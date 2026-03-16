@@ -244,6 +244,12 @@ Brauzerda:
   XATO BO'LSA NIMA QILISH
 ══════════════════════════════════════════════════════════════════
 
+XATO: "DATABASE_URL muhit o'zgaruvchisi o'rnatilmagan!" yoki KeyError: 'DATABASE_URL'
+  → Railway da PostgreSQL servis qo'shing (New → Database → PostgreSQL)
+  → mashrab-api servisi → Variables → DATABASE_URL ni PostgreSQL dan reference qiling
+    (${{Postgres.DATABASE_URL}} yoki "Add variable" → Reference → Postgres → DATABASE_URL)
+  → Konteyner DATABASE_URL bo‘lmaganda ishga tushmaydi — bu kutilgan
+
 XATO: "JWT_SECRET muhit o'zgaruvchisi o'rnatilmagan!" (Container Crashed)
   → Railway → Service (mashrab-api) → Variables → JWT_SECRET qo'shing
   → Kamida 32 belgili tasodifiy matn (masalan: openssl rand -hex 32)

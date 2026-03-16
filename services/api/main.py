@@ -125,7 +125,16 @@ class PaginatsiyaResponse(BaseModel):
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    dsn    = os.environ["DATABASE_URL"]
+    dsn = (os.getenv("DATABASE_URL") or "").strip()
+    if not dsn:
+        log.error(
+            "DATABASE_URL o'rnatilmagan. Railway da: 1) PostgreSQL servis qo'shing, "
+            "2) mashrab-api → Variables → DATABASE_URL ni PostgreSQL reference qiling."
+        )
+        raise RuntimeError(
+            "DATABASE_URL muhit o'zgaruvchisi o'rnatilmagan. "
+            "Railway: PostgreSQL ulang va Service Variables da DATABASE_URL qo'shing."
+        )
     r_url  = os.getenv("REDIS_URL", "")
     q_url  = os.getenv("QDRANT_URL")
     q_key  = os.getenv("QDRANT_API_KEY")
