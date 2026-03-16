@@ -244,7 +244,32 @@ def _split_sql_statements(sql: str) -> list[str]:
     stmt = "".join(current).strip()
     if stmt:
         statements.append(stmt)
-    return statements
+    return _split_combined_statements(statements)
+
+
+def _split_combined_statements(statements: list[str]) -> list[str]:
+    """Bir statement ichida ); keyin CREATE/SELECT/... bo'lsa alohida statementlarga ajratadi.
+    ); dan keyin \\n, comment (-- ...) va bo'sh qatorlar bo'lishi mumkin."""
+    import re
+    result: list[str] = []
+    # ); dan keyin ixtiyoriy \n, comment qatorlari, keyin CREATE/SELECT/...
+    pat = re.compile(
+        r"\);\s*\n(?:\s*\n|\s*--[^\n]*\n)*\s*(?=CREATE\s|SELECT\s|INSERT\s|UPDATE\s|DELETE\s|DROP\s|ALTER\s)",
+        re.IGNORECASE,
+    )
+    for stmt in statements:
+        parts = pat.split(stmt)
+        if len(parts) == 1:
+            result.append(stmt)
+            continue
+        for i, part in enumerate(parts):
+            p = part.strip()
+            if not p:
+                continue
+            if i == 0 and not p.endswith(");"):
+                p = p + ");"
+            result.append(p)
+    return result
 
 
 async def run_schema_on_conn(conn: asyncpg.Connection) -> None:
