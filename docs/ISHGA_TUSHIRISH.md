@@ -244,6 +244,14 @@ Brauzerda:
   XATO BO'LSA NIMA QILISH
 ══════════════════════════════════════════════════════════════════
 
+XATO: "uvicorn: command not found" (Container Crashed)
+  → Railway → Service → Settings → "Start Command" ni BO'SHATING
+    (Dockerfile ichidagi start.sh ishlashi uchun)
+  → Yoki Start Command ni shunga o'zgartiring:
+    python -m uvicorn main:app --host 0.0.0.0 --port $PORT --workers 4
+  → Cognitive servisi uchun:
+    python -m uvicorn api:app --host 0.0.0.0 --port $PORT --workers 2
+
 XATO: "Bot ishlamayapti"
   → Railway → mashrab-bot → Logs → xato xabarini o'qing
   → Ko'pincha: BOT_TOKEN noto'g'ri yoki DATABASE_URL xato

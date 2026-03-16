@@ -12,5 +12,7 @@ WORKDIR /app/services/cognitive
 
 ENV PYTHONPATH=/app
 
+RUN chmod +x /app/services/cognitive/start.sh
+
 # api:app - cognitive service entry is api.py not main.py
-CMD ["sh", "-c", "python -m uvicorn api:app --host 0.0.0.0 --port ${PORT:-8001} --workers 2"]
+ENTRYPOINT ["/app/services/cognitive/start.sh"]

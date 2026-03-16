@@ -12,4 +12,6 @@ WORKDIR /app/services/api
 
 ENV PYTHONPATH=/app
 
-CMD ["sh", "-c", "python -m uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000} --workers 4"]
+RUN chmod +x /app/services/api/start.sh
+
+ENTRYPOINT ["/app/services/api/start.sh"]
