@@ -15,4 +15,4 @@ WORKDIR /app/services/worker
 
 ENV PYTHONPATH=/app
 
-CMD ["celery", "-A", "tasks", "worker", "--loglevel=info", "--concurrency=2"]
+CMD ["python", "-m", "celery", "-A", "tasks", "worker", "--loglevel=info", "--concurrency=2"]
