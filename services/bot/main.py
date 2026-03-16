@@ -137,7 +137,7 @@ async def _user_ol_kesh(uid: int):
     cached = _kesh_ol(k)
     if cached is not None:
         return cached
-    user = await _user_ol_kesh(uid)
+    user = await db.user_ol(uid)
     if user:
         _kesh_yoz(k, user, _KESH_USER_TTL)
     return user
@@ -147,15 +147,15 @@ async def health_check(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     """Railway health monitoring — turbo v21.3"""
     import time as _t
     start = _t.monotonic()
-    # DB ping
     try:
-        from shared.database.pool import pool_health
         import asyncio
-        db_info = await asyncio.wait_for(pool_health(), timeout=5)
-        db_ms = db_info.get("ping_ms", "?")
+        db_info = await asyncio.wait_for(db.pool_health(), timeout=5)
+        db_ms = db_info.get("ping_ms") or "?"
         db_status = f"✅ DB: {db_ms}ms (pool: {db_info.get('used',0)}/{db_info.get('size',0)})"
-    except Exception:
-        db_status = "⚠️ DB: tekshirib bo'lmadi"
+        if db_info.get("status") == "error":
+            db_status = f"⚠️ DB: {db_info.get('error', 'xato')}"
+    except Exception as e:
+        db_status = f"⚠️ DB: {e!s}"
     # Cache stats
     cache_size = len(_kesh)
     total_ms = round((_t.monotonic() - start) * 1000, 1)
@@ -178,16 +178,15 @@ async def xato_handler(update: object,
 
     # Adminlarga xabar berish
     try:
-        if _CFG:
+        if _CFG and _CFG.admin_ids:
+            err_msg = (str(xato)[:500] if xato else "Noma'lum xato")
             for aid in _CFG.admin_ids:
                 await ctx.bot.send_message(
                     aid,
-                    f"⛔ *Bot xatosi*\n\n"
-                    "Xato yuz berdi",
-                    parse_mode=ParseMode.MARKDOWN,
+                    f"⛔ Bot xatosi\n\n{err_msg}",
                 )
     except Exception as _exc:
-        log.debug("%s: %s", "main", _exc)  # was silent
+        log.debug("Admin xabar: %s", _exc)
 
 H_SEGMENT, H_DOKON, H_TELEFON = range(3)
 _oxirgi: dict[int,float] = defaultdict(float)
@@ -266,7 +265,7 @@ async def cmd_start(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
         ogoh=""
         if kam: ogoh=f"\n\n⚠️ Kam qoldiq: {', '.join(t['nomi'] for t in kam[:3])}"
         await update.message.reply_text(
-            f"👋 Xush kelibsiz, *{user['to_liq_ism']}*!\n"
+            f"👋 Xush kelibsiz, *{(user.get('ism') or user.get('to_liq_ism') or '').strip() or 'Do\'st'}*!\n"
             f"🏪 {user['dokon_nomi']}  |  "
             f"{SEGMENT_NOMI.get(user['segment'],'')}\n\n"
             f"🤖 *Mashrab Moliya v{__version__}*\n"
@@ -530,7 +529,7 @@ async def _ovoz_buyruq_bajar(update:Update, ctx:ContextTypes.DEFAULT_TYPE,
         await update.message.reply_text("📋 Asosiy menyu:", reply_markup=asosiy_menyu())
     elif action == "greet":
         user = await _user_ol_kesh(uid)
-        ism = user.get("to_liq_ism","") if user else ""
+        ism = (user.get("ism") or user.get("to_liq_ism") or "") if user else ""
         await update.message.reply_text(
             f"👋 Salom{', ' + ism if ism else ''}! Ovoz yuboring yoki menyu tanlang 👇",
             reply_markup=asosiy_menyu())
@@ -2086,7 +2085,7 @@ async def cmd_foydalanuvchilar(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
           f"|  📊 Jami: {len(qatorlar)}\n\n")
     for r in qatorlar:
         belgi="✅" if r["faol"] else "⏳"
-        matn+=(f"{belgi} *{r['to_liq_ism']}*\n"
+        matn+=(f"{belgi} *{(r.get('ism') or r.get('to_liq_ism') or '')}*\n"
                f"   🏪 {r.get('dokon_nomi','')} | "
                f"{SEGMENT_NOMI.get(r.get('segment',''),'')}\n"
                f"   🆔 `{r['id']}` | Obuna: {str(r.get('obuna_tugash','?'))}\n\n")
@@ -2099,6 +2098,7 @@ async def cmd_faollashtir(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
                                          parse_mode=ParseMode.MARKDOWN); return
     try:
         uid=int(ctx.args[0]); await db.user_faollashtir(uid); await db.user_yangilab(uid,faol=True)
+        _kesh_tozala(f"user:{uid}")
         await update.message.reply_text(f"✅ `{uid}` faollashtirildi!",parse_mode=ParseMode.MARKDOWN)
         try: await ctx.bot.send_message(uid,"✅ Hisobingiz faollashtirildi! /start bosing.")
         except Exception: pass

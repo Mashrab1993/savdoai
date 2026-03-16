@@ -74,7 +74,7 @@ _pool: Optional[asyncpg.Pool] = None
 _SCHEMA = """
 CREATE TABLE IF NOT EXISTS users (
     id              BIGINT        PRIMARY KEY,
-    to_liq_ism      TEXT          NOT NULL DEFAULT '',
+    ism             TEXT          NOT NULL DEFAULT '',
     username        TEXT,
     telefon         TEXT,
     dokon_nomi      TEXT,
@@ -296,6 +296,26 @@ async def pool_close() -> None:
         _pool = None
 
 
+async def pool_health() -> dict:
+    """Bot DB pool holati — /health uchun"""
+    if _pool is None:
+        return {"status": "closed", "ping_ms": None, "size": 0, "used": 0}
+    import time as _t
+    try:
+        start = _t.monotonic()
+        async with _pool.acquire() as c:
+            await c.fetchval("SELECT 1")
+        ping_ms = round((_t.monotonic() - start) * 1000, 1)
+        return {
+            "status": "ok",
+            "ping_ms": ping_ms,
+            "size": _pool.get_size(),
+            "used": _pool.get_size() - _pool.get_idle_size(),
+        }
+    except Exception as e:
+        return {"status": "error", "error": str(e), "ping_ms": None, "size": 0, "used": 0}
+
+
 # ════════════════════════════════════════════════════════════════
 #  § 4. YORDAMCHI FUNKSIYALAR
 # ════════════════════════════════════════════════════════════════
@@ -348,11 +368,12 @@ async def user_ol(uid: int) -> Optional[asyncpg.Record]:
 
 async def user_yoz(uid: int, to_liq_ism: str,
                    username: Optional[str] = None) -> None:
+    """Ro'yxatdan o'tkazish. Schema: ism (shared) yoki to_liq_ism (fallback)."""
     async with _P().acquire() as c:
         await c.execute("""
-            INSERT INTO users (id, to_liq_ism, username)
-            VALUES ($1, $2, $3) ON CONFLICT (id) DO NOTHING
-        """, uid, to_liq_ism, username)
+            INSERT INTO users (id, ism, username)
+            VALUES ($1, $2, $3) ON CONFLICT (id) DO UPDATE SET ism = EXCLUDED.ism, username = EXCLUDED.username
+        """, uid, to_liq_ism or "", username)
 
 
 async def user_yangilab(uid: int, **maydonlar) -> None:
