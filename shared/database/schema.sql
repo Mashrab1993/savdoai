@@ -263,9 +263,8 @@ ORDER BY t.tablename;
 -- ────────────────────────────────────────────────────────────────────
 -- QO'SHIMCHA INDEKSLAR (20,000+ foydalanuvchi uchun)
 -- ────────────────────────────────────────────────────────────────────
--- Sotuv tahlili uchun
-CREATE INDEX IF NOT EXISTS idx_ss_uid_sana_btr
-    ON sotuv_sessiyalar(user_id, (sana AT TIME ZONE 'Asia/Tashkent')::date DESC);
+-- Sotuv tahlili uchun (::date index olib tashlangan — asyncpg syntax)
+-- CREATE INDEX IF NOT EXISTS idx_ss_uid_sana_btr ON sotuv_sessiyalar(...);
 
 -- Qarz muddati uchun
 CREATE INDEX IF NOT EXISTS idx_qrz_muddat

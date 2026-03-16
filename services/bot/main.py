@@ -92,7 +92,7 @@ logging.basicConfig(
 )
 for _s in ("httpx","httpcore","telegram.ext._application"):
     logging.getLogger(_s).setLevel(logging.WARNING)
-__version__ = "21.5"
+__version__ = "22.1"
 __author__  = "Mashrab Moliya"
 
 # Segment nomi matnlari
@@ -1937,7 +1937,7 @@ async def cmd_tovar(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
 
 
 async def cmd_yangilik(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
-    """v21.5 SAP-GRADE yangiliklari"""
+    """v22.1 yangiliklari"""
     await update.message.reply_text(
         f"🆕 *MASHRAB MOLIYA v{__version__} — SAP-GRADE YANGILIKLAR*\n"
         "━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
@@ -2142,10 +2142,13 @@ async def boshlash(app:Application) -> None:
     global _CFG; _CFG=app.bot_data["cfg"]
     try:
         await db.pool_init(_CFG.database_url, min_size=_CFG.db_min, max_size=_CFG.db_max)
-        await db.schema_init()
     except Exception as _e:
         log.critical("DB ulanishda xato: %s", _e, exc_info=True)
         raise RuntimeError(f"DB pool init muvaffaqiyatsiz: {_e}") from _e
+    try:
+        await db.schema_init()
+    except Exception as _e:
+        log.warning("schema_init xato (bot davom etadi): %s", _e)
     try:
         ovoz_xizmat.ishga_tushir(_CFG.gemini_key, _CFG.gemini_model)
     except Exception as _e:
@@ -2156,6 +2159,7 @@ async def boshlash(app:Application) -> None:
         log.critical("Claude ishga tushmadi: %s", _e, exc_info=True)
         raise RuntimeError(f"AI xizmat init muvaffaqiyatsiz: {_e}") from _e
     log.info("✅ Bot xizmatlar tayyor")
+    log.info("🚀 SavdoAI Mashrab Moliya v%s PRODUCTION — TAYYOR!", __version__)
     # Vision AI (ixtiyoriy — Gemini key bilan ishlaydi)
     try:
         from shared.services.vision import ishga_tushir as vision_init
@@ -2177,7 +2181,7 @@ async def boshlash(app:Application) -> None:
     await app.bot.set_my_commands([
         BotCommand("start",            "Botni boshlash"),
         BotCommand("menyu",            "Asosiy menyu"),
-        BotCommand("yangilik",         "🆕 v21.5 yangiliklari"),
+        BotCommand("yangilik",         "🆕 v22.1 yangiliklari"),
         BotCommand("imkoniyatlar",     "📋 Barcha imkoniyatlar"),
         BotCommand("yordam",           "❓ Qanday ishlatish"),
         BotCommand("nakladnoy",        "Nakladnoy (Word+Excel+PDF)"),

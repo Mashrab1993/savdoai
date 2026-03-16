@@ -60,7 +60,7 @@ logging.basicConfig(
     format="%(asctime)s │ %(levelname)-8s │ %(name)s │ %(message)s"
 )
 
-__version__ = "21.3"
+__version__ = "22.1"
 # JWT_SECRET bo‘lmasa ham konteyner ishga tushadi; /health ishlaydi.
 # Auth endpointlar 503 qaytaradi — Railway Variables da JWT_SECRET o‘rnating.
 _JWT_SECRET_RAW = (os.getenv("JWT_SECRET") or "").strip()
@@ -156,9 +156,8 @@ async def lifespan(app: FastAPI):
 
     try:
         await pool_init(dsn,
-                        min_size=int(os.getenv("DB_MIN", "5")),
-                        max_size=int(os.getenv("DB_MAX", "50")))
-        await schema_init()
+                        min_size=int(os.getenv("DB_MIN", "2")),
+                        max_size=int(os.getenv("DB_MAX", "10")))
     except socket.gaierror as e:
         log.error(
             "DATABASE_URL hostname aniqlanmadi (No address associated with hostname). "
@@ -176,6 +175,10 @@ async def lifespan(app: FastAPI):
                 "DATABASE_URL hostname aniqlanmadi. Railway: Add reference → Postgres → DATABASE_URL."
             ) from e
         raise
+    try:
+        await schema_init()
+    except Exception as e:
+        log.warning("schema_init xato (API davom etadi): %s", e)
 
     if r_url:
         await redis_init(r_url)
@@ -183,7 +186,7 @@ async def lifespan(app: FastAPI):
     if rag_init is not None:
         rag_init(q_url, q_key)
 
-    log.info("🚀 API v%s tayyor", __version__)
+    log.info("🚀 SavdoAI API v%s tayyor", __version__)
     yield
     await pool_close()
     log.info("API to'xtatildi")

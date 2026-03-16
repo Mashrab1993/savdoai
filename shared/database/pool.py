@@ -286,6 +286,8 @@ async def run_schema_on_conn(conn: asyncpg.Connection) -> None:
         return
     sql = open(schema_file, encoding="utf-8").read()
     statements = _split_sql_statements(sql)
+    ok_count = 0
+    skip_count = 0
     for idx, stmt in enumerate(statements):
         stmt = stmt.strip()
         no_comment = "".join(
@@ -294,34 +296,44 @@ async def run_schema_on_conn(conn: asyncpg.Connection) -> None:
         ).strip()
         if not no_comment:
             continue
+        is_create_table = no_comment.strip().upper().startswith("CREATE TABLE")
         last_err = None
         for attempt in range(3):
             try:
                 await conn.execute(stmt)
+                ok_count += 1
                 break
             except Exception as e:
                 last_err = e
                 err = str(e).lower()
                 if "already exists" in err or "duplicate" in err:
+                    skip_count += 1
                     log.debug("Schema stmt %s: allaqachon mavjud, o'tkazildi", idx + 1)
                     break
                 if "tuple concurrently updated" in err or "could not serialize" in err:
                     if attempt < 2:
                         await asyncio.sleep(0.5 * (attempt + 1))
                         continue
-                log.error(
-                    "Schema statement %s xato: %s | stmt preview: %.200s...",
-                    idx + 1, e, no_comment[:200]
-                )
-                raise
+                if is_create_table:
+                    log.error(
+                        "Schema statement %s xato (CREATE TABLE): %s | stmt: %.200s...",
+                        idx + 1, e, no_comment[:200]
+                    )
+                    raise
+                skip_count += 1
+                log.warning("Schema stmt %s skip: %s", idx + 1, e)
+                break
         else:
             if last_err is not None:
-                log.error(
-                    "Schema statement %s xato (3 urinish): %s | stmt: %.200s...",
-                    idx + 1, last_err, no_comment[:200]
-                )
-                raise last_err
-    log.info("✅ Schema tayyor (RLS yoqilgan)")
+                if is_create_table:
+                    log.error(
+                        "Schema statement %s xato (3 urinish): %s | stmt: %.200s...",
+                        idx + 1, last_err, no_comment[:200]
+                    )
+                    raise last_err
+                skip_count += 1
+                log.warning("Schema stmt %s skip (3 urinish): %s", idx + 1, last_err)
+    log.info("✅ Schema tayyor (%d OK, %d skip, RLS yoqilgan)", ok_count, skip_count)
 
 
 async def schema_init() -> None:
