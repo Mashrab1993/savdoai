@@ -13,6 +13,7 @@
 """
 from __future__ import annotations
 import os, sys, logging, time, hashlib, hmac, base64, json
+import socket
 from pathlib import Path
 from contextlib import asynccontextmanager
 from typing import Optional
@@ -139,10 +140,28 @@ async def lifespan(app: FastAPI):
     q_url  = os.getenv("QDRANT_URL")
     q_key  = os.getenv("QDRANT_API_KEY")
 
-    await pool_init(dsn,
-                    min_size=int(os.getenv("DB_MIN", "5")),
-                    max_size=int(os.getenv("DB_MAX", "50")))
-    await schema_init()
+    try:
+        await pool_init(dsn,
+                        min_size=int(os.getenv("DB_MIN", "5")),
+                        max_size=int(os.getenv("DB_MAX", "50")))
+        await schema_init()
+    except socket.gaierror as e:
+        log.error(
+            "DATABASE_URL hostname aniqlanmadi (No address associated with hostname). "
+            "Railway da: savdoai → Variables → DATABASE_URL ni 'Add reference' orqali Postgres servisidan qo'shing. "
+            "API va Postgres bir xil project da bo'lishi kerak."
+        )
+        raise RuntimeError(
+            "DATABASE_URL hostname aniqlanmadi. Railway: Variables → Add reference → Postgres → DATABASE_URL. "
+            "API va Postgres bir project da bo'lsin."
+        ) from e
+    except OSError as e:
+        if "No address associated with hostname" in str(e) or "Name or service not known" in str(e):
+            log.error("DATABASE_URL hostname xato. Railway da Postgres dan reference ishlating.")
+            raise RuntimeError(
+                "DATABASE_URL hostname aniqlanmadi. Railway: Add reference → Postgres → DATABASE_URL."
+            ) from e
+        raise
 
     if r_url:
         await redis_init(r_url)

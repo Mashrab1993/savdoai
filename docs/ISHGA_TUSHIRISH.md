@@ -250,6 +250,13 @@ XATO: "DATABASE_URL muhit o'zgaruvchisi o'rnatilmagan!" yoki KeyError: 'DATABASE
     (${{Postgres.DATABASE_URL}} yoki "Add variable" → Reference → Postgres → DATABASE_URL)
   → Konteyner DATABASE_URL bo‘lmaganda ishga tushmaydi — bu kutilgan
 
+XATO: "No address associated with hostname" yoki socket.gaierror (DB ulanishi)
+  → DATABASE_URL ni QO'LDa yozmang (localhost yoki noto'g'ri host bo'ladi)
+  → Railway: savdoai (yoki mashrab-api) → Variables → DATABASE_URL
+  → "Add variable" → "Add a reference" → Postgres servisini tanlang → DATABASE_URL
+  → API va Postgres bir xil Railway project da bo'lishi kerak
+  → Reference qilgandan keyin Redeploy qiling
+
 XATO: "JWT_SECRET muhit o'zgaruvchisi o'rnatilmagan!" (Container Crashed)
   → Railway → Service (mashrab-api) → Variables → JWT_SECRET qo'shing
   → Kamida 32 belgili tasodifiy matn (masalan: openssl rand -hex 32)
