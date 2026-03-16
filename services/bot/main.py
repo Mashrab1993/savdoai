@@ -257,48 +257,66 @@ async def _yuborish(update:Update, matn:str, **kw) -> None:
 
 # ════════════ START + RO'YXAT ════════════
 
-async def cmd_start(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
-    uid=update.effective_user.id
-    user=await _user_ol_kesh(uid)
-    if user and user["faol"]:
-        kam=await db.kam_qoldiq_tovarlar(uid)
-        ogoh=""
-        if kam: ogoh=f"\n\n⚠️ Kam qoldiq: {', '.join(t['nomi'] for t in kam[:3])}"
-        await update.message.reply_text(
-            f"👋 Xush kelibsiz, *{(user.get('ism') or user.get('to_liq_ism') or '').strip() or 'Do\'st'}*!\n"
-            f"🏪 {user['dokon_nomi']}  |  "
-            f"{SEGMENT_NOMI.get(user['segment'],'')}\n\n"
-            f"🤖 *Mashrab Moliya v{__version__}*\n"
-            "━━━━━━━━━━━━━━━━━━━━━\n"
-            "🎤 *OVOZ YUBORING* — bot hamma ishni qiladi!\n\n"
-            "📋 *Namunalar:*\n"
-            "• _\"Salimovga 50 Ariel, 20 Tide, qarzga\"_\n"
-            "• _\"100 ta un kirdi, narxi 35,000\"_\n"
-            "• _\"Salimov 500,000 to'ladi\"_\n"
-            "• _\"Bugungi hisobot\"_\n"
-            f"━━━━━━━━━━━━━━━━━━━━━{ogoh}\n\n"
-            "👇 Menyu yoki /yangilik — yangiliklar",
-            parse_mode=ParseMode.MARKDOWN, reply_markup=asosiy_menyu(),
+async def cmd_start(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    """/start — har doim javob beradi; xato bo'lsa ham foydalanuvchi xabar oladi."""
+    if not update.message:
+        return ConversationHandler.END
+    uid = update.effective_user.id
+    try:
+        user = await _user_ol_kesh(uid)
+        if user and user["faol"]:
+            kam = await db.kam_qoldiq_tovarlar(uid)
+            ogoh = ""
+            if kam:
+                ogoh = f"\n\n⚠️ Kam qoldiq: {', '.join(t['nomi'] for t in kam[:3])}"
+            await update.message.reply_text(
+                f"👋 Xush kelibsiz, *{(user.get('ism') or user.get('to_liq_ism') or '').strip() or 'Do\'st'}*!\n"
+                f"🏪 {user['dokon_nomi']}  |  "
+                f"{SEGMENT_NOMI.get(user['segment'],'')}\n\n"
+                f"🤖 *Mashrab Moliya v{__version__}*\n"
+                "━━━━━━━━━━━━━━━━━━━━━\n"
+                "🎤 *OVOZ YUBORING* — bot hamma ishni qiladi!\n\n"
+                "📋 *Namunalar:*\n"
+                "• _\"Salimovga 50 Ariel, 20 Tide, qarzga\"_\n"
+                "• _\"100 ta un kirdi, narxi 35,000\"_\n"
+                "• _\"Salimov 500,000 to'ladi\"_\n"
+                "• _\"Bugungi hisobot\"_\n"
+                f"━━━━━━━━━━━━━━━━━━━━━{ogoh}\n\n"
+                "👇 Menyu yoki /yangilik — yangiliklar",
+                parse_mode=ParseMode.MARKDOWN,
+                reply_markup=asosiy_menyu(),
+            )
+            return ConversationHandler.END
+        if user and not user["faol"]:
+            await update.message.reply_text("⏳ Hisobingiz tasdiqlanmagan.")
+            return ConversationHandler.END
+        await db.user_yoz(
+            uid,
+            update.effective_user.full_name or "Nomsiz",
+            update.effective_user.username,
         )
+        await update.message.reply_text(
+            "👋 *Mashrab Moliya*ga xush kelibsiz!\n\nBiznes turini tanlang:",
+            parse_mode=ParseMode.MARKDOWN,
+            reply_markup=tg(
+                [("🏭 Optom (ulgurji)", "seg:optom")],
+                [("🏪 Chakana (mayda)", "seg:chakana")],
+                [("🍽️ Oshxona / Kafe", "seg:oshxona")],
+                [("🍦 Xo'zmak / Fast-food", "seg:xozmak")],
+                [("🛒 Universal savdo", "seg:universal")],
+            ),
+        )
+        return H_SEGMENT
+    except Exception as e:
+        log.exception("cmd_start xato (uid=%s): %s", uid, e)
+        try:
+            await update.message.reply_text(
+                "👋 Savdo AI ga xush kelibsiz.\n\n"
+                "⚠️ Vaqtincha texnik ish olib borilmoqda. Bir necha soniyadan keyin /start ni qayta bosing.",
+            )
+        except Exception:
+            pass
         return ConversationHandler.END
-    if user and not user["faol"]:
-        await update.message.reply_text("⏳ Hisobingiz tasdiqlanmagan.")
-        return ConversationHandler.END
-    await db.user_yoz(uid,
-        update.effective_user.full_name or "Nomsiz",
-        update.effective_user.username)
-    await update.message.reply_text(
-        "👋 *Mashrab Moliya*ga xush kelibsiz!\n\nBiznes turini tanlang:",
-        parse_mode=ParseMode.MARKDOWN,
-        reply_markup=tg(
-            [("🏭 Optom (ulgurji)",     "seg:optom")],
-            [("🏪 Chakana (mayda)",     "seg:chakana")],
-            [("🍽️ Oshxona / Kafe",     "seg:oshxona")],
-            [("🍦 Xo'zmak / Fast-food","seg:xozmak")],
-            [("🛒 Universal savdo",    "seg:universal")],
-        ),
-    )
-    return H_SEGMENT
 
 
 async def h_segment(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
