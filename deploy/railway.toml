@@ -19,7 +19,7 @@ name = "mashrab-api"
 [services.build]
 dockerfilePath = "services/api/Dockerfile"
 [services.deploy]
-startCommand = "sh -c 'python -m uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000} --workers 4'"
+startCommand = "sh -c 'python -m uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000} --workers 1'"
 healthCheckPath = "/health"
 restartPolicyType = "ON_FAILURE"
 [services.variables]
@@ -27,8 +27,8 @@ DATABASE_URL  = "${{Postgres.DATABASE_URL}}"
 REDIS_URL     = "${{Redis.REDIS_URL}}"
 JWT_SECRET    = "${{JWT_SECRET}}"
 WEB_URL       = "${{WEB_URL}}"
-DB_MIN        = "5"
-DB_MAX        = "50"
+DB_MIN        = "2"
+DB_MAX        = "10"
 COGNITIVE_URL = "${{mashrab-cognitive.RAILWAY_SERVICE_URL}}"
 
 [[services]]
@@ -50,7 +50,7 @@ API_URL           = "${{mashrab-api.RAILWAY_SERVICE_URL}}"
 COGNITIVE_URL     = "${{mashrab-cognitive.RAILWAY_SERVICE_URL}}"
 WORKER_URL        = "${{mashrab-worker.RAILWAY_SERVICE_URL}}"
 DB_MIN            = "2"
-DB_MAX            = "15"
+DB_MAX            = "10"
 
 [[services]]
 name = "mashrab-worker"

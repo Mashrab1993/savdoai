@@ -38,7 +38,10 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 from shared.database.pool import pool_init, pool_close, schema_init, rls_conn, get_pool
 from shared.cache.redis_cache import redis_init, cache_ol, cache_yoz
 from shared.cache.redis_cache import k_hisobot_kunlik, k_qarzlar, k_user, TTL_HISOBOT, TTL_USER
-from shared.rag.vector_db import rag_init
+try:
+    from shared.rag.vector_db import rag_init
+except ImportError:
+    rag_init = None  # qdrant-client ixtiyoriy
 
 log = logging.getLogger(__name__)
 
@@ -177,7 +180,8 @@ async def lifespan(app: FastAPI):
     if r_url:
         await redis_init(r_url)
 
-    rag_init(q_url, q_key)
+    if rag_init is not None:
+        rag_init(q_url, q_key)
 
     log.info("🚀 API v%s tayyor", __version__)
     yield
