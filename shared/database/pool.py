@@ -215,7 +215,7 @@ def _split_sql_statements(sql: str) -> list[str]:
                 continue
             if sql[i] == ";" and (i + 1 >= n or sql[i + 1] in "\n\r"):
                 stmt = "".join(current).strip()
-                if stmt and not stmt.startswith("--"):
+                if stmt:
                     statements.append(stmt)
                 current = []
                 i += 1
@@ -232,13 +232,16 @@ def _split_sql_statements(sql: str) -> list[str]:
             i += 1
 
     stmt = "".join(current).strip()
-    if stmt and not stmt.startswith("--"):
+    if stmt:
         statements.append(stmt)
     return statements
 
 
-async def schema_init() -> None:
-    """SQL schema faylidan jadvallarni yaratish (har bir statement alohida)."""
+async def run_schema_on_conn(conn: asyncpg.Connection) -> None:
+    """
+    Berilgan connection da schema.sql ni bajaradi (statement-split bilan).
+    Bot va boshqa servislar o'z pool ulanishida chaqirishi mumkin.
+    """
     import os
     schema_file = os.path.join(
         os.path.dirname(__file__), "schema.sql"
@@ -246,31 +249,32 @@ async def schema_init() -> None:
     if not os.path.exists(schema_file):
         log.error("schema.sql topilmadi: %s", schema_file)
         return
-
     sql = open(schema_file, encoding="utf-8").read()
     statements = _split_sql_statements(sql)
-    async with get_pool().acquire() as conn:
-        for idx, stmt in enumerate(statements):
-            stmt = stmt.strip()
-            # Faqat bo'sh yoki to'liq comment qatorlardan iborat bo'lsa o'tkazib yuboramiz
-            # (boshida -- bo'lsa ham CREATE TABLE ... kabi asl SQL bajariladi)
-            no_comment = "".join(
-                line for line in stmt.splitlines()
-                if line.strip() and not line.strip().startswith("--")
-            ).strip()
-            if not no_comment:
-                continue
-            try:
-                await conn.execute(stmt)
-            except Exception as e:
-                err = str(e).lower()
-                if "already exists" in err or "duplicate" in err:
-                    log.debug("Schema stmt %s: allaqachon mavjud, o'tkazildi", idx + 1)
-                else:
-                    log.error("Schema statement %s xato: %s", idx + 1, e)
-                    raise
-
+    for idx, stmt in enumerate(statements):
+        stmt = stmt.strip()
+        no_comment = "".join(
+            line for line in stmt.splitlines()
+            if line.strip() and not line.strip().startswith("--")
+        ).strip()
+        if not no_comment:
+            continue
+        try:
+            await conn.execute(stmt)
+        except Exception as e:
+            err = str(e).lower()
+            if "already exists" in err or "duplicate" in err:
+                log.debug("Schema stmt %s: allaqachon mavjud, o'tkazildi", idx + 1)
+            else:
+                log.error("Schema statement %s xato: %s", idx + 1, e)
+                raise
     log.info("✅ Schema tayyor (RLS yoqilgan)")
+
+
+async def schema_init() -> None:
+    """SQL schema faylidan jadvallarni yaratish (har bir statement alohida)."""
+    async with get_pool().acquire() as conn:
+        await run_schema_on_conn(conn)
 
 
 async def rls_tekshir() -> list[dict]:

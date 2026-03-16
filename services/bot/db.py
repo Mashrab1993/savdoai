@@ -34,9 +34,10 @@ from typing import Any, Optional
 
 import asyncio
 import asyncpg
-import asyncio
 import asyncpg.exceptions
 import pytz
+
+from shared.database.pool import run_schema_on_conn
 
 # ── DB xato handleri ─────────────────────────────────────
 class DBXato(Exception):
@@ -274,18 +275,17 @@ async def _init_conn(conn: asyncpg.Connection) -> None:
 
 
 async def schema_init() -> None:
-    """Load shared schema.sql (includes RLS policies)"""
+    """Load shared schema.sql (statement-split bilan; RLS policies ham)."""
     import os as _os2
     _schema_path = _os2.path.join(
         _os2.path.dirname(_os2.path.dirname(_os2.path.dirname(_os2.path.abspath(__file__)))),
         "shared", "database", "schema.sql"
     )
-    if _os2.path.exists(_schema_path):
-        sql = open(_schema_path, encoding="utf-8").read()
-    else:
-        sql = _SCHEMA  # fallback: embedded schema
     async with _P().acquire() as c:
-        await c.execute(sql)
+        if _os2.path.exists(_schema_path):
+            await run_schema_on_conn(c)
+        else:
+            await c.execute(_SCHEMA)
     log.info("✅ Jadvallar tayyor (RLS yoqilgan)")
 
 
