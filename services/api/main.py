@@ -57,10 +57,12 @@ logging.basicConfig(
 )
 
 __version__ = "21.3"
-_JWT_SECRET_RAW = os.getenv("JWT_SECRET", "")
-if not _JWT_SECRET_RAW:
-    raise RuntimeError("JWT_SECRET muhit o'zgaruvchisi o'rnatilmagan!")
-JWT_SECRET = _JWT_SECRET_RAW
+# JWT_SECRET bo‘lmasa ham konteyner ishga tushadi; /health ishlaydi.
+# Auth endpointlar 503 qaytaradi — Railway Variables da JWT_SECRET o‘rnating.
+_JWT_SECRET_RAW = (os.getenv("JWT_SECRET") or "").strip()
+JWT_SECRET = _JWT_SECRET_RAW or None
+if not JWT_SECRET:
+    log.warning("JWT_SECRET o‘rnatilmagan — /auth va API token ishlamaydi. Railway Variables da JWT_SECRET qo‘ying.")
 
 
 # ════════════════════════════════════════════════════════════
@@ -189,6 +191,11 @@ from services.api.deps import get_uid, jwt_tekshir
 
 def jwt_yarat(user_id: int, ttl: int = 86400) -> str:
     """JWT token yaratish"""
+    if not JWT_SECRET:
+        raise HTTPException(
+            status_code=503,
+            detail="JWT_SECRET o'rnatilmagan. Railway → Service → Variables → JWT_SECRET qo'shing (min 32 belgi).",
+        )
     h64 = base64.urlsafe_b64encode(
         b'{"alg":"HS256","typ":"JWT"}'
     ).rstrip(b"=").decode()
@@ -227,6 +234,11 @@ async def auth_telegram(data: TelegramAuthSo_rov):
     Telegram bot → API token olish.
     Bot har foydalanuvchi uchun bu endpoint orqali JWT oladi.
     """
+    if not JWT_SECRET:
+        raise HTTPException(
+            status_code=503,
+            detail="JWT_SECRET o'rnatilmagan. Railway → Variables → JWT_SECRET qo'shing.",
+        )
     uid      = data.user_id
     bot_hash = data.hash
     expected = hashlib.sha256(

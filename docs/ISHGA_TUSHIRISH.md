@@ -244,6 +244,11 @@ Brauzerda:
   XATO BO'LSA NIMA QILISH
 ══════════════════════════════════════════════════════════════════
 
+XATO: "JWT_SECRET muhit o'zgaruvchisi o'rnatilmagan!" (Container Crashed)
+  → Railway → Service (mashrab-api) → Variables → JWT_SECRET qo'shing
+  → Kamida 32 belgili tasodifiy matn (masalan: openssl rand -hex 32)
+  → Yangilangan kodda JWT bo‘lmasa ham konteyner ishga tushadi; /health ishlaydi, auth 503 qaytaradi
+
 XATO: "uvicorn: command not found" (Container Crashed)
   → Railway → Service → Settings → "Start Command" ni BO'SHATING
     (Dockerfile ichidagi start.sh ishlashi uchun)
