@@ -252,7 +252,13 @@ async def schema_init() -> None:
     async with get_pool().acquire() as conn:
         for idx, stmt in enumerate(statements):
             stmt = stmt.strip()
-            if not stmt or stmt.startswith("--"):
+            # Faqat bo'sh yoki to'liq comment qatorlardan iborat bo'lsa o'tkazib yuboramiz
+            # (boshida -- bo'lsa ham CREATE TABLE ... kabi asl SQL bajariladi)
+            no_comment = "".join(
+                line for line in stmt.splitlines()
+                if line.strip() and not line.strip().startswith("--")
+            ).strip()
+            if not no_comment:
                 continue
             try:
                 await conn.execute(stmt)
