@@ -2303,9 +2303,9 @@ def main() -> None:
     conf=config_init(); app=ilovani_qur(conf)
     log.info("▶️  Polling boshlandi...")
     try:
-        # drop_pending_updates=False: restart da xabarlar yo'qolmaydi
-        # Faqat debug/test uchun True ga o'zgartiring
-        _drop = _os.getenv("DROP_PENDING", "false").lower() == "true"
+        # drop_pending_updates: restart da eski xabarlarni tashlash (conflict oldini olish)
+        _drop_val = _os.getenv("DROP_PENDING", "false").lower().strip()
+        _drop = _drop_val in ("true", "1", "yes")
         app.run_polling(
             allowed_updates=Update.ALL_TYPES,
             drop_pending_updates=_drop,
