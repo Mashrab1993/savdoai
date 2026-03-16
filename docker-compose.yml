@@ -1,4 +1,4 @@
-# Mashrab Moliya v21.5 — Lokal infratuzilma (PostgreSQL + Redis)
+# Mashrab Moliya v22.1 — Lokal (PostgreSQL + Redis + API + Bot + Worker)
 # Ishga tushirish: docker-compose up -d
 # To'xtatish: docker-compose down
 
@@ -34,6 +34,50 @@ services:
       interval: 5s
       timeout: 3s
       retries: 5
+
+  api:
+    build:
+      context: .
+      dockerfile: services/api/Dockerfile
+    container_name: mashrab_api
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/mashrab
+      REDIS_URL: redis://redis:6379/0
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+    restart: unless-stopped
+
+  bot:
+    build:
+      context: .
+      dockerfile: services/bot/Dockerfile
+    container_name: mashrab_bot
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/mashrab
+      REDIS_URL: redis://redis:6379/0
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+    restart: unless-stopped
+
+  worker:
+    build:
+      context: .
+      dockerfile: services/worker/Dockerfile
+    container_name: mashrab_worker
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/mashrab
+      REDIS_URL: redis://redis:6379/0
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+    restart: unless-stopped
 
 volumes:
   mashrab_pgdata:
