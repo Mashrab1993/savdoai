@@ -136,6 +136,17 @@ async def lifespan(app: FastAPI):
             "DATABASE_URL muhit o'zgaruvchisi o'rnatilmagan. "
             "Railway: PostgreSQL ulang va Service Variables da DATABASE_URL qo'shing."
         )
+    # Template qo'lda yozilgan bo'lsa — Railway almashtirmaydi, hostname resolve bo'lmaydi
+    if "${{" in dsn:
+        log.error(
+            "DATABASE_URL template ko'rinishida (reference emas). "
+            "Railway savdoai → Variables → DATABASE_URL ni O'CHIRING → + New Variable → "
+            "'Add a reference' (yoki Variable Reference) → Postgres servisini tanlang → DATABASE_URL."
+        )
+        raise RuntimeError(
+            "DATABASE_URL reference orqali qo'yilmagan. Template matnni qo'lda yozmang. "
+            "Railway: Variables → DATABASE_URL o'chiring → + New Variable → Add reference → Postgres → DATABASE_URL."
+        )
     r_url  = os.getenv("REDIS_URL", "")
     q_url  = os.getenv("QDRANT_URL")
     q_key  = os.getenv("QDRANT_API_KEY")

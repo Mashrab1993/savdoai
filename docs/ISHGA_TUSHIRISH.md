@@ -257,6 +257,14 @@ XATO: "No address associated with hostname" yoki socket.gaierror (DB ulanishi)
   → API va Postgres bir xil Railway project da bo'lishi kerak
   → Reference qilgandan keyin Redeploy qiling
 
+XATO: "DATABASE_URL reference orqali qo'yilmagan" yoki template matn
+  → Agar DATABASE_URL qiymati postgresql://${{PGUSER}}:${{...}} ko'rinishida bo'lsa —
+    bu REFERENCE emas, template. Railway buni avtomatik almashtirmaydi.
+  → TO'G'RI USUL: savdoai → Variables → mavjud DATABASE_url ni O'CHIRING
+  → "+ New Variable" → "Add a reference" (yoki "Variable Reference")
+  → Postgres servisini tanlang → DATABASE_URL ni tanlang
+  → Saqlang va Redeploy qiling. Endi qiymat to'liq connection string bo'ladi.
+
 XATO: "JWT_SECRET muhit o'zgaruvchisi o'rnatilmagan!" (Container Crashed)
   → Railway → Service (mashrab-api) → Variables → JWT_SECRET qo'shing
   → Kamida 32 belgili tasodifiy matn (masalan: openssl rand -hex 32)
