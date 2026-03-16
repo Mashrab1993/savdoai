@@ -199,12 +199,14 @@ async def rls_conn_notrx(user_id: int) -> AsyncGenerator[asyncpg.Connection, Non
 # ════════════════════════════════════════════════════════════
 
 def _split_sql_statements(sql: str) -> list[str]:
-    """SQL ni statement larga ajratadi; $$ ... $$ ichidagi ; ga e'tibor bermaydi."""
+    """SQL ni statement larga ajratadi; $$ ... $$ ichidagi ; ga e'tibor bermaydi.
+    )::TYPE; qatorida ; da bo'linmaydi (syntax error at or near :: oldini olish)."""
     statements: list[str] = []
     current: list[str] = []
     i = 0
     n = len(sql)
     in_dollar = False
+    last_newline = 0  # current da oxirgi \n indeksi
 
     while i < n:
         if not in_dollar:
@@ -213,7 +215,15 @@ def _split_sql_statements(sql: str) -> list[str]:
                 current.append("$$")
                 i += 2
                 continue
+            if sql[i] == "\n":
+                last_newline = len(current)
             if sql[i] == ";" and (i + 1 >= n or sql[i + 1] in "\n\r"):
+                # Qatorda )::TYPE; bo'lsa shu ; da bo'lmaymiz (expression tugashi)
+                line_since_newline = "".join(current[last_newline:])
+                if "::" in line_since_newline:
+                    current.append(";")
+                    i += 1
+                    continue
                 stmt = "".join(current).strip()
                 if stmt:
                     statements.append(stmt)
@@ -259,15 +269,33 @@ async def run_schema_on_conn(conn: asyncpg.Connection) -> None:
         ).strip()
         if not no_comment:
             continue
-        try:
-            await conn.execute(stmt)
-        except Exception as e:
-            err = str(e).lower()
-            if "already exists" in err or "duplicate" in err:
-                log.debug("Schema stmt %s: allaqachon mavjud, o'tkazildi", idx + 1)
-            else:
-                log.error("Schema statement %s xato: %s", idx + 1, e)
+        last_err = None
+        for attempt in range(3):
+            try:
+                await conn.execute(stmt)
+                break
+            except Exception as e:
+                last_err = e
+                err = str(e).lower()
+                if "already exists" in err or "duplicate" in err:
+                    log.debug("Schema stmt %s: allaqachon mavjud, o'tkazildi", idx + 1)
+                    break
+                if "tuple concurrently updated" in err or "could not serialize" in err:
+                    if attempt < 2:
+                        await asyncio.sleep(0.5 * (attempt + 1))
+                        continue
+                log.error(
+                    "Schema statement %s xato: %s | stmt preview: %.200s...",
+                    idx + 1, e, no_comment[:200]
+                )
                 raise
+        else:
+            if last_err is not None:
+                log.error(
+                    "Schema statement %s xato (3 urinish): %s | stmt: %.200s...",
+                    idx + 1, last_err, no_comment[:200]
+                )
+                raise last_err
     log.info("✅ Schema tayyor (RLS yoqilgan)")
 
 
