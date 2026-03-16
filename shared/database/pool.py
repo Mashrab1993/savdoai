@@ -198,8 +198,47 @@ async def rls_conn_notrx(user_id: int) -> AsyncGenerator[asyncpg.Connection, Non
 #  SCHEMA INIT
 # ════════════════════════════════════════════════════════════
 
+def _split_sql_statements(sql: str) -> list[str]:
+    """SQL ni statement larga ajratadi; $$ ... $$ ichidagi ; ga e'tibor bermaydi."""
+    statements: list[str] = []
+    current: list[str] = []
+    i = 0
+    n = len(sql)
+    in_dollar = False
+
+    while i < n:
+        if not in_dollar:
+            if i + 1 < n and sql[i:i + 2] == "$$":
+                in_dollar = True
+                current.append("$$")
+                i += 2
+                continue
+            if sql[i] == ";" and (i + 1 >= n or sql[i + 1] in "\n\r"):
+                stmt = "".join(current).strip()
+                if stmt and not stmt.startswith("--"):
+                    statements.append(stmt)
+                current = []
+                i += 1
+                continue
+            current.append(sql[i])
+            i += 1
+        else:
+            if i + 1 < n and sql[i:i + 2] == "$$":
+                in_dollar = False
+                current.append("$$")
+                i += 2
+                continue
+            current.append(sql[i])
+            i += 1
+
+    stmt = "".join(current).strip()
+    if stmt and not stmt.startswith("--"):
+        statements.append(stmt)
+    return statements
+
+
 async def schema_init() -> None:
-    """SQL schema faylidan jadvallarni yaratish"""
+    """SQL schema faylidan jadvallarni yaratish (har bir statement alohida)."""
     import os
     schema_file = os.path.join(
         os.path.dirname(__file__), "schema.sql"
@@ -209,8 +248,21 @@ async def schema_init() -> None:
         return
 
     sql = open(schema_file, encoding="utf-8").read()
+    statements = _split_sql_statements(sql)
     async with get_pool().acquire() as conn:
-        await conn.execute(sql)
+        for idx, stmt in enumerate(statements):
+            stmt = stmt.strip()
+            if not stmt or stmt.startswith("--"):
+                continue
+            try:
+                await conn.execute(stmt)
+            except Exception as e:
+                err = str(e).lower()
+                if "already exists" in err or "duplicate" in err:
+                    log.debug("Schema stmt %s: allaqachon mavjud, o'tkazildi", idx + 1)
+                else:
+                    log.error("Schema statement %s xato: %s", idx + 1, e)
+                    raise
 
     log.info("✅ Schema tayyor (RLS yoqilgan)")
 
