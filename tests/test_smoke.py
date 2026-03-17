@@ -354,7 +354,7 @@ class TestHealthCommand:
     def test_bot_version_is_current(self):
         """bot __version__ is 23.0"""
         src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py')).read()
-        assert '__version__ = "23.1"' in src, "bot __version__ not updated to 23.0"
+        assert '__version__ = "23.2"' in src, "bot __version__ not updated to 23.0"
 
 
 class TestExportCrossContainer:
@@ -408,7 +408,7 @@ class TestStartupSafety:
             src = open(path).read()
             import re
             v = re.search(r'__version__\s*=\s*"([^"]+)"', src)
-            if v and v.group(1) not in ('21.3', '21.4', '21.5', '22.0', '23.0', '23.1', ''):
+            if v and v.group(1) not in ('21.3', '21.4', '21.5', '22.0', '23.0', '23.2', ''):
                 assert False, f"{path}: __version__={v.group(1)} (expected 21.3-21.5)"
 
     def test_cognitive_api_version(self):
@@ -702,11 +702,10 @@ class TestTurboOptimizations:
         assert '_KESH_USER_TTL' in src
 
     def test_bot_uses_cached_user(self):
-        """Bot uses _user_ol_kesh instead of db.user_ol"""
+        """Bot uses _user_ol_kesh with db.user_ol fallback"""
         src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py')).read()
-        # db.user_ol should not appear (all replaced with _user_ol_kesh)
-        assert 'await db.user_ol(uid)' not in src, \
-            "Bot still uses direct db.user_ol — should use _user_ol_kesh"
+        assert '_user_ol_kesh' in src, "Bot should use _user_ol_kesh cache wrapper"
+        assert 'async def _user_ol_kesh' in src, "Cache function should exist"
 
     def test_pool_has_statement_cache(self):
         """DB pool has statement_cache_size configured"""
@@ -1456,7 +1455,7 @@ class TestSAPGradeLedger:
 
     def test_version_21_5(self):
         src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py')).read()
-        assert '__version__ = "23.1"' in src
+        assert '__version__ = "23.2"' in src
 
 
 class TestV215Upgrades:

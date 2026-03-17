@@ -50,7 +50,7 @@ logging.basicConfig(
     format="%(asctime)s │ %(levelname)-8s │ %(name)s │ %(message)s"
 )
 
-__version__ = "23.1"
+__version__ = "23.2"
 _JWT_SECRET_RAW = os.getenv("JWT_SECRET", "")
 if not _JWT_SECRET_RAW:
     _JWT_SECRET_RAW = "savdoai-default-dev-secret-change-me-in-production"

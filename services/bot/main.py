@@ -1,6 +1,6 @@
 """
 ╔══════════════════════════════════════════════════════════════════╗
-║  SAVDOAI MASHRAB MOLIYA  v23.1  PRODUCTION GRADE               ║
+║  SAVDOAI MASHRAB MOLIYA  v23.2  PRODUCTION GRADE               ║
 ║  @savdoai_mashrab_bot                                            ║
 ║                                                                  ║
 ║  🎤 OVOZ-BIRINCHI: Ovoz yuboring — bot hamma ishni qiladi      ║
@@ -12,7 +12,7 @@
 ║  🔒 HIMOYA: RLS + JWT + Decimal + FK + Audit Log                ║
 ║  📊 SAP-GRADE: Double-Entry Ledger + Reconciliation             ║
 ║                                                                  ║
-║  v23.1 PRODUCTION YANGILIKLAR:                                   ║
+║  v23.2 PRODUCTION YANGILIKLAR:                                   ║
 ║  ✅ Railway production deploy — crash-proof schema_init          ║
 ║  ✅ Bulletproof startup (hech qachon crash qilmaydi)            ║
 ║  ✅ Nixpacks + Procfile + railway.toml — 3x fallback            ║
@@ -90,7 +90,7 @@ logging.basicConfig(
 )
 for _s in ("httpx","httpcore","telegram.ext._application"):
     logging.getLogger(_s).setLevel(logging.WARNING)
-__version__ = "23.1"
+__version__ = "23.2"
 __author__  = "Mashrab Moliya"
 
 # Segment nomi matnlari
@@ -135,14 +135,14 @@ async def _user_ol_kesh(uid: int):
     cached = _kesh_ol(k)
     if cached is not None:
         return cached
-    user = await _user_ol_kesh(uid)
+    user = await db.user_ol(uid)
     if user:
         _kesh_yoz(k, user, _KESH_USER_TTL)
     return user
 
 
 async def health_check(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
-    """Railway health monitoring — v23.1"""
+    """Railway health monitoring — v23.2"""
     import time as _t
     start = _t.monotonic()
     # DB ping
@@ -1638,7 +1638,7 @@ async def cmd_status(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
         db_ms = f"{info.get('ping_ms', '?')}ms (pool: {info.get('used',0)}/{info.get('size',0)})"
     except Exception: pass
     matn = (
-        "⚙️ *BOT HOLATI (v23.1 PRODUCTION)*\n\n"
+        "⚙️ *BOT HOLATI (v23.2 PRODUCTION)*\n\n"
         + f"📅 Vaqt: `{hozir}`\n"
         + f"🐍 Python: `{sys.version.split()[0]}`\n"
         + f"💻 OS: `{platform.system()} {platform.release()}`\n\n"
@@ -1918,7 +1918,7 @@ async def cmd_tovar(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
 
 
 async def cmd_yangilik(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
-    """v23.1 PRODUCTION yangiliklari"""
+    """v23.2 PRODUCTION yangiliklari"""
     await update.message.reply_text(
         f"🆕 *SAVDOAI MASHRAB MOLIYA v{__version__} YANGILIKLAR*\n"
         "━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
@@ -2170,7 +2170,7 @@ async def boshlash(app:Application) -> None:
     await app.bot.set_my_commands([
         BotCommand("start",            "Botni boshlash"),
         BotCommand("menyu",            "Asosiy menyu"),
-        BotCommand("yangilik",         "🆕 v23.1 yangiliklari"),
+        BotCommand("yangilik",         "🆕 v23.2 yangiliklari"),
         BotCommand("imkoniyatlar",     "📋 Barcha imkoniyatlar"),
         BotCommand("yordam",           "❓ Qanday ishlatish"),
         BotCommand("nakladnoy",        "Nakladnoy (Word+Excel+PDF)"),
@@ -2234,7 +2234,7 @@ async def boshlash(app:Application) -> None:
             log.info("✅ Standalone: kunlik/haftalik/qarz/obuna joblar yoqildi")
         else:
             log.info("✅ Worker rejim: scheduling Worker/Beat tomonida boshqariladi")
-    log.info("🚀 SavdoAI Mashrab Moliya v23.1 PRODUCTION — TAYYOR!")
+    log.info("🚀 SavdoAI Mashrab Moliya v23.2 PRODUCTION — TAYYOR!")
 
 
 def ilovani_qur(conf:Config) -> Application:
