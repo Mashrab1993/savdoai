@@ -1,4 +1,4 @@
-# SavdoAI Mashrab Moliya v22.1 — Railway
+# SavdoAI Mashrab Moliya v23.1 — Railway
 # 3 ta servis: savdoai-api, savdoai-bot, savdoai-worker
 
 [build]
@@ -35,7 +35,7 @@ REDIS_URL         = "${{Redis.REDIS_URL}}"
 ANTHROPIC_API_KEY = "${{ANTHROPIC_API_KEY}}"
 GEMINI_API_KEY    = "${{GEMINI_API_KEY}}"
 ADMIN_IDS         = "${{ADMIN_IDS}}"
-GEMINI_MODEL      = "gemini-2.0-flash-lite"
+GEMINI_MODEL      = "gemini-2.5-flash-lite"
 DB_MIN            = "2"
 DB_MAX            = "10"
 DROP_PENDING      = "true"

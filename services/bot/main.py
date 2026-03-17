@@ -92,7 +92,7 @@ logging.basicConfig(
 )
 for _s in ("httpx","httpcore","telegram.ext._application"):
     logging.getLogger(_s).setLevel(logging.WARNING)
-__version__ = "22.1"
+__version__ = "23.1"
 __author__  = "Mashrab Moliya"
 
 # Segment nomi matnlari
@@ -1968,7 +1968,7 @@ async def cmd_tovar(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
 
 
 async def cmd_yangilik(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
-    """v22.1 yangiliklari"""
+    """v23.1 yangiliklari"""
     await update.message.reply_text(
         f"🆕 *MASHRAB MOLIYA v{__version__} — SAP-GRADE YANGILIKLAR*\n"
         "━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
@@ -2212,7 +2212,7 @@ async def boshlash(app:Application) -> None:
     await app.bot.set_my_commands([
         BotCommand("start",            "Botni boshlash"),
         BotCommand("menyu",            "Asosiy menyu"),
-        BotCommand("yangilik",         "🆕 v22.1 yangiliklari"),
+        BotCommand("yangilik",         "🆕 v23.1 yangiliklari"),
         BotCommand("imkoniyatlar",     "📋 Barcha imkoniyatlar"),
         BotCommand("yordam",           "❓ Qanday ishlatish"),
         BotCommand("nakladnoy",        "Nakladnoy (Word+Excel+PDF)"),

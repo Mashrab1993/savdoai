@@ -26,11 +26,11 @@ check "API schema_init xato (API davom" grep -q "schema_init xato (API davom" se
 echo "=== 6. Bot schema try/except ==="
 check "Bot schema_init xato (bot davom" grep -q "schema_init xato (bot davom" services/bot/main.py
 
-echo "=== 7. Bot version 22.1 yoki 23.0 ==="
-check "Bot __version__ 22.1/23.0" grep -qE '__version__ = "22\.1"|__version__ = "23\.0"' services/bot/main.py
+echo "=== 7. Bot version 22.1 / 23.0 / 23.1 ==="
+check "Bot __version__ 22.1/23.x" grep -qE '__version__ = "22\.1"|__version__ = "23\.0"|__version__ = "23\.1"' services/bot/main.py
 
-echo "=== 8. API version 22.1 yoki 23.0 ==="
-check "API __version__ 22.1/23.0" grep -qE '__version__ = "22\.1"|__version__ = "23\.0"' services/api/main.py
+echo "=== 8. API version 22.1 / 23.0 / 23.1 ==="
+check "API __version__ 22.1/23.x" grep -qE '__version__ = "22\.1"|__version__ = "23\.0"|__version__ = "23\.1"' services/api/main.py
 
 echo "=== 9. railway.toml root da ==="
 check "railway.toml exists" test -f railway.toml

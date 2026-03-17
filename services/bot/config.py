@@ -23,7 +23,7 @@ class Config:
 
     # ── AI modellari ──────────────────────────────────────
     claude_model:  str = "claude-sonnet-4-6"
-    gemini_model:  str = "gemini-3.1-flash-lite"
+    gemini_model:  str = "gemini-2.5-flash-lite"
 
     # ── Railway / Webhook ─────────────────────────────────────────────
     # Bot long-polling rejimida ishlaydi (DROP_PENDING env bilan boshqarish).
@@ -34,7 +34,7 @@ class Config:
 
     # ── DB pool ───────────────────────────────────────────
     db_min:        int = 2
-    db_max:        int = 20
+    db_max:        int = 10
     db_timeout:    int = 60   # UNUSED: asyncpg uses default timeouts
 
     # ── AI ─────────────────────────────────────────────────────────────

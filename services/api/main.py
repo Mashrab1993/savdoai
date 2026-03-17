@@ -60,7 +60,7 @@ logging.basicConfig(
     format="%(asctime)s │ %(levelname)-8s │ %(name)s │ %(message)s"
 )
 
-__version__ = "22.1"
+__version__ = "23.1"
 # JWT_SECRET bo‘lmasa ham konteyner ishga tushadi; /health ishlaydi.
 # Auth endpointlar 503 qaytaradi — Railway Variables da JWT_SECRET o‘rnating.
 _JWT_SECRET_RAW = (os.getenv("JWT_SECRET") or "").strip()

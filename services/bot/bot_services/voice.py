@@ -22,7 +22,7 @@ from tenacity import (
 log = logging.getLogger(__name__)
 
 _client    = None
-MODEL      = __import__("os").getenv("GEMINI_MODEL", "gemini-2.0-flash")
+MODEL      = __import__("os").getenv("GEMINI_MODEL", "gemini-2.5-flash-lite")
 MAX_MB     = 20
 TIMEOUT_S  = 30
 

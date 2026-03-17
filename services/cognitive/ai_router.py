@@ -121,7 +121,7 @@ class _GeminiClient:
 
     def __init__(self):
         self._client = None
-        self._model = os.getenv("GEMINI_MODEL", "gemini-3.1-flash-lite")
+        self._model = os.getenv("GEMINI_MODEL", "gemini-2.5-flash-lite")
 
     def init(self, api_key: str, model: str = "") -> None:
         if model:
