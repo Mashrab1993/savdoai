@@ -170,11 +170,26 @@ async def health_check(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
 
 async def xato_handler(update: object,
                         ctx: ContextTypes.DEFAULT_TYPE) -> None:
-    """Global xato handler — hech narsa jimgina o'tmaydi"""
+    """Global xato handler — hech narsa jimgina o'tmaydi; foydalanuvchiga ham javob."""
     import traceback
     xato = ctx.error
     tb   = "".join(traceback.format_exception(type(xato), xato, xato.__traceback__))
     log.error("⛔ Global xato:\n%s", tb)
+
+    # Foydalanuvchiga qisqa xabar (har doim javob bor bo'lsin)
+    try:
+        if isinstance(update, Update):
+            if update.message:
+                await update.message.reply_text(
+                    "⚠️ Vaqtincha xato yuz berdi. Qaytadan urinib ko'ring yoki /start bosing."
+                )
+            elif update.callback_query:
+                await update.callback_query.answer(
+                    "Xato yuz berdi. Qaytadan urinib ko'ring.",
+                    show_alert=True,
+                )
+    except Exception as _exc:
+        log.debug("Foydalanuvchi javob: %s", _exc)
 
     # Adminlarga xabar berish
     try:
@@ -270,7 +285,7 @@ async def cmd_start(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
             if kam:
                 ogoh = f"\n\n⚠️ Kam qoldiq: {', '.join(t['nomi'] for t in kam[:3])}"
             await update.message.reply_text(
-                f"👋 Xush kelibsiz, *{(user.get('ism') or user.get('to_liq_ism') or '').strip() or 'Do\'st'}*!\n"
+                f"👋 Xush kelibsiz, *{(user.get('ism') or user.get('to_liq_ism') or '').strip() or 'Do' + chr(39) + 'st'}*!\n"
                 f"🏪 {user['dokon_nomi']}  |  "
                 f"{SEGMENT_NOMI.get(user['segment'],'')}\n\n"
                 f"🤖 *Mashrab Moliya v{__version__}*\n"
@@ -376,14 +391,19 @@ async def ovoz_qabul(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
             tmp_path = tmp.name
         matn=await ovoz_xizmat.matnga_aylantir(tmp_path)
         if not matn:
-            await holat.edit_text("❌ Ovoz tushunilmadi. Qaytadan yuboring.")
+            try: await holat.edit_text("❌ Ovoz tushunilmadi. Qaytadan yuboring.")
+            except Exception: await update.message.reply_text("❌ Ovoz tushunilmadi. Qaytadan yuboring.")
             return
-        await holat.edit_text(f"🎤 _{matn}_\n\n🤖 Tahlil qilinmoqda...",
-                               parse_mode=ParseMode.MARKDOWN)
+        try:
+            await holat.edit_text(f"🎤 _{matn}_\n\n🤖 Tahlil qilinmoqda...",
+                                   parse_mode=ParseMode.MARKDOWN)
+        except Exception:
+            await update.message.reply_text(f"🎤 {matn}\n\n🤖 Tahlil qilinmoqda...")
         await _qayta_ishlash(update,ctx,matn,holat)
     except Exception as xato:
         log.error("ovoz_qabul: %s",xato,exc_info=True)
-        await holat.edit_text("❌ Saqlashda xato yuz berdi")
+        try: await holat.edit_text("❌ Saqlashda xato yuz berdi")
+        except Exception: await update.message.reply_text("❌ Saqlashda xato yuz berdi. Qaytadan urinib ko'ring.")
     finally:
         if tmp_path:
             try: __import__("os").unlink(tmp_path)
@@ -392,31 +412,42 @@ async def ovoz_qabul(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
 
 async def matn_qabul(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
     uid=update.effective_user.id
-    if not _flood_ok(uid): return
-    if not await faol_tekshir(update): return
-    matn=(update.message.text or "").strip()
-    if not matn or matn.startswith("/"): return
-    # Duplicate guard
-    from shared.services.guards import is_duplicate_message
-    if is_duplicate_message(uid, matn): return
+    try:
+        if not _flood_ok(uid): return
+        if not await faol_tekshir(update): return
+        matn=(update.message.text or "").strip()
+        if not matn or matn.startswith("/"): return
+        # Duplicate guard
+        from shared.services.guards import is_duplicate_message
+        if is_duplicate_message(uid, matn): return
 
-    # ═══ O'ZBEK BUYRUQ TEKSHIRUVI (AI ga yubormasdan) ═══
-    from shared.services.voice_commands import detect_voice_command, is_quick_command
-    cmd = detect_voice_command(matn)
-    if cmd and is_quick_command(matn):
-        await _ovoz_buyruq_bajar(update, ctx, cmd)
-        return
+        # ═══ O'ZBEK BUYRUQ TEKSHIRUVI (AI ga yubormasdan) ═══
+        from shared.services.voice_commands import detect_voice_command, is_quick_command
+        cmd = detect_voice_command(matn)
+        if cmd and is_quick_command(matn):
+            await _ovoz_buyruq_bajar(update, ctx, cmd)
+            return
 
-    # Agar buyruq emas — AI ga yuborish
-    await _qayta_ishlash(update,ctx,matn)
+        # Agar buyruq emas — AI ga yuborish
+        await _qayta_ishlash(update,ctx,matn)
+    except Exception as e:
+        log.exception("matn_qabul: %s", e)
+        try:
+            await update.message.reply_text("⚠️ Vaqtincha xato. Qaytadan urinib ko'ring yoki /menyu.")
+        except Exception:
+            pass
 
 
 async def _ovoz_buyruq_bajar(update:Update, ctx:ContextTypes.DEFAULT_TYPE,
                                cmd: dict) -> None:
-    """O'zbek ovoz buyrug'ini AI siz bajarish"""
+    """O'zbek ovoz buyrug'ini AI siz bajarish — xato bo'lsa ham foydalanuvchi javob oladi."""
     uid = update.effective_user.id
-    action = cmd["action"]
-    sub = cmd["sub"]
+    try:
+        action = cmd["action"]
+        sub = cmd["sub"]
+    except Exception:
+        await update.message.reply_text("⚠️ Buyruq tushunilmadi. Qaytadan yozing yoki /menyu.")
+        return
 
     if action == "confirm":
         # Kutilayotgan draft tasdiqlash
