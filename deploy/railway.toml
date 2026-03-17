@@ -1,42 +1,35 @@
 # ════════════════════════════════════════════════════════════
-#  MASHRAB MOLIYA v21 — 7 QUTI ARXITEKTURA
-#
-#  Servislar (Railway):
-#  1. PostgreSQL    — Ma'lumotlar (RLS izolyatsiya)
-#  2. Redis         — Cache + Celery broker
-#  3. API           — FastAPI Gateway (4 worker)
-#  4. Bot           — Telegram Bot
-#  5. Worker        — Celery worker (og'ir ishlar)
-#  5b. Beat         — Celery beat (scheduler, alohida instance)
-#  6. Cognitive     — DSc AI Engine
+#  SAVDOAI MASHRAB MOLIYA v23.1 — Railway Config
+#  URL: https://savdoai-production.up.railway.app/
+#  Bot: @savdoai_mashrab_bot
 # ════════════════════════════════════════════════════════════
 
 [build]
 builder = "NIXPACKS"
 
 [[services]]
-name = "mashrab-api"
+name = "savdoai-api"
 [services.build]
 dockerfilePath = "services/api/Dockerfile"
 [services.deploy]
-startCommand = "sh -c 'python -m uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000} --workers 1'"
+startCommand = "cd /app/services/api && python -m uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000} --workers 1"
 healthCheckPath = "/health"
 restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 5
 [services.variables]
 DATABASE_URL  = "${{Postgres.DATABASE_URL}}"
 REDIS_URL     = "${{Redis.REDIS_URL}}"
 JWT_SECRET    = "${{JWT_SECRET}}"
-WEB_URL       = "${{WEB_URL}}"
 DB_MIN        = "2"
 DB_MAX        = "10"
-COGNITIVE_URL = "${{mashrab-cognitive.RAILWAY_SERVICE_URL}}"
+PYTHONPATH    = "/app"
 
 [[services]]
-name = "mashrab-bot"
+name = "savdoai-bot"
 [services.build]
 dockerfilePath = "services/bot/Dockerfile"
 [services.deploy]
-startCommand = "python main.py"
+startCommand = "cd /app/services/bot && python main.py"
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 5
 [services.variables]
@@ -46,54 +39,25 @@ REDIS_URL         = "${{Redis.REDIS_URL}}"
 ANTHROPIC_API_KEY = "${{ANTHROPIC_API_KEY}}"
 GEMINI_API_KEY    = "${{GEMINI_API_KEY}}"
 ADMIN_IDS         = "${{ADMIN_IDS}}"
-API_URL           = "${{mashrab-api.RAILWAY_SERVICE_URL}}"
-COGNITIVE_URL     = "${{mashrab-cognitive.RAILWAY_SERVICE_URL}}"
-WORKER_URL        = "${{mashrab-worker.RAILWAY_SERVICE_URL}}"
+GEMINI_MODEL      = "gemini-2.5-flash-lite"
 DB_MIN            = "2"
 DB_MAX            = "10"
+DROP_PENDING      = "true"
+PYTHONPATH        = "/app"
 
 [[services]]
-name = "mashrab-worker"
+name = "savdoai-worker"
 [services.build]
 dockerfilePath = "services/worker/Dockerfile"
 [services.deploy]
-startCommand = "python -m celery -A tasks worker --loglevel=info --concurrency=2"
-restartPolicyType = "ON_FAILURE"
-[services.variables]
-DATABASE_URL = "${{Postgres.DATABASE_URL}}"
-REDIS_URL    = "${{Redis.REDIS_URL}}"
-BOT_TOKEN    = "${{BOT_TOKEN}}"
-DB_MIN       = "1"
-DB_MAX       = "5"
-
-[[services]]
-name = "mashrab-beat"
-[services.build]
-dockerfilePath = "services/worker/Dockerfile"
-[services.deploy]
-startCommand = "python -m celery -A tasks beat --loglevel=info --scheduler celery.beat:PersistentScheduler"
+startCommand = "cd /app/services/worker && celery -A tasks worker --loglevel=info --concurrency=2"
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 3
 [services.variables]
 DATABASE_URL = "${{Postgres.DATABASE_URL}}"
 REDIS_URL    = "${{Redis.REDIS_URL}}"
 BOT_TOKEN    = "${{BOT_TOKEN}}"
+ADMIN_IDS    = "${{ADMIN_IDS}}"
 DB_MIN       = "1"
-DB_MAX       = "2"
-
-[[services]]
-name = "mashrab-cognitive"
-[services.build]
-dockerfilePath = "services/cognitive/Dockerfile"
-[services.deploy]
-startCommand = "sh -c 'python -m uvicorn api:app --host 0.0.0.0 --port ${PORT:-8001} --workers 2'"
-healthCheckPath = "/health"
-restartPolicyType = "ON_FAILURE"
-[services.variables]
-ANTHROPIC_API_KEY = "${{ANTHROPIC_API_KEY}}"
-GEMINI_API_KEY    = "${{GEMINI_API_KEY}}"
-REDIS_URL         = "${{Redis.REDIS_URL}}"
-DATABASE_URL      = "${{Postgres.DATABASE_URL}}"
-MODEL             = "claude-sonnet-4-6"
-DB_MIN            = "1"
-DB_MAX            = "5"
+DB_MAX       = "5"
+PYTHONPATH   = "/app"

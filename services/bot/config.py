@@ -34,7 +34,7 @@ class Config:
 
     # ── DB pool ───────────────────────────────────────────
     db_min:        int = 2
-    db_max:        int = 10
+    db_max:        int = 20
     db_timeout:    int = 60   # UNUSED: asyncpg uses default timeouts
 
     # ── AI ─────────────────────────────────────────────────────────────

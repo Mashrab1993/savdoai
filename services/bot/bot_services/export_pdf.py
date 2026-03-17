@@ -137,7 +137,7 @@ def sotuv_pdf(data: dict, dokon_nomi: str) -> bytes:
     els.append(yig_im_tbl)
     els.append(Spacer(1, 0.5*cm))
     els.append(Paragraph(
-        f"Yaratildi: {_hozir()}  |  @mashrab_ceo_bot  |  Mashrab Moliya",
+        f"Yaratildi: {_hozir()}  |  @savdoai_mashrab_bot  |  Mashrab Moliya",
         s["Ostki"]
     ))
 
@@ -236,7 +236,7 @@ def klient_hisobi_pdf(data: dict, dokon_nomi: str) -> bytes:
 
     els.append(Spacer(1, 0.5*cm))
     els.append(Paragraph(
-        f"Hisobot yaratildi: {_hozir()}  |  @mashrab_ceo_bot",
+        f"Hisobot yaratildi: {_hozir()}  |  @savdoai_mashrab_bot",
         s["Ostki"]
     ))
     doc.build(els)
@@ -296,7 +296,7 @@ def kunlik_pdf(d: dict, dokon_nomi: str) -> bytes:
 
     els.append(Spacer(1, 0.5*cm))
     els.append(Paragraph(
-        f"Yaratildi: {_hozir()}  |  @mashrab_ceo_bot",
+        f"Yaratildi: {_hozir()}  |  @savdoai_mashrab_bot",
         s["Ostki"]
     ))
     doc.build(els)

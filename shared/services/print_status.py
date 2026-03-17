@@ -243,6 +243,6 @@ def format_receipt_58mm(data: dict, dokon: str = "") -> str:
         lines.append(f"{'QARZ:':>20} {qarz:>10,.0f}")
 
     lines.append(SEP)
-    lines.append("@mashrab_ceo_bot".center(W))
+    lines.append("@savdoai_mashrab_bot".center(W))
 
     return "\n".join(lines)

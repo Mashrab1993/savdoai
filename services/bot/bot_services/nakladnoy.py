@@ -261,7 +261,7 @@ def yaratish_word(data: dict) -> bytes:
     # Footer
     foot = doc.add_paragraph()
     foot.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    foot.add_run(f"@mashrab_ceo_bot  |  {dokon}  |  {_hozir_full()}").font.size = Pt(8)
+    foot.add_run(f"@savdoai_mashrab_bot  |  {dokon}  |  {_hozir_full()}").font.size = Pt(8)
     foot.runs[0].font.color.rgb = KULRANG
 
     buf = io.BytesIO()
@@ -374,7 +374,7 @@ def yaratish_excel(data: dict) -> bytes:
     ws.cell(sig_row + 3, 1, f"Sana: {sana}")
     ws.cell(sig_row + 3, 4, f"Sana: {sana}")
 
-    ws.cell(sig_row + 5, 1, f"@mashrab_ceo_bot | {_hozir_full()}").font = Font(
+    ws.cell(sig_row + 5, 1, f"@savdoai_mashrab_bot | {_hozir_full()}").font = Font(
         size=8, color="6b7280", name="Calibri"
     )
 

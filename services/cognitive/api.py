@@ -5,20 +5,10 @@ Gemini (Ko'z+Quloq) + Claude (Mantiq) → bitta endpoint
 """
 from __future__ import annotations
 import os, sys, logging, base64, json
-from pathlib import Path
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException, Depends
 from pydantic import BaseModel
 from fastapi import Request
-
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
-# .env loyiha ildizidan
-try:
-    from dotenv import load_dotenv
-    _root = Path(__file__).resolve().parents[2]
-    load_dotenv(_root / ".env")
-except ImportError:
-    pass
 
 COGNITIVE_API_KEY = os.environ.get("COGNITIVE_API_KEY", os.environ.get("ANTHROPIC_API_KEY", ""))
 
@@ -36,6 +26,7 @@ async def _verify_api_key(request: Request):
         raise HTTPException(401, "Cognitive API: Invalid API key")
 from typing import Optional
 
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 log = logging.getLogger(__name__)
 __version__ = "21.3"
 

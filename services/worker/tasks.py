@@ -13,17 +13,8 @@ from __future__ import annotations
 import logging
 import os
 import sys
-from pathlib import Path
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
-
-# .env loyiha ildizidan
-try:
-    from dotenv import load_dotenv
-    _root = Path(__file__).resolve().parents[2]
-    load_dotenv(_root / ".env")
-except ImportError:
-    pass
 
 from celery import Celery
 from celery.schedules import crontab
@@ -79,6 +70,11 @@ app.conf.update(
         "obuna-eslatma": {
             "task":     "tasks.obuna_eslatma_barcha",
             "schedule": crontab(hour=9, minute=0),
+        },
+        # Ledger reconciliation — har kuni 06:00
+        "ledger-recon": {
+            "task":     "tasks.ledger_reconciliation",
+            "schedule": crontab(hour=6, minute=0),
         },
     },
 )
@@ -808,3 +804,58 @@ def _nakl_pdf(data: dict, fayl: str) -> None:
     doc.build(els)
 
 
+
+
+# ════════════════════════════════════════════════════════════════
+#  LEDGER RECONCILIATION — Har kuni tekshirish
+# ════════════════════════════════════════════════════════════════
+
+@app.task(name="tasks.ledger_reconciliation")
+def ledger_reconciliation():
+    """Har kuni balans tekshiruvi — DEBIT = CREDIT"""
+    import asyncio
+    asyncio.get_event_loop().run_until_complete(_ledger_recon_async())
+
+
+async def _ledger_recon_async():
+    from shared.database.pool import pool_init, pool_close, rls_conn
+    from shared.services.ledger import balans_tekshir
+    await pool_init()
+    try:
+        users = await _all_faol_users()
+        xatolar = []
+        for u in users:
+            uid = u["id"]
+            try:
+                async with rls_conn(uid) as c:
+                    result = await balans_tekshir(c, uid)
+                    if not result["balanslangan"]:
+                        xatolar.append(f"⚠️ User {uid}: farq={result['farq']}")
+                        log.warning("LEDGER XATO: uid=%d farq=%s", uid, result["farq"])
+            except Exception as e:
+                log.debug("recon uid=%d: %s", uid, e)
+
+        if xatolar:
+            # Admin ga ogohlantirish
+            admin_ids = os.environ.get("ADMIN_IDS", "").split(",")
+            xabar = (
+                "🔴 *LEDGER RECONCILIATION XATO*\n\n"
+                + "\n".join(xatolar[:10])
+                + f"\n\nJami: {len(xatolar)} ta foydalanuvchida balans buzilgan"
+            )
+            for aid in admin_ids:
+                if aid.strip():
+                    try:
+                        await _send_tg(int(aid.strip()), xabar)
+                    except Exception:
+                        pass
+        else:
+            log.info("✅ LEDGER RECONCILIATION: barcha userlar balanslangan")
+    finally:
+        await pool_close()
+
+
+async def _all_faol_users():
+    from shared.database.pool import _pool
+    async with _pool().acquire() as c:
+        return await c.fetch("SELECT id FROM users WHERE faol=TRUE")

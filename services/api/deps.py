@@ -65,11 +65,6 @@ async def get_uid(
     Rate limiting + JWT tekshirish → user_id.
     Barcha himoyalangan endpointlar shu dependency dan foydalanadi.
     """
-    if not _JWT_SECRET_RAW or not _JWT_SECRET_RAW.strip():
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="JWT_SECRET o'rnatilmagan. Railway → Service → Variables → JWT_SECRET qo'shing (min 32 belgi).",
-        )
     ip = request.client.host if request.client else "unknown"
 
     if not await rate_limit_tekshir(f"ip:{ip}", max_req=100, window_s=60):

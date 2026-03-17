@@ -1,50 +1,148 @@
 #!/bin/bash
-# SavdoAI v22.1 / v23.0 deploy tekshiruvi — 12 ta check
-set -e
-OK=0
-FAIL=0
+# SavdoAI v23.1 — Deploy oldi tekshiruv
+# Bu skript BARCHA critical fayllarni tekshiradi
+# BARCHA testlar o'tishi KERAK, aks holda deploy qilma
 
-check() {
-  if "$@"; then echo "  ✅ $1"; OK=$((OK+1)); return 0; else echo "  ❌ $1"; FAIL=$((FAIL+1)); return 1; fi
-}
+echo "════════════════════════════════════════"
+echo "  SavdoAI v23.1 Deploy Tekshiruv"
+echo "════════════════════════════════════════"
 
-echo "=== 1. Procfile workers ==="
-check "Procfile --workers 1" grep -q 'workers 1' Procfile
+ERRORS=0
 
-echo "=== 2. pool.py is_create_table ==="
-check "pool.py is_create_table" grep -q 'is_create_table' shared/database/pool.py
+# 1. Root fayllar
+echo ""
+echo "1. Root fayllar mavjudligi..."
+for f in Procfile railway.toml nixpacks.toml requirements.txt .python-version; do
+  if [ -f "$f" ]; then
+    echo "   ✅ $f"
+  else
+    echo "   ❌ $f TOPILMADI!"
+    ERRORS=$((ERRORS+1))
+  fi
+done
 
-echo "=== 3. schema.sql idx_ss olib tashlangan ==="
-check "schema.sql idx_ss commented/removed" grep -q 'olib tashlangan\|^--.*idx_ss' shared/database/schema.sql
+# 2. Key source files
+echo ""
+echo "2. Manba fayllar..."
+for f in shared/database/pool.py shared/database/schema.sql services/bot/db.py services/bot/main.py services/api/main.py; do
+  if [ -f "$f" ]; then
+    echo "   ✅ $f"
+  else
+    echo "   ❌ $f TOPILMADI!"
+    ERRORS=$((ERRORS+1))
+  fi
+done
 
-echo "=== 4. schema.sql ::date faqat comment da ==="
-check "schema.sql no ::date in active stmt" bash -c '! grep -v "^[[:space:]]*--" shared/database/schema.sql | grep -q "::date"'
+# 3. Procfile workers
+echo ""
+echo "3. Procfile workers=1..."
+if grep -q "workers 1" Procfile 2>/dev/null; then
+  echo "   ✅ workers=1"
+else
+  echo "   ❌ Procfile da workers=1 YO'Q!"
+  ERRORS=$((ERRORS+1))
+fi
 
-echo "=== 5. API schema try/except ==="
-check "API schema_init xato (API davom" grep -q "schema_init xato (API davom" services/api/main.py
+# 4. railway.toml workers
+echo ""
+echo "4. railway.toml workers=1..."
+if grep -q "workers 1" railway.toml 2>/dev/null; then
+  echo "   ✅ workers=1"
+else
+  echo "   ❌ railway.toml da workers=1 YO'Q!"
+  ERRORS=$((ERRORS+1))
+fi
 
-echo "=== 6. Bot schema try/except ==="
-check "Bot schema_init xato (bot davom" grep -q "schema_init xato (bot davom" services/bot/main.py
+# 5. pool.py crash-proof
+echo ""
+echo "5. pool.py crash-proof schema_init..."
+if grep -q "is_create_table" shared/database/pool.py 2>/dev/null; then
+  echo "   ✅ is_create_table logikasi bor"
+else
+  echo "   ❌ pool.py ESKI — is_create_table YO'Q!"
+  ERRORS=$((ERRORS+1))
+fi
 
-echo "=== 7. Bot version 22.1 / 23.0 / 23.1 ==="
-check "Bot __version__ 22.1/23.x" grep -qE '__version__ = "22\.1"|__version__ = "23\.0"|__version__ = "23\.1"' services/bot/main.py
+# 6. db.py crash-proof
+echo ""
+echo "6. db.py crash-proof schema_init..."
+if grep -q "is_create_table" services/bot/db.py 2>/dev/null; then
+  echo "   ✅ is_create_table logikasi bor"
+else
+  echo "   ❌ db.py ESKI — is_create_table YO'Q!"
+  ERRORS=$((ERRORS+1))
+fi
 
-echo "=== 8. API version 22.1 / 23.0 / 23.1 ==="
-check "API __version__ 22.1/23.x" grep -qE '__version__ = "22\.1"|__version__ = "23\.0"|__version__ = "23\.1"' services/api/main.py
+# 7. Dangerous index removed
+echo ""
+echo "7. Xavfli idx_ss_uid_sana_btr olib tashlangan..."
+if grep -q "idx_ss_uid_sana_btr" shared/database/schema.sql 2>/dev/null; then
+  echo "   ❌ idx_ss_uid_sana_btr hali bor — XAVFLI!"
+  ERRORS=$((ERRORS+1))
+else
+  echo "   ✅ idx_ss_uid_sana_btr yo'q"
+fi
 
-echo "=== 9. railway.toml root da ==="
-check "railway.toml exists" test -f railway.toml
+# 8. No ::date in CREATE INDEX
+echo ""
+echo "8. CREATE INDEX da ::date yo'q..."
+DATECOUNT=$(grep -A2 "CREATE INDEX" shared/database/schema.sql 2>/dev/null | grep -c "::date" || true)
+if [ "$DATECOUNT" = "0" ] || [ -z "$DATECOUNT" ]; then
+  echo "   ✅ ::date INDEX larda yo'q"
+else
+  echo "   ❌ ::date INDEX larda topildi — XAVFLI!"
+  ERRORS=$((ERRORS+1))
+fi
 
-echo "=== 10. railway.toml workers 1 ==="
-check "railway.toml workers 1" grep -q 'workers 1' railway.toml
+# 9. Version
+echo ""
+echo "9. Versiya v23.1..."
+if grep -q '__version__ = "23.1"' services/bot/main.py 2>/dev/null; then
+  echo "   ✅ bot v23.1"
+else
+  echo "   ❌ bot versiya 23.0 emas!"
+  ERRORS=$((ERRORS+1))
+fi
 
-echo "=== 11. railway.toml DB_MAX 10 ==="
-check "railway.toml DB_MAX 10" grep -q 'DB_MAX.*=.*"10"\|DB_MAX.*10' railway.toml
+# 10. PYTHONPATH in nixpacks.toml
+echo ""
+echo "10. PYTHONPATH nixpacks.toml da..."
+if grep -q 'PYTHONPATH' nixpacks.toml 2>/dev/null; then
+  echo "   ✅ PYTHONPATH bor"
+else
+  echo "   ❌ PYTHONPATH yo'q!"
+  ERRORS=$((ERRORS+1))
+fi
 
-echo "=== 12. PYTHONPATH /app ==="
-check "railway.toml PYTHONPATH" grep -q 'PYTHONPATH.*/app' railway.toml
+# 11. API schema try/except
+echo ""
+echo "11. API schema try/except..."
+if grep -q "Schema init xato" services/api/main.py 2>/dev/null; then
+  echo "   ✅ API schema try/except bor"
+else
+  echo "   ❌ API schema try/except YO'Q!"
+  ERRORS=$((ERRORS+1))
+fi
+
+# 12. Bot schema try/except
+echo ""
+echo "12. Bot schema try/except..."
+if grep -q "Schema init xato" services/bot/main.py 2>/dev/null; then
+  echo "   ✅ Bot schema try/except bor"
+else
+  echo "   ❌ Bot schema try/except YO'Q!"
+  ERRORS=$((ERRORS+1))
+fi
 
 echo ""
-echo "Natija: $OK ✅  $FAIL ❌"
-if [ "$FAIL" -gt 0 ]; then exit 1; fi
-echo "BARCHA 12 TA TEKSHIRUV O'TDI. Push qilish mumkin."
+echo "════════════════════════════════════════"
+if [ "$ERRORS" -eq 0 ]; then
+  echo "  ✅ BARCHA TESTLAR O'TDI — DEPLOY MUMKIN"
+  echo "════════════════════════════════════════"
+  exit 0
+else
+  echo "  ❌ $ERRORS TA XATO TOPILDI — DEPLOY QILMA!"
+  echo "  ZIP dan fayllarni qayta ko'chiring."
+  echo "════════════════════════════════════════"
+  exit 1
+fi

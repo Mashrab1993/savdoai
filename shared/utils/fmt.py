@@ -86,7 +86,7 @@ def sotuv_cheki(data: dict, dokon: str) -> str:
     if data.get("manba"):
         Q.append(f"Manba  : {data['manba']}")
 
-    Q += ["=" * KENGLIK, _m("@mashrab_ceo_bot"), "=" * KENGLIK, ""]
+    Q += ["=" * KENGLIK, _m("@savdoai_mashrab_bot"), "=" * KENGLIK, ""]
     return "\n".join(Q)
 
 
@@ -113,7 +113,7 @@ def kirim_cheki(data: dict, dokon: str) -> str:
 
     j = float(data.get("jami_summa", hisob))
     Q += ["-" * KENGLIK, _cs("JAMI:", f"{j:,.0f} so'm"),
-          "=" * KENGLIK, _m("@mashrab_ceo_bot"), "=" * KENGLIK, ""]
+          "=" * KENGLIK, _m("@savdoai_mashrab_bot"), "=" * KENGLIK, ""]
     return "\n".join(Q)
 
 
@@ -144,7 +144,7 @@ def qaytarish_cheki(natijalar: list[dict], dokon: str) -> str:
     Q += [
         "-" * KENGLIK,
         _cs("QAYTARILDI:", f"{jami:,.0f} so'm"),
-        "=" * KENGLIK, _m("@mashrab_ceo_bot"), "=" * KENGLIK, "",
+        "=" * KENGLIK, _m("@savdoai_mashrab_bot"), "=" * KENGLIK, "",
     ]
     return "\n".join(Q)
 

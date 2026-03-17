@@ -198,148 +198,76 @@ async def rls_conn_notrx(user_id: int) -> AsyncGenerator[asyncpg.Connection, Non
 #  SCHEMA INIT
 # ════════════════════════════════════════════════════════════
 
-def _split_sql_statements(sql: str) -> list[str]:
-    """SQL ni statement larga ajratadi; $$ ... $$ ichidagi ; ga e'tibor bermaydi.
-    )::TYPE; qatorida ; da bo'linmaydi (syntax error at or near :: oldini olish)."""
-    statements: list[str] = []
-    current: list[str] = []
-    i = 0
-    n = len(sql)
-    in_dollar = False
-    last_newline = 0  # current da oxirgi \n indeksi
-
-    while i < n:
-        if not in_dollar:
-            if i + 1 < n and sql[i:i + 2] == "$$":
-                in_dollar = True
-                current.append("$$")
-                i += 2
-                continue
-            if sql[i] == "\n":
-                last_newline = len(current)
-            if sql[i] == ";" and (i + 1 >= n or sql[i + 1] in "\n\r"):
-                # Qatorda )::TYPE; bo'lsa shu ; da bo'lmaymiz (expression tugashi)
-                line_since_newline = "".join(current[last_newline:])
-                if "::" in line_since_newline:
-                    current.append(";")
-                    i += 1
-                    continue
-                stmt = "".join(current).strip()
-                if stmt:
-                    statements.append(stmt)
-                current = []
-                i += 1
-                continue
-            current.append(sql[i])
-            i += 1
-        else:
-            if i + 1 < n and sql[i:i + 2] == "$$":
-                in_dollar = False
-                current.append("$$")
-                i += 2
-                continue
-            current.append(sql[i])
-            i += 1
-
-    stmt = "".join(current).strip()
-    if stmt:
-        statements.append(stmt)
-    return _split_combined_statements(statements)
-
-
-def _split_combined_statements(statements: list[str]) -> list[str]:
-    """Bir statement ichida ); keyin CREATE/SELECT/... bo'lsa alohida statementlarga ajratadi.
-    ); dan keyin \\n, comment (-- ...) va bo'sh qatorlar bo'lishi mumkin."""
-    import re
-    result: list[str] = []
-    # ); dan keyin ixtiyoriy \n, comment qatorlari, keyin CREATE/SELECT/...
-    pat = re.compile(
-        r"\);\s*\n(?:\s*\n|\s*--[^\n]*\n)*\s*(?=CREATE\s|SELECT\s|INSERT\s|UPDATE\s|DELETE\s|DROP\s|ALTER\s)",
-        re.IGNORECASE,
-    )
-    for stmt in statements:
-        parts = pat.split(stmt)
-        if len(parts) == 1:
-            result.append(stmt)
-            continue
-        for i, part in enumerate(parts):
-            p = part.strip()
-            if not p:
-                continue
-            if i == 0 and not p.endswith(");"):
-                p = p + ");"
-            result.append(p)
-    return result
-
-
-async def run_schema_on_conn(conn: asyncpg.Connection) -> None:
-    """
-    Berilgan connection da schema.sql ni bajaradi (statement-split bilan).
-    Bot va boshqa servislar o'z pool ulanishida chaqirishi mumkin.
-    """
-    import os
+async def schema_init() -> None:
+    """SQL schema faylidan jadvallarni yaratish — xatolarga chidamli"""
+    import os, re
     schema_file = os.path.join(
         os.path.dirname(__file__), "schema.sql"
     )
     if not os.path.exists(schema_file):
         log.error("schema.sql topilmadi: %s", schema_file)
         return
+
     sql = open(schema_file, encoding="utf-8").read()
-    statements = _split_sql_statements(sql)
-    ok_count = 0
-    skip_count = 0
-    for idx, stmt in enumerate(statements):
-        stmt = stmt.strip()
-        no_comment = "".join(
-            line for line in stmt.splitlines()
-            if line.strip() and not line.strip().startswith("--")
-        ).strip()
-        if not no_comment:
+
+    # Smart split: DO $$ ... $$; bloklarni to'g'ri ajratish
+    statements = []
+    current = []
+    in_dollar = False
+    for line in sql.split("\n"):
+        stripped = line.strip()
+        # Skip pure comments
+        if stripped.startswith("--") and not current:
             continue
-        is_create_table = no_comment.strip().upper().startswith("CREATE TABLE")
-        last_err = None
-        for attempt in range(3):
+
+        current.append(line)
+
+        # Track $$ blocks
+        dollar_count = line.count("$$")
+        if dollar_count % 2 == 1:  # odd number of $$ toggles
+            in_dollar = not in_dollar
+
+        # Statement end: semicolon at end, not inside $$ block
+        if not in_dollar and stripped.endswith(";"):
+            stmt = "\n".join(current).strip()
+            if stmt and stmt != ";":
+                statements.append(stmt)
+            current = []
+
+    # Any remaining
+    if current:
+        stmt = "\n".join(current).strip()
+        if stmt and stmt != ";" and len(stmt) > 5:
+            statements.append(stmt)
+
+    async with get_pool().acquire() as conn:
+        ok = 0
+        skip = 0
+        fail = 0
+        for i, stmt in enumerate(statements, 1):
             try:
                 await conn.execute(stmt)
-                ok_count += 1
-                break
+                ok += 1
             except Exception as e:
-                last_err = e
-                err = str(e).lower()
-                if "already exists" in err or "duplicate" in err:
-                    skip_count += 1
-                    log.debug("Schema stmt %s: allaqachon mavjud, o'tkazildi", idx + 1)
-                    break
-                if "tuple concurrently updated" in err or "could not serialize" in err:
-                    if attempt < 2:
-                        await asyncio.sleep(0.5 * (attempt + 1))
-                        continue
-                if is_create_table:
-                    log.error(
-                        "Schema statement %s xato (CREATE TABLE): %s | stmt: %.200s...",
-                        idx + 1, e, no_comment[:200]
-                    )
-                    raise
-                skip_count += 1
-                log.warning("Schema stmt %s skip: %s", idx + 1, e)
-                break
-        else:
-            if last_err is not None:
-                if is_create_table:
-                    log.error(
-                        "Schema statement %s xato (3 urinish): %s | stmt: %.200s...",
-                        idx + 1, last_err, no_comment[:200]
-                    )
-                    raise last_err
-                skip_count += 1
-                log.warning("Schema stmt %s skip (3 urinish): %s", idx + 1, last_err)
-    log.info("✅ Schema tayyor (%d OK, %d skip, RLS yoqilgan)", ok_count, skip_count)
+                err_msg = str(e)
+                s = stmt.upper().strip()
+                # Critical: only CREATE TABLE failures are fatal
+                is_create_table = s.startswith("CREATE TABLE")
+                if any(w in err_msg for w in ["already exists", "duplicate"]):
+                    skip += 1
+                elif is_create_table:
+                    fail += 1
+                    log.error("Schema %d CRITICAL: %s | %.80s", i, err_msg, stmt)
+                else:
+                    # Non-critical: INDEX, VIEW, FUNCTION, POLICY, TRIGGER — skip
+                    skip += 1
+                    log.warning("Schema %d skip: %s | %.60s", i, err_msg, stmt)
 
+        if fail > 0:
+            log.error("❌ Schema %d ta critical xato!", fail)
+            raise RuntimeError(f"Schema init: {fail} CREATE TABLE xato")
 
-async def schema_init() -> None:
-    """SQL schema faylidan jadvallarni yaratish (har bir statement alohida)."""
-    async with get_pool().acquire() as conn:
-        await run_schema_on_conn(conn)
+    log.info("✅ Schema tayyor (%d OK, %d skip, RLS yoqilgan)", ok, skip)
 
 
 async def rls_tekshir() -> list[dict]:

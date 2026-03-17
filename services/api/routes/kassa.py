@@ -110,7 +110,7 @@ async def kassa_stats(uid: int = Depends(get_uid)):
 
 @router.post("/operatsiya")
 async def kassa_operatsiya_yarat(data: KassaOperatsiya, uid: int = Depends(get_uid)):
-    """Yangi kassa operatsiyasi yaratish"""
+    """Yangi kassa operatsiyasi yaratish + LEDGER"""
     async with rls_conn(uid) as c:
         op_id = await c.fetchval("""
             INSERT INTO kassa_operatsiyalar
@@ -119,6 +119,19 @@ async def kassa_operatsiya_yarat(data: KassaOperatsiya, uid: int = Depends(get_u
             RETURNING id
         """, uid, data.tur, data.summa, data.usul,
             data.tavsif, data.kategoriya)
+
+        # 📒 DOUBLE-ENTRY LEDGER
+        try:
+            if data.tur == "kirim":
+                from shared.services.ledger import qarz_tolash_jurnali, jurnal_saqlash
+                je = qarz_tolash_jurnali(uid, data.tavsif or "Kassa kirim", data.summa, data.usul)
+            else:
+                from shared.services.ledger import xarajat_jurnali, jurnal_saqlash
+                je = xarajat_jurnali(uid, data.tavsif or "Kassa chiqim", data.summa, data.usul)
+            je.idempotency_key = f"kassa_{uid}_{op_id}"
+            await jurnal_saqlash(c, je)
+        except Exception as _e:
+            log.debug("kassa ledger: %s", _e)
 
     log.info("Kassa: uid=%d tur=%s summa=%s usul=%s",
              uid, data.tur, data.summa, data.usul)

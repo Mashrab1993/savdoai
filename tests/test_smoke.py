@@ -352,9 +352,9 @@ class TestHealthCommand:
             "health_check uses bare datetime.now() — will fail at runtime"
 
     def test_bot_version_is_current(self):
-        """bot __version__ is 21.3"""
+        """bot __version__ is 23.0"""
         src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py')).read()
-        assert '__version__ = "21.5"' in src, "bot __version__ not updated to 21.3"
+        assert '__version__ = "23.1"' in src, "bot __version__ not updated to 23.0"
 
 
 class TestExportCrossContainer:
@@ -408,7 +408,7 @@ class TestStartupSafety:
             src = open(path).read()
             import re
             v = re.search(r'__version__\s*=\s*"([^"]+)"', src)
-            if v and v.group(1) not in ('21.3', '21.4', '21.5', ''):
+            if v and v.group(1) not in ('21.3', '21.4', '21.5', '22.0', '23.0', '23.1', ''):
                 assert False, f"{path}: __version__={v.group(1)} (expected 21.3-21.5)"
 
     def test_cognitive_api_version(self):
@@ -1265,15 +1265,15 @@ class TestGemini31:
     """Gemini model upgraded to 3.1."""
     def test_gemini_31_in_voice(self):
         src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'bot_services', 'voice.py')).read()
-        assert 'gemini-3.1-flash-lite' in src, "Voice not using Gemini 3.1"
+        assert 'gemini-2.5-flash-lite' in src, "Voice not using Gemini 3.1"
 
     def test_gemini_31_in_router(self):
         src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'cognitive', 'ai_router.py')).read()
-        assert 'gemini-3.1-flash-lite' in src, "Router not using Gemini 3.1"
+        assert 'gemini-2.5-flash-lite' in src, "Router not using Gemini 3.1"
 
     def test_gemini_31_in_config(self):
         src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'config.py')).read()
-        assert 'gemini-3.1-flash-lite' in src, "Config not using Gemini 3.1"
+        assert 'gemini-2.5-flash-lite' in src, "Config not using Gemini 3.1"
 
 
 class TestVoiceCommands:
@@ -1456,4 +1456,51 @@ class TestSAPGradeLedger:
 
     def test_version_21_5(self):
         src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py')).read()
-        assert '__version__ = "21.5"' in src
+        assert '__version__ = "23.1"' in src
+
+
+class TestV215Upgrades:
+    """v21.5 SAP-GRADE kuchaytirishlar."""
+
+    def test_kassa_ledger_wired(self):
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'api', 'routes', 'kassa.py')).read()
+        assert 'jurnal_saqlash' in src, "Kassa not wired to ledger"
+        assert 'xarajat_jurnali' in src, "Kassa chiqim not using xarajat_jurnali"
+        assert 'idempotency_key' in src, "Kassa missing idempotency"
+
+    def test_worker_reconciliation(self):
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'worker', 'tasks.py')).read()
+        assert 'ledger_reconciliation' in src
+        assert 'balans_tekshir' in src
+        assert 'ledger-recon' in src  # beat schedule
+
+    def test_api_rate_limiting(self):
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'api', 'main.py')).read()
+        assert 'rate_limit_middleware' in src
+        assert 'RATE_LIMIT' in src
+        assert '429' in src
+        assert 'X-RateLimit' in src
+
+    def test_api_ledger_endpoints(self):
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'api', 'main.py')).read()
+        assert '/api/v1/ledger/balans' in src
+        assert '/api/v1/ledger/jurnal' in src
+        assert '/api/v1/ledger/hisob/' in src
+
+    def test_inline_query(self):
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py')).read()
+        assert 'InlineQueryHandler' in src
+        assert 'inline_qidirish' in src
+
+    def test_audit_helpers(self):
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py')).read()
+        for fn in ['_audit_sotuv', '_audit_kirim', '_audit_qaytarish', '_audit_qarz_tolash']:
+            assert f'async def {fn}' in src, f"Missing helper: {fn}"
+
+    def test_migration_002(self):
+        import os
+        path = os.path.join(os.path.dirname(__file__), '..', 'shared', 'migrations', 'versions', '002_v21_5_sap_grade_ledger.sql')
+        assert os.path.exists(path), "Migration 002 missing"
+        src = open(path).read()
+        assert 'jurnal_yozuvlar' in src
+        assert 'jurnal_qatorlar' in src

@@ -8,13 +8,16 @@ WORKDIR /app
 
 # Install dependencies
 COPY services/bot/requirements.txt .
-RUN python -m pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy shared library
 COPY shared /app/shared
 
 # Copy bot service
 COPY services/bot /app/services/bot
+
+# Copy cognitive (ixtiyoriy — Dual-Brain MoE uchun)
+COPY services/cognitive /app/services/cognitive
 
 # Set working directory to bot service
 WORKDIR /app/services/bot

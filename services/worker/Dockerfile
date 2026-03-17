@@ -6,7 +6,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends     postgresql-
 WORKDIR /app
 
 COPY services/worker/requirements.txt .
-RUN python -m pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
 
 COPY shared /app/shared
 COPY services/worker /app/services/worker
@@ -15,4 +15,4 @@ WORKDIR /app/services/worker
 
 ENV PYTHONPATH=/app
 
-CMD ["python", "-m", "celery", "-A", "tasks", "worker", "--loglevel=info", "--concurrency=2"]
+CMD ["celery", "-A", "tasks", "worker", "--loglevel=info", "--concurrency=2"]

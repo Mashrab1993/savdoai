@@ -3,7 +3,7 @@
 **O'zbek bozori uchun AI-powered savdo boshqaruv tizimi.**
 Bank/SAP darajasidagi buxgalteriya + ovoz bilan boshqarish.
 
-**Bot:** @mashrab_ceo_bot  |  **Telegram + Web + API**
+**Bot:** @savdoai_mashrab_bot  |  **Telegram + Web + API**
 
 ## Ko'rsatkichlar
 
@@ -34,8 +34,7 @@ Bank/SAP darajasidagi buxgalteriya + ovoz bilan boshqarish.
 
 ## Ishga tushirish
 
-- **Lokal (kompyuterda):** `docs/Lokal_ISHGA_TUSHIRISH.md`
-- **Railway (production):** `docs/ISHGA_TUSHIRISH.md`
+Batafsil: `docs/ISHGA_TUSHIRISH.md`
 
 ## Testlar
 

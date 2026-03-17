@@ -1,6 +1,6 @@
 ══════════════════════════════════════════════════════════════════
   MASHRAB MOLIYA v21.4 — ISHGA TUSHIRISH QO'LLANMASI
-  @mashrab_ceo_bot → Yangi versiya deploy
+  @savdoai_mashrab_bot → Yangi versiya deploy
   
   ESKI BOTNI TO'XTATIB, YANGI v21.4 NI ISHGA TUSHIRISH
 ══════════════════════════════════════════════════════════════════
@@ -15,7 +15,7 @@ Bu qo'llanma eski botni yangi v21.4 ga ALMASHTIRADI.
 Sizda bor bo'lishi kerak:
   ✅ GitHub account (repozitoriy uchun)
   ✅ Railway account (https://railway.app) — deploy uchun
-  ✅ Telegram Bot Token (@BotFather dan) — @mashrab_ceo_bot uchun
+  ✅ Telegram Bot Token (@BotFather dan) — @savdoai_mashrab_bot uchun
   ✅ Anthropic API Key (Claude uchun) — https://console.anthropic.com
   ✅ Google Gemini API Key — https://aistudio.google.com/apikey
   ✅ Sizning Telegram ID (admin uchun)
@@ -177,7 +177,7 @@ MUHIM! Bir vaqtda 2 bot ishlay olmaydi (bir token — bir bot).
      kill <PID>
 
 Eski bot to'xtaganini tekshiring:
-  @mashrab_ceo_bot ga /start yuboring
+  @savdoai_mashrab_bot ga /start yuboring
   → Javob kelmasa = to'xtagan ✅
 
 ══════════════════════════════════════════════════════════════════
@@ -200,7 +200,7 @@ Eski bot to'xtaganini tekshiring:
   8-QADAM: TEKSHIRISH
 ══════════════════════════════════════════════════════════════════
 
-@mashrab_ceo_bot ga boring va tekshiring:
+@savdoai_mashrab_bot ga boring va tekshiring:
 
 TEST 1 — /start:
   → "Xush kelibsiz! Mashrab Moliya v21.4" ko'rinishi kerak
@@ -243,40 +243,6 @@ Brauzerda:
 ══════════════════════════════════════════════════════════════════
   XATO BO'LSA NIMA QILISH
 ══════════════════════════════════════════════════════════════════
-
-XATO: "DATABASE_URL muhit o'zgaruvchisi o'rnatilmagan!" yoki KeyError: 'DATABASE_URL'
-  → Railway da PostgreSQL servis qo'shing (New → Database → PostgreSQL)
-  → mashrab-api servisi → Variables → DATABASE_URL ni PostgreSQL dan reference qiling
-    (${{Postgres.DATABASE_URL}} yoki "Add variable" → Reference → Postgres → DATABASE_URL)
-  → Konteyner DATABASE_URL bo‘lmaganda ishga tushmaydi — bu kutilgan
-
-XATO: "No address associated with hostname" yoki socket.gaierror (DB ulanishi)
-  → DATABASE_URL ni QO'LDa yozmang (localhost yoki noto'g'ri host bo'ladi)
-  → Railway: savdoai (yoki mashrab-api) → Variables → DATABASE_URL
-  → "Add variable" → "Add a reference" → Postgres servisini tanlang → DATABASE_URL
-  → API va Postgres bir xil Railway project da bo'lishi kerak
-  → Reference qilgandan keyin Redeploy qiling
-
-XATO: "DATABASE_URL reference orqali qo'yilmagan" yoki template matn
-  → Agar DATABASE_URL qiymati postgresql://${{PGUSER}}:${{...}} ko'rinishida bo'lsa —
-    bu REFERENCE emas, template. Railway buni avtomatik almashtirmaydi.
-  → TO'G'RI USUL: savdoai → Variables → mavjud DATABASE_url ni O'CHIRING
-  → "+ New Variable" → "Add a reference" (yoki "Variable Reference")
-  → Postgres servisini tanlang → DATABASE_URL ni tanlang
-  → Saqlang va Redeploy qiling. Endi qiymat to'liq connection string bo'ladi.
-
-XATO: "JWT_SECRET muhit o'zgaruvchisi o'rnatilmagan!" (Container Crashed)
-  → Railway → Service (mashrab-api) → Variables → JWT_SECRET qo'shing
-  → Kamida 32 belgili tasodifiy matn (masalan: openssl rand -hex 32)
-  → Yangilangan kodda JWT bo‘lmasa ham konteyner ishga tushadi; /health ishlaydi, auth 503 qaytaradi
-
-XATO: "uvicorn: command not found" (Container Crashed)
-  → Railway → Service → Settings → "Start Command" ni BO'SHATING
-    (Dockerfile ichidagi start.sh ishlashi uchun)
-  → Yoki Start Command ni shunga o'zgartiring:
-    python -m uvicorn main:app --host 0.0.0.0 --port $PORT --workers 4
-  → Cognitive servisi uchun:
-    python -m uvicorn api:app --host 0.0.0.0 --port $PORT --workers 2
 
 XATO: "Bot ishlamayapti"
   → Railway → mashrab-bot → Logs → xato xabarini o'qing

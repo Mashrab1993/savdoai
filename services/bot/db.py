@@ -34,10 +34,9 @@ from typing import Any, Optional
 
 import asyncio
 import asyncpg
+import asyncio
 import asyncpg.exceptions
 import pytz
-
-from shared.database.pool import run_schema_on_conn
 
 # ── DB xato handleri ─────────────────────────────────────
 class DBXato(Exception):
@@ -74,7 +73,7 @@ _pool: Optional[asyncpg.Pool] = None
 _SCHEMA = """
 CREATE TABLE IF NOT EXISTS users (
     id              BIGINT        PRIMARY KEY,
-    ism             TEXT          NOT NULL DEFAULT '',
+    to_liq_ism      TEXT          NOT NULL DEFAULT '',
     username        TEXT,
     telefon         TEXT,
     dokon_nomi      TEXT,
@@ -275,18 +274,63 @@ async def _init_conn(conn: asyncpg.Connection) -> None:
 
 
 async def schema_init() -> None:
-    """Load shared schema.sql (statement-split bilan; RLS policies ham)."""
+    """Load shared schema.sql — statement-by-statement (xatolarga chidamli)"""
     import os as _os2
     _schema_path = _os2.path.join(
         _os2.path.dirname(_os2.path.dirname(_os2.path.dirname(_os2.path.abspath(__file__)))),
         "shared", "database", "schema.sql"
     )
+    if _os2.path.exists(_schema_path):
+        sql = open(_schema_path, encoding="utf-8").read()
+    else:
+        sql = _SCHEMA  # fallback: embedded schema
+
+    # ═══ STATEMENT-BY-STATEMENT EXECUTION ═══
+    # asyncpg conn.execute() ga butun SQL berib bo'lmaydi
+    # DO $$ ... $$; bloklarni to'g'ri ajratish kerak
+    statements = []
+    current = []
+    in_dollar = False
+    for line in sql.split("\n"):
+        stripped = line.strip()
+        if stripped.startswith("--") and not current:
+            continue
+        current.append(line)
+        dollar_count = line.count("$$")
+        if dollar_count % 2 == 1:
+            in_dollar = not in_dollar
+        if not in_dollar and stripped.endswith(";"):
+            stmt = "\n".join(current).strip()
+            if stmt and stmt != ";":
+                statements.append(stmt)
+            current = []
+    if current:
+        stmt = "\n".join(current).strip()
+        if stmt and stmt != ";" and len(stmt) > 5:
+            statements.append(stmt)
+
     async with _P().acquire() as c:
-        if _os2.path.exists(_schema_path):
-            await run_schema_on_conn(c)
-        else:
-            await c.execute(_SCHEMA)
-    log.info("✅ Jadvallar tayyor (RLS yoqilgan)")
+        ok = skip = fail = 0
+        for i, stmt in enumerate(statements, 1):
+            try:
+                await c.execute(stmt)
+                ok += 1
+            except Exception as e:
+                err = str(e)
+                s = stmt.upper().strip()
+                is_create_table = s.startswith("CREATE TABLE")
+                if any(w in err for w in ["already exists", "duplicate"]):
+                    skip += 1
+                elif is_create_table:
+                    fail += 1
+                    log.error("Schema #%d CRITICAL: %s | %.80s", i, err, stmt)
+                else:
+                    skip += 1
+                    log.warning("Schema #%d skip: %s | %.60s", i, err, stmt)
+
+        if fail > 0:
+            raise RuntimeError(f"Schema init: {fail} CREATE TABLE xato")
+    log.info("✅ Jadvallar tayyor (%d OK, %d skip, RLS yoqilgan)", ok, skip)
 
 
 async def pool_close() -> None:
@@ -294,26 +338,6 @@ async def pool_close() -> None:
     if _pool:
         await _pool.close()
         _pool = None
-
-
-async def pool_health() -> dict:
-    """Bot DB pool holati — /health uchun"""
-    if _pool is None:
-        return {"status": "closed", "ping_ms": None, "size": 0, "used": 0}
-    import time as _t
-    try:
-        start = _t.monotonic()
-        async with _pool.acquire() as c:
-            await c.fetchval("SELECT 1")
-        ping_ms = round((_t.monotonic() - start) * 1000, 1)
-        return {
-            "status": "ok",
-            "ping_ms": ping_ms,
-            "size": _pool.get_size(),
-            "used": _pool.get_size() - _pool.get_idle_size(),
-        }
-    except Exception as e:
-        return {"status": "error", "error": str(e), "ping_ms": None, "size": 0, "used": 0}
 
 
 # ════════════════════════════════════════════════════════════════
@@ -368,12 +392,11 @@ async def user_ol(uid: int) -> Optional[asyncpg.Record]:
 
 async def user_yoz(uid: int, to_liq_ism: str,
                    username: Optional[str] = None) -> None:
-    """Ro'yxatdan o'tkazish. Schema: ism (shared) yoki to_liq_ism (fallback)."""
     async with _P().acquire() as c:
         await c.execute("""
-            INSERT INTO users (id, ism, username)
-            VALUES ($1, $2, $3) ON CONFLICT (id) DO UPDATE SET ism = EXCLUDED.ism, username = EXCLUDED.username
-        """, uid, to_liq_ism or "", username)
+            INSERT INTO users (id, to_liq_ism, username)
+            VALUES ($1, $2, $3) ON CONFLICT (id) DO NOTHING
+        """, uid, to_liq_ism, username)
 
 
 async def user_yangilab(uid: int, **maydonlar) -> None:

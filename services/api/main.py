@@ -13,18 +13,8 @@
 """
 from __future__ import annotations
 import os, sys, logging, time, hashlib, hmac, base64, json
-import socket
-from pathlib import Path
 from contextlib import asynccontextmanager
 from typing import Optional
-
-# .env loyiha ildizidan (uvicorn services.api.main dan ishlaganda)
-try:
-    from dotenv import load_dotenv
-    _root = Path(__file__).resolve().parents[2]
-    load_dotenv(_root / ".env")
-except ImportError:
-    pass
 
 from fastapi import FastAPI, HTTPException, Depends, Request, status
 from fastapi.middleware.gzip import GZipMiddleware
@@ -40,8 +30,8 @@ from shared.cache.redis_cache import redis_init, cache_ol, cache_yoz
 from shared.cache.redis_cache import k_hisobot_kunlik, k_qarzlar, k_user, TTL_HISOBOT, TTL_USER
 try:
     from shared.rag.vector_db import rag_init
-except ImportError:
-    rag_init = None  # qdrant-client ixtiyoriy
+except (ImportError, ModuleNotFoundError):
+    rag_init = None
 
 log = logging.getLogger(__name__)
 
@@ -61,12 +51,11 @@ logging.basicConfig(
 )
 
 __version__ = "23.1"
-# JWT_SECRET bo‘lmasa ham konteyner ishga tushadi; /health ishlaydi.
-# Auth endpointlar 503 qaytaradi — Railway Variables da JWT_SECRET o‘rnating.
-_JWT_SECRET_RAW = (os.getenv("JWT_SECRET") or "").strip()
-JWT_SECRET = _JWT_SECRET_RAW or None
-if not JWT_SECRET:
-    log.warning("JWT_SECRET o‘rnatilmagan — /auth va API token ishlamaydi. Railway Variables da JWT_SECRET qo‘ying.")
+_JWT_SECRET_RAW = os.getenv("JWT_SECRET", "")
+if not _JWT_SECRET_RAW:
+    _JWT_SECRET_RAW = "savdoai-default-dev-secret-change-me-in-production"
+    log.warning("⚠️ JWT_SECRET o'rnatilmagan — default ishlatilmoqda. Production uchun o'rnating!")
+JWT_SECRET = _JWT_SECRET_RAW
 
 
 # ════════════════════════════════════════════════════════════
@@ -129,62 +118,34 @@ class PaginatsiyaResponse(BaseModel):
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    dsn = (os.getenv("DATABASE_URL") or "").strip()
-    if not dsn:
-        log.error(
-            "DATABASE_URL o'rnatilmagan. Railway da: 1) PostgreSQL servis qo'shing, "
-            "2) mashrab-api → Variables → DATABASE_URL ni PostgreSQL reference qiling."
-        )
-        raise RuntimeError(
-            "DATABASE_URL muhit o'zgaruvchisi o'rnatilmagan. "
-            "Railway: PostgreSQL ulang va Service Variables da DATABASE_URL qo'shing."
-        )
-    # Template qo'lda yozilgan bo'lsa — Railway almashtirmaydi, hostname resolve bo'lmaydi
-    if "${{" in dsn:
-        log.error(
-            "DATABASE_URL template ko'rinishida (reference emas). "
-            "Railway savdoai → Variables → DATABASE_URL ni O'CHIRING → + New Variable → "
-            "'Add a reference' (yoki Variable Reference) → Postgres servisini tanlang → DATABASE_URL."
-        )
-        raise RuntimeError(
-            "DATABASE_URL reference orqali qo'yilmagan. Template matnni qo'lda yozmang. "
-            "Railway: Variables → DATABASE_URL o'chiring → + New Variable → Add reference → Postgres → DATABASE_URL."
-        )
+    dsn    = os.environ.get("DATABASE_URL", "")
+    # Railway postgres:// → asyncpg postgresql://
+    if dsn.startswith("postgres://"):
+        dsn = dsn.replace("postgres://", "postgresql://", 1)
     r_url  = os.getenv("REDIS_URL", "")
     q_url  = os.getenv("QDRANT_URL")
     q_key  = os.getenv("QDRANT_API_KEY")
 
-    try:
-        await pool_init(dsn,
-                        min_size=int(os.getenv("DB_MIN", "2")),
-                        max_size=int(os.getenv("DB_MAX", "10")))
-    except socket.gaierror as e:
-        log.error(
-            "DATABASE_URL hostname aniqlanmadi (No address associated with hostname). "
-            "Railway da: savdoai → Variables → DATABASE_URL ni 'Add reference' orqali Postgres servisidan qo'shing. "
-            "API va Postgres bir xil project da bo'lishi kerak."
-        )
-        raise RuntimeError(
-            "DATABASE_URL hostname aniqlanmadi. Railway: Variables → Add reference → Postgres → DATABASE_URL. "
-            "API va Postgres bir project da bo'lsin."
-        ) from e
-    except OSError as e:
-        if "No address associated with hostname" in str(e) or "Name or service not known" in str(e):
-            log.error("DATABASE_URL hostname xato. Railway da Postgres dan reference ishlating.")
-            raise RuntimeError(
-                "DATABASE_URL hostname aniqlanmadi. Railway: Add reference → Postgres → DATABASE_URL."
-            ) from e
-        raise
+    await pool_init(dsn,
+                    min_size=int(os.getenv("DB_MIN", "2")),
+                    max_size=int(os.getenv("DB_MAX", "10")))
+
     try:
         await schema_init()
-    except Exception as e:
-        log.warning("schema_init xato (API davom etadi): %s", e)
+    except Exception as _schema_err:
+        log.error("⚠️ Schema init xato (API davom etadi): %s", _schema_err)
 
     if r_url:
-        await redis_init(r_url)
+        try:
+            await redis_init(r_url)
+        except Exception as _r:
+            log.warning("Redis ulana olmadi: %s", _r)
 
-    if rag_init is not None:
-        rag_init(q_url, q_key)
+    if rag_init and q_url:
+        try:
+            rag_init(q_url, q_key)
+        except Exception as _e:
+            log.warning("Qdrant ulana olmadi (RAG o'chirildi): %s", _e)
 
     log.info("🚀 SavdoAI API v%s tayyor", __version__)
     yield
@@ -193,11 +154,12 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title       = "Mashrab Moliya API",
+    title       = "SavdoAI Mashrab Moliya API",
     version     = __version__,
-    description = "Savdo boshqaruv tizimi REST API",
+    description = "O'zbek bozori uchun AI-powered savdo boshqaruv tizimi REST API",
     lifespan    = lifespan,
-    docs_url    = "/docs" if os.getenv("DEBUG") else None,
+    docs_url    = "/docs",
+    redoc_url   = "/redoc",
 )
 
 # CORS
@@ -205,12 +167,15 @@ app.add_middleware(GZipMiddleware, minimum_size=500)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        os.getenv("WEB_URL", "https://mashrab-moliya.vercel.app"),
+        os.getenv("WEB_URL", "https://savdoai-production.up.railway.app"),
+        "https://savdoai-production.up.railway.app",
+        "https://mashrab-moliya.vercel.app",
         "http://localhost:3000",
+        "http://localhost:5173",
     ],
     allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH"],
-    allow_headers=["Authorization", "Content-Type"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type", "X-API-Key"],
 )
 
 # ═══ v21.3 YANGI ROUTELAR ═══
@@ -237,11 +202,6 @@ from services.api.deps import get_uid, jwt_tekshir
 
 def jwt_yarat(user_id: int, ttl: int = 86400) -> str:
     """JWT token yaratish"""
-    if not JWT_SECRET:
-        raise HTTPException(
-            status_code=503,
-            detail="JWT_SECRET o'rnatilmagan. Railway → Service → Variables → JWT_SECRET qo'shing (min 32 belgi).",
-        )
     h64 = base64.urlsafe_b64encode(
         b'{"alg":"HS256","typ":"JWT"}'
     ).rstrip(b"=").decode()
@@ -256,6 +216,65 @@ def jwt_yarat(user_id: int, ttl: int = 86400) -> str:
 # ════════════════════════════════════════════════════════════
 #  ENDPOINTLAR
 # ════════════════════════════════════════════════════════════
+
+@app.get("/", include_in_schema=False)
+async def root():
+    """Landing page — API ishlayotganini ko'rsatadi"""
+    from fastapi.responses import HTMLResponse
+    html = f"""<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SavdoAI Mashrab Moliya v{__version__}</title>
+    <style>
+        * {{ margin:0; padding:0; box-sizing:border-box; }}
+        body {{ font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+               background:linear-gradient(135deg,#0f172a 0%,#1e293b 100%);
+               color:#e2e8f0; min-height:100vh; display:flex; align-items:center; justify-content:center; }}
+        .card {{ background:#1e293b; border:1px solid #334155; border-radius:16px;
+                padding:48px; max-width:600px; width:90%; box-shadow:0 20px 60px rgba(0,0,0,0.4); }}
+        h1 {{ font-size:28px; margin-bottom:8px; color:#38bdf8; }}
+        .version {{ color:#94a3b8; font-size:14px; margin-bottom:24px; }}
+        .status {{ display:flex; align-items:center; gap:8px; margin-bottom:24px;
+                  padding:12px 16px; background:#0f172a; border-radius:8px; }}
+        .dot {{ width:10px; height:10px; border-radius:50%; background:#22c55e; animation:pulse 2s infinite; }}
+        @keyframes pulse {{ 0%,100%{{opacity:1}} 50%{{opacity:0.5}} }}
+        .links {{ display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:24px; }}
+        .links a {{ display:block; padding:12px 16px; background:#334155; border-radius:8px;
+                   color:#38bdf8; text-decoration:none; text-align:center; font-size:14px;
+                   transition:background 0.2s; }}
+        .links a:hover {{ background:#475569; }}
+        .stats {{ display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-top:24px; }}
+        .stat {{ text-align:center; padding:16px; background:#0f172a; border-radius:8px; }}
+        .stat-num {{ font-size:24px; font-weight:700; color:#38bdf8; }}
+        .stat-label {{ font-size:12px; color:#94a3b8; margin-top:4px; }}
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>SavdoAI Mashrab Moliya</h1>
+        <div class="version">v{__version__} &mdash; AI-powered savdo boshqaruv tizimi</div>
+        <div class="status">
+            <div class="dot"></div>
+            <span>API ishlayapti</span>
+        </div>
+        <div class="stats">
+            <div class="stat"><div class="stat-num">37+</div><div class="stat-label">API Endpoints</div></div>
+            <div class="stat"><div class="stat-num">19</div><div class="stat-label">DB Jadvallar</div></div>
+            <div class="stat"><div class="stat-num">2</div><div class="stat-label">AI Modellar</div></div>
+        </div>
+        <div class="links">
+            <a href="/docs">API Docs</a>
+            <a href="/health">Health Check</a>
+            <a href="/redoc">ReDoc</a>
+            <a href="https://t.me/savdoai_mashrab_bot">Telegram Bot</a>
+        </div>
+    </div>
+</body>
+</html>"""
+    return HTMLResponse(content=html)
+
 
 @app.get("/health")
 async def health():
@@ -280,11 +299,6 @@ async def auth_telegram(data: TelegramAuthSo_rov):
     Telegram bot → API token olish.
     Bot har foydalanuvchi uchun bu endpoint orqali JWT oladi.
     """
-    if not JWT_SECRET:
-        raise HTTPException(
-            status_code=503,
-            detail="JWT_SECRET o'rnatilmagan. Railway → Variables → JWT_SECRET qo'shing.",
-        )
     uid      = data.user_id
     bot_hash = data.hash
     expected = hashlib.sha256(
@@ -1063,6 +1077,44 @@ async def timing_middleware(request: Request, call_next):
     response.headers["X-Response-Time"] = f"{ms}ms"
     if ms > 1000:
         log.warning("SLOW: %s %s — %sms", request.method, request.url.path, ms)
+    return response
+
+
+# ═══ RATE LIMITER — SAP-GRADE API HIMOYA ═══
+_rate_buckets: dict = {}  # {ip: [timestamps]}
+RATE_LIMIT = int(os.environ.get("API_RATE_LIMIT", "60"))  # per minute
+RATE_WINDOW = 60  # seconds
+
+@app.middleware("http")
+async def rate_limit_middleware(request: Request, call_next):
+    """IP-based rate limiting — SAP-GRADE API himoya"""
+    import time as _t
+    # Health/readyz endpoints skip
+    if request.url.path in ("/health", "/healthz", "/readyz"):
+        return await call_next(request)
+
+    ip = request.client.host if request.client else "unknown"
+    now = _t.time()
+
+    # Clean old entries
+    if ip in _rate_buckets:
+        _rate_buckets[ip] = [t for t in _rate_buckets[ip] if now - t < RATE_WINDOW]
+    else:
+        _rate_buckets[ip] = []
+
+    if len(_rate_buckets[ip]) >= RATE_LIMIT:
+        log.warning("RATE LIMIT: %s — %d req/min", ip, len(_rate_buckets[ip]))
+        from starlette.responses import JSONResponse
+        return JSONResponse(
+            {"error": "Rate limit exceeded", "limit": RATE_LIMIT, "window": "60s"},
+            status_code=429,
+            headers={"Retry-After": "60", "X-RateLimit-Limit": str(RATE_LIMIT)}
+        )
+
+    _rate_buckets[ip].append(now)
+    response = await call_next(request)
+    response.headers["X-RateLimit-Limit"] = str(RATE_LIMIT)
+    response.headers["X-RateLimit-Remaining"] = str(RATE_LIMIT - len(_rate_buckets[ip]))
     return response
 
 
