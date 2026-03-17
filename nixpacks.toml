@@ -1,16 +1,9 @@
-# Nixpacks — Railway build (uvicorn moduli o'rnatiladi va to'g'ri ishga tushadi)
-# Nix Python pip o'rnatmaydi — ensurepip yoki nixPkgs orqali pip kerak
+# Nixpacks — Railway build. Nix Python pip keltirmaydi, shuning uchun setup da pip qo'shamiz.
+[phases.setup]
+nixPkgs = ["...", "python312Packages.pip"]
 
-# Variant 1: ensurepip (standart kutubxona). Ishlamasa Variant 2 ni yoqing:
 [phases.install]
-cmds = [
-  "python -m ensurepip --upgrade",
-  "python -m pip install --no-cache-dir -r requirements.txt"
-]
-
-# Variant 2 (ensurepip bo'lmasa): [phases.setup] ni yoqing, [phases.install] dan ensurepip qatorini olib tashlang:
-# [phases.setup]
-# nixPkgs = ["...", "python312Packages.pip"]
+cmds = ["python -m pip install --no-cache-dir -r requirements.txt"]
 
 [start]
 cmd = "PYTHONPATH=/app python -m uvicorn services.api.main:app --host 0.0.0.0 --port ${PORT:-8000} --workers 1"
