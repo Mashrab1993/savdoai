@@ -226,7 +226,15 @@ def asosiy_menyu() -> InlineKeyboardMarkup:
 async def xat(q, matn:str, **kw) -> None:
     try: await q.edit_message_text(matn,**kw)
     except BadRequest as e:
-        if "not modified" not in str(e).lower(): log.warning("xat: %s",e)
+        msg = str(e).lower()
+        if "not modified" not in msg:
+            log.warning("xat edit failed (%s). Fallback reply_text...", e)
+            # Telegram ba'zi xabarlarni tahrirlashga ruxsat bermaydi.
+            # Bunday holatda foydalanuvchiga hech narsa ko'rinmay qolmasligi uchun reply_text qilamiz.
+            try:
+                await q.message.reply_text(matn, **kw)
+            except Exception:
+                pass
 
 
 async def faol_tekshir(update:Update) -> bool:
@@ -2814,7 +2822,7 @@ def ilovani_qur(conf:Config) -> Application:
             H_TELEFON:[MessageHandler(filters.TEXT & ~filters.COMMAND,h_telefon)],
         },
         fallbacks=[CommandHandler("start",cmd_start)],
-        allow_reentry=True,per_message=False,
+        allow_reentry=True,per_message=False,block=False,
     )
     app.add_handler(royxat)
     app.add_handler(MessageHandler(filters.VOICE,ovoz_qabul))
