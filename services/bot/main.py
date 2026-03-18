@@ -1,6 +1,6 @@
 """
 ╔══════════════════════════════════════════════════════════════════╗
-║  SAVDOAI MASHRAB MOLIYA  v23.2  PRODUCTION GRADE               ║
+║  SAVDOAI MASHRAB MOLIYA  v25.0  PRODUCTION GRADE               ║
 ║  @savdoai_mashrab_bot                                            ║
 ║                                                                  ║
 ║  🎤 OVOZ-BIRINCHI: Ovoz yuboring — bot hamma ishni qiladi      ║
@@ -12,7 +12,7 @@
 ║  🔒 HIMOYA: RLS + JWT + Decimal + FK + Audit Log                ║
 ║  📊 SAP-GRADE: Double-Entry Ledger + Reconciliation             ║
 ║                                                                  ║
-║  v23.2 PRODUCTION YANGILIKLAR:                                   ║
+║  v25.0 PRODUCTION YANGILIKLAR:                                   ║
 ║  ✅ Railway production deploy — crash-proof schema_init          ║
 ║  ✅ Bulletproof startup (hech qachon crash qilmaydi)            ║
 ║  ✅ Nixpacks + Procfile + railway.toml — 3x fallback            ║
@@ -90,7 +90,7 @@ logging.basicConfig(
 )
 for _s in ("httpx","httpcore","telegram.ext._application"):
     logging.getLogger(_s).setLevel(logging.WARNING)
-__version__ = "23.2"
+__version__ = "25.0"
 __author__  = "Mashrab Moliya"
 
 # Segment nomi matnlari
@@ -142,7 +142,7 @@ async def _user_ol_kesh(uid: int):
 
 
 async def health_check(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
-    """Railway health monitoring — v23.2"""
+    """Railway health monitoring — v25.0"""
     import time as _t
     start = _t.monotonic()
     # DB ping
@@ -361,6 +361,21 @@ async def ovoz_qabul(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
             return
         await holat.edit_text(f"🎤 _{matn}_\n\n🤖 Tahlil qilinmoqda...",
                                parse_mode=ParseMode.MARKDOWN)
+        # Shogird xarajat tekshiruvi (ovoz uchun)
+        if not cfg().is_admin(uid):
+            try:
+                from shared.services.shogird_xarajat import shogird_topish_tg
+                from shared.database.pool import get_pool
+                pool = get_pool()
+                async with pool.acquire() as raw_conn:
+                    shogird = await shogird_topish_tg(raw_conn, uid)
+                if shogird:
+                    handled = await _shogird_xarajat_qabul(update, ctx, matn, shogird)
+                    if handled:
+                        await holat.delete()
+                        return
+            except Exception as _se:
+                log.debug("Shogird ovoz: %s", _se)
         await _qayta_ishlash(update,ctx,matn,holat)
     except Exception as xato:
         log.error("ovoz_qabul: %s",xato,exc_info=True)
@@ -380,6 +395,128 @@ async def matn_qabul(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
     # Duplicate guard
     from shared.services.guards import is_duplicate_message
     if is_duplicate_message(uid, matn): return
+
+    # ═══ SHOGIRD XARAJAT TEKSHIRUVI ═══
+    # Agar foydalanuvchi shogird bo'lsa — xarajat sifatida qayta ishlash
+    if not cfg().is_admin(uid):
+        try:
+            from shared.services.shogird_xarajat import shogird_topish_tg
+            from shared.database.pool import get_pool
+            pool = get_pool()
+            async with pool.acquire() as raw_conn:
+                shogird = await shogird_topish_tg(raw_conn, uid)
+            if shogird:
+                handled = await _shogird_xarajat_qabul(update, ctx, matn, shogird)
+                if handled:
+                    return
+        except Exception as _se:
+            log.debug("Shogird tekshiruv: %s", _se)
+
+    # ═══ TAHRIRLASH REJIMI ═══
+    tahr_rejim = ctx.user_data.get("_tahr_rejim")
+    if tahr_rejim and ctx.user_data.get("kutilayotgan"):
+        natija = ctx.user_data["kutilayotgan"]
+        tovarlar = natija.get("tovarlar", [])
+        xabar = ""
+        
+        if tahr_rejim == "klient":
+            eski = natija.get("klient", "yo'q")
+            natija["klient"] = matn.strip()
+            xabar = f"✅ Klient o'zgartirildi: *{eski}* → *{matn.strip()}*"
+        
+        elif tahr_rejim == "narx":
+            qismlar = matn.strip().split()
+            if len(qismlar) >= 2 and qismlar[0].lower() == "hammasi":
+                narx = float(qismlar[1].replace(",","").replace(".",""))
+                for t in tovarlar:
+                    t["narx"] = narx
+                    t["jami"] = narx * float(t.get("miqdor", 0))
+                xabar = f"✅ Barcha narxlar: *{narx:,.0f}* so'm"
+            elif len(qismlar) >= 2:
+                try:
+                    idx = int(qismlar[0]) - 1
+                    narx = float(qismlar[1].replace(",","").replace(".",""))
+                    if 0 <= idx < len(tovarlar):
+                        tovarlar[idx]["narx"] = narx
+                        tovarlar[idx]["jami"] = narx * float(tovarlar[idx].get("miqdor", 0))
+                        xabar = f"✅ *{tovarlar[idx]['nomi']}* narxi: *{narx:,.0f}* so'm"
+                    else:
+                        xabar = f"❌ Tovar #{qismlar[0]} topilmadi (1-{len(tovarlar)})"
+                except ValueError:
+                    xabar = "❌ Noto'g'ri format. Masalan: _1 45000_ yoki _hammasi 50000_"
+            else:
+                try:
+                    narx = float(matn.replace(",","").replace(".","").replace(" ",""))
+                    for t in tovarlar:
+                        t["narx"] = narx
+                        t["jami"] = narx * float(t.get("miqdor", 0))
+                    xabar = f"✅ Barcha narxlar: *{narx:,.0f}* so'm"
+                except ValueError:
+                    xabar = "❌ Raqam kiriting. Masalan: _45000_ yoki _1 45000_"
+        
+        elif tahr_rejim == "miqdor":
+            qismlar = matn.strip().split()
+            if len(qismlar) >= 2 and qismlar[0].lower() == "hammasi":
+                miqdor = float(qismlar[1].replace(",",""))
+                for t in tovarlar:
+                    t["miqdor"] = miqdor
+                    t["jami"] = float(t.get("narx", 0)) * miqdor
+                xabar = f"✅ Barcha miqdorlar: *{miqdor:,.0f}*"
+            elif len(qismlar) >= 2:
+                try:
+                    idx = int(qismlar[0]) - 1
+                    miqdor = float(qismlar[1].replace(",",""))
+                    if 0 <= idx < len(tovarlar):
+                        tovarlar[idx]["miqdor"] = miqdor
+                        tovarlar[idx]["jami"] = float(tovarlar[idx].get("narx", 0)) * miqdor
+                        xabar = f"✅ *{tovarlar[idx]['nomi']}* miqdori: *{miqdor:,.0f}*"
+                    else:
+                        xabar = f"❌ Tovar #{qismlar[0]} topilmadi (1-{len(tovarlar)})"
+                except ValueError:
+                    xabar = "❌ Noto'g'ri format. Masalan: _1 100_ yoki _hammasi 50_"
+            else:
+                xabar = "❌ Masalan: _1 100_ yoki _hammasi 50_"
+        
+        elif tahr_rejim == "qarz":
+            matn_t = matn.strip().lower().replace(",","").replace(".","").replace(" ","")
+            jami = float(natija.get("jami_summa", 0))
+            if matn_t == "hammasi":
+                natija["qarz"] = jami
+                natija["tolangan"] = 0
+                xabar = f"✅ To'liq qarzga: *{jami:,.0f}* so'm"
+            else:
+                try:
+                    qarz_y = float(matn_t)
+                    if qarz_y > jami:
+                        qarz_y = jami
+                    natija["qarz"] = qarz_y
+                    natija["tolangan"] = max(jami - qarz_y, 0)
+                    xabar = f"✅ Qarz: *{qarz_y:,.0f}* | To'langan: *{jami - qarz_y:,.0f}*"
+                except ValueError:
+                    xabar = "❌ Raqam kiriting. Masalan: _500000_ yoki _hammasi_"
+        
+        # Jami summani qayta hisoblash
+        if tovarlar:
+            natija["jami_summa"] = sum(float(t.get("jami", 0)) for t in tovarlar)
+            if tahr_rejim != "qarz":
+                qarz = float(natija.get("qarz", 0))
+                natija["tolangan"] = max(natija["jami_summa"] - qarz, 0)
+        
+        ctx.user_data["kutilayotgan"] = natija
+        ctx.user_data.pop("_tahr_rejim", None)
+        
+        # Yangilangan preview
+        oldindan = ai_xizmat.oldindan_korinish(natija)
+        markup=tg(
+            [("✅ Saqlash","t:ha"),("❌ Bekor","t:yoq")],
+            [("✏️ Klient","t:tahr:klient"),("✏️ Narx","t:tahr:narx")],
+            [("✏️ Miqdor","t:tahr:miqdor"),("✏️ Qarz","t:tahr:qarz")],
+        )
+        await update.message.reply_text(
+            f"{xabar}\n\n{'─'*26}\n\n{oldindan}",
+            parse_mode=ParseMode.MARKDOWN, reply_markup=markup
+        )
+        return
 
     # ═══ O'ZBEK BUYRUQ TEKSHIRUVI (AI ga yubormasdan) ═══
     from shared.services.voice_commands import detect_voice_command, is_quick_command
@@ -604,7 +741,7 @@ async def _qayta_ishlash(update:Update, ctx:ContextTypes.DEFAULT_TYPE,
         else: await update.message.reply_text(yordam,parse_mode=ParseMode.MARKDOWN)
         return
 
-    # ═══ PIPELINE: AI → DRAFT → CONFIDENCE → CONFIRM ═══
+    # ═══ PIPELINE: AI → SMART NARX → DRAFT → CONFIDENCE → CONFIRM ═══
     from shared.services.pipeline import create_draft, TxType, TxStatus
     tx_map = {"kirim": TxType.KIRIM, "chiqim": TxType.SOTUV, "sotuv": TxType.SOTUV,
               "qaytarish": TxType.QAYTARISH, "qarz_tolash": TxType.QARZ_TOLASH}
@@ -616,6 +753,31 @@ async def _qayta_ishlash(update:Update, ctx:ContextTypes.DEFAULT_TYPE,
     if klient:
         kl = await db.klient_topish(uid, klient)
         db_ctx["klient_topildi"] = kl is not None
+
+    # ═══ SMART NARX: AI narx bermasa → DB dan aniqlash ═══
+    if amal in ("chiqim", "sotuv", "nakladnoy") and natija.get("tovarlar"):
+        try:
+            from shared.services.smart_narx import narx_aniqla_nomi
+            from shared.database.pool import rls_conn
+            async with rls_conn(uid) as sc:
+                narx_izoh = []
+                for t in natija["tovarlar"]:
+                    if not t.get("narx") or t["narx"] == 0:
+                        r = await narx_aniqla_nomi(sc, uid, klient, t.get("nomi", ""))
+                        if r["narx"] > 0:
+                            t["narx"] = float(r["narx"])
+                            t["jami"] = float(r["narx"]) * float(t.get("miqdor", 0))
+                            manba_belgi = {"shaxsiy": "👤", "guruh": "🏷", "oxirgi": "🔄", "default": "📦"}
+                            narx_izoh.append(f"{manba_belgi.get(r['manba'], '💰')} {t['nomi']}: {r['narx']:,.0f} ({r['manba']})")
+                if narx_izoh:
+                    # Jami summani qayta hisoblash
+                    natija["jami_summa"] = sum(t.get("jami", 0) for t in natija["tovarlar"])
+                    qarz = natija.get("qarz", 0) or 0
+                    natija["tolangan"] = max(natija["jami_summa"] - qarz, 0)
+                    natija["_narx_manba"] = narx_izoh
+                    log.info("Smart narx: %s", " | ".join(narx_izoh))
+        except Exception as _sn:
+            log.warning("Smart narx xato (davom etadi): %s", _sn)
 
     draft = create_draft(natija, tx_type, uid, db_ctx)
 
@@ -638,7 +800,16 @@ async def _qayta_ishlash(update:Update, ctx:ContextTypes.DEFAULT_TYPE,
     if not oldindan or len(oldindan) < 10:
         oldindan = ai_xizmat.oldindan_korinish(natija)
 
-    markup=tg([("✅ Saqlash","t:ha"),("❌ Bekor","t:yoq")])
+    # Smart narx manbasini ko'rsatish
+    narx_manba = natija.get("_narx_manba")
+    if narx_manba:
+        oldindan += "\n\n💡 *Narxlar avtomatik:*\n" + "\n".join(f"  {m}" for m in narx_manba)
+
+    markup=tg(
+        [("✅ Saqlash","t:ha"),("❌ Bekor","t:yoq")],
+        [("✏️ Klient","t:tahr:klient"),("✏️ Narx","t:tahr:narx")],
+        [("✏️ Miqdor","t:tahr:miqdor"),("✏️ Qarz","t:tahr:qarz")],
+    )
     if tahrirlash: await tahrirlash.edit_text(oldindan,parse_mode=ParseMode.MARKDOWN,reply_markup=markup)
     else: await update.message.reply_text(oldindan,parse_mode=ParseMode.MARKDOWN,reply_markup=markup)
 
@@ -825,7 +996,90 @@ async def tasdiq_cb(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
         ctx.user_data.pop("kutilayotgan",None)
         ctx.user_data.pop("kutilayotgan_majbur",None)
         ctx.user_data.pop("draft_info",None)
+        ctx.user_data.pop("_tahr_rejim",None)
         await xat(q,"❌ Bekor qilindi."); return
+
+    # ═══ TAHRIRLASH TUGMALARI ═══
+    if q.data.startswith("t:tahr:"):
+        tahr_tur = q.data.split(":")[-1]  # klient, narx, miqdor, qarz
+        natija = ctx.user_data.get("kutilayotgan")
+        if not natija:
+            await xat(q,"❌ Tahrirlash uchun ma'lumot yo'q."); return
+        
+        ctx.user_data["_tahr_rejim"] = tahr_tur
+        
+        if tahr_tur == "klient":
+            await xat(q,
+                "✏️ *KLIENT TAHRIRLASH*\n\n"
+                f"Hozirgi: *{natija.get('klient') or 'yo`q'}*\n\n"
+                "Yangi klient ismini yozing:\n"
+                "_Masalan: Salimov_",
+                parse_mode=ParseMode.MARKDOWN,
+                reply_markup=tg([("❌ Bekor","t:tahr:orqaga")]))
+        
+        elif tahr_tur == "narx":
+            tovarlar = natija.get("tovarlar", [])
+            narx_matn = "\n".join(
+                f"  {i+1}. {t.get('nomi','')} — {t.get('narx',0):,.0f} so'm"
+                for i, t in enumerate(tovarlar)
+            )
+            await xat(q,
+                "✏️ *NARX TAHRIRLASH*\n\n"
+                f"Hozirgi narxlar:\n{narx_matn}\n\n"
+                "Yangi narx yozing:\n"
+                "_Tovar raqami va narx, masalan:_\n"
+                "_1 45000_ (1-tovar narxi 45000)\n"
+                "_hammasi 50000_ (barchasi 50000)",
+                parse_mode=ParseMode.MARKDOWN,
+                reply_markup=tg([("❌ Bekor","t:tahr:orqaga")]))
+        
+        elif tahr_tur == "miqdor":
+            tovarlar = natija.get("tovarlar", [])
+            miq_matn = "\n".join(
+                f"  {i+1}. {t.get('nomi','')} — {t.get('miqdor',0)} {t.get('birlik','dona')}"
+                for i, t in enumerate(tovarlar)
+            )
+            await xat(q,
+                "✏️ *MIQDOR TAHRIRLASH*\n\n"
+                f"Hozirgi miqdorlar:\n{miq_matn}\n\n"
+                "Yangi miqdor yozing:\n"
+                "_Tovar raqami va miqdor, masalan:_\n"
+                "_1 100_ (1-tovar miqdori 100)\n"
+                "_hammasi 50_ (barchasi 50)",
+                parse_mode=ParseMode.MARKDOWN,
+                reply_markup=tg([("❌ Bekor","t:tahr:orqaga")]))
+        
+        elif tahr_tur == "qarz":
+            jami = natija.get("jami_summa", 0)
+            qarz = natija.get("qarz", 0)
+            tolangan = natija.get("tolangan", 0)
+            await xat(q,
+                "✏️ *QARZ TAHRIRLASH*\n\n"
+                f"Jami: *{jami:,.0f}* so'm\n"
+                f"Hozirgi qarz: *{qarz:,.0f}* so'm\n"
+                f"To'langan: *{tolangan:,.0f}* so'm\n\n"
+                "Yangi qarz summasini yozing:\n"
+                "_Masalan: 500000_\n"
+                "_Yoki: hammasi_ (to'liq qarzga)\n"
+                "_Yoki: 0_ (qarzsiz)",
+                parse_mode=ParseMode.MARKDOWN,
+                reply_markup=tg([("❌ Bekor","t:tahr:orqaga")]))
+        
+        elif tahr_tur == "orqaga":
+            # Tahrirlash bekor — preview qayta ko'rsatish
+            ctx.user_data.pop("_tahr_rejim", None)
+            natija_o = ctx.user_data.get("kutilayotgan")
+            if natija_o:
+                oldindan = ai_xizmat.oldindan_korinish(natija_o)
+                markup=tg(
+                    [("✅ Saqlash","t:ha"),("❌ Bekor","t:yoq")],
+                    [("✏️ Klient","t:tahr:klient"),("✏️ Narx","t:tahr:narx")],
+                    [("✏️ Miqdor","t:tahr:miqdor"),("✏️ Qarz","t:tahr:qarz")],
+                )
+                await xat(q, oldindan, parse_mode=ParseMode.MARKDOWN, reply_markup=markup)
+            else:
+                await xat(q, "❌ Ma'lumot topilmadi.")
+        return
 
     natija=ctx.user_data.pop("kutilayotgan",None)
     if not natija:
@@ -844,6 +1098,19 @@ async def tasdiq_cb(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
             if kam: ogoh=f"\n\n⚠️ *Kam qoldiq:* {', '.join(t['nomi'] for t in kam[:3])}"
             await xat(q,f"✅ *{len(tovarlar)} ta tovar kirim!*\n\n"+chek_md(chek)+ogoh,
                       parse_mode=ParseMode.MARKDOWN)
+            # ═══ AVTOMATIK KIRIM CHEK PDF ═══
+            try:
+                kirim_data = dict(natija); kirim_data["amal"] = "kirim"
+                pdf_bytes = pdf_xizmat.chek_pdf(kirim_data, dokon)
+                if pdf_bytes:
+                    sana_s = _os.popen("date +%d%m%Y_%H%M").read().strip() or "kirim"
+                    nom = f"kirim_{sana_s}.pdf"
+                    await q.message.reply_document(
+                        document=InputFile(io.BytesIO(pdf_bytes), filename=nom),
+                        caption=f"🖨 *{nom}*\nPrinterga yuboring!",
+                        parse_mode=ParseMode.MARKDOWN)
+            except Exception as _pdf_e:
+                log.warning("Avtomatik kirim PDF: %s", _pdf_e)
 
         elif amal=="chiqim":
             # ── 1. Validatsiya ───────────────────────────────
@@ -948,11 +1215,28 @@ async def tasdiq_cb(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
             sess_id=sotuv["sessiya_id"]
             markup=tg(
                 [("📋 Nakladnoy",f"n:sess:{sess_id}"),
-                 ("📄 PDF chek", f"eks:pdf:sotuv:{sess_id}")],
-                [("📊 Excel chek",f"eks:xls:sotuv:{sess_id}"),
-                 ("✅ Yaxshi",   "m:orqaga")],
+                 ("📊 Excel",f"eks:xls:sotuv:{sess_id}")],
+                [("✅ Yaxshi",   "m:orqaga")],
             )
             await xat(q,javob,parse_mode=ParseMode.MARKDOWN,reply_markup=markup)
+
+            # ═══ AVTOMATIK MINI CHEK PDF ═══
+            try:
+                chek_pdf_data = dict(natija)
+                chek_pdf_data["amal"] = "chiqim"
+                if eski_qarz_total > 0:
+                    chek_pdf_data["eski_qarz"] = float(eski_qarz_total)
+                pdf_bytes = pdf_xizmat.chek_pdf(chek_pdf_data, dokon)
+                if pdf_bytes:
+                    sana_s = _os.popen("date +%d%m%Y_%H%M").read().strip() or "chek"
+                    kl_s = (klient or "sotuv").replace(" ", "_")[:15]
+                    nom = f"chek_{kl_s}_{sana_s}.pdf"
+                    await q.message.reply_document(
+                        document=InputFile(io.BytesIO(pdf_bytes), filename=nom),
+                        caption=f"🖨 *{nom}*\nPrinterga yuboring!",
+                        parse_mode=ParseMode.MARKDOWN)
+            except Exception as _pdf_e:
+                log.warning("Avtomatik chek PDF: %s", _pdf_e)
 
         elif q.data == "t:majbur":
             natija_m = ctx.user_data.pop("kutilayotgan_majbur", None)
@@ -967,6 +1251,15 @@ async def tasdiq_cb(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
                     [("📋 Nakladnoy", f"n:sess:{sotuv_m['sessiya_id']}")],
                     [("✅ OK", "m:orqaga")],
                 ))
+            # Avtomatik chek PDF
+            try:
+                natija_m["amal"] = "chiqim"
+                pdf_b = pdf_xizmat.chek_pdf(natija_m, dokon)
+                if pdf_b:
+                    await q.message.reply_document(
+                        document=InputFile(io.BytesIO(pdf_b), filename=f"chek_{sotuv_m['sessiya_id']}.pdf"),
+                        caption="🖨 Printerga yuboring!", parse_mode=ParseMode.MARKDOWN)
+            except Exception as _pe: log.warning("Majbur chek PDF: %s", _pe)
 
         elif q.data == "t:zarar_tasdiq":
             natija_z = ctx.user_data.pop("kutilayotgan", None)
@@ -981,6 +1274,15 @@ async def tasdiq_cb(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
                     [("📋 Nakladnoy", f"n:sess:{sotuv_z['sessiya_id']}")],
                     [("✅ OK", "m:orqaga")],
                 ))
+            # Avtomatik chek PDF
+            try:
+                natija_z["amal"] = "chiqim"
+                pdf_b = pdf_xizmat.chek_pdf(natija_z, dokon)
+                if pdf_b:
+                    await q.message.reply_document(
+                        document=InputFile(io.BytesIO(pdf_b), filename=f"chek_{sotuv_z['sessiya_id']}.pdf"),
+                        caption="🖨 Printerga yuboring!", parse_mode=ParseMode.MARKDOWN)
+            except Exception as _pe: log.warning("Zarar chek PDF: %s", _pe)
 
         elif amal=="qaytarish":
             if not tovarlar or not klient:
@@ -1036,7 +1338,9 @@ async def eksport_cb(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
         if tur=="sotuv":
             sess_id=int(qismlar[3]); data=await db.sessiya_ol(uid,sess_id)
             if not data: await q.message.reply_text("❌ Sessiya topilmadi."); return
-            if format_=="pdf": kontent=pdf_xizmat.sotuv_pdf(data,dokon); nom=f"sotuv_{sess_id}.pdf"
+            if format_=="chek":
+                kontent=pdf_xizmat.chek_pdf(data,dokon); nom=f"chek_{sess_id}.pdf"
+            elif format_=="pdf": kontent=pdf_xizmat.sotuv_pdf(data,dokon); nom=f"sotuv_{sess_id}.pdf"
             else: kontent=excel_xizmat.sotuv_excel(data,dokon); nom=f"sotuv_{sess_id}.xlsx"
         elif tur=="klient":
             klient_id=int(qismlar[3]); data=await db.klient_to_liq_hisobi(uid,klient_id)
@@ -1394,6 +1698,226 @@ async def faktura_cb(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
         await q.message.reply_text("❌ Faktura yaratishda xato yuz berdi")
 
 
+# ════════════ SHOGIRD XARAJAT NAZORATI ════════════
+
+async def cmd_shogird_qosh(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
+    """Admin: yangi shogird qo'shish. Format: /shogird_qosh <telegram_id> <ism>"""
+    if not await faol_tekshir(update): return
+    uid = update.effective_user.id
+    if not cfg().is_admin(uid):
+        await update.message.reply_text("🔒 Faqat admin uchun."); return
+    
+    matn = (update.message.text or "").strip()
+    qismlar = matn.split(maxsplit=2)
+    if len(qismlar) < 3:
+        await update.message.reply_text(
+            "📝 *Shogird qo'shish*\n\n"
+            "Format: `/shogird_qosh <telegram_id> <ism>`\n\n"
+            "Masalan:\n"
+            "`/shogird_qosh 123456789 Akbar haydovchi`\n\n"
+            "Telegram ID bilish: shogird @userinfobot ga /start yuborsin",
+            parse_mode=ParseMode.MARKDOWN)
+        return
+    
+    try:
+        tg_id = int(qismlar[1])
+        ism = qismlar[2]
+    except ValueError:
+        await update.message.reply_text("❌ Telegram ID raqam bo'lishi kerak."); return
+    
+    try:
+        from shared.services.shogird_xarajat import shogird_qoshish
+        async with _rls_conn(uid) as c:
+            result = await shogird_qoshish(c, uid, tg_id, ism)
+        await update.message.reply_text(
+            f"✅ *Shogird qo'shildi!*\n\n"
+            f"👤 Ism: *{ism}*\n"
+            f"📱 Telegram ID: `{tg_id}`\n"
+            f"💰 Kunlik limit: 500,000 so'm\n"
+            f"📊 Oylik limit: 10,000,000 so'm\n\n"
+            f"Endi {ism} botga ovoz/matn yuborib xarajat kiritadi.",
+            parse_mode=ParseMode.MARKDOWN)
+    except Exception as e:
+        log.error("shogird_qosh: %s", e, exc_info=True)
+        await update.message.reply_text("❌ Shogird qo'shishda xato yuz berdi.")
+
+
+async def cmd_shogirdlar(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
+    """Admin: shogirdlar ro'yxati"""
+    if not await faol_tekshir(update): return
+    uid = update.effective_user.id
+    if not cfg().is_admin(uid):
+        await update.message.reply_text("🔒 Faqat admin uchun."); return
+    
+    try:
+        from shared.services.shogird_xarajat import shogirdlar_royxati
+        async with _rls_conn(uid) as c:
+            shogirdlar = await shogirdlar_royxati(c, uid)
+        
+        if not shogirdlar:
+            await update.message.reply_text(
+                "📋 Hali shogird yo'q.\n\n"
+                "Qo'shish: `/shogird_qosh <telegram_id> <ism>`",
+                parse_mode=ParseMode.MARKDOWN)
+            return
+        
+        matn = "👥 *SHOGIRDLAR*\n━━━━━━━━━━━━━━━━━━\n\n"
+        jami_bugun = Decimal('0')
+        jami_oy = Decimal('0')
+        
+        for s in shogirdlar:
+            bugun = s['bugungi_xarajat']
+            oy = s['oylik_xarajat']
+            kutish = s['kutilmoqda']
+            jami_bugun += bugun
+            jami_oy += oy
+            
+            limit_pct = int((bugun / s['kunlik_limit']) * 100) if s['kunlik_limit'] > 0 else 0
+            bar = "🟢" if limit_pct < 70 else "🟡" if limit_pct < 100 else "🔴"
+            
+            matn += (
+                f"{bar} *{s['ism']}* ({s['lavozim']})\n"
+                f"   📱 `{s['telegram_uid']}`\n"
+                f"   Bugun: *{bugun:,.0f}* / {s['kunlik_limit']:,.0f}\n"
+                f"   Oy: *{oy:,.0f}* / {s['oylik_limit']:,.0f}\n"
+            )
+            if kutish > 0:
+                matn += f"   ⏳ Kutilmoqda: {kutish} ta\n"
+            matn += "\n"
+        
+        matn += f"━━━━━━━━━━━━━━━━━━\n💰 Bugun jami: *{jami_bugun:,.0f}*\n📊 Oy jami: *{jami_oy:,.0f}*"
+        
+        await update.message.reply_text(matn, parse_mode=ParseMode.MARKDOWN)
+    except Exception as e:
+        log.error("cmd_shogirdlar: %s", e, exc_info=True)
+        await update.message.reply_text("❌ Xato yuz berdi.")
+
+
+async def cmd_xarajatlar(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
+    """Admin: tasdiqlanmagan xarajatlar"""
+    if not await faol_tekshir(update): return
+    uid = update.effective_user.id
+    if not cfg().is_admin(uid):
+        await update.message.reply_text("🔒 Faqat admin uchun."); return
+    
+    try:
+        from shared.services.shogird_xarajat import kutilmoqda_royxati
+        async with _rls_conn(uid) as c:
+            kutilmoqda = await kutilmoqda_royxati(c, uid)
+        
+        if not kutilmoqda:
+            await update.message.reply_text("✅ Barcha xarajatlar tasdiqlangan!")
+            return
+        
+        matn = "⏳ *KUTILMOQDA*\n━━━━━━━━━━━━━━━━━━\n\n"
+        buttons = []
+        for x in kutilmoqda[:10]:
+            sana = str(x['sana'])[11:16]
+            matn += (
+                f"#{x['id']} {x['kategoriya_nomi']}\n"
+                f"👤 {x['shogird_ismi']} | 💰 *{x['summa']:,.0f}*\n"
+                f"📝 {x['izoh'] or '-'} | ⏰ {sana}\n\n"
+            )
+            buttons.append([
+                (f"✅ #{x['id']}", f"sx:tasdiq:{x['id']}"),
+                (f"❌ #{x['id']}", f"sx:bekor:{x['id']}"),
+            ])
+        
+        markup = tg(*buttons) if buttons else None
+        await update.message.reply_text(matn, parse_mode=ParseMode.MARKDOWN, reply_markup=markup)
+    except Exception as e:
+        log.error("cmd_xarajatlar: %s", e, exc_info=True)
+        await update.message.reply_text("❌ Xato yuz berdi.")
+
+
+async def shogird_xarajat_cb(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
+    """Admin: xarajatni tasdiqlash/bekor qilish"""
+    q = update.callback_query; await q.answer()
+    uid = update.effective_user.id
+    qismlar = q.data.split(":")
+    amal = qismlar[1]  # tasdiq yoki bekor
+    xarajat_id = int(qismlar[2])
+    
+    try:
+        from shared.services.shogird_xarajat import xarajat_tasdiqlash, xarajat_bekor
+        async with _rls_conn(uid) as c:
+            if amal == "tasdiq":
+                ok = await xarajat_tasdiqlash(c, xarajat_id, uid)
+                await q.message.reply_text(f"✅ Xarajat #{xarajat_id} tasdiqlandi!" if ok else "❌ Topilmadi.")
+            elif amal == "bekor":
+                ok = await xarajat_bekor(c, xarajat_id, uid)
+                await q.message.reply_text(f"❌ Xarajat #{xarajat_id} bekor qilindi!" if ok else "❌ Topilmadi.")
+    except Exception as e:
+        log.error("shogird_xarajat_cb: %s", e, exc_info=True)
+        await q.message.reply_text("❌ Xato yuz berdi.")
+
+
+async def _shogird_xarajat_qabul(update:Update, ctx:ContextTypes.DEFAULT_TYPE, 
+                                   matn:str, shogird:dict) -> bool:
+    """Shogird xarajat yubordi — qayta ishlash"""
+    from shared.services.shogird_xarajat import xarajat_saqlash, kategoriya_aniqla
+    
+    # Matndan summa va kategoriya ajratish
+    import re
+    raqamlar = re.findall(r'[\d,]+(?:\.\d+)?', matn.replace(" ", ""))
+    if not raqamlar:
+        return False
+    
+    # Eng katta raqamni summa deb olish
+    summa = max(float(r.replace(",", "")) for r in raqamlar)
+    if summa < 1000:  # 1000 dan kam — xarajat emas
+        return False
+    
+    kat_nomi, kat_emoji = kategoriya_aniqla(matn)
+    izoh = matn.strip()
+    
+    admin_uid = shogird["admin_uid"]
+    shogird_id = shogird["id"]
+    
+    try:
+        async with _rls_conn(admin_uid) as c:
+            result = await xarajat_saqlash(c, admin_uid, shogird_id, kat_nomi, summa, izoh)
+        
+        limit_info = result.get("limit_info", {})
+        ogohlantirish = limit_info.get("ogohlantirish", [])
+        
+        javob = (
+            f"✅ *Xarajat saqlandi!*\n\n"
+            f"{kat_emoji} Kategoriya: *{kat_nomi}*\n"
+            f"💰 Summa: *{summa:,.0f} so'm*\n"
+            f"📝 Izoh: _{izoh[:50]}_\n"
+            f"\n📊 Bugun jami: *{limit_info.get('bugungi', 0) + Decimal(str(summa)):,.0f}* / "
+            f"{limit_info.get('kunlik_limit', 0):,.0f}\n"
+        )
+        
+        if ogohlantirish:
+            javob += "\n" + "\n".join(ogohlantirish)
+        
+        if not limit_info.get("ruxsat", True):
+            javob += "\n\n🔴 *LIMIT OSHDI! Admin xabardor qilinadi.*"
+            # Admin ga xabar yuborish
+            try:
+                admin_msg = (
+                    f"🔴 *LIMIT OGOHLANTIRISH!*\n\n"
+                    f"👤 Shogird: *{shogird['ism']}*\n"
+                    f"{kat_emoji} {kat_nomi}: *{summa:,.0f} so'm*\n"
+                    f"📊 Bugun: *{limit_info.get('bugungi', 0) + Decimal(str(summa)):,.0f}* / "
+                    f"{limit_info.get('kunlik_limit', 0):,.0f}"
+                )
+                for aid in cfg().admin_ids:
+                    try:
+                        await ctx.bot.send_message(aid, admin_msg, parse_mode=ParseMode.MARKDOWN)
+                    except Exception: pass
+            except Exception as _ae:
+                log.warning("Admin xabar: %s", _ae)
+        
+        await update.message.reply_text(javob, parse_mode=ParseMode.MARKDOWN)
+        return True
+    except Exception as e:
+        log.error("shogird_xarajat: %s", e, exc_info=True)
+        return False
+
+
 # ════════════ ADMIN ════════════
 
 async def admin_cb(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
@@ -1638,7 +2162,7 @@ async def cmd_status(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
         db_ms = f"{info.get('ping_ms', '?')}ms (pool: {info.get('used',0)}/{info.get('size',0)})"
     except Exception: pass
     matn = (
-        "⚙️ *BOT HOLATI (v23.2 PRODUCTION)*\n\n"
+        "⚙️ *BOT HOLATI (v25.0 PRODUCTION)*\n\n"
         + f"📅 Vaqt: `{hozir}`\n"
         + f"🐍 Python: `{sys.version.split()[0]}`\n"
         + f"💻 OS: `{platform.system()} {platform.release()}`\n\n"
@@ -1918,7 +2442,7 @@ async def cmd_tovar(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
 
 
 async def cmd_yangilik(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
-    """v23.2 PRODUCTION yangiliklari"""
+    """v25.0 PRODUCTION yangiliklari"""
     await update.message.reply_text(
         f"🆕 *SAVDOAI MASHRAB MOLIYA v{__version__} YANGILIKLAR*\n"
         "━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
@@ -2126,6 +2650,12 @@ async def boshlash(app:Application) -> None:
     except Exception as _e:
         log.critical("❌ DB ulanishda xato: %s", _e, exc_info=True)
         raise RuntimeError(f"DB pool init muvaffaqiyatsiz: {_e}") from _e
+    # 1b. Shared pool ham ishga tushirish (rls_conn, ledger, kassa uchun)
+    try:
+        await _pool_init(_CFG.database_url, min_size=_CFG.db_min, max_size=_CFG.db_max)
+        log.info("✅ Shared pool ulandi")
+    except Exception as _e:
+        log.warning("⚠️ Shared pool xato (ba'zi funksiyalar ishlamasligi mumkin): %s", _e)
     # 2. Schema — non-fatal (jadvallar allaqachon bo'lishi mumkin)
     try:
         await db.schema_init()
@@ -2170,7 +2700,7 @@ async def boshlash(app:Application) -> None:
     await app.bot.set_my_commands([
         BotCommand("start",            "Botni boshlash"),
         BotCommand("menyu",            "Asosiy menyu"),
-        BotCommand("yangilik",         "🆕 v23.2 yangiliklari"),
+        BotCommand("yangilik",         "🆕 v25.0 yangiliklari"),
         BotCommand("imkoniyatlar",     "📋 Barcha imkoniyatlar"),
         BotCommand("yordam",           "❓ Qanday ishlatish"),
         BotCommand("nakladnoy",        "Nakladnoy (Word+Excel+PDF)"),
@@ -2190,6 +2720,9 @@ async def boshlash(app:Application) -> None:
         BotCommand("foydalanuvchilar", "Foydalanuvchilar (admin)"),
         BotCommand("faollashtir",      "Faollashtirish (admin)"),
         BotCommand("statistika",       "Statistika (admin)"),
+        BotCommand("shogird_qosh",    "Shogird qo'shish (admin)"),
+        BotCommand("shogirdlar",      "Shogirdlar ro'yxati (admin)"),
+        BotCommand("xarajatlar",      "Xarajatlar nazorati (admin)"),
     ])
 
     job_queue=app.job_queue
@@ -2234,7 +2767,7 @@ async def boshlash(app:Application) -> None:
             log.info("✅ Standalone: kunlik/haftalik/qarz/obuna joblar yoqildi")
         else:
             log.info("✅ Worker rejim: scheduling Worker/Beat tomonida boshqariladi")
-    log.info("🚀 SavdoAI Mashrab Moliya v23.2 PRODUCTION — TAYYOR!")
+    log.info("🚀 SavdoAI Mashrab Moliya v25.0 PRODUCTION — TAYYOR!")
 
 
 def ilovani_qur(conf:Config) -> Application:
@@ -2335,6 +2868,11 @@ def ilovani_qur(conf:Config) -> Application:
     app.add_handler(CommandHandler("faollashtir",      cmd_faollashtir))
     app.add_handler(CommandHandler("statistika",       cmd_statistika))
     app.add_handler(CommandHandler("health", health_check))
+    # Shogird xarajat
+    app.add_handler(CommandHandler("shogird_qosh",     cmd_shogird_qosh))
+    app.add_handler(CommandHandler("shogirdlar",       cmd_shogirdlar))
+    app.add_handler(CommandHandler("xarajatlar",       cmd_xarajatlar))
+    app.add_handler(CallbackQueryHandler(shogird_xarajat_cb, pattern=r"^sx:"))
     app.add_error_handler(xato_handler)
     return app
 

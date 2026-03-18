@@ -22,31 +22,31 @@ class TestBotImports:
         """services/bot/db.py imports cleanly"""
         import importlib
         # Just check syntax
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'db.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'db.py'), encoding='utf-8').read()
         ast.parse(src)
 
     def test_bot_main_syntax(self):
         """bot/main.py has no syntax errors"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py'), encoding='utf-8').read()
         ast.parse(src)
 
     def test_bot_no_stale_imports(self):
         """bot/main.py has no stale utils.hisob imports"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py'), encoding='utf-8').read()
         assert 'from utils.hisob import' not in src
         assert 'import core.database' not in src
         assert 'from config import load_config' not in src
 
     def test_bot_datetime_pytz_imported(self):
         """bot/main.py imports datetime and pytz at module level"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py'), encoding='utf-8').read()
         top = src[:3000]  # top of file before first def
         assert 'import datetime' in top or 'from datetime import' in top
         assert 'import pytz' in top
 
     def test_voice_alias(self):
         """voice.py has matnga_aylantir alias"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'bot_services', 'voice.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'bot_services', 'voice.py'), encoding='utf-8').read()
         assert 'matnga_aylantir' in src
 
     def test_bot_services_syntax(self):
@@ -63,17 +63,17 @@ class TestAPIEndpoints:
 
     def test_api_syntax(self):
         """api/main.py has valid syntax"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'api', 'main.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'api', 'main.py'), encoding='utf-8').read()
         ast.parse(src)
 
     def test_jwt_secret_no_hardcoded_default(self):
         """JWT_SECRET has no insecure hardcoded fallback"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'api', 'main.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'api', 'main.py'), encoding='utf-8').read()
         assert 'mashrab_moliya_secret_2026' not in src
 
     def test_kirim_uses_pydantic_attributes(self):
         """kirim_saqlash uses model attributes, not data.get()"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'api', 'main.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'api', 'main.py'), encoding='utf-8').read()
         import re
         idx = src.find('async def kirim_saqlash')
         end = src.find('\n\n@app.', idx)
@@ -82,7 +82,7 @@ class TestAPIEndpoints:
 
     def test_readyz_no_str_e(self):
         """readyz endpoint does not expose str(e)"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'api', 'main.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'api', 'main.py'), encoding='utf-8').read()
         idx = src.find('async def readyz()')
         end = src.find('\n\n@app.', idx)
         fn  = src[idx:end]
@@ -90,7 +90,7 @@ class TestAPIEndpoints:
 
     def test_pydantic_models_defined(self):
         """Required Pydantic models exist"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'api', 'main.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'api', 'main.py'), encoding='utf-8').read()
         for model in ['SotuvSo_rov', 'KirimSo_rov', 'QarzTolashSo_rov']:
             assert f'class {model}' in src
 
@@ -100,24 +100,24 @@ class TestWorkerTasks:
 
     def test_worker_syntax(self):
         """worker/tasks.py has valid syntax"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'worker', 'tasks.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'worker', 'tasks.py'), encoding='utf-8').read()
         ast.parse(src)
 
     def test_crontab_used(self):
         """Beat schedule uses crontab, not raw dicts"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'worker', 'tasks.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'worker', 'tasks.py'), encoding='utf-8').read()
         assert 'from celery.schedules import crontab' in src
         assert '"schedule": {' not in src
 
     def test_export_is_real(self):
         """Export async function writes a real file (openpyxl)"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'worker', 'tasks.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'worker', 'tasks.py'), encoding='utf-8').read()
         assert 'openpyxl' in src
         assert 'wb.save(' in src
 
     def test_haftalik_sends_notification(self):
         """Haftalik task sends real Telegram messages"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'worker', 'tasks.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'worker', 'tasks.py'), encoding='utf-8').read()
         # find the async implementation (second occurrence after the task wrapper)
         idx = src.find('async def _haftalik_hisobot_async')
         fn  = src[idx:idx+2000]
@@ -125,7 +125,7 @@ class TestWorkerTasks:
 
     def test_qarz_sends_notification(self):
         """Qarz task sends real Telegram messages"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'worker', 'tasks.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'worker', 'tasks.py'), encoding='utf-8').read()
         idx = src.find('async def _qarz_eslatma_async')
         fn  = src[idx:idx+2000]
         assert 'sendMessage' in fn
@@ -136,13 +136,13 @@ class TestRLSConsistency:
 
     def test_pool_uses_app_uid(self):
         """shared/database/pool.py uses app.uid"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'shared', 'database', 'pool.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'shared', 'database', 'pool.py'), encoding='utf-8').read()
         assert "app.uid" in src
         assert "app.user_id" not in src
 
     def test_schema_current_uid_uses_app_uid(self):
         """schema.sql current_uid() reads app.uid"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'shared', 'database', 'schema.sql')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'shared', 'database', 'schema.sql'), encoding='utf-8').read()
         assert "app.uid" in src
 
 
@@ -152,17 +152,17 @@ class TestDockerfiles:
     def test_no_invalid_copy(self):
         """No Dockerfile uses invalid ../../shared COPY"""
         for svc in ['bot', 'api', 'worker', 'cognitive']:
-            df = open(os.path.join(os.path.dirname(__file__), '..', 'services', svc, 'Dockerfile')).read()
+            df = open(os.path.join(os.path.dirname(__file__), '..', 'services', svc, 'Dockerfile'), encoding='utf-8').read()
             assert '../../shared' not in df, f"{svc}/Dockerfile has invalid ../../shared"
 
     def test_worker_has_pg_client(self):
         """Worker Dockerfile installs postgresql-client for pg_dump"""
-        df = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'worker', 'Dockerfile')).read()
+        df = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'worker', 'Dockerfile'), encoding='utf-8').read()
         assert 'postgresql-client' in df
 
     def test_cognitive_entrypoint(self):
         """Cognitive Dockerfile uses api:app not main:app"""
-        df = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'cognitive', 'Dockerfile')).read()
+        df = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'cognitive', 'Dockerfile'), encoding='utf-8').read()
         assert 'api:app' in df
         assert 'main:app' not in df
 
@@ -172,34 +172,34 @@ class TestWorkerFixes:
 
     def test_obuna_sends_notification(self):
         """Obuna task sends real Telegram messages"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'worker', 'tasks.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'worker', 'tasks.py'), encoding='utf-8').read()
         idx = src.find('async def _obuna_eslatma_async')
         fn  = src[idx:idx+2000]
         assert 'sendMessage' in fn, "Obuna task does not send Telegram messages"
 
     def test_export_passes_format(self):
         """katta_export task accepts format_ argument"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'worker', 'tasks.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'worker', 'tasks.py'), encoding='utf-8').read()
         idx = src.find('def katta_export(')
         fn  = src[idx:idx+200]
         assert 'format_' in fn, "katta_export missing format_ arg"
 
     def test_nakladnoy_generates_real_file(self):
         """nakladnoy task writes actual files (not fake path)"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'worker', 'tasks.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'worker', 'tasks.py'), encoding='utf-8').read()
         assert '_nakl_word' in src, "No _nakl_word function"
         assert '_nakl_excel' in src, "No _nakl_excel function"
         assert '_nakl_pdf' in src, "No _nakl_pdf function"
-        assert 'python-docx' in open(os.path.join(os.path.dirname(__file__), '..', 'services', 'worker', 'requirements.txt')).read()
+        assert 'python-docx' in open(os.path.join(os.path.dirname(__file__), '..', 'services', 'worker', 'requirements.txt'), encoding='utf-8').read()
 
     def test_export_pdf_implemented(self):
         """PDF export path is implemented"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'worker', 'tasks.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'worker', 'tasks.py'), encoding='utf-8').read()
         assert '_export_pdf_async' in src, "PDF export function missing"
 
     def test_no_str_e_in_results(self):
         """Worker tasks do not return raw str(e) in result dicts"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'worker', 'tasks.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'worker', 'tasks.py'), encoding='utf-8').read()
         import re
         # Look for return dicts with str(e)
         raw = re.findall(r'"xato":\s*str\(e\)', src)
@@ -211,12 +211,12 @@ class TestAPIFixes:
 
     def test_readyz_has_strict_mode(self):
         """readyz has REDIS_REQUIRED env support"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'api', 'main.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'api', 'main.py'), encoding='utf-8').read()
         assert 'REDIS_REQUIRED' in src
 
     def test_export_passes_format_to_worker(self):
         """export_trigger passes format_ to celery task"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'api', 'main.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'api', 'main.py'), encoding='utf-8').read()
         idx = src.find('async def export_trigger')
         fn  = src[idx:idx+1200]  # wider window: validation code added before args
         assert 'format_' in fn
@@ -231,7 +231,7 @@ class TestRLSHelpers:
 
     def test_rls_conn_notrx_uses_set_config(self):
         """rls_conn_notrx uses set_config, not SET LOCAL (works outside transactions)"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'shared', 'database', 'pool.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'shared', 'database', 'pool.py'), encoding='utf-8').read()
         idx = src.find('async def rls_conn_notrx')
         fn  = src[idx:idx+700]
         # Verify set_config is used for the actual DB call
@@ -242,7 +242,7 @@ class TestRLSHelpers:
 
     def test_rls_conn_uses_transaction(self):
         """rls_conn uses a transaction context for RLS safety"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'shared', 'database', 'pool.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'shared', 'database', 'pool.py'), encoding='utf-8').read()
         idx = src.find('async def rls_conn(')
         # function can be large; search 1500 chars
         fn  = src[idx:idx+1500]
@@ -254,13 +254,13 @@ class TestBotConfig:
 
     def test_scheduler_uses_config_fields(self):
         """Bot scheduler uses _CFG.kunlik_soat etc, not hardcoded hours"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py'), encoding='utf-8').read()
         assert '_CFG.kunlik_soat' in src, "Scheduler should use _CFG.kunlik_soat"
         assert '_CFG.haftalik_soat' in src
 
     def test_no_bot_raw_error_to_user(self):
         """Bot does not leak raw xato to users via f-string"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py'), encoding='utf-8').read()
         import re
         leaks = re.findall(r'f"[^"]*\{xato[^"]*\}"', src)
         assert not leaks, f"Raw error leaks: {leaks[:3]}"
@@ -271,7 +271,7 @@ class TestExportSemantics:
 
     def test_export_tur_validation(self):
         """export_trigger validates tur parameter"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'api', 'main.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'api', 'main.py'), encoding='utf-8').read()
         idx = src.find('async def export_trigger')
         fn  = src[idx:idx+1500]
         assert 'haftalik' in fn, "export_trigger should handle haftalik tur"
@@ -279,7 +279,7 @@ class TestExportSemantics:
 
     def test_export_date_computed_from_tur(self):
         """Worker computes sana_dan from tur when not provided"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'worker', 'tasks.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'worker', 'tasks.py'), encoding='utf-8').read()
         idx = src.find('async def _export_async')
         fn  = src[idx:idx+1000]
         assert 'timedelta' in fn, "_export_async should compute dates from tur"
@@ -287,13 +287,13 @@ class TestExportSemantics:
 
     def test_export_status_endpoint_exists(self):
         """API has export status endpoint"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'api', 'main.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'api', 'main.py'), encoding='utf-8').read()
         assert 'export/{task_id}' in src, "Missing export status endpoint"
         assert 'export/file/{task_id}' in src, "Missing export file download endpoint"
 
     def test_cyrillic_key_normalized(self):
         """No Cyrillic confusable characters in dict keys in worker"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'worker', 'tasks.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'worker', 'tasks.py'), encoding='utf-8').read()
         import re
         # Check for the specific known bug: "xatо" with Cyrillic o
         cyr_o = '\u043e'  # Cyrillic о
@@ -305,21 +305,21 @@ class TestNakladnoyImports:
 
     def test_uchala_format_no_stale_import(self):
         """uchala_format does not import from stale services.export_pdf path"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'bot_services', 'nakladnoy.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'bot_services', 'nakladnoy.py'), encoding='utf-8').read()
         idx = src.find('def uchala_format')
         fn  = src[idx:idx+1000]
         assert 'from services.export_pdf import' not in fn,             "stale 'from services.export_pdf' import still present"
 
     def test_uchala_format_uses_correct_path(self):
         """uchala_format imports export_pdf from correct bot_services path"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'bot_services', 'nakladnoy.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'bot_services', 'nakladnoy.py'), encoding='utf-8').read()
         idx = src.find('def uchala_format')
         fn  = src[idx:idx+1000]
         assert 'bot_services.export_pdf' in fn,             "uchala_format should import from services.bot.bot_services.export_pdf"
 
     def test_nakladnoy_worker_delivery(self):
         """Worker nakladnoy task delivers file via Telegram"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'worker', 'tasks.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'worker', 'tasks.py'), encoding='utf-8').read()
         assert '_nakl_yuborish' in src, "No Telegram delivery function in nakladnoy task"
         idx = src.find('async def _nakl_yuborish')
         fn  = src[idx:idx+1000]
@@ -333,7 +333,7 @@ class TestVersionConsistency:
         """No stale v18 banners in source files"""
         import glob
         for path in glob.glob('services/**/*.py', recursive=True) + glob.glob('shared/**/*.py', recursive=True):
-            src = open(path).read()
+            src = open(path, encoding='utf-8').read()
             banner = src[:600]
             if 'v18' in banner and 'v21' not in banner:
                 assert False, f"{path} has stale v18 banner without v21"
@@ -344,7 +344,7 @@ class TestHealthCommand:
 
     def test_health_uses_datetime_datetime(self):
         """health_check uses datetime.datetime.now(), not datetime.now()"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py'), encoding='utf-8').read()
         idx = src.find('async def health_check')
         fn  = src[idx:idx+800]
         # Must not call datetime.now() — should call datetime.datetime.now()
@@ -353,8 +353,8 @@ class TestHealthCommand:
 
     def test_bot_version_is_current(self):
         """bot __version__ is 23.0"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py')).read()
-        assert '__version__ = "23.2"' in src, "bot __version__ not updated to 23.0"
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py'), encoding='utf-8').read()
+        assert '__version__ = "25.0"' in src, "bot __version__ not updated to 23.0"
 
 
 class TestExportCrossContainer:
@@ -362,7 +362,7 @@ class TestExportCrossContainer:
 
     def test_worker_stores_base64_not_filepath(self):
         """Worker stores content_b64 in Celery result, not a filesystem path"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'worker', 'tasks.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'worker', 'tasks.py'), encoding='utf-8').read()
         idx = src.find('def katta_export')
         fn  = src[idx:idx+2000]
         assert 'content_b64' in fn, "Worker does not store content_b64 in result"
@@ -370,7 +370,7 @@ class TestExportCrossContainer:
 
     def test_api_reads_base64_not_filesystem(self):
         """API export file endpoint reads base64 from Redis, not a filesystem path"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'api', 'main.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'api', 'main.py'), encoding='utf-8').read()
         idx = src.find('async def export_file_yuklab')
         fn  = src[idx:idx+1200]
         assert 'content_b64' in fn, "API does not read content_b64 from result"
@@ -381,7 +381,7 @@ class TestExportCrossContainer:
 
     def test_export_status_honest(self):
         """Export status endpoint returns honest state, not 'tayyor' for missing file"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'api', 'main.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'api', 'main.py'), encoding='utf-8').read()
         idx = src.find('async def export_natija')
         fn  = src[idx:idx+1500]
         # Should check content_b64 exists, not os.path.exists
@@ -394,7 +394,7 @@ class TestStartupSafety:
 
     def test_boshlash_has_error_handling(self):
         """Bot boshlash() wraps DB init in try/except"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py'), encoding='utf-8').read()
         idx = src.find('async def boshlash(')
         fn  = src[idx:idx+1000]
         assert 'try:' in fn, "boshlash() has no try/except around DB init"
@@ -405,15 +405,15 @@ class TestStartupSafety:
         """All service __version__ strings are 21.3"""
         import glob
         for path in glob.glob('services/**/*.py', recursive=True):
-            src = open(path).read()
+            src = open(path, encoding='utf-8').read()
             import re
             v = re.search(r'__version__\s*=\s*"([^"]+)"', src)
-            if v and v.group(1) not in ('21.3', '21.4', '21.5', '22.0', '23.0', '23.2', ''):
+            if v and v.group(1) not in ('21.3', '21.4', '21.5', '22.0', '23.0', '25.0', ''):
                 assert False, f"{path}: __version__={v.group(1)} (expected 21.3-21.5)"
 
     def test_cognitive_api_version(self):
         """cognitive/api.py FastAPI version is 21.3"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'cognitive', 'api.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'cognitive', 'api.py'), encoding='utf-8').read()
         assert '21.3' in src, "cognitive/api.py has wrong version"
 
 
@@ -422,7 +422,7 @@ class TestExportSecurity:
 
     def test_task_id_uuid_validated(self):
         """Export endpoints validate task_id as UUID"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'api', 'main.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'api', 'main.py'), encoding='utf-8').read()
         idx = src.find('async def export_natija')
         fn  = src[idx:idx+500]
         assert 'UUID' in fn or 'uuid' in fn.lower(), \
@@ -430,7 +430,7 @@ class TestExportSecurity:
 
     def test_nakladnoy_empty_content_guard(self):
         """nakladnoy_yaratish checks content_b64 is non-empty before returning success"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'worker', 'tasks.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'worker', 'tasks.py'), encoding='utf-8').read()
         idx = src.find('def nakladnoy_yaratish')
         fn  = src[idx:idx+1500]
         assert 'if not content_b64' in fn, \
@@ -438,7 +438,7 @@ class TestExportSecurity:
 
     def test_nakl_yuborish_checks_file_exists(self):
         """_nakl_yuborish checks file exists before opening"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'worker', 'tasks.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'worker', 'tasks.py'), encoding='utf-8').read()
         idx = src.find('async def _nakl_yuborish')
         fn  = src[idx:idx+600]
         assert 'os.path.exists' in fn, "_nakl_yuborish does not check file exists"
@@ -449,7 +449,7 @@ class TestPass3Fixes:
 
     def test_chetvert_key_all_cyrillic(self):
         """uzb_nlp.py четверть key must be all-Cyrillic (no Latin e)"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'shared', 'utils', 'uzb_nlp.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'shared', 'utils', 'uzb_nlp.py'), encoding='utf-8').read()
         import re
         keys = re.findall(r'"([^"]+)":\s*Decimal', src)
         for key in keys:
@@ -467,7 +467,7 @@ class TestPass3Fixes:
 
     def test_sana_gacha_not_truncated(self):
         """API export_trigger uses sana_gacha, not sana_gach"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'api', 'main.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'api', 'main.py'), encoding='utf-8').read()
         idx = src.find('async def export_trigger')
         fn  = src[idx:idx+1500]
         import re
@@ -476,7 +476,7 @@ class TestPass3Fixes:
 
     def test_export_failure_state_handled(self):
         """export_natija explicitly handles FAILURE state"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'api', 'main.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'api', 'main.py'), encoding='utf-8').read()
         idx = src.find('async def export_natija')
         fn_end = src.find('\n@app.', idx + 10)
         fn  = src[idx:fn_end]
@@ -488,14 +488,14 @@ class TestPass3Fixes:
 
     def test_voice_ishga_tushir_accepts_model(self):
         """voice.ishga_tushir accepts optional model parameter"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'bot_services', 'voice.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'bot_services', 'voice.py'), encoding='utf-8').read()
         idx = src.find('def ishga_tushir')
         sig = src[idx:idx+80]
         assert 'model' in sig, "ishga_tushir does not accept model parameter"
 
     def test_boshlash_passes_model_to_voice(self):
         """boshlash() passes gemini_model from config to voice service"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py'), encoding='utf-8').read()
         idx = src.find('ovoz_xizmat.ishga_tushir')
         call = src[idx:idx+100]
         assert 'gemini_model' in call, \
@@ -503,9 +503,9 @@ class TestPass3Fixes:
 
     def test_bot_banner_model_matches_config(self):
         """Bot banner Gemini version matches config default"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py'), encoding='utf-8').read()
         banner = src[:600]
-        cfg_src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'config.py')).read()
+        cfg_src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'config.py'), encoding='utf-8').read()
         import re
         cfg_model = re.search(r'gemini_model.*=.*"([^"]+)"', cfg_src)
         if cfg_model:
@@ -516,7 +516,7 @@ class TestPass3Fixes:
 
     def test_tasdiq_cb_error_inside_except(self):
         """tasdiq_cb error message is inside except block, not after it"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py'), encoding='utf-8').read()
         idx = src.find('async def tasdiq_cb')
         fn = src[idx:]
         # Find the except block
@@ -536,7 +536,7 @@ class TestPass3Fixes:
 
     def test_ovoz_qabul_uses_tempfile(self):
         """ovoz_qabul writes audio to tempfile before STT"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py'), encoding='utf-8').read()
         idx = src.find('async def ovoz_qabul')
         fn = src[idx:idx+900]
         assert 'tempfile' in fn, "ovoz_qabul does not use tempfile"
@@ -553,7 +553,7 @@ class TestV21_3MergedModules:
 
     def test_kassa_module_exists(self):
         """Kassa route module exists and has valid syntax"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'api', 'routes', 'kassa.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'api', 'routes', 'kassa.py'), encoding='utf-8').read()
         ast.parse(src)
         assert 'class KassaStats' in src
         assert 'class KassaOperatsiya' in src
@@ -563,27 +563,27 @@ class TestV21_3MergedModules:
 
     def test_kassa_uses_rls(self):
         """Kassa uses RLS connection"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'api', 'routes', 'kassa.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'api', 'routes', 'kassa.py'), encoding='utf-8').read()
         assert 'rls_conn' in src, "Kassa does not use RLS"
 
     def test_kassa_uses_decimal(self):
         """Kassa uses Decimal for money"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'api', 'routes', 'kassa.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'api', 'routes', 'kassa.py'), encoding='utf-8').read()
         assert 'Decimal' in src, "Kassa does not use Decimal"
 
     def test_kassa_validates_tur(self):
         """Kassa validates tur field (kirim/chiqim only)"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'api', 'routes', 'kassa.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'api', 'routes', 'kassa.py'), encoding='utf-8').read()
         assert 'kirim' in src and 'chiqim' in src
 
     def test_kassa_validates_usul(self):
         """Kassa validates usul field (naqd/karta/otkazma)"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'api', 'routes', 'kassa.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'api', 'routes', 'kassa.py'), encoding='utf-8').read()
         assert 'naqd' in src and 'karta' in src and 'otkazma' in src
 
     def test_vision_module_exists(self):
         """Vision AI module exists and has valid syntax"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'shared', 'services', 'vision.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'shared', 'services', 'vision.py'), encoding='utf-8').read()
         ast.parse(src)
         assert 'async def rasm_tahlil' in src
         assert 'async def chek_skanerlash' in src
@@ -591,36 +591,36 @@ class TestV21_3MergedModules:
 
     def test_vision_graceful_degradation(self):
         """Vision AI handles missing client gracefully"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'shared', 'services', 'vision.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'shared', 'services', 'vision.py'), encoding='utf-8').read()
         assert 'if not _gemini_client' in src, "No graceful handling for missing Gemini"
 
     def test_vision_timeout(self):
         """Vision AI has timeout protection"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'shared', 'services', 'vision.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'shared', 'services', 'vision.py'), encoding='utf-8').read()
         assert 'TimeoutError' in src
         assert 'timeout=30' in src or 'timeout=' in src
 
     def test_websocket_module_exists(self):
         """WebSocket module exists and has valid syntax"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'api', 'routes', 'websocket.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'api', 'routes', 'websocket.py'), encoding='utf-8').read()
         ast.parse(src)
         assert 'class ConnectionManager' in src
         assert 'async def websocket_endpoint' in src
 
     def test_websocket_jwt_auth(self):
         """WebSocket requires JWT authentication"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'api', 'routes', 'websocket.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'api', 'routes', 'websocket.py'), encoding='utf-8').read()
         assert '_jwt_tekshir' in src
         assert 'JWT_SECRET' in src or 'jwt' in src.lower()
 
     def test_websocket_rejects_no_secret(self):
         """WebSocket rejects connection if JWT_SECRET missing"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'api', 'routes', 'websocket.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'api', 'routes', 'websocket.py'), encoding='utf-8').read()
         assert 'not secret' in src or 'close' in src
 
     def test_invoice_module_exists(self):
         """Invoice/Faktura module exists and has valid syntax"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'shared', 'services', 'invoice.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'shared', 'services', 'invoice.py'), encoding='utf-8').read()
         ast.parse(src)
         assert 'def faktura_yaratish' in src
         assert 'def _faktura_word' in src
@@ -628,64 +628,64 @@ class TestV21_3MergedModules:
 
     def test_invoice_returns_both_formats(self):
         """Invoice returns both word and pdf"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'shared', 'services', 'invoice.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'shared', 'services', 'invoice.py'), encoding='utf-8').read()
         idx = src.find('def faktura_yaratish')
         fn = src[idx:idx+500]
         assert '"word"' in fn and '"pdf"' in fn
 
     def test_rasm_handler_exists(self):
         """Bot rasm handler exists and has valid syntax"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'bot_services', 'rasm_handler.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'bot_services', 'rasm_handler.py'), encoding='utf-8').read()
         ast.parse(src)
         assert 'async def rasm_qabul' in src
 
     def test_rasm_handler_uses_vision(self):
         """Rasm handler calls Vision AI"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'bot_services', 'rasm_handler.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'bot_services', 'rasm_handler.py'), encoding='utf-8').read()
         assert 'rasm_tahlil' in src
 
     def test_bot_registers_photo_handler(self):
         """Bot main.py registers PHOTO handler"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py'), encoding='utf-8').read()
         assert 'filters.PHOTO' in src, "PHOTO handler not registered"
         assert 'rasm_xizmat' in src or 'rasm_handler' in src
 
     def test_schema_has_kassa_table(self):
         """schema.sql has kassa_operatsiyalar table"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'shared', 'database', 'schema.sql')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'shared', 'database', 'schema.sql'), encoding='utf-8').read()
         assert 'kassa_operatsiyalar' in src
         assert 'kassa_isolation' in src, "Kassa table has no RLS policy"
 
     def test_schema_has_vision_table(self):
         """schema.sql has vision_log table"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'shared', 'database', 'schema.sql')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'shared', 'database', 'schema.sql'), encoding='utf-8').read()
         assert 'vision_log' in src
         assert 'vision_isolation' in src
 
     def test_schema_has_faktura_table(self):
         """schema.sql has fakturalar table"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'shared', 'database', 'schema.sql')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'shared', 'database', 'schema.sql'), encoding='utf-8').read()
         assert 'fakturalar' in src
         assert 'faktura_isolation' in src
 
     def test_api_includes_kassa_router(self):
         """API main.py includes kassa router"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'api', 'main.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'api', 'main.py'), encoding='utf-8').read()
         assert 'kassa_router' in src
 
     def test_api_includes_websocket_router(self):
         """API main.py includes websocket router"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'api', 'main.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'api', 'main.py'), encoding='utf-8').read()
         assert 'ws_router' in src
 
     def test_bot_vision_init(self):
         """Bot initializes Vision AI in boshlash()"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py'), encoding='utf-8').read()
         assert 'vision_init' in src or 'vision.ishga_tushir' in src
 
     def test_kassa_no_float_in_db(self):
         """Kassa schema uses NUMERIC, not FLOAT"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'shared', 'database', 'schema.sql')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'shared', 'database', 'schema.sql'), encoding='utf-8').read()
         idx = src.find('kassa_operatsiyalar')
         block = src[idx:idx+500]
         assert 'NUMERIC' in block, "Kassa uses FLOAT instead of NUMERIC"
@@ -697,35 +697,35 @@ class TestTurboOptimizations:
 
     def test_bot_has_user_cache(self):
         """Bot has _user_ol_kesh function for cached user lookups"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py'), encoding='utf-8').read()
         assert 'async def _user_ol_kesh' in src
         assert '_KESH_USER_TTL' in src
 
     def test_bot_uses_cached_user(self):
         """Bot uses _user_ol_kesh with db.user_ol fallback"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py'), encoding='utf-8').read()
         assert '_user_ol_kesh' in src, "Bot should use _user_ol_kesh cache wrapper"
         assert 'async def _user_ol_kesh' in src, "Cache function should exist"
 
     def test_pool_has_statement_cache(self):
         """DB pool has statement_cache_size configured"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'shared', 'database', 'pool.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'shared', 'database', 'pool.py'), encoding='utf-8').read()
         assert 'statement_cache_size' in src
 
     def test_pool_has_max_queries(self):
         """DB pool has max_queries for connection recycling"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'shared', 'database', 'pool.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'shared', 'database', 'pool.py'), encoding='utf-8').read()
         assert 'max_queries' in src
 
     def test_pool_has_health_check(self):
         """DB pool has pool_health() function"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'shared', 'database', 'pool.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'shared', 'database', 'pool.py'), encoding='utf-8').read()
         assert 'async def pool_health' in src
         assert 'ping_ms' in src
 
     def test_health_shows_pool_stats(self):
         """Bot health command shows DB pool metrics"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py'), encoding='utf-8').read()
         idx = src.find('async def health_check')
         fn = src[idx:idx+800]
         assert 'pool_health' in fn, "health_check doesn't show pool stats"
@@ -733,29 +733,29 @@ class TestTurboOptimizations:
 
     def test_api_has_timing_middleware(self):
         """API has X-Response-Time middleware"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'api', 'main.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'api', 'main.py'), encoding='utf-8').read()
         assert 'X-Response-Time' in src
         assert 'timing_middleware' in src
 
     def test_cache_invalidation_on_user_change(self):
         """Bot invalidates cache when user data changes"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py'), encoding='utf-8').read()
         assert '_kesh_tozala(f"user:{uid}")' in src, \
             "No cache invalidation when user data changes"
 
     def test_bot_menu_has_kassa(self):
         """Bot main menu has kassa button"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py'), encoding='utf-8').read()
         assert 'm:kassa' in src, "Main menu missing kassa button"
 
     def test_bot_menu_has_rasm(self):
         """Bot main menu has rasm OCR button"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py'), encoding='utf-8').read()
         assert 'm:rasm' in src, "Main menu missing rasm button"
 
     def test_kassa_handler_in_menyu(self):
         """menyu_cb handles kassa action"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py'), encoding='utf-8').read()
         idx = src.find('async def menyu_cb')
         fn_end = src.find("\nasync def ", idx + 10)
         fn = src[idx:fn_end] if fn_end > idx else src[idx:]
@@ -773,7 +773,7 @@ class TestTurboOptimizations:
 
     def test_env_example_complete(self):
         """.env.example has all required variables"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', '.env.example')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', '.env.example'), encoding='utf-8').read()
         for var in ['BOT_TOKEN', 'DATABASE_URL', 'ANTHROPIC_API_KEY',
                     'GEMINI_API_KEY', 'ADMIN_IDS', 'JWT_SECRET',
                     'REDIS_URL', 'COGNITIVE_URL']:
@@ -785,25 +785,25 @@ class TestDualBrainRouter:
 
     def test_ai_router_exists(self):
         """ai_router.py exists and has valid syntax"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'cognitive', 'ai_router.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'cognitive', 'ai_router.py'), encoding='utf-8').read()
         ast.parse(src)
 
     def test_cognitive_router_class(self):
         """CognitiveRouter class exists with process method"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'cognitive', 'ai_router.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'cognitive', 'ai_router.py'), encoding='utf-8').read()
         assert 'class CognitiveRouter' in src
         assert 'async def process' in src
 
     def test_task_types_defined(self):
         """All 10 TaskType enum values defined"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'cognitive', 'ai_router.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'cognitive', 'ai_router.py'), encoding='utf-8').read()
         for task in ['VOICE_STT','IMAGE_OCR','INVOICE_OCR','INTENT_PARSE','NLP_NORMALIZE',
                      'BUSINESS_LOGIC','REPORT_GEN','DATA_ANALYSIS','DECISION_VALID','EXPORT_ARCH']:
             assert task in src, f"TaskType.{task} missing"
 
     def test_routing_table_complete(self):
         """Routing table maps all tasks to correct model"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'cognitive', 'ai_router.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'cognitive', 'ai_router.py'), encoding='utf-8').read()
         assert '_ROUTING_TABLE' in src
         # Gemini tasks
         for task in ['VOICE_STT','IMAGE_OCR','INVOICE_OCR','INTENT_PARSE','NLP_NORMALIZE']:
@@ -814,14 +814,14 @@ class TestDualBrainRouter:
 
     def test_fallback_mechanism(self):
         """Router has fallback from one model to another"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'cognitive', 'ai_router.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'cognitive', 'ai_router.py'), encoding='utf-8').read()
         assert 'fallback' in src.lower()
         assert 'fallback_model' in src
         assert 'fallback_used' in src
 
     def test_convenience_methods(self):
         """Router has convenience methods"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'cognitive', 'ai_router.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'cognitive', 'ai_router.py'), encoding='utf-8').read()
         assert 'async def voice_to_text' in src
         assert 'async def image_to_data' in src
         assert 'async def parse_intent' in src
@@ -830,7 +830,7 @@ class TestDualBrainRouter:
 
     def test_metrics_tracking(self):
         """Router tracks metrics (latency, calls, errors)"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'cognitive', 'ai_router.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'cognitive', 'ai_router.py'), encoding='utf-8').read()
         assert '_record_metric' in src
         assert 'def stats' in src
         assert 'total_calls' in src
@@ -838,30 +838,30 @@ class TestDualBrainRouter:
 
     def test_gemini_client_class(self):
         """_GeminiClient has init and async call"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'cognitive', 'ai_router.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'cognitive', 'ai_router.py'), encoding='utf-8').read()
         assert 'class _GeminiClient' in src
         assert 'async def call' in src
 
     def test_claude_client_class(self):
         """_ClaudeClient has init and async call"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'cognitive', 'ai_router.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'cognitive', 'ai_router.py'), encoding='utf-8').read()
         assert 'class _ClaudeClient' in src
         assert 'temperature=0.0' in src
 
     def test_json_parse_handles_markdown(self):
         """_try_parse_json handles markdown code fences"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'cognitive', 'ai_router.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'cognitive', 'ai_router.py'), encoding='utf-8').read()
         assert '```json' in src
         assert '```' in src
 
     def test_cognitive_api_uses_router(self):
         """cognitive/api.py uses ai_router"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'cognitive', 'api.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'cognitive', 'api.py'), encoding='utf-8').read()
         assert 'from ai_router import' in src or 'ai_router' in src
 
     def test_cognitive_api_dual_brain_endpoints(self):
         """cognitive/api.py has MoE endpoints"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'cognitive', 'api.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'cognitive', 'api.py'), encoding='utf-8').read()
         assert '/tahlil' in src
         assert '/ovoz' in src
         assert '/rasm' in src
@@ -870,13 +870,13 @@ class TestDualBrainRouter:
 
     def test_bot_wires_router_in_boshlash(self):
         """Bot boshlash() initializes Dual-Brain router"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py'), encoding='utf-8').read()
         assert 'router_init' in src
         assert 'Dual-Brain' in src or 'MoE' in src
 
     def test_router_singleton(self):
         """get_router returns singleton"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'cognitive', 'ai_router.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'cognitive', 'ai_router.py'), encoding='utf-8').read()
         assert 'def get_router' in src
         assert 'def router_init' in src
         assert '_router' in src
@@ -887,7 +887,7 @@ class TestKassaAuthSecurity:
 
     def test_kassa_no_default_uid(self):
         """kassa routes must NOT have uid: int = 0"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'api', 'routes', 'kassa.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'api', 'routes', 'kassa.py'), encoding='utf-8').read()
         import re
         # Find all function signatures with uid parameter
         fns = re.findall(r'async def \w+\([^)]*uid[^)]*\)', src)
@@ -897,12 +897,12 @@ class TestKassaAuthSecurity:
 
     def test_kassa_imports_get_uid(self):
         """kassa.py imports get_uid from deps"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'api', 'routes', 'kassa.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'api', 'routes', 'kassa.py'), encoding='utf-8').read()
         assert 'from services.api.deps import get_uid' in src
 
     def test_deps_module_exists(self):
         """services/api/deps.py exists with get_uid"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'api', 'deps.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'api', 'deps.py'), encoding='utf-8').read()
         ast.parse(src)
         assert 'async def get_uid' in src
         assert 'jwt_tekshir' in src
@@ -911,7 +911,7 @@ class TestKassaAuthSecurity:
 
     def test_main_imports_get_uid_from_deps(self):
         """main.py imports get_uid from deps (no duplication)"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'api', 'main.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'api', 'main.py'), encoding='utf-8').read()
         assert 'from services.api.deps import get_uid' in src
         # Should NOT define get_uid inline anymore
         count = src.count('async def get_uid')
@@ -923,28 +923,28 @@ class TestSchemaForeignKeys:
 
     def test_kassa_fk(self):
         """kassa_operatsiyalar.user_id references users(id)"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'shared', 'database', 'schema.sql')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'shared', 'database', 'schema.sql'), encoding='utf-8').read()
         idx = src.find('kassa_operatsiyalar')
         block = src[idx:idx+400]
         assert 'REFERENCES users(id)' in block, "kassa missing FK to users"
 
     def test_vision_fk(self):
         """vision_log.user_id references users(id)"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'shared', 'database', 'schema.sql')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'shared', 'database', 'schema.sql'), encoding='utf-8').read()
         idx = src.find('vision_log')
         block = src[idx:idx+400]
         assert 'REFERENCES users(id)' in block, "vision_log missing FK to users"
 
     def test_faktura_fk(self):
         """fakturalar.user_id references users(id)"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'shared', 'database', 'schema.sql')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'shared', 'database', 'schema.sql'), encoding='utf-8').read()
         idx = src.find('fakturalar')
         block = src[idx:idx+400]
         assert 'REFERENCES users(id)' in block, "fakturalar missing FK to users"
 
     def test_migration_has_fk(self):
         """Migration file also has FK constraints"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'shared', 'migrations', 'versions', '001_v21_3_kassa_vision_faktura.sql')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'shared', 'migrations', 'versions', '001_v21_3_kassa_vision_faktura.sql'), encoding='utf-8').read()
         assert src.count('REFERENCES users(id)') >= 3, "Migration missing FK constraints"
 
 
@@ -953,7 +953,7 @@ class TestDecimalIntegrity:
 
     def test_kassa_response_models_use_decimal(self):
         """KassaStats and KassaQator use Decimal, not float"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'api', 'routes', 'kassa.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'api', 'routes', 'kassa.py'), encoding='utf-8').read()
         # KassaStats fields
         idx = src.find('class KassaStats')
         block = src[idx:src.find('class Kassa', idx + 10)]
@@ -962,14 +962,14 @@ class TestDecimalIntegrity:
 
     def test_kassa_no_float_in_db_write(self):
         """kassa_operatsiya_yarat does not convert Decimal to float before DB write"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'api', 'routes', 'kassa.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'api', 'routes', 'kassa.py'), encoding='utf-8').read()
         idx = src.find('async def kassa_operatsiya_yarat')
         fn = src[idx:idx+500]
         assert 'float(data.summa)' not in fn, "DB write converts Decimal to float"
 
     def test_kassa_stats_no_float_conversion(self):
         """kassa_stats does not use float() on DB values"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'api', 'routes', 'kassa.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'api', 'routes', 'kassa.py'), encoding='utf-8').read()
         idx = src.find('async def kassa_stats')
         end = src.find('async def ', idx + 10)
         fn = src[idx:end]
@@ -981,7 +981,7 @@ class TestTimezoneConsistency:
 
     def test_kassa_uses_tz_aware_today(self):
         """kassa does not use bare CURRENT_DATE (timezone-unaware)"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'api', 'routes', 'kassa.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'api', 'routes', 'kassa.py'), encoding='utf-8').read()
         # Should use AT TIME ZONE based comparison, not bare CURRENT_DATE
         assert 'Asia/Tashkent' in src, "Kassa missing timezone"
         # The _TODAY_SQL constant should handle this
@@ -993,7 +993,7 @@ class TestBotNewCommands:
 
     def test_cmd_kassa_exists(self):
         """cmd_kassa function exists with faol_tekshir"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py'), encoding='utf-8').read()
         assert 'async def cmd_kassa' in src
         idx = src.find('async def cmd_kassa')
         fn = src[idx:idx+600]
@@ -1002,7 +1002,7 @@ class TestBotNewCommands:
 
     def test_cmd_faktura_exists(self):
         """cmd_faktura function exists with faol_tekshir"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py'), encoding='utf-8').read()
         assert 'async def cmd_faktura' in src
         idx = src.find('async def cmd_faktura')
         fn = src[idx:idx+400]
@@ -1010,23 +1010,23 @@ class TestBotNewCommands:
 
     def test_cmd_kassa_registered(self):
         """cmd_kassa is registered as CommandHandler"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py'), encoding='utf-8').read()
         assert 'CommandHandler("kassa"' in src, "cmd_kassa not registered"
 
     def test_cmd_faktura_registered(self):
         """cmd_faktura is registered as CommandHandler"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py'), encoding='utf-8').read()
         assert 'CommandHandler("faktura"' in src, "cmd_faktura not registered"
 
     def test_faktura_cb_registered(self):
         """faktura callback handler registered"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py'), encoding='utf-8').read()
         assert 'faktura_cb' in src
         assert 'pattern=r"^fkt:"' in src, "faktura callback pattern missing"
 
     def test_bot_command_list_has_kassa_and_faktura(self):
         """BotCommand list includes kassa and faktura"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py'), encoding='utf-8').read()
         assert 'BotCommand("kassa"' in src, "kassa missing from command list"
         assert 'BotCommand("faktura"' in src, "faktura missing from command list"
 
@@ -1036,14 +1036,14 @@ class TestNoFloatInCriticalPaths:
 
     def test_kassa_no_float_in_db_write(self):
         """Kassa DB write uses Decimal, not float"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'api', 'routes', 'kassa.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'api', 'routes', 'kassa.py'), encoding='utf-8').read()
         idx = src.find('async def kassa_operatsiya_yarat')
         fn = src[idx:idx+500]
         assert 'float(data.summa)' not in fn, "Kassa DB write converts to float"
 
     def test_qarz_tolash_no_float_in_logic(self):
         """qarz_tolash does not use float() in calculation"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'api', 'main.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'api', 'main.py'), encoding='utf-8').read()
         idx = src.find('async def qarz_tolash_endpoint')
         end = src.find('\n@app.', idx + 10)
         fn = src[idx:end]
@@ -1053,7 +1053,7 @@ class TestNoFloatInCriticalPaths:
 
     def test_invoice_documents_float_usage(self):
         """Invoice uses _n() helper (documented display-only), not raw float()"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'shared', 'services', 'invoice.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'shared', 'services', 'invoice.py'), encoding='utf-8').read()
         assert 'def _n(' in src, "Invoice missing _n() display helper"
         # No raw float() in rendering functions (except in _n itself)
         for fn_name in ['_faktura_word', '_faktura_pdf']:
@@ -1070,18 +1070,18 @@ class TestTransactionPipeline:
 
     def test_pipeline_module_exists(self):
         """pipeline.py exists and has valid syntax"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'shared', 'services', 'pipeline.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'shared', 'services', 'pipeline.py'), encoding='utf-8').read()
         ast.parse(src)
 
     def test_tx_status_lifecycle(self):
         """Transaction has correct lifecycle statuses"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'shared', 'services', 'pipeline.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'shared', 'services', 'pipeline.py'), encoding='utf-8').read()
         for status in ['DRAFT', 'PENDING', 'CONFIRMED', 'POSTED', 'REJECTED', 'CORRECTED', 'VOIDED']:
             assert status in src, f"TxStatus.{status} missing"
 
     def test_confidence_gate_exists(self):
         """Confidence scoring system exists"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'shared', 'services', 'pipeline.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'shared', 'services', 'pipeline.py'), encoding='utf-8').read()
         assert 'class ConfidenceReport' in src
         assert 'evaluate_confidence' in src
         assert 'CONFIDENCE_AUTO_CONFIRM' in src
@@ -1089,7 +1089,7 @@ class TestTransactionPipeline:
 
     def test_confidence_thresholds_safe(self):
         """Auto-confirm threshold is high enough (>=0.90)"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'shared', 'services', 'pipeline.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'shared', 'services', 'pipeline.py'), encoding='utf-8').read()
         import re
         m = re.search(r'CONFIDENCE_AUTO_CONFIRM\s*=\s*([\d.]+)', src)
         assert m, "CONFIDENCE_AUTO_CONFIRM not found"
@@ -1098,7 +1098,7 @@ class TestTransactionPipeline:
 
     def test_deterministic_math(self):
         """hisob_tekshir_va_tuzat uses Decimal, not float"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'shared', 'services', 'pipeline.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'shared', 'services', 'pipeline.py'), encoding='utf-8').read()
         idx = src.find('def hisob_tekshir_va_tuzat')
         fn = src[idx:idx+1500]
         assert 'Decimal' in fn, "Business math must use Decimal"
@@ -1106,14 +1106,14 @@ class TestTransactionPipeline:
 
     def test_audit_yoz_exists(self):
         """audit_yoz function exists for immutable trace"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'shared', 'services', 'pipeline.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'shared', 'services', 'pipeline.py'), encoding='utf-8').read()
         assert 'async def audit_yoz' in src
         assert 'audit_log' in src
         assert 'HECH QACHON' in src  # Comment about never deleting
 
     def test_create_draft_function(self):
         """create_draft creates draft without writing to DB"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'shared', 'services', 'pipeline.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'shared', 'services', 'pipeline.py'), encoding='utf-8').read()
         assert 'def create_draft' in src
         idx = src.find('def create_draft')
         fn = src[idx:idx+800]
@@ -1123,12 +1123,12 @@ class TestTransactionPipeline:
 
     def test_draft_has_preview(self):
         """TransactionDraft has to_preview for user display"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'shared', 'services', 'pipeline.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'shared', 'services', 'pipeline.py'), encoding='utf-8').read()
         assert 'def to_preview' in src
 
     def test_ai_never_owns_math(self):
         """Deterministic check overrides AI calculations"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'shared', 'services', 'pipeline.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'shared', 'services', 'pipeline.py'), encoding='utf-8').read()
         # hisob_tekshir_va_tuzat must override AI jami
         idx = src.find('def hisob_tekshir_va_tuzat')
         fn = src[idx:idx+1500]
@@ -1137,7 +1137,7 @@ class TestTransactionPipeline:
 
     def test_gramm_kg_conversion(self):
         """Weight conversion (gramm→kg) in business logic"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'shared', 'services', 'pipeline.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'shared', 'services', 'pipeline.py'), encoding='utf-8').read()
         assert 'gramm' in src, "Missing gramm conversion in business logic"
         assert '1000' in src, "Missing kg divisor"
 
@@ -1146,7 +1146,7 @@ class TestFuzzyMatchEngine:
     """Fuzzy search for products and customers."""
 
     def test_fuzzy_module_exists(self):
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'shared', 'services', 'fuzzy_match.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'shared', 'services', 'fuzzy_match.py'), encoding='utf-8').read()
         ast.parse(src)
         assert 'def similarity' in src
         assert 'async def fuzzy_klient_top' in src
@@ -1155,12 +1155,12 @@ class TestFuzzyMatchEngine:
 
     def test_normalize_cyrillic(self):
         """normalize converts Cyrillic to Latin"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'shared', 'services', 'fuzzy_match.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'shared', 'services', 'fuzzy_match.py'), encoding='utf-8').read()
         assert '_CYR_TO_LAT' in src
 
     def test_trigram_scoring(self):
         """Similarity uses trigram scoring"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'shared', 'services', 'fuzzy_match.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'shared', 'services', 'fuzzy_match.py'), encoding='utf-8').read()
         assert '_trigrams' in src
         assert 'intersection' in src
 
@@ -1169,43 +1169,43 @@ class TestSafetyGuards:
     """Stock, debt, duplicate protection."""
 
     def test_guards_module_exists(self):
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'shared', 'services', 'guards.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'shared', 'services', 'guards.py'), encoding='utf-8').read()
         ast.parse(src)
 
     def test_duplicate_guard(self):
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'shared', 'services', 'guards.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'shared', 'services', 'guards.py'), encoding='utf-8').read()
         assert 'def is_duplicate_message' in src
         assert '_DUPLICATE_WINDOW' in src
 
     def test_stock_safety(self):
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'shared', 'services', 'guards.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'shared', 'services', 'guards.py'), encoding='utf-8').read()
         assert 'async def tekshir_qoldiq' in src
         assert 'kamchilik' in src
 
     def test_debt_limit_guard(self):
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'shared', 'services', 'guards.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'shared', 'services', 'guards.py'), encoding='utf-8').read()
         assert 'async def tekshir_qarz_limit' in src
         assert 'kredit_limit' in src
 
     def test_price_sanity_check(self):
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'shared', 'services', 'guards.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'shared', 'services', 'guards.py'), encoding='utf-8').read()
         assert 'async def tekshir_narx' in src
         assert 'ZARAR' in src
 
     def test_bot_uses_duplicate_guard(self):
         """Bot matn_qabul uses duplicate protection"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py'), encoding='utf-8').read()
         assert 'is_duplicate_message' in src
 
     def test_bot_uses_pipeline(self):
         """Bot _qayta_ishlash uses pipeline.create_draft"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py'), encoding='utf-8').read()
         assert 'from shared.services.pipeline import create_draft' in src
         assert 'draft = create_draft(' in src or 'create_draft(' in src
 
     def test_guards_use_decimal(self):
         """Guards use Decimal, not float for money"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'shared', 'services', 'guards.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'shared', 'services', 'guards.py'), encoding='utf-8').read()
         assert 'from decimal import Decimal' in src
 
 
@@ -1214,28 +1214,28 @@ class TestAuditWiring:
 
     def test_sotuv_has_audit(self):
         """sotuv save triggers audit_yoz"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py'), encoding='utf-8').read()
         idx = src.find('sotuv=await db.sotuv_saqlash')
         block = src[idx:idx+500]
         assert '_audit_sotuv' in block or 'audit_yoz' in block, "Sotuv save missing audit trail"
 
     def test_kirim_has_audit(self):
         """kirim save triggers audit_yoz"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py'), encoding='utf-8').read()
         idx = src.find('await db.kirim_saqlash')
         block = src[idx:idx+500]
         assert '_audit_kirim' in block or 'audit_yoz' in block, "Kirim save missing audit trail"
 
     def test_qaytarish_has_audit(self):
         """qaytarish save triggers audit_yoz"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py'), encoding='utf-8').read()
         idx = src.find('qaytarish_saqlash')
         block = src[idx:idx+500]
         assert '_audit_qaytarish' in block or 'audit_yoz' in block, "Qaytarish missing audit trail"
 
     def test_qarz_tolash_has_audit(self):
         """qarz_tolash triggers audit_yoz"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py'), encoding='utf-8').read()
         idx = src.find('await db.qarz_tolash')
         block = src[idx:idx+500]
         assert '_audit_qarz_tolash' in block or 'audit_yoz' in block, "Qarz tolash missing audit trail"
@@ -1246,7 +1246,7 @@ class TestDebtLimitWiring:
 
     def test_sotuv_checks_debt_limit(self):
         """Sotuv flow checks debt limit before save"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py'), encoding='utf-8').read()
         idx = src.find('elif amal=="chiqim"')
         end = src.find('elif amal=="qaytarish"', idx)
         flow = src[idx:end]
@@ -1254,7 +1254,7 @@ class TestDebtLimitWiring:
 
     def test_voice_has_duplicate_guard(self):
         """Voice handler has duplicate guard"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py'), encoding='utf-8').read()
         idx = src.find('async def ovoz_qabul')
         fn = src[idx:idx+400]
         assert 'is_duplicate_message' in fn, "Voice missing duplicate guard"
@@ -1263,43 +1263,43 @@ class TestDebtLimitWiring:
 class TestGemini31:
     """Gemini model upgraded to 3.1."""
     def test_gemini_31_in_voice(self):
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'bot_services', 'voice.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'bot_services', 'voice.py'), encoding='utf-8').read()
         assert 'gemini-2.5-flash-lite' in src, "Voice not using Gemini 3.1"
 
     def test_gemini_31_in_router(self):
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'cognitive', 'ai_router.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'cognitive', 'ai_router.py'), encoding='utf-8').read()
         assert 'gemini-2.5-flash-lite' in src, "Router not using Gemini 3.1"
 
     def test_gemini_31_in_config(self):
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'config.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'config.py'), encoding='utf-8').read()
         assert 'gemini-2.5-flash-lite' in src, "Config not using Gemini 3.1"
 
 
 class TestVoiceCommands:
     """O'zbek ovoz buyruqlari."""
     def test_module_exists(self):
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'shared', 'services', 'voice_commands.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'shared', 'services', 'voice_commands.py'), encoding='utf-8').read()
         ast.parse(src)
         assert 'detect_voice_command' in src
         assert 'is_quick_command' in src
 
     def test_uzbek_patterns_count(self):
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'shared', 'services', 'voice_commands.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'shared', 'services', 'voice_commands.py'), encoding='utf-8').read()
         assert '_PATTERNS' in src
         assert src.count('"confirm"') + src.count('"report"') + src.count('"print"') >= 5, "Too few action types"
 
     def test_confirm_cancel_patterns(self):
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'shared', 'services', 'voice_commands.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'shared', 'services', 'voice_commands.py'), encoding='utf-8').read()
         for word in ['tasdiqla', 'bekor', 'tuzat', 'chek chiqar', 'qayta hisobla']:
             assert word in src, f"Missing pattern: {word}"
 
     def test_report_patterns(self):
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'shared', 'services', 'voice_commands.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'shared', 'services', 'voice_commands.py'), encoding='utf-8').read()
         for word in ['bugungi hisobot', 'haftalik', 'kassa holati', 'top klientlar', 'kam qolgan']:
             assert word in src, f"Missing pattern: {word}"
 
     def test_bot_uses_voice_commands(self):
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py'), encoding='utf-8').read()
         assert 'detect_voice_command' in src
         assert 'is_quick_command' in src
         assert '_ovoz_buyruq_bajar' in src
@@ -1308,32 +1308,32 @@ class TestVoiceCommands:
 class TestPrintStatus:
     """Mini printer status lifecycle."""
     def test_module_exists(self):
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'shared', 'services', 'print_status.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'shared', 'services', 'print_status.py'), encoding='utf-8').read()
         ast.parse(src)
 
     def test_status_lifecycle(self):
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'shared', 'services', 'print_status.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'shared', 'services', 'print_status.py'), encoding='utf-8').read()
         for status in ['PREVIEW', 'CONFIRMED', 'PRINTING', 'PRINTED', 'FAILED', 'REPRINT']:
             assert status in src, f"PrintStatus.{status} missing"
 
     def test_job_functions(self):
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'shared', 'services', 'print_status.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'shared', 'services', 'print_status.py'), encoding='utf-8').read()
         for fn in ['create_print_job', 'confirm_print', 'mark_printing',
                     'mark_printed', 'mark_failed', 'request_reprint']:
             assert f'def {fn}' in src, f"{fn} missing"
 
     def test_receipt_58mm(self):
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'shared', 'services', 'print_status.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'shared', 'services', 'print_status.py'), encoding='utf-8').read()
         assert 'def format_receipt_58mm' in src
         assert '58mm' in src
 
     def test_reprint_tracking(self):
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'shared', 'services', 'print_status.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'shared', 'services', 'print_status.py'), encoding='utf-8').read()
         assert 'reprint_count' in src
         assert 'original_job_id' in src
 
     def test_bot_print_commands(self):
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py'), encoding='utf-8').read()
         assert 'format_receipt_58mm' in src
         assert 'create_print_job' in src
         assert 'request_reprint' in src
@@ -1344,28 +1344,28 @@ class TestV214Upgrades:
 
     def test_fuzzy_klient_in_db(self):
         """db.klient_topish uses ILIKE fuzzy fallback"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'db.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'db.py'), encoding='utf-8').read()
         idx = src.find('async def klient_topish')
         fn = src[idx:idx+500]
         assert 'ILIKE' in fn or 'LIKE' in fn, "klient_topish missing fuzzy fallback"
 
     def test_fuzzy_tovar_in_db(self):
         """db.tovar_topish uses ILIKE fuzzy fallback"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'db.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'db.py'), encoding='utf-8').read()
         idx = src.find('async def tovar_topish')
         fn = src[idx:idx+500]
         assert 'ILIKE' in fn or 'LIKE' in fn, "tovar_topish missing fuzzy fallback"
 
     def test_corrected_data_saved_not_raw_ai(self):
         """Pipeline saves corrected draft, not raw AI data"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py'), encoding='utf-8').read()
         assert 'corrected_natija' in src, "Missing corrected_natija variable"
         assert 'draft.corrected' in src, "Not using draft.corrected"
         assert 'kutilayotgan"] = corrected_natija' in src, "Not saving corrected data"
 
     def test_excel_import_module(self):
         """Excel import module exists"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'shared', 'services', 'excel_import.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'shared', 'services', 'excel_import.py'), encoding='utf-8').read()
         ast.parse(src)
         assert 'def detect_file_type' in src
         assert 'def parse_reestr' in src
@@ -1375,25 +1375,25 @@ class TestV214Upgrades:
 
     def test_hujjat_handler_exists(self):
         """Bot has document/Excel handler"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py'), encoding='utf-8').read()
         assert 'async def hujjat_qabul' in src
         assert 'Document.ALL' in src or 'hujjat_qabul' in src
 
     def test_cmd_chiqim_exists(self):
         """cmd_chiqim (expense) command exists"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py'), encoding='utf-8').read()
         assert 'async def cmd_chiqim' in src
         assert 'CommandHandler("chiqim"' in src
 
     def test_cmd_tovar_exists(self):
         """cmd_tovar (single product) command exists"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py'), encoding='utf-8').read()
         assert 'async def cmd_tovar' in src
         assert 'CommandHandler("tovar"' in src
 
     def test_no_float_in_qoldiq_check(self):
         """Stock check uses Decimal, not float"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py'), encoding='utf-8').read()
         idx = src.find('qolgan_q is not None')
         if idx >= 0:
             line = src[idx:idx+200]
@@ -1404,95 +1404,95 @@ class TestSAPGradeLedger:
     """SAP/Bank grade double-entry ledger."""
 
     def test_ledger_module_exists(self):
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'shared', 'services', 'ledger.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'shared', 'services', 'ledger.py'), encoding='utf-8').read()
         ast.parse(src)
         assert 'class JurnalYozuv' in src
         assert 'class JurnalQator' in src
 
     def test_hisob_turlari(self):
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'shared', 'services', 'ledger.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'shared', 'services', 'ledger.py'), encoding='utf-8').read()
         for h in ['KASSA_NAQD','KASSA_KARTA','OMBOR','DEBITORLAR','KREDITORLAR','DAROMAD','XARAJAT','TANNARX']:
             assert h in src, f"HisobTuri.{h} missing"
 
     def test_journal_creators(self):
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'shared', 'services', 'ledger.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'shared', 'services', 'ledger.py'), encoding='utf-8').read()
         for fn in ['sotuv_jurnali','kirim_jurnali','qaytarish_jurnali','qarz_tolash_jurnali','xarajat_jurnali']:
             assert f'def {fn}' in src, f"{fn} missing"
 
     def test_balans_constraint(self):
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'shared', 'services', 'ledger.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'shared', 'services', 'ledger.py'), encoding='utf-8').read()
         assert 'balanslangan' in src
         assert 'jami_debit == self.jami_credit' in src
 
     def test_idempotency(self):
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'shared', 'services', 'ledger.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'shared', 'services', 'ledger.py'), encoding='utf-8').read()
         assert 'idempotency_key' in src
 
     def test_jurnal_saqlash(self):
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'shared', 'services', 'ledger.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'shared', 'services', 'ledger.py'), encoding='utf-8').read()
         assert 'async def jurnal_saqlash' in src
 
     def test_balans_tekshir(self):
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'shared', 'services', 'ledger.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'shared', 'services', 'ledger.py'), encoding='utf-8').read()
         assert 'async def balans_tekshir' in src
 
     def test_schema_has_jurnal(self):
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'shared', 'database', 'schema.sql')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'shared', 'database', 'schema.sql'), encoding='utf-8').read()
         assert 'jurnal_yozuvlar' in src
         assert 'jurnal_qatorlar' in src
         assert 'jami_debit = jami_credit' in src  # DB constraint
 
     def test_schema_has_versioning(self):
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'shared', 'database', 'schema.sql')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'shared', 'database', 'schema.sql'), encoding='utf-8').read()
         assert 'hujjat_versiyalar' in src
 
     def test_bot_uses_ledger(self):
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py'), encoding='utf-8').read()
         assert 'jurnal_saqlash' in src
         assert 'sotuv_jurnali' in src
         assert 'kirim_jurnali' in src
         assert 'qarz_tolash_jurnali' in src
 
     def test_version_21_5(self):
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py')).read()
-        assert '__version__ = "23.2"' in src
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py'), encoding='utf-8').read()
+        assert '__version__ = "25.0"' in src
 
 
 class TestV215Upgrades:
     """v21.5 SAP-GRADE kuchaytirishlar."""
 
     def test_kassa_ledger_wired(self):
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'api', 'routes', 'kassa.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'api', 'routes', 'kassa.py'), encoding='utf-8').read()
         assert 'jurnal_saqlash' in src, "Kassa not wired to ledger"
         assert 'xarajat_jurnali' in src, "Kassa chiqim not using xarajat_jurnali"
         assert 'idempotency_key' in src, "Kassa missing idempotency"
 
     def test_worker_reconciliation(self):
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'worker', 'tasks.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'worker', 'tasks.py'), encoding='utf-8').read()
         assert 'ledger_reconciliation' in src
         assert 'balans_tekshir' in src
         assert 'ledger-recon' in src  # beat schedule
 
     def test_api_rate_limiting(self):
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'api', 'main.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'api', 'main.py'), encoding='utf-8').read()
         assert 'rate_limit_middleware' in src
         assert 'RATE_LIMIT' in src
         assert '429' in src
         assert 'X-RateLimit' in src
 
     def test_api_ledger_endpoints(self):
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'api', 'main.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'api', 'main.py'), encoding='utf-8').read()
         assert '/api/v1/ledger/balans' in src
         assert '/api/v1/ledger/jurnal' in src
         assert '/api/v1/ledger/hisob/' in src
 
     def test_inline_query(self):
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py'), encoding='utf-8').read()
         assert 'InlineQueryHandler' in src
         assert 'inline_qidirish' in src
 
     def test_audit_helpers(self):
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py')).read()
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py'), encoding='utf-8').read()
         for fn in ['_audit_sotuv', '_audit_kirim', '_audit_qaytarish', '_audit_qarz_tolash']:
             assert f'async def {fn}' in src, f"Missing helper: {fn}"
 

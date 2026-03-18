@@ -482,3 +482,140 @@ DO $$ BEGIN
     CREATE POLICY hujjat_isolation ON hujjat_versiyalar USING (user_id = current_uid());
 EXCEPTION WHEN duplicate_object THEN NULL;
 END $$;
+-- ═══════════════════════════════════════════════════════════
+--  SavdoAI v24.0 — SMART NARX TIZIMI
+--  3 qatlam: Shaxsiy narx → Guruh narx → Oxirgi narx
+-- ═══════════════════════════════════════════════════════════
+
+-- 1. Narx guruhlari (Ulgurji, Chakana, VIP)
+CREATE TABLE IF NOT EXISTS narx_guruhlari (
+    id          BIGSERIAL   PRIMARY KEY,
+    user_id     BIGINT      NOT NULL REFERENCES users(id),
+    nomi        TEXT        NOT NULL,
+    izoh        TEXT,
+    yaratilgan  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE(user_id, nomi)
+);
+
+-- 2. Guruh narxlari (har guruh uchun har tovarning narxi)
+CREATE TABLE IF NOT EXISTS guruh_narxlar (
+    id          BIGSERIAL   PRIMARY KEY,
+    user_id     BIGINT      NOT NULL REFERENCES users(id),
+    guruh_id    BIGINT      NOT NULL REFERENCES narx_guruhlari(id) ON DELETE CASCADE,
+    tovar_id    BIGINT      NOT NULL REFERENCES tovarlar(id) ON DELETE CASCADE,
+    narx        DECIMAL(18,2) NOT NULL,
+    yangilangan TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE(guruh_id, tovar_id)
+);
+
+-- 3. Klient shaxsiy narxlari (eng yuqori prioritet)
+CREATE TABLE IF NOT EXISTS klient_narxlar (
+    id          BIGSERIAL   PRIMARY KEY,
+    user_id     BIGINT      NOT NULL REFERENCES users(id),
+    klient_id   BIGINT      NOT NULL REFERENCES klientlar(id) ON DELETE CASCADE,
+    tovar_id    BIGINT      NOT NULL REFERENCES tovarlar(id) ON DELETE CASCADE,
+    narx        DECIMAL(18,2) NOT NULL,
+    yangilangan TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE(klient_id, tovar_id)
+);
+
+-- 4. Klientlar jadvaliga guruh qo'shish
+ALTER TABLE klientlar ADD COLUMN IF NOT EXISTS narx_guruh_id BIGINT REFERENCES narx_guruhlari(id);
+
+-- 5. RLS
+ALTER TABLE narx_guruhlari ENABLE ROW LEVEL SECURITY;
+ALTER TABLE guruh_narxlar ENABLE ROW LEVEL SECURITY;
+ALTER TABLE klient_narxlar ENABLE ROW LEVEL SECURITY;
+
+DO $$ BEGIN
+  CREATE POLICY rls_narx_guruhlari ON narx_guruhlari USING (user_id = current_setting('app.user_id')::BIGINT);
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+DO $$ BEGIN
+  CREATE POLICY rls_guruh_narxlar ON guruh_narxlar USING (user_id = current_setting('app.user_id')::BIGINT);
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+DO $$ BEGIN
+  CREATE POLICY rls_klient_narxlar ON klient_narxlar USING (user_id = current_setting('app.user_id')::BIGINT);
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+-- 6. Indexlar
+CREATE INDEX IF NOT EXISTS idx_guruh_narx_tovar ON guruh_narxlar(guruh_id, tovar_id);
+CREATE INDEX IF NOT EXISTS idx_klient_narx_tovar ON klient_narxlar(klient_id, tovar_id);
+CREATE INDEX IF NOT EXISTS idx_klient_guruh ON klientlar(narx_guruh_id) WHERE narx_guruh_id IS NOT NULL;
+-- ═══════════════════════════════════════════════════════════
+--  SavdoAI v25.0 — SHOGIRD XARAJAT NAZORATI
+--  Admin shogirdlarini qo'shadi, shogirdlar xarajat tashlaydi
+--  Admin hammani real-time ko'radi
+-- ═══════════════════════════════════════════════════════════
+
+-- 1. Shogirdlar jadvali
+CREATE TABLE IF NOT EXISTS shogirdlar (
+    id              BIGSERIAL   PRIMARY KEY,
+    admin_uid       BIGINT      NOT NULL REFERENCES users(id),
+    telegram_uid    BIGINT      NOT NULL,
+    ism             TEXT        NOT NULL,
+    telefon         TEXT,
+    lavozim         TEXT        DEFAULT 'haydovchi',
+    kunlik_limit    DECIMAL(18,2) NOT NULL DEFAULT 500000,
+    oylik_limit     DECIMAL(18,2) NOT NULL DEFAULT 10000000,
+    faol            BOOLEAN     NOT NULL DEFAULT TRUE,
+    yaratilgan      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE(admin_uid, telegram_uid)
+);
+
+-- 2. Xarajat kategoriyalari
+CREATE TABLE IF NOT EXISTS xarajat_kategoriyalar (
+    id          BIGSERIAL   PRIMARY KEY,
+    admin_uid   BIGINT      NOT NULL REFERENCES users(id),
+    nomi        TEXT        NOT NULL,
+    emoji       TEXT        DEFAULT '💰',
+    faol        BOOLEAN     NOT NULL DEFAULT TRUE,
+    UNIQUE(admin_uid, nomi)
+);
+
+-- 3. Xarajatlar jadvali (asosiy)
+CREATE TABLE IF NOT EXISTS xarajatlar (
+    id              BIGSERIAL   PRIMARY KEY,
+    admin_uid       BIGINT      NOT NULL REFERENCES users(id),
+    shogird_id      BIGINT      NOT NULL REFERENCES shogirdlar(id),
+    kategoriya_id   BIGINT      REFERENCES xarajat_kategoriyalar(id),
+    kategoriya_nomi TEXT        NOT NULL DEFAULT 'boshqa',
+    summa           DECIMAL(18,2) NOT NULL,
+    izoh            TEXT,
+    rasm_file_id    TEXT,
+    tasdiqlangan    BOOLEAN     NOT NULL DEFAULT FALSE,
+    tasdiq_vaqti    TIMESTAMPTZ,
+    bekor_qilingan  BOOLEAN     NOT NULL DEFAULT FALSE,
+    sana            TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- 4. Default kategoriyalar qo'shish funksiyasi
+DO $$ BEGIN
+    -- Bu funksiya yangi admin registratsiya qilganda chaqiriladi
+    -- Hozircha manual qo'shiladi
+END $$;
+
+-- 5. RLS
+ALTER TABLE shogirdlar ENABLE ROW LEVEL SECURITY;
+ALTER TABLE xarajat_kategoriyalar ENABLE ROW LEVEL SECURITY;
+ALTER TABLE xarajatlar ENABLE ROW LEVEL SECURITY;
+
+DO $$ BEGIN
+  CREATE POLICY rls_shogirdlar ON shogirdlar USING (admin_uid = current_setting('app.user_id')::BIGINT);
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+DO $$ BEGIN
+  CREATE POLICY rls_xarajat_kat ON xarajat_kategoriyalar USING (admin_uid = current_setting('app.user_id')::BIGINT);
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+DO $$ BEGIN
+  CREATE POLICY rls_xarajatlar ON xarajatlar USING (admin_uid = current_setting('app.user_id')::BIGINT);
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+-- 6. Indexlar
+CREATE INDEX IF NOT EXISTS idx_xar_shogird ON xarajatlar(shogird_id, sana DESC);
+CREATE INDEX IF NOT EXISTS idx_xar_admin ON xarajatlar(admin_uid, sana DESC);
+CREATE INDEX IF NOT EXISTS idx_xar_kat ON xarajatlar(kategoriya_nomi, sana DESC);
+CREATE INDEX IF NOT EXISTS idx_shogird_admin ON shogirdlar(admin_uid, faol);
+CREATE INDEX IF NOT EXISTS idx_shogird_tg ON shogirdlar(telegram_uid);

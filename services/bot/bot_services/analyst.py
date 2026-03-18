@@ -111,9 +111,10 @@ Xojalik: Idish-tovoq | Xojalik: Kiyim | Boshqa
    - "накладная" → nakladnoy
 
 8. XATO QILMASLIK:
-   - Narx 0 bo'lsa ham yoz (miqdor bor)
+   - Narx aytilmasa narx=0 qo'y (tizim o'zi aniqlaydi)
    - Klient yo'q bo'lsa null
    - Tovar nomi aniq yoz (qisqartma emas)
+   - "Salimovga 50 Ariel" → narx=0 (tizim Salimov narxini topadi)
 
 ═══════════════ JAVOB FORMATI ═══════════════
 FAQAT SOF JSON (markdown, ```, izoh YO'Q):

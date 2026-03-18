@@ -1,10 +1,10 @@
 #!/bin/bash
-# SavdoAI v23.2 — Deploy oldi tekshiruv
+# SavdoAI v24.0 — Deploy oldi tekshiruv
 # Bu skript BARCHA critical fayllarni tekshiradi
 # BARCHA testlar o'tishi KERAK, aks holda deploy qilma
 
 echo "════════════════════════════════════════"
-echo "  SavdoAI v23.2 Deploy Tekshiruv"
+echo "  SavdoAI v24.0 Deploy Tekshiruv"
 echo "════════════════════════════════════════"
 
 ERRORS=0
@@ -96,9 +96,9 @@ fi
 
 # 9. Version
 echo ""
-echo "9. Versiya v23.2..."
-if grep -q '__version__ = "23.2"' services/bot/main.py 2>/dev/null; then
-  echo "   ✅ bot v23.2"
+echo "9. Versiya v24.0..."
+if grep -q '__version__ = "25.0"' services/bot/main.py 2>/dev/null; then
+  echo "   ✅ bot v24.0"
 else
   echo "   ❌ bot versiya 23.0 emas!"
   ERRORS=$((ERRORS+1))

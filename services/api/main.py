@@ -50,7 +50,7 @@ logging.basicConfig(
     format="%(asctime)s │ %(levelname)-8s │ %(name)s │ %(message)s"
 )
 
-__version__ = "23.2"
+__version__ = "25.0"
 _JWT_SECRET_RAW = os.getenv("JWT_SECRET", "")
 if not _JWT_SECRET_RAW:
     _JWT_SECRET_RAW = "savdoai-default-dev-secret-change-me-in-production"
@@ -1189,3 +1189,58 @@ async def ledger_hisob(hisob: str, uid: int = Depends(get_uid)):
             ORDER BY jy.sana DESC LIMIT 50
         """, uid, hisob)
     return {"hisob": hisob, "balans": float(balans), "tarix": [dict(r) for r in tarix]}
+
+
+# ═══════════════════════════════════════════════════════════
+#  SHOGIRD XARAJAT API (Web Dashboard uchun)
+# ═══════════════════════════════════════════════════════════
+
+@app.get("/api/v1/shogirdlar")
+async def api_shogirdlar(uid: int = Depends(get_uid)):
+    from shared.services.shogird_xarajat import shogirdlar_royxati
+    async with rls_conn(uid) as c:
+        return [dict(s) for s in await shogirdlar_royxati(c, uid)]
+
+@app.get("/api/v1/shogird/dashboard")
+async def api_shogird_dashboard(uid: int = Depends(get_uid)):
+    from shared.services.shogird_xarajat import dashboard_data
+    async with rls_conn(uid) as c:
+        return await dashboard_data(c, uid)
+
+@app.get("/api/v1/xarajatlar/bugungi")
+async def api_xarajatlar_bugungi(uid: int = Depends(get_uid)):
+    from shared.services.shogird_xarajat import kunlik_hisobot
+    async with rls_conn(uid) as c:
+        return await kunlik_hisobot(c, uid)
+
+@app.get("/api/v1/xarajatlar/oylik")
+async def api_xarajatlar_oylik(uid: int = Depends(get_uid)):
+    from shared.services.shogird_xarajat import oylik_hisobot
+    async with rls_conn(uid) as c:
+        return await oylik_hisobot(c, uid)
+
+@app.get("/api/v1/xarajatlar/kutilmoqda")
+async def api_kutilmoqda(uid: int = Depends(get_uid)):
+    from shared.services.shogird_xarajat import kutilmoqda_royxati
+    async with rls_conn(uid) as c:
+        return [dict(k) for k in await kutilmoqda_royxati(c, uid)]
+
+@app.get("/api/v1/shogird/{shogird_id}/hisobot")
+async def api_shogird_hisobot(shogird_id: int, kunlar: int = 7, uid: int = Depends(get_uid)):
+    from shared.services.shogird_xarajat import shogird_hisobot
+    async with rls_conn(uid) as c:
+        return await shogird_hisobot(c, uid, shogird_id, kunlar)
+
+@app.post("/api/v1/xarajat/{xarajat_id}/tasdiqlash")
+async def api_xarajat_tasdiq(xarajat_id: int, uid: int = Depends(get_uid)):
+    from shared.services.shogird_xarajat import xarajat_tasdiqlash
+    async with rls_conn(uid) as c:
+        ok = await xarajat_tasdiqlash(c, xarajat_id, uid)
+    return {"ok": ok}
+
+@app.post("/api/v1/xarajat/{xarajat_id}/bekor")
+async def api_xarajat_bekor(xarajat_id: int, uid: int = Depends(get_uid)):
+    from shared.services.shogird_xarajat import xarajat_bekor
+    async with rls_conn(uid) as c:
+        ok = await xarajat_bekor(c, xarajat_id, uid)
+    return {"ok": ok}

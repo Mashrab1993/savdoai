@@ -145,7 +145,130 @@ def sotuv_pdf(data: dict, dokon_nomi: str) -> bytes:
     return buf.getvalue()
 
 
-# ─── KLIENT TO'LIQ HISOBI ────────────────────────────────
+# ─── MINI PRINTER CHEK (58mm / 80mm termal printer) ──────
+
+def chek_pdf(data: dict, dokon_nomi: str, width_mm: int = 80) -> bytes:
+    """
+    Termal printer uchun chek PDF.
+    width_mm: 58 (kichik) yoki 80 (standart) mm
+    """
+    from reportlab.lib.units import mm as MM
+
+    page_w = width_mm * MM
+    margin = 3 * MM
+    content_w = page_w - 2 * margin
+
+    tovarlar = data.get("tovarlar", [])
+    # Chek balandligini hisoblash
+    n_items = max(len(tovarlar), 1)
+    base_h = 60 * MM  # header + footer
+    item_h = 8 * MM   # har tovar uchun
+    qarz_h = 15 * MM if float(data.get("qarz", 0)) > 0 else 0
+    page_h = base_h + (n_items * item_h) + qarz_h
+
+    buf = io.BytesIO()
+    from reportlab.pdfgen import canvas as cv
+    c = cv.Canvas(buf, pagesize=(page_w, page_h))
+
+    y = page_h - margin
+    cx = page_w / 2  # center x
+
+    # ═══ DO'KON NOMI ═══
+    c.setFont("Helvetica-Bold", 14)
+    c.drawCentredString(cx, y, dokon_nomi or "SAVDOAI")
+    y -= 14
+
+    c.setFont("Helvetica", 7)
+    c.drawCentredString(cx, y, "@savdoai_mashrab_bot")
+    y -= 12
+
+    # ═══ SANA + KLIENT ═══
+    c.setFont("Helvetica", 8)
+    sana = _hozir()
+    c.drawString(margin, y, f"Sana: {sana}")
+    y -= 10
+
+    klient = data.get("klient")
+    if klient:
+        c.drawString(margin, y, f"Klient: {klient}")
+        y -= 10
+
+    amal = data.get("amal", "chiqim")
+    amal_nom = {"kirim": "KIRIM", "chiqim": "SOTUV", "qaytarish": "QAYTARISH"}.get(amal, "SOTUV")
+    c.setFont("Helvetica-Bold", 9)
+    c.drawCentredString(cx, y, amal_nom)
+    y -= 8
+
+    # ═══ CHIZIQ ═══
+    c.setDash(1, 2)
+    c.line(margin, y, page_w - margin, y)
+    c.setDash()
+    y -= 10
+
+    # ═══ TOVARLAR ═══
+    c.setFont("Helvetica", 8)
+    for i, t in enumerate(tovarlar, 1):
+        nomi = t.get("nomi", "")[:25]
+        miq = float(t.get("miqdor", 0))
+        narx = float(t.get("narx", 0))
+        jami = float(t.get("jami", 0))
+        birlik = t.get("birlik", "dona")
+
+        # Miq formatini soddalashtirish
+        miq_s = f"{miq:.1f}".rstrip("0").rstrip(".")
+
+        # 1-qator: raqam + nom
+        c.setFont("Helvetica", 8)
+        c.drawString(margin, y, f"{i}. {nomi}")
+        y -= 9
+
+        # 2-qator: miqdor × narx = jami (o'ngga tekislangan)
+        c.setFont("Helvetica", 7)
+        hisob = f"{miq_s} {birlik} x {narx:,.0f} = {jami:,.0f}"
+        c.drawRightString(page_w - margin, y, hisob)
+        y -= 9
+
+    # ═══ CHIZIQ ═══
+    y -= 2
+    c.setDash(1, 2)
+    c.line(margin, y, page_w - margin, y)
+    c.setDash()
+    y -= 12
+
+    # ═══ JAMI ═══
+    jami_s = float(data.get("jami_summa", 0))
+    c.setFont("Helvetica-Bold", 12)
+    c.drawString(margin, y, "JAMI:")
+    c.drawRightString(page_w - margin, y, f"{jami_s:,.0f}")
+    y -= 12
+
+    # ═══ QARZ ═══
+    qarz = float(data.get("qarz", 0))
+    tolangan = float(data.get("tolangan", 0) or data.get("tolandan", 0) or jami_s)
+    if qarz > 0:
+        c.setFont("Helvetica", 9)
+        c.drawString(margin, y, "To'landi:")
+        c.drawRightString(page_w - margin, y, f"{tolangan:,.0f}")
+        y -= 10
+        c.setFont("Helvetica-Bold", 10)
+        c.drawString(margin, y, "QARZ:")
+        c.drawRightString(page_w - margin, y, f"{qarz:,.0f}")
+        y -= 12
+
+    # ═══ PASTKI CHIZIQ ═══
+    c.setDash(1, 2)
+    c.line(margin, y, page_w - margin, y)
+    c.setDash()
+    y -= 10
+
+    # ═══ FOOTER ═══
+    c.setFont("Helvetica", 6)
+    c.drawCentredString(cx, y, "Mashrab Moliya | @savdoai_mashrab_bot")
+    y -= 8
+    c.drawCentredString(cx, y, sana)
+
+    c.save()
+    return buf.getvalue()
 
 def klient_hisobi_pdf(data: dict, dokon_nomi: str) -> bytes:
     if not data:
