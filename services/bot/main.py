@@ -2692,8 +2692,8 @@ async def boshlash(app:Application) -> None:
 
         token_hash = hashlib.sha256((_CFG.bot_token or "").encode("utf-8")).hexdigest()[:12]
         lock_key = f"bot_polling:{token_hash}"
-        lock_ttl_s = int(_os.getenv("BOT_POLL_LOCK_TTL_S", "3600"))  # 1 soat
-        lock_wait_s = int(_os.getenv("BOT_POLL_LOCK_WAIT_S", "120"))  # 2 daqiqa
+        lock_ttl_s = int(_os.getenv("BOT_POLL_LOCK_TTL_S", "86400"))  # 24 soat (odatda kerakmas, lekin conflict chiqmasin)
+        lock_wait_s = int(_os.getenv("BOT_POLL_LOCK_WAIT_S", "0"))  # 0 => cheksiz kutish
 
         start = time.monotonic()
         while True:
@@ -2702,7 +2702,7 @@ async def boshlash(app:Application) -> None:
                 log.info("✅ Polling lock olindi (%s).", lock_key)
                 break
 
-            if time.monotonic() - start > lock_wait_s:
+            if lock_wait_s > 0 and time.monotonic() - start > lock_wait_s:
                 log.error(
                     "⛔ Polling lock band (%s). Boshqa instance polling qilmoqda — bu instance to'xtaydi.",
                     lock_key,
