@@ -619,3 +619,9 @@ CREATE INDEX IF NOT EXISTS idx_xar_admin ON xarajatlar(admin_uid, sana DESC);
 CREATE INDEX IF NOT EXISTS idx_xar_kat ON xarajatlar(kategoriya_nomi, sana DESC);
 CREATE INDEX IF NOT EXISTS idx_shogird_admin ON shogirdlar(admin_uid, faol);
 CREATE INDEX IF NOT EXISTS idx_shogird_tg ON shogirdlar(telegram_uid);
+
+-- v25.0 fix: to_liq_ism alias uchun
+ALTER TABLE users ADD COLUMN IF NOT EXISTS to_liq_ism TEXT DEFAULT '';
+DO $$ BEGIN
+  UPDATE users SET to_liq_ism = ism WHERE to_liq_ism = '' AND ism != '';
+EXCEPTION WHEN OTHERS THEN NULL; END $$;

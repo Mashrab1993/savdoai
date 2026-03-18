@@ -137,6 +137,7 @@ async def _user_ol_kesh(uid: int):
         return cached
     user = await db.user_ol(uid)
     if user:
+        user = dict(user)  # asyncpg.Record → dict (.get() ishlashi uchun)
         _kesh_yoz(k, user, _KESH_USER_TTL)
     return user
 
@@ -249,7 +250,7 @@ async def faol_tekshir(update:Update) -> bool:
     uid=update.effective_user.id
     user=await _user_ol_kesh(uid)
     if not user: msg="❌ Siz ro'yxatdan o'tmagansiz. /start bosing."
-    elif not user["faol"]: msg="⏳ Hisobingiz hali tasdiqlanmagan."
+    elif not user.get("faol", False): msg="⏳ Hisobingiz hali tasdiqlanmagan."
     else:
         if user.get("obuna_tugash"):
             qoldi=(user["obuna_tugash"]-datetime.date.today()).days
@@ -280,14 +281,14 @@ async def cmd_start(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
         log.error("❌ /start user_ol xato: %s", _e, exc_info=True)
         await update.message.reply_text("❌ Xato yuz berdi. Qayta /start bosing.")
         return ConversationHandler.END
-    if user and user["faol"]:
+    if user and user.get("faol", False):
         kam=await db.kam_qoldiq_tovarlar(uid)
         ogoh=""
         if kam: ogoh=f"\n\n⚠️ Kam qoldiq: {', '.join(t['nomi'] for t in kam[:3])}"
         await update.message.reply_text(
-            f"👋 Xush kelibsiz, *{user['to_liq_ism']}*!\n"
-            f"🏪 {user['dokon_nomi']}  |  "
-            f"{SEGMENT_NOMI.get(user['segment'],'')}\n\n"
+            f"👋 Xush kelibsiz, *{user.get('to_liq_ism') or user.get('ism', 'Foydalanuvchi')}*!\n"
+            f"🏪 {user.get('dokon_nomi', 'Mening Do`konim')}  |  "
+            f"{SEGMENT_NOMI.get(user.get('segment', 'universal'), '')}\n\n"
             f"🤖 *Mashrab Moliya v{__version__}*\n"
             "━━━━━━━━━━━━━━━━━━━━━\n"
             "🎤 *OVOZ YUBORING* — bot hamma ishni qiladi!\n\n"
@@ -301,7 +302,7 @@ async def cmd_start(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
             parse_mode=ParseMode.MARKDOWN, reply_markup=asosiy_menyu(),
         )
         return ConversationHandler.END
-    if user and not user["faol"]:
+    if user and not user.get("faol", False):
         await update.message.reply_text("⏳ Hisobingiz tasdiqlanmagan.")
         return ConversationHandler.END
     await db.user_yoz(uid,
@@ -686,7 +687,7 @@ async def _ovoz_buyruq_bajar(update:Update, ctx:ContextTypes.DEFAULT_TYPE,
         await update.message.reply_text("📋 Asosiy menyu:", reply_markup=asosiy_menyu())
     elif action == "greet":
         user = await _user_ol_kesh(uid)
-        ism = user.get("to_liq_ism","") if user else ""
+        ism = user.get("to_liq_ism") or user.get("ism", "") if user else ""
         await update.message.reply_text(
             f"👋 Salom{', ' + ism if ism else ''}! Ovoz yuboring yoki menyu tanlang 👇",
             reply_markup=asosiy_menyu())
@@ -1124,7 +1125,7 @@ async def tasdiq_cb(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
                 kirim_data = dict(natija); kirim_data["amal"] = "kirim"
                 pdf_bytes = pdf_xizmat.chek_pdf(kirim_data, dokon)
                 if pdf_bytes:
-                    sana_s = _os.popen("date +%d%m%Y_%H%M").read().strip() or "kirim"
+                    sana_s = datetime.datetime.now().strftime("%d%m%Y_%H%M")
                     nom = f"kirim_{sana_s}.pdf"
                     await q.message.reply_document(
                         document=InputFile(io.BytesIO(pdf_bytes), filename=nom),
@@ -1249,7 +1250,7 @@ async def tasdiq_cb(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
                     chek_pdf_data["eski_qarz"] = float(eski_qarz_total)
                 pdf_bytes = pdf_xizmat.chek_pdf(chek_pdf_data, dokon)
                 if pdf_bytes:
-                    sana_s = _os.popen("date +%d%m%Y_%H%M").read().strip() or "chek"
+                    sana_s = datetime.datetime.now().strftime("%d%m%Y_%H%M")
                     kl_s = (klient or "sotuv").replace(" ", "_")[:15]
                     nom = f"chek_{kl_s}_{sana_s}.pdf"
                     await q.message.reply_document(
@@ -3025,7 +3026,7 @@ async def cmd_foydalanuvchilar(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
           f"|  📊 Jami: {len(qatorlar)}\n\n")
     for r in qatorlar:
         belgi="✅" if r["faol"] else "⏳"
-        matn+=(f"{belgi} *{r['to_liq_ism']}*\n"
+        matn+=(f"{belgi} *{r.get('to_liq_ism') or r.get('ism', '')}*\n"
                f"   🏪 {r.get('dokon_nomi','')} | "
                f"{SEGMENT_NOMI.get(r.get('segment',''),'')}\n"
                f"   🆔 `{r['id']}` | Obuna: {str(r.get('obuna_tugash','?'))}\n\n")

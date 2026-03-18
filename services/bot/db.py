@@ -393,10 +393,17 @@ async def user_ol(uid: int) -> Optional[asyncpg.Record]:
 async def user_yoz(uid: int, to_liq_ism: str,
                    username: Optional[str] = None) -> None:
     async with _P().acquire() as c:
-        await c.execute("""
-            INSERT INTO users (id, to_liq_ism, username)
-            VALUES ($1, $2, $3) ON CONFLICT (id) DO NOTHING
-        """, uid, to_liq_ism, username)
+        # Try both column names — ism (schema.sql) or to_liq_ism (embedded)
+        try:
+            await c.execute("""
+                INSERT INTO users (id, ism, username)
+                VALUES ($1, $2, $3) ON CONFLICT (id) DO NOTHING
+            """, uid, to_liq_ism, username)
+        except Exception:
+            await c.execute("""
+                INSERT INTO users (id, to_liq_ism, username)
+                VALUES ($1, $2, $3) ON CONFLICT (id) DO NOTHING
+            """, uid, to_liq_ism, username)
 
 
 async def user_yangilab(uid: int, **maydonlar) -> None:
@@ -420,12 +427,14 @@ async def user_faollashtir(uid: int, obuna_kun: int = 30) -> None:
 
 async def barcha_users() -> list:
     async with _P().acquire() as c:
-        return await c.fetch("SELECT * FROM users ORDER BY yaratilgan DESC")
+        _rows = await c.fetch("SELECT * FROM users ORDER BY yaratilgan DESC")
+        return [dict(r) for r in _rows]
 
 
 async def faol_users() -> list:
     async with _P().acquire() as c:
-        return await c.fetch("SELECT * FROM users WHERE faol = TRUE")
+        _rows = await c.fetch("SELECT * FROM users WHERE faol = TRUE")
+        return [dict(r) for r in _rows]
 
 
 async def obuna_tugayotganlar(kun: int = 3) -> list:
@@ -441,7 +450,7 @@ async def obuna_tugayotganlar(kun: int = 3) -> list:
 #  § 6. KLIENTLAR
 # ════════════════════════════════════════════════════════════════
 
-async def klient_topish(uid: int, ism: str) -> Optional[asyncpg.Record]:
+async def klient_topish(uid: int, ism: str) -> Optional[dict]:
     """Klient topish — exact match, keyin fuzzy ILIKE"""
     s = ism.strip()
     if not s: return None
@@ -451,33 +460,35 @@ async def klient_topish(uid: int, ism: str) -> Optional[asyncpg.Record]:
             SELECT * FROM klientlar
             WHERE user_id = $1 AND lower(ism) = lower($2)
         """, uid, s)
-        if r: return r
+        if r: return dict(r)
         # 2. ILIKE fuzzy (partial match)
         r = await c.fetchrow("""
             SELECT * FROM klientlar
             WHERE user_id = $1 AND lower(ism) LIKE lower($2)
             ORDER BY jami_sotib DESC LIMIT 1
         """, uid, f"%{s}%")
-        return r
+        return dict(r) if r else None
 
 
-async def klient_olish_yaratish(uid: int, ism: str) -> asyncpg.Record:
+async def klient_olish_yaratish(uid: int, ism: str) -> dict:
     k = await klient_topish(uid, ism)
     if k: return k
     async with _P().acquire() as c:
-        return await c.fetchrow("""
+        r = await c.fetchrow("""
             INSERT INTO klientlar (user_id, ism) VALUES ($1, $2)
             ON CONFLICT (user_id, lower(ism))
             DO UPDATE SET ism = klientlar.ism RETURNING *
         """, uid, ism.strip())
+        return dict(r) if r else {}
 
 
 async def klientlar_ol(uid: int, limit: int = 20, offset: int = 0) -> list:
     async with _P().acquire() as c:
-        return await c.fetch("""
+        rows = await c.fetch("""
             SELECT * FROM klientlar WHERE user_id = $1
             ORDER BY jami_sotib DESC, ism ASC LIMIT $2 OFFSET $3
         """, uid, limit, offset)
+        return [dict(r) for r in rows]
 
 
 async def klientlar_soni(uid: int) -> int:
@@ -574,7 +585,7 @@ async def klient_kredit_tekshir(uid: int,
 #  § 7. TOVARLAR
 # ════════════════════════════════════════════════════════════════
 
-async def tovar_topish(uid: int, nomi: str) -> Optional[asyncpg.Record]:
+async def tovar_topish(uid: int, nomi: str) -> Optional[dict]:
     """Tovar topish — exact match, keyin fuzzy ILIKE"""
     s = nomi.strip()
     if not s: return None
@@ -584,28 +595,29 @@ async def tovar_topish(uid: int, nomi: str) -> Optional[asyncpg.Record]:
             SELECT * FROM tovarlar
             WHERE user_id=$1 AND lower(nomi)=lower($2)
         """, uid, s)
-        if r: return r
+        if r: return dict(r)
         # 2. ILIKE fuzzy
         r = await c.fetchrow("""
             SELECT * FROM tovarlar
             WHERE user_id=$1 AND lower(nomi) LIKE lower($2)
             ORDER BY qoldiq DESC LIMIT 1
         """, uid, f"%{s}%")
-        return r
+        return dict(r) if r else None
 
 
 async def tovar_olish_yaratish(uid: int, nomi: str,
                                 kategoriya: str = "Boshqa",
-                                birlik: str = "dona") -> asyncpg.Record:
+                                birlik: str = "dona") -> dict:
     t = await tovar_topish(uid, nomi)
     if t: return t
     async with _P().acquire() as c:
-        return await c.fetchrow("""
+        r = await c.fetchrow("""
             INSERT INTO tovarlar (user_id, nomi, kategoriya, birlik)
             VALUES ($1, $2, $3, $4)
             ON CONFLICT (user_id, lower(nomi))
             DO UPDATE SET nomi = EXCLUDED.nomi RETURNING *
         """, uid, nomi.strip(), kategoriya, birlik)
+        return dict(r) if r else {}
 
 
 async def tovarlar_ol(uid: int, limit: int = 20, offset: int = 0) -> list:
@@ -858,16 +870,17 @@ async def sessiya_ol(uid: int, sess_id: int) -> Optional[dict]:
             SELECT * FROM sotuv_sessiyalar WHERE id=$1 AND user_id=$2
         """, sess_id, uid)
         if not sess: return None
+        sess_d = dict(sess)  # Record → dict
         chiqimlar = await c.fetch(
             "SELECT * FROM chiqimlar WHERE sessiya_id=$1 ORDER BY id",
             sess_id)
         return {
-            **dict(sess),
-            "klient":     sess.get("klient_ismi"),
+            **sess_d,
+            "klient":     sess_d.get("klient_ismi"),
             "tovarlar":   [dict(ch) for ch in chiqimlar],
-            "jami_summa": float(sess["jami"] or 0),
-            "tolandan":   float(sess["tolangan"] or 0),
-            "qarz":       float(sess["qarz"] or 0),
+            "jami_summa": float(sess_d.get("jami", 0) or 0),
+            "tolandan":   float(sess_d.get("tolangan", 0) or 0),
+            "qarz":       float(sess_d.get("qarz", 0) or 0),
         }
 
 
