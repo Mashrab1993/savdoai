@@ -18,6 +18,7 @@ from typing import Optional
 
 from fastapi import FastAPI, HTTPException, Depends, Request, status
 from fastapi.middleware.gzip import GZipMiddleware
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field, validator
 from typing import Optional, List
 from fastapi.middleware.cors import CORSMiddleware
@@ -291,6 +292,17 @@ async def health():
         "db_pool": f"{db.get('used',0)}/{db.get('size',0)}",
         "latency_ms": latency_ms,
     }
+
+
+@app.get("/dashboard", include_in_schema=False)
+async def dashboard():
+    """Web Dashboard — Shogird xarajat + Savdo + Ombor"""
+    from fastapi.responses import HTMLResponse
+    import os as _os2
+    html_path = _os2.path.join(_os2.path.dirname(_os2.path.abspath(__file__)), "static", "dashboard.html")
+    if _os2.path.exists(html_path):
+        return HTMLResponse(content=open(html_path, encoding="utf-8").read())
+    return HTMLResponse(content="<h1>Dashboard yuklanmadi</h1>", status_code=500)
 
 
 @app.post("/auth/telegram")
@@ -1244,3 +1256,43 @@ async def api_xarajat_bekor(xarajat_id: int, uid: int = Depends(get_uid)):
     async with rls_conn(uid) as c:
         ok = await xarajat_bekor(c, xarajat_id, uid)
     return {"ok": ok}
+
+
+# ═══════════════════════════════════════════════════════════
+#  NARX GURUH API (Web Dashboard uchun)
+# ═══════════════════════════════════════════════════════════
+
+@app.get("/api/v1/narx/guruhlar")
+async def api_narx_guruhlar(uid: int = Depends(get_uid)):
+    from shared.services.smart_narx import guruhlar_royxati
+    async with rls_conn(uid) as c:
+        return [dict(g) for g in await guruhlar_royxati(c, uid)]
+
+@app.post("/api/v1/narx/guruh")
+async def api_narx_guruh_yarat(data: dict, uid: int = Depends(get_uid)):
+    from shared.services.smart_narx import guruh_yaratish
+    nomi = data.get("nomi", "")
+    if not nomi: raise HTTPException(400, "Guruh nomi kerak")
+    async with rls_conn(uid) as c:
+        gid = await guruh_yaratish(c, uid, nomi, data.get("izoh", ""))
+    return {"id": gid, "nomi": nomi}
+
+@app.post("/api/v1/narx/qoyish")
+async def api_narx_qoy(data: dict, uid: int = Depends(get_uid)):
+    from shared.services.smart_narx import guruh_narx_qoyish, shaxsiy_narx_qoyish
+    from decimal import Decimal
+    narx = Decimal(str(data.get("narx", 0)))
+    if narx <= 0: raise HTTPException(400, "Narx musbat bo'lishi kerak")
+    async with rls_conn(uid) as c:
+        if data.get("guruh_id"):
+            await guruh_narx_qoyish(c, uid, int(data["guruh_id"]), int(data["tovar_id"]), narx)
+        elif data.get("klient_id"):
+            await shaxsiy_narx_qoyish(c, uid, int(data["klient_id"]), int(data["tovar_id"]), narx)
+    return {"ok": True}
+
+@app.post("/api/v1/narx/klient_guruh")
+async def api_klient_guruhga(data: dict, uid: int = Depends(get_uid)):
+    from shared.services.smart_narx import klient_guruhga_qoyish
+    async with rls_conn(uid) as c:
+        await klient_guruhga_qoyish(c, int(data["klient_id"]), int(data["guruh_id"]))
+    return {"ok": True}

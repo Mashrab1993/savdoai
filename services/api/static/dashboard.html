@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<title>SavdoAI Dashboard</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+:root{--bg:#0f172a;--card:#1e293b;--border:#334155;--text:#e2e8f0;--muted:#94a3b8;--blue:#3b82f6;--green:#22c55e;--red:#ef4444;--orange:#f59e0b;--radius:12px}
+*{margin:0;padding:0;box-sizing:border-box}body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding-bottom:80px}
+.header{background:linear-gradient(135deg,#1e40af,#7c3aed);padding:20px;text-align:center;position:sticky;top:0;z-index:100}.header h1{font-size:20px;font-weight:700;color:#fff}.header p{font-size:12px;color:rgba(255,255,255,0.7);margin-top:4px}
+.tabs{display:flex;background:var(--card);border-bottom:1px solid var(--border);position:sticky;top:64px;z-index:99;overflow-x:auto}.tab{flex:1;padding:12px 8px;text-align:center;font-size:12px;font-weight:600;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;min-width:80px;transition:all .2s}.tab.active{color:var(--blue);border-bottom-color:var(--blue);background:rgba(59,130,246,.1)}
+.page{display:none;padding:16px;max-width:800px;margin:0 auto}.page.active{display:block}.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:12px}.card-title{font-size:14px;font-weight:700;color:var(--blue);margin-bottom:12px}
+.stats{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:16px}.stat{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:14px;text-align:center}.stat-num{font-size:22px;font-weight:700;color:var(--blue)}.stat-num.green{color:var(--green)}.stat-num.red{color:var(--red)}.stat-num.orange{color:var(--orange)}.stat-label{font-size:11px;color:var(--muted);margin-top:4px}
+.list-item{display:flex;justify-content:space-between;align-items:center;padding:12px;border-bottom:1px solid var(--border)}.list-item:last-child{border-bottom:none}.list-name{font-weight:600;font-size:14px}.list-sub{font-size:11px;color:var(--muted);margin-top:2px}.list-amount{font-weight:700;font-size:15px;text-align:right}
+.progress{height:6px;background:var(--border);border-radius:3px;margin-top:6px;overflow:hidden}.progress-fill{height:100%;border-radius:3px;transition:width .5s}.progress-fill.green{background:var(--green)}.progress-fill.orange{background:var(--orange)}.progress-fill.red{background:var(--red)}
+.btn{padding:8px 16px;border-radius:8px;font-size:13px;font-weight:600;border:none;cursor:pointer}.btn-blue{background:var(--blue);color:#fff}.btn-green{background:var(--green);color:#fff}.btn-red{background:var(--red);color:#fff}.btn-sm{padding:6px 12px;font-size:11px}.btn-group{display:flex;gap:8px;margin-top:8px}
+.form-group{margin-bottom:14px}.form-label{font-size:12px;color:var(--muted);margin-bottom:4px;display:block}.form-input{width:100%;padding:10px 12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;outline:none}.form-input:focus{border-color:var(--blue)}select.form-input{appearance:none}
+.empty{text-align:center;padding:40px 20px;color:var(--muted)}.empty-icon{font-size:48px;margin-bottom:12px}
+.badge{display:inline-block;padding:3px 8px;border-radius:12px;font-size:10px;font-weight:600}.badge-green{background:rgba(34,197,94,.2);color:var(--green)}.badge-orange{background:rgba(245,158,11,.2);color:var(--orange)}.badge-red{background:rgba(239,68,68,.2);color:var(--red)}
+.table{width:100%;border-collapse:collapse;font-size:12px}.table th{text-align:left;padding:8px;color:var(--muted);font-weight:600;border-bottom:1px solid var(--border)}.table td{padding:8px;border-bottom:1px solid var(--border)}
+.toast{position:fixed;top:80px;left:50%;transform:translateX(-50%);background:var(--green);color:#fff;padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;z-index:200;display:none}
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px solid var(--border);display:flex;z-index:100;padding-bottom:env(safe-area-inset-bottom)}.nav-item{flex:1;padding:8px 4px;text-align:center;cursor:pointer;color:var(--muted)}.nav-item.active{color:var(--blue)}.nav-icon{font-size:20px}.nav-label{font-size:10px;margin-top:2px}
+</style>
+</head>
+<body>
+<div class="header"><h1>SavdoAI Dashboard</h1><p>Mashrab Moliya v25.0</p></div>
+<div class="tabs"><div class="tab active" onclick="P('dashboard')">Umumiy</div><div class="tab" onclick="P('shogirdlar')">Shogirdlar</div><div class="tab" onclick="P('xarajatlar')">Xarajatlar</div><div class="tab" onclick="P('narx')">Narxlar</div><div class="tab" onclick="P('sozlama')">Sozlama</div></div>
+<div id="toast" class="toast"></div>
+<div class="page active" id="page-dashboard">
+<div class="stats"><div class="stat"><div class="stat-num" id="s-b">0</div><div class="stat-label">Bugungi xarajat</div></div><div class="stat"><div class="stat-num orange" id="s-k">0</div><div class="stat-label">Kutilmoqda</div></div><div class="stat"><div class="stat-num green" id="s-o">0</div><div class="stat-label">Oylik jami</div></div><div class="stat"><div class="stat-num" id="s-s">0</div><div class="stat-label">Shogirdlar</div></div></div>
+<div class="card"><div class="card-title">Kategoriyalar</div><div id="kat-c"></div></div>
+<div class="card"><div class="card-title">Shogirdlar holati</div><div id="sh-s"></div></div>
+</div>
+<div class="page" id="page-shogirdlar">
+<div class="card"><div class="card-title">Yangi shogird</div><div class="form-group"><label class="form-label">Telegram ID</label><input class="form-input" id="si" type="number" placeholder="123456789"></div><div class="form-group"><label class="form-label">Ism</label><input class="form-input" id="sn" placeholder="Akbar"></div><div class="form-group"><label class="form-label">Lavozim</label><select class="form-input" id="sl"><option>haydovchi</option><option>sotuvchi</option><option>omborchi</option></select></div><button class="btn btn-blue" onclick="SQ()" style="width:100%">Qo'shish</button></div>
+<div class="card"><div class="card-title">Ro'yxat</div><div id="sh-l"></div></div>
+</div>
+<div class="page" id="page-xarajatlar">
+<div class="card"><div class="card-title">Kutilmoqda</div><div id="kl"></div></div>
+<div class="card"><div class="card-title">Bugungi</div><div id="ax"></div></div>
+</div>
+<div class="page" id="page-narx">
+<div class="card"><div class="card-title">Narx guruhlari</div><div id="gl"></div></div>
+<div class="card"><div class="card-title">Yangi guruh</div><div class="form-group"><label class="form-label">Nomi</label><input class="form-input" id="gn" placeholder="Ulgurji"></div><button class="btn btn-blue" onclick="GY()" style="width:100%">Yaratish</button></div>
+</div>
+<div class="page" id="page-sozlama">
+<div class="card"><div class="card-title">Tizim</div><div class="list-item"><span>Versiya</span><b>v25.0</b></div><div class="list-item"><span>Bot</span><span>@savdoai_mashrab_bot</span></div><div class="list-item"><span>Jadvallar</span><span>25</span></div><div class="list-item"><span>API</span><span>36 endpoint</span></div><div class="list-item"><a href="/docs" style="color:var(--blue)">API Docs</a></div><div class="list-item"><a href="/health" style="color:var(--blue)">Health</a></div></div>
+</div>
+<div class="bottom-nav"><div class="nav-item active" onclick="P('dashboard')"><div class="nav-icon">📊</div><div class="nav-label">Umumiy</div></div><div class="nav-item" onclick="P('shogirdlar')"><div class="nav-icon">👥</div><div class="nav-label">Shogirdlar</div></div><div class="nav-item" onclick="P('xarajatlar')"><div class="nav-icon">💰</div><div class="nav-label">Xarajatlar</div></div><div class="nav-item" onclick="P('narx')"><div class="nav-icon">🏷</div><div class="nav-label">Narxlar</div></div><div class="nav-item" onclick="P('sozlama')"><div class="nav-icon">⚙️</div><div class="nav-label">Sozlama</div></div></div>
+<script>
+const A=window.location.origin,TG=window.Telegram?.WebApp;if(TG){TG.ready();TG.expand()}
+const $=id=>document.getElementById(id),p=n=>Number(n||0).toLocaleString('uz-UZ');
+function P(id){document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));document.querySelectorAll('.tab,.nav-item').forEach(t=>t.classList.remove('active'));$('page-'+id).classList.add('active');const i=['dashboard','shogirdlar','xarajatlar','narx','sozlama'].indexOf(id);document.querySelectorAll('.tab')[i]?.classList.add('active');document.querySelectorAll('.nav-item')[i]?.classList.add('active');if(id==='dashboard')LD();if(id==='xarajatlar')LX()}
+function toast(m,c='var(--green)'){const t=$('toast');t.textContent=m;t.style.background=c;t.style.display='block';setTimeout(()=>t.style.display='none',3000)}
+async function F(u){try{const r=await fetch(A+u);if(!r.ok)return null;return await r.json()}catch(e){return null}}
+async function FP(u){try{const r=await fetch(A+u,{method:'POST'});return await r.json()}catch(e){return null}}
+async function LD(){
+  const d=await F('/api/v1/shogird/dashboard');
+  if(!d){$('sh-s').innerHTML='<div class="empty">API yuklanmadi</div>';return}
+  $('s-b').textContent=p(d.jami_bugungi);$('s-k').textContent=d.kutilmoqda_soni;$('s-o').textContent=p(d.jami_oylik);$('s-s').textContent=d.jami_shogird;
+  let h='';if(d.bugungi?.kategoriyalar?.length){const mx=Math.max(...d.bugungi.kategoriyalar.map(k=>+k.jami));d.bugungi.kategoriyalar.forEach(k=>{const pc=mx>0?Math.round(+k.jami/mx*100):0;h+=`<div style="margin-bottom:10px"><div style="display:flex;justify-content:space-between;font-size:13px"><span>${k.kategoriya_nomi}</span><b>${p(k.jami)}</b></div><div class="progress"><div class="progress-fill green" style="width:${pc}%"></div></div></div>`})}else h='<div class="empty">Bugun xarajat yoq</div>';
+  $('kat-c').innerHTML=h;
+  let s='';if(d.shogirdlar?.length){d.shogirdlar.forEach(x=>{const pc=+x.kunlik_limit>0?Math.round(+x.bugungi_xarajat/+x.kunlik_limit*100):0;const c=pc<70?'green':pc<100?'orange':'red';s+=`<div class="list-item"><div><div class="list-name">${x.ism}</div><div class="list-sub">${x.lavozim} | ${p(x.bugungi_xarajat)} / ${p(x.kunlik_limit)}</div><div class="progress"><div class="progress-fill ${c}" style="width:${Math.min(pc,100)}%"></div></div></div><div>${x.kutilmoqda>0?'<span class="badge badge-orange">'+x.kutilmoqda+'</span>':'<span class="badge badge-green">OK</span>'}</div></div>`})}else s='<div class="empty">Shogird yoq</div>';
+  $('sh-s').innerHTML=s;
+}
+async function LX(){
+  const k=await F('/api/v1/xarajatlar/kutilmoqda');
+  if(!k?.length){$('kl').innerHTML='<div class="empty">Hammasi tasdiqlangan</div>'}else{let h='';k.forEach(x=>{h+=`<div class="list-item" style="flex-direction:column;align-items:stretch"><div style="display:flex;justify-content:space-between"><div><b>${x.kategoriya_nomi}</b><div class="list-sub">${x.shogird_ismi} | ${x.izoh||''}</div></div><div class="list-amount">${p(x.summa)}</div></div><div class="btn-group"><button class="btn btn-green btn-sm" onclick="XT(${x.id})">Tasdiqlash</button><button class="btn btn-red btn-sm" onclick="XB(${x.id})">Bekor</button></div></div>`});$('kl').innerHTML=h}
+  const b=await F('/api/v1/xarajatlar/bugungi');
+  if(!b?.kategoriyalar?.length){$('ax').innerHTML='<div class="empty">Bugun xarajat yoq</div>'}else{let h='<table class="table"><tr><th>Kategoriya</th><th>Soni</th><th>Jami</th></tr>';b.kategoriyalar.forEach(k=>{h+=`<tr><td>${k.kategoriya_nomi}</td><td>${k.soni}</td><td><b>${p(k.jami)}</b></td></tr>`});h+=`<tr style="color:var(--blue);font-weight:700"><td>JAMI</td><td></td><td>${p(b.jami)}</td></tr></table>`;$('ax').innerHTML=h}
+}
+async function XT(id){await FP('/api/v1/xarajat/'+id+'/tasdiqlash');toast('Tasdiqlandi!');LX();LD()}
+async function XB(id){await FP('/api/v1/xarajat/'+id+'/bekor');toast('Bekor!','var(--red)');LX();LD()}
+function SQ(){const i=$('si').value,n=$('sn').value;if(!i||!n){toast('ID va ism!','var(--red)');return}toast('Botda: /shogird_qosh '+i+' '+n,'var(--blue)')}
+function GY(){const n=$('gn').value;if(!n){toast('Nom!','var(--red)');return}toast('Botda: /narx_guruh '+n,'var(--blue)')}
+LD();setInterval(()=>{if(document.querySelector('.page.active')?.id==='page-dashboard')LD()},30000);
+</script>
+</body>
+</html>

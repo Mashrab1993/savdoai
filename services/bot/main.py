@@ -174,15 +174,6 @@ async def xato_handler(update: object,
     tb   = "".join(traceback.format_exception(type(xato), xato, xato.__traceback__))
     log.error("⛔ Global xato:\n%s", tb)
 
-    # Foydalanuvchiga qisqa javob (xato bo'lsa ham javob bor bo'lsin)
-    try:
-        if update and getattr(update, "message", None) and update.message:
-            await update.message.reply_text("❌ Xato yuz berdi. Qayta urinib ko'ring.")
-        elif update and getattr(update, "callback_query", None) and update.callback_query:
-            await update.callback_query.answer("❌ Xato yuz berdi.", show_alert=True)
-    except Exception as _exc:
-        log.debug("xato_handler user reply: %s", _exc)
-
     # Adminlarga xabar berish
     try:
         if _CFG:
@@ -219,31 +210,38 @@ def tg(*qatorlar:tuple) -> InlineKeyboardMarkup:
 
 
 def asosiy_menyu() -> InlineKeyboardMarkup:
-    return tg(
-        [("📥 Kirim",      "m:kirim"),    ("📤 Sotuv",      "m:chiqim")],
-        [("↩️ Qaytarish",  "m:qaytarish"),("💰 Qarz to'lash","m:qarzlar")],
-        [("📋 Nakladnoy",  "m:nakladnoy"),("📋 Faktura",    "m:faktura")],
-        [("📦 Tovarlar",   "m:tovarlar"), ("👥 Klientlar",  "m:klientlar")],
-        [("📊 Hisobot",    "m:hisobot"),  ("💹 Foyda",      "m:foyda")],
-        [("💳 Kassa",      "m:kassa"),    ("📸 Rasm OCR",   "m:rasm")],
-        [("🏭 Ombor",      "m:ombor"),    ("⚠️ Kam qoldiq", "m:ogoh")],
-        [("📒 Jurnal",     "m:jurnal"),  ("📊 Balans",     "m:balans")],
-        [("🆕 Yangiliklar","m:yangilik"), ("❓ Yordam",     "m:yordam")],
-    )
+    from telegram import WebAppInfo
+    _dash_url = _os.getenv("WEB_URL", "https://savdoai-production.up.railway.app") + "/dashboard"
+    buttons = [
+        [InlineKeyboardButton("📥 Kirim", callback_data="m:kirim"),
+         InlineKeyboardButton("📤 Sotuv", callback_data="m:chiqim")],
+        [InlineKeyboardButton("↩️ Qaytarish", callback_data="m:qaytarish"),
+         InlineKeyboardButton("💰 Qarz to'lash", callback_data="m:qarzlar")],
+        [InlineKeyboardButton("📋 Nakladnoy", callback_data="m:nakladnoy"),
+         InlineKeyboardButton("📋 Faktura", callback_data="m:faktura")],
+        [InlineKeyboardButton("📦 Tovarlar", callback_data="m:tovarlar"),
+         InlineKeyboardButton("👥 Klientlar", callback_data="m:klientlar")],
+        [InlineKeyboardButton("📊 Hisobot", callback_data="m:hisobot"),
+         InlineKeyboardButton("💹 Foyda", callback_data="m:foyda")],
+        [InlineKeyboardButton("💳 Kassa", callback_data="m:kassa"),
+         InlineKeyboardButton("📸 Rasm OCR", callback_data="m:rasm")],
+        [InlineKeyboardButton("🏭 Ombor", callback_data="m:ombor"),
+         InlineKeyboardButton("⚠️ Kam qoldiq", callback_data="m:ogoh")],
+        [InlineKeyboardButton("📒 Jurnal", callback_data="m:jurnal"),
+         InlineKeyboardButton("📊 Balans", callback_data="m:balans")],
+        [InlineKeyboardButton("👥 Shogirdlar", callback_data="m:shogirdlar"),
+         InlineKeyboardButton("🏷 Narx guruh", callback_data="m:narx")],
+        [InlineKeyboardButton("📱 Dashboard", web_app=WebAppInfo(url=_dash_url))],
+        [InlineKeyboardButton("🆕 Yangiliklar", callback_data="m:yangilik"),
+         InlineKeyboardButton("❓ Yordam", callback_data="m:yordam")],
+    ]
+    return InlineKeyboardMarkup(buttons)
 
 
 async def xat(q, matn:str, **kw) -> None:
     try: await q.edit_message_text(matn,**kw)
     except BadRequest as e:
-        msg = str(e).lower()
-        if "not modified" not in msg:
-            log.warning("xat edit failed (%s). Fallback reply_text...", e)
-            # Telegram ba'zi xabarlarni tahrirlashga ruxsat bermaydi.
-            # Bunday holatda foydalanuvchiga hech narsa ko'rinmay qolmasligi uchun reply_text qilamiz.
-            try:
-                await q.message.reply_text(matn, **kw)
-            except Exception:
-                pass
+        if "not modified" not in str(e).lower(): log.warning("xat: %s",e)
 
 
 async def faol_tekshir(update:Update) -> bool:
@@ -274,64 +272,53 @@ async def _yuborish(update:Update, matn:str, **kw) -> None:
 # ════════════ START + RO'YXAT ════════════
 
 async def cmd_start(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
-    uid = update.effective_user.id
-    log.info("📩 /start qabul qilindi — user_id=%s", uid)
+    uid=update.effective_user.id
+    log.info("📩 /start: uid=%d name=%s", uid, update.effective_user.full_name)
     try:
         user=await _user_ol_kesh(uid)
-    except Exception as e:
-        log.exception("cmd_start: user_ol_kesh xato")
-        try:
-            await update.message.reply_text("❌ Xato yuz berdi. Qayta urinib ko'ring yoki admin bilan bog'laning.")
-        except Exception:
-            pass
+    except Exception as _e:
+        log.error("❌ /start user_ol xato: %s", _e, exc_info=True)
+        await update.message.reply_text("❌ Xato yuz berdi. Qayta /start bosing.")
         return ConversationHandler.END
-    try:
-        if user and user["faol"]:
-            kam=await db.kam_qoldiq_tovarlar(uid)
-            ogoh=""
-            if kam: ogoh=f"\n\n⚠️ Kam qoldiq: {', '.join(t['nomi'] for t in kam[:3])}"
-            await update.message.reply_text(
-                f"👋 Xush kelibsiz, *{user['to_liq_ism']}*!\n"
-                f"🏪 {user['dokon_nomi']}  |  "
-                f"{SEGMENT_NOMI.get(user['segment'],'')}\n\n"
-                f"🤖 *Mashrab Moliya v{__version__}*\n"
-                "━━━━━━━━━━━━━━━━━━━━━\n"
-                "🎤 *OVOZ YUBORING* — bot hamma ishni qiladi!\n\n"
-                "📋 *Namunalar:*\n"
-                "• _\"Salimovga 50 Ariel, 20 Tide, qarzga\"_\n"
-                "• _\"100 ta un kirdi, narxi 35,000\"_\n"
-                "• _\"Salimov 500,000 to'ladi\"_\n"
-                "• _\"Bugungi hisobot\"_\n"
-                f"━━━━━━━━━━━━━━━━━━━━━{ogoh}\n\n"
-                "👇 Menyu yoki /yangilik — yangiliklar",
-                parse_mode=ParseMode.MARKDOWN, reply_markup=asosiy_menyu(),
-            )
-            return ConversationHandler.END
-        if user and not user["faol"]:
-            await update.message.reply_text("⏳ Hisobingiz tasdiqlanmagan.")
-            return ConversationHandler.END
-        await db.user_yoz(uid,
-            update.effective_user.full_name or "Nomsiz",
-            update.effective_user.username)
+    if user and user["faol"]:
+        kam=await db.kam_qoldiq_tovarlar(uid)
+        ogoh=""
+        if kam: ogoh=f"\n\n⚠️ Kam qoldiq: {', '.join(t['nomi'] for t in kam[:3])}"
         await update.message.reply_text(
-            "👋 *Mashrab Moliya*ga xush kelibsiz!\n\nBiznes turini tanlang:",
-            parse_mode=ParseMode.MARKDOWN,
-            reply_markup=tg(
-                [("🏭 Optom (ulgurji)",     "seg:optom")],
-                [("🏪 Chakana (mayda)",     "seg:chakana")],
-                [("🍽️ Oshxona / Kafe",     "seg:oshxona")],
-                [("🍦 Xo'zmak / Fast-food","seg:xozmak")],
-                [("🛒 Universal savdo",    "seg:universal")],
-            ),
+            f"👋 Xush kelibsiz, *{user['to_liq_ism']}*!\n"
+            f"🏪 {user['dokon_nomi']}  |  "
+            f"{SEGMENT_NOMI.get(user['segment'],'')}\n\n"
+            f"🤖 *Mashrab Moliya v{__version__}*\n"
+            "━━━━━━━━━━━━━━━━━━━━━\n"
+            "🎤 *OVOZ YUBORING* — bot hamma ishni qiladi!\n\n"
+            "📋 *Namunalar:*\n"
+            "• _\"Salimovga 50 Ariel, 20 Tide, qarzga\"_\n"
+            "• _\"100 ta un kirdi, narxi 35,000\"_\n"
+            "• _\"Salimov 500,000 to'ladi\"_\n"
+            "• _\"Bugungi hisobot\"_\n"
+            f"━━━━━━━━━━━━━━━━━━━━━{ogoh}\n\n"
+            "👇 Menyu yoki /yangilik — yangiliklar",
+            parse_mode=ParseMode.MARKDOWN, reply_markup=asosiy_menyu(),
         )
-        return H_SEGMENT
-    except Exception as e:
-        log.exception("cmd_start xato")
-        try:
-            await update.message.reply_text("❌ Xato yuz berdi. Qayta urinib ko'ring yoki admin bilan bog'laning.")
-        except Exception:
-            pass
         return ConversationHandler.END
+    if user and not user["faol"]:
+        await update.message.reply_text("⏳ Hisobingiz tasdiqlanmagan.")
+        return ConversationHandler.END
+    await db.user_yoz(uid,
+        update.effective_user.full_name or "Nomsiz",
+        update.effective_user.username)
+    await update.message.reply_text(
+        "👋 *Mashrab Moliya*ga xush kelibsiz!\n\nBiznes turini tanlang:",
+        parse_mode=ParseMode.MARKDOWN,
+        reply_markup=tg(
+            [("🏭 Optom (ulgurji)",     "seg:optom")],
+            [("🏪 Chakana (mayda)",     "seg:chakana")],
+            [("🍽️ Oshxona / Kafe",     "seg:oshxona")],
+            [("🍦 Xo'zmak / Fast-food","seg:xozmak")],
+            [("🛒 Universal savdo",    "seg:universal")],
+        ),
+    )
+    return H_SEGMENT
 
 
 async def h_segment(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
@@ -1656,6 +1643,27 @@ async def menyu_cb(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
     elif akt=="orqaga":
         ctx.user_data.pop("tv_s",None); ctx.user_data.pop("kl_s",None)
         await xat(q,"📋 Asosiy menyu:",reply_markup=asosiy_menyu())
+    elif akt=="shogirdlar":
+        await xat(q,
+            "👥 *SHOGIRDLAR*\n\n"
+            "/shogirdlar — ro'yxat\n"
+            "/shogird_qosh — yangi qo'shish\n"
+            "/xarajatlar — xarajatlar nazorati\n\n"
+            "Shogird ovoz/matn yuboradi:\n"
+            "_\"Benzin 80000\"_ → bot saqlaydi",
+            parse_mode=ParseMode.MARKDOWN,
+            reply_markup=tg([("⬅️ Orqaga", "m:orqaga")]))
+    elif akt=="narx":
+        await xat(q,
+            "🏷 *NARX GURUHLARI*\n\n"
+            "/narx_guruh — guruhlar ko'rish/yaratish\n"
+            "/narx_qoy — guruhga tovar narxi qo'yish\n"
+            "/klient_narx — shaxsiy narx qo'yish\n"
+            "/klient_guruh — klientni guruhga biriktirish\n\n"
+            "Ovozda narx aytish shart emas —\n"
+            "bot o'zi topadi!",
+            parse_mode=ParseMode.MARKDOWN,
+            reply_markup=tg([("⬅️ Orqaga", "m:orqaga")]))
 
 
 async def paginatsiya_cb(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
@@ -1730,6 +1738,381 @@ async def faktura_cb(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
     except Exception as e:
         log.error("faktura_cb: %s", e, exc_info=True)
         await q.message.reply_text("❌ Faktura yaratishda xato yuz berdi")
+
+
+# ════════════ NARX GURUHLARI ════════════
+
+async def cmd_narx_guruh(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
+    """Narx guruh yaratish/ko'rish. /narx_guruh [nom]"""
+    if not await faol_tekshir(update): return
+    uid = update.effective_user.id
+    matn = (update.message.text or "").strip()
+    qismlar = matn.split(maxsplit=1)
+    
+    try:
+        from shared.services.smart_narx import guruhlar_royxati, guruh_yaratish
+        async with _rls_conn(uid) as c:
+            if len(qismlar) > 1:
+                # Yangi guruh yaratish
+                nom = qismlar[1].strip()
+                gid = await guruh_yaratish(c, uid, nom)
+                await update.message.reply_text(
+                    f"✅ *Narx guruhi yaratildi!*\n\n"
+                    f"🏷 Nomi: *{nom}*\n"
+                    f"ID: #{gid}\n\n"
+                    f"Narx qo'yish: `/narx_qoy {nom} Ariel 45000`",
+                    parse_mode=ParseMode.MARKDOWN)
+            else:
+                # Ro'yxat
+                guruhlar = await guruhlar_royxati(c, uid)
+                if not guruhlar:
+                    await update.message.reply_text(
+                        "📋 Hali narx guruhi yo'q.\n\n"
+                        "Yaratish: `/narx_guruh Ulgurji`\n"
+                        "Masalan: Ulgurji, Chakana, VIP",
+                        parse_mode=ParseMode.MARKDOWN)
+                    return
+                matn = "🏷 *NARX GURUHLARI*\n━━━━━━━━━━━━━━━━━━\n\n"
+                for g in guruhlar:
+                    matn += (
+                        f"🏷 *{g['nomi']}*\n"
+                        f"   📦 {g['tovar_soni']} ta tovar narxi\n"
+                        f"   👥 {g['klient_soni']} ta klient\n\n"
+                    )
+                matn += "Yangi guruh: `/narx_guruh <nom>`\nNarx qo'yish: `/narx_qoy <guruh> <tovar> <narx>`"
+                await update.message.reply_text(matn, parse_mode=ParseMode.MARKDOWN)
+    except Exception as e:
+        log.error("cmd_narx_guruh: %s", e, exc_info=True)
+        await update.message.reply_text("❌ Xato yuz berdi.")
+
+
+async def cmd_narx_qoy(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
+    """Narx qo'yish. /narx_qoy <guruh> <tovar> <narx>"""
+    if not await faol_tekshir(update): return
+    uid = update.effective_user.id
+    matn = (update.message.text or "").strip()
+    qismlar = matn.split()
+    
+    if len(qismlar) < 4:
+        await update.message.reply_text(
+            "📝 *Narx qo'yish*\n\n"
+            "Format: `/narx_qoy <guruh> <tovar> <narx>`\n\n"
+            "Masalan:\n"
+            "`/narx_qoy Ulgurji Ariel 43000`\n"
+            "`/narx_qoy VIP Tide 38000`",
+            parse_mode=ParseMode.MARKDOWN)
+        return
+    
+    guruh_nom = qismlar[1]
+    tovar_nom = qismlar[2]
+    try:
+        narx = float(qismlar[3].replace(",",""))
+    except ValueError:
+        await update.message.reply_text("❌ Narx raqam bo'lishi kerak."); return
+    
+    try:
+        from shared.services.smart_narx import guruh_narx_qoyish
+        async with _rls_conn(uid) as c:
+            # Guruh topish
+            guruh = await c.fetchrow(
+                "SELECT id FROM narx_guruhlari WHERE user_id=$1 AND LOWER(nomi) LIKE LOWER($2)",
+                uid, f"%{guruh_nom}%")
+            if not guruh:
+                await update.message.reply_text(f"❌ *{guruh_nom}* guruhi topilmadi.\n/narx_guruh bilan yarating.", parse_mode=ParseMode.MARKDOWN)
+                return
+            # Tovar topish
+            tovar = await c.fetchrow(
+                "SELECT id, nomi FROM tovarlar WHERE user_id=$1 AND LOWER(nomi) LIKE LOWER($2)",
+                uid, f"%{tovar_nom}%")
+            if not tovar:
+                await update.message.reply_text(f"❌ *{tovar_nom}* tovari topilmadi.", parse_mode=ParseMode.MARKDOWN)
+                return
+            await guruh_narx_qoyish(c, uid, guruh["id"], tovar["id"], Decimal(str(narx)))
+        await update.message.reply_text(
+            f"✅ *Narx qo'yildi!*\n\n"
+            f"🏷 Guruh: *{guruh_nom}*\n"
+            f"📦 Tovar: *{tovar['nomi']}*\n"
+            f"💰 Narx: *{narx:,.0f} so'm*",
+            parse_mode=ParseMode.MARKDOWN)
+    except Exception as e:
+        log.error("cmd_narx_qoy: %s", e, exc_info=True)
+        await update.message.reply_text("❌ Xato yuz berdi.")
+
+
+async def cmd_klient_narx(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
+    """Klientga shaxsiy narx. /klient_narx <klient> <tovar> <narx>"""
+    if not await faol_tekshir(update): return
+    uid = update.effective_user.id
+    matn = (update.message.text or "").strip()
+    qismlar = matn.split()
+    
+    if len(qismlar) < 4:
+        await update.message.reply_text(
+            "📝 *Klient shaxsiy narx*\n\n"
+            "Format: `/klient_narx <klient> <tovar> <narx>`\n\n"
+            "Masalan:\n"
+            "`/klient_narx Salimov Ariel 43000`\n"
+            "`/klient_narx Karimov Tide 38000`",
+            parse_mode=ParseMode.MARKDOWN)
+        return
+    
+    klient_nom = qismlar[1]
+    tovar_nom = qismlar[2]
+    try:
+        narx = float(qismlar[3].replace(",",""))
+    except ValueError:
+        await update.message.reply_text("❌ Narx raqam bo'lishi kerak."); return
+    
+    try:
+        from shared.services.smart_narx import shaxsiy_narx_qoyish
+        async with _rls_conn(uid) as c:
+            klient = await c.fetchrow(
+                "SELECT id, ism FROM klientlar WHERE user_id=$1 AND LOWER(ism) LIKE LOWER($2)",
+                uid, f"%{klient_nom}%")
+            if not klient:
+                await update.message.reply_text(f"❌ *{klient_nom}* klienti topilmadi.", parse_mode=ParseMode.MARKDOWN)
+                return
+            tovar = await c.fetchrow(
+                "SELECT id, nomi FROM tovarlar WHERE user_id=$1 AND LOWER(nomi) LIKE LOWER($2)",
+                uid, f"%{tovar_nom}%")
+            if not tovar:
+                await update.message.reply_text(f"❌ *{tovar_nom}* tovari topilmadi.", parse_mode=ParseMode.MARKDOWN)
+                return
+            await shaxsiy_narx_qoyish(c, uid, klient["id"], tovar["id"], Decimal(str(narx)))
+        await update.message.reply_text(
+            f"✅ *Shaxsiy narx qo'yildi!*\n\n"
+            f"👤 Klient: *{klient['ism']}*\n"
+            f"📦 Tovar: *{tovar['nomi']}*\n"
+            f"💰 Narx: *{narx:,.0f} so'm*\n\n"
+            f"Endi \"{klient['ism']}ga {tovar['nomi']}\" desangiz, narx avtomatik qo'yiladi.",
+            parse_mode=ParseMode.MARKDOWN)
+    except Exception as e:
+        log.error("cmd_klient_narx: %s", e, exc_info=True)
+        await update.message.reply_text("❌ Xato yuz berdi.")
+
+
+async def cmd_klient_guruh(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
+    """Klientni guruhga biriktirish. /klient_guruh <klient> <guruh>"""
+    if not await faol_tekshir(update): return
+    uid = update.effective_user.id
+    matn = (update.message.text or "").strip()
+    qismlar = matn.split()
+    
+    if len(qismlar) < 3:
+        await update.message.reply_text(
+            "📝 *Klientni guruhga biriktirish*\n\n"
+            "Format: `/klient_guruh <klient> <guruh>`\n\n"
+            "Masalan:\n"
+            "`/klient_guruh Salimov Ulgurji`",
+            parse_mode=ParseMode.MARKDOWN)
+        return
+    
+    klient_nom = qismlar[1]
+    guruh_nom = qismlar[2]
+    
+    try:
+        from shared.services.smart_narx import klient_guruhga_qoyish
+        async with _rls_conn(uid) as c:
+            klient = await c.fetchrow(
+                "SELECT id, ism FROM klientlar WHERE user_id=$1 AND LOWER(ism) LIKE LOWER($2)",
+                uid, f"%{klient_nom}%")
+            if not klient:
+                await update.message.reply_text(f"❌ *{klient_nom}* topilmadi.", parse_mode=ParseMode.MARKDOWN); return
+            guruh = await c.fetchrow(
+                "SELECT id, nomi FROM narx_guruhlari WHERE user_id=$1 AND LOWER(nomi) LIKE LOWER($2)",
+                uid, f"%{guruh_nom}%")
+            if not guruh:
+                await update.message.reply_text(f"❌ *{guruh_nom}* guruhi topilmadi.", parse_mode=ParseMode.MARKDOWN); return
+            await klient_guruhga_qoyish(c, klient["id"], guruh["id"])
+        await update.message.reply_text(
+            f"✅ *Biriktirildi!*\n\n"
+            f"👤 *{klient['ism']}* → 🏷 *{guruh['nomi']}*\n\n"
+            f"Endi {klient['ism']}ga sotuv qilsangiz, {guruh['nomi']} narxlari avtomatik qo'yiladi.",
+            parse_mode=ParseMode.MARKDOWN)
+    except Exception as e:
+        log.error("cmd_klient_guruh: %s", e, exc_info=True)
+        await update.message.reply_text("❌ Xato yuz berdi.")
+
+
+# ════════════ NARX GURUH BOSHQARUVI ════════════
+
+async def cmd_narx_guruh(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
+    """Narx guruhi yaratish: /narx_guruh Ulgurji"""
+    if not await faol_tekshir(update): return
+    uid = update.effective_user.id
+    if not cfg().is_admin(uid):
+        await update.message.reply_text("🔒 Faqat admin uchun."); return
+    
+    matn = (update.message.text or "").strip()
+    qismlar = matn.split(maxsplit=1)
+    if len(qismlar) < 2:
+        await update.message.reply_text(
+            "🏷 *Narx guruhi yaratish*\n\n"
+            "Format: `/narx_guruh <nomi>`\n\n"
+            "Masalan:\n"
+            "`/narx_guruh Ulgurji`\n"
+            "`/narx_guruh Chakana`\n"
+            "`/narx_guruh VIP`",
+            parse_mode=ParseMode.MARKDOWN)
+        return
+    
+    nomi = qismlar[1].strip()
+    try:
+        from shared.services.smart_narx import guruh_yaratish
+        async with _rls_conn(uid) as c:
+            gid = await guruh_yaratish(c, uid, nomi)
+        await update.message.reply_text(
+            f"✅ *Narx guruhi yaratildi!*\n\n"
+            f"🏷 Nomi: *{nomi}*\n"
+            f"🆔 ID: {gid}\n\n"
+            f"Endi narx qo'ying:\n"
+            f"`/narx_qoy {nomi} Ariel 43000`",
+            parse_mode=ParseMode.MARKDOWN)
+    except Exception as e:
+        log.error("narx_guruh: %s", e, exc_info=True)
+        await update.message.reply_text("❌ Guruh yaratishda xato yuz berdi.")
+
+
+async def cmd_narx_qoy(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
+    """Guruh narxi: /narx_qoy Ulgurji Ariel 43000"""
+    if not await faol_tekshir(update): return
+    uid = update.effective_user.id
+    if not cfg().is_admin(uid):
+        await update.message.reply_text("🔒 Faqat admin uchun."); return
+    
+    matn = (update.message.text or "").strip()
+    qismlar = matn.split()
+    if len(qismlar) < 4:
+        await update.message.reply_text(
+            "💰 *Narx qo'yish*\n\n"
+            "Format: `/narx_qoy <guruh> <tovar> <narx>`\n\n"
+            "Masalan:\n"
+            "`/narx_qoy Ulgurji Ariel 43000`\n"
+            "`/narx_qoy Chakana Tide 47000`\n\n"
+            "Klient shaxsiy narx:\n"
+            "`/klient_narx Salimov Ariel 42000`",
+            parse_mode=ParseMode.MARKDOWN)
+        return
+    
+    guruh_nomi = qismlar[1]
+    tovar_nomi = qismlar[2]
+    try:
+        narx = Decimal(qismlar[3].replace(",","").replace(".",""))
+    except Exception:
+        await update.message.reply_text("❌ Narx raqam bo'lishi kerak."); return
+    
+    try:
+        async with _rls_conn(uid) as c:
+            # Guruh topish
+            guruh = await c.fetchrow("SELECT id FROM narx_guruhlari WHERE LOWER(nomi) LIKE LOWER($1) LIMIT 1", f"%{guruh_nomi}%")
+            if not guruh:
+                await update.message.reply_text(f"❌ *{guruh_nomi}* guruhi topilmadi.\n`/narx_guruh {guruh_nomi}` bilan yarating.", parse_mode=ParseMode.MARKDOWN)
+                return
+            # Tovar topish
+            tovar = await c.fetchrow("SELECT id, nomi FROM tovarlar WHERE LOWER(nomi) LIKE LOWER($1) LIMIT 1", f"%{tovar_nomi}%")
+            if not tovar:
+                await update.message.reply_text(f"❌ *{tovar_nomi}* tovari topilmadi.", parse_mode=ParseMode.MARKDOWN)
+                return
+            from shared.services.smart_narx import guruh_narx_qoyish
+            await guruh_narx_qoyish(c, uid, guruh["id"], tovar["id"], narx)
+        await update.message.reply_text(
+            f"✅ *Narx qo'yildi!*\n\n"
+            f"🏷 Guruh: *{guruh_nomi}*\n"
+            f"📦 Tovar: *{tovar['nomi']}*\n"
+            f"💰 Narx: *{narx:,.0f}* so'm",
+            parse_mode=ParseMode.MARKDOWN)
+    except Exception as e:
+        log.error("narx_qoy: %s", e, exc_info=True)
+        await update.message.reply_text("❌ Narx qo'yishda xato yuz berdi.")
+
+
+async def cmd_klient_narx(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
+    """Klient shaxsiy narx: /klient_narx Salimov Ariel 42000"""
+    if not await faol_tekshir(update): return
+    uid = update.effective_user.id
+    if not cfg().is_admin(uid):
+        await update.message.reply_text("🔒 Faqat admin uchun."); return
+    
+    matn = (update.message.text or "").strip()
+    qismlar = matn.split()
+    if len(qismlar) < 4:
+        await update.message.reply_text(
+            "👤 *Klient shaxsiy narx*\n\n"
+            "Format: `/klient_narx <klient> <tovar> <narx>`\n\n"
+            "Masalan:\n"
+            "`/klient_narx Salimov Ariel 42000`\n"
+            "`/klient_narx Karimov Tide 38000`",
+            parse_mode=ParseMode.MARKDOWN)
+        return
+    
+    klient_ism = qismlar[1]
+    tovar_nomi = qismlar[2]
+    try:
+        narx = Decimal(qismlar[3].replace(",","").replace(".",""))
+    except Exception:
+        await update.message.reply_text("❌ Narx raqam bo'lishi kerak."); return
+    
+    try:
+        async with _rls_conn(uid) as c:
+            klient = await c.fetchrow("SELECT id, ism FROM klientlar WHERE LOWER(ism) LIKE LOWER($1) LIMIT 1", f"%{klient_ism}%")
+            if not klient:
+                await update.message.reply_text(f"❌ *{klient_ism}* klienti topilmadi.", parse_mode=ParseMode.MARKDOWN); return
+            tovar = await c.fetchrow("SELECT id, nomi FROM tovarlar WHERE LOWER(nomi) LIKE LOWER($1) LIMIT 1", f"%{tovar_nomi}%")
+            if not tovar:
+                await update.message.reply_text(f"❌ *{tovar_nomi}* tovari topilmadi.", parse_mode=ParseMode.MARKDOWN); return
+            from shared.services.smart_narx import shaxsiy_narx_qoyish
+            await shaxsiy_narx_qoyish(c, uid, klient["id"], tovar["id"], narx)
+        await update.message.reply_text(
+            f"✅ *Shaxsiy narx qo'yildi!*\n\n"
+            f"👤 Klient: *{klient['ism']}*\n"
+            f"📦 Tovar: *{tovar['nomi']}*\n"
+            f"💰 Narx: *{narx:,.0f}* so'm\n\n"
+            f"Endi \"{klient['ism']}ga {tovar['nomi']}\" desangiz narx avtomatik.",
+            parse_mode=ParseMode.MARKDOWN)
+    except Exception as e:
+        log.error("klient_narx: %s", e, exc_info=True)
+        await update.message.reply_text("❌ Narx qo'yishda xato yuz berdi.")
+
+
+async def cmd_klient_guruh(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
+    """Klientni guruhga biriktirish: /klient_guruh Salimov Ulgurji"""
+    if not await faol_tekshir(update): return
+    uid = update.effective_user.id
+    if not cfg().is_admin(uid):
+        await update.message.reply_text("🔒 Faqat admin uchun."); return
+    
+    matn = (update.message.text or "").strip()
+    qismlar = matn.split()
+    if len(qismlar) < 3:
+        await update.message.reply_text(
+            "🏷 *Klientni guruhga biriktirish*\n\n"
+            "Format: `/klient_guruh <klient> <guruh>`\n\n"
+            "Masalan:\n"
+            "`/klient_guruh Salimov Ulgurji`",
+            parse_mode=ParseMode.MARKDOWN)
+        return
+    
+    klient_ism = qismlar[1]
+    guruh_nomi = qismlar[2]
+    
+    try:
+        async with _rls_conn(uid) as c:
+            klient = await c.fetchrow("SELECT id, ism FROM klientlar WHERE LOWER(ism) LIKE LOWER($1) LIMIT 1", f"%{klient_ism}%")
+            if not klient:
+                await update.message.reply_text(f"❌ *{klient_ism}* topilmadi.", parse_mode=ParseMode.MARKDOWN); return
+            guruh = await c.fetchrow("SELECT id, nomi FROM narx_guruhlari WHERE LOWER(nomi) LIKE LOWER($1) LIMIT 1", f"%{guruh_nomi}%")
+            if not guruh:
+                await update.message.reply_text(f"❌ *{guruh_nomi}* guruhi topilmadi.", parse_mode=ParseMode.MARKDOWN); return
+            from shared.services.smart_narx import klient_guruhga_qoyish
+            await klient_guruhga_qoyish(c, klient["id"], guruh["id"])
+        await update.message.reply_text(
+            f"✅ *Biriktirildi!*\n\n"
+            f"👤 {klient['ism']} → 🏷 {guruh['nomi']}\n\n"
+            f"Endi {klient['ism']}ga sotuv qilsangiz {guruh['nomi']} narxlari ishlatiladi.",
+            parse_mode=ParseMode.MARKDOWN)
+    except Exception as e:
+        log.error("klient_guruh: %s", e, exc_info=True)
+        await update.message.reply_text("❌ Xato yuz berdi.")
 
 
 # ════════════ SHOGIRD XARAJAT NAZORATI ════════════
@@ -2706,68 +3089,13 @@ async def boshlash(app:Application) -> None:
         raise RuntimeError(f"AI xizmat init muvaffaqiyatsiz: {_e}") from _e
     log.info("✅ Bot xizmatlar tayyor")
     # Redis cache (ixtiyoriy — yo'q bo'lsa ham bot ishlaydi)
-    redis_ok = False
     try:
         redis_url = _os.environ.get("REDIS_URL", "")
         if redis_url:
             from shared.cache.redis_cache import redis_init
             await redis_init(redis_url)
-            redis_ok = True
     except Exception as _e:
         log.warning("Redis ulana olmadi (cache o'chirildi): %s", _e)
-        redis_ok = False
-
-    if not redis_ok:
-        log.warning(
-            "⚠️ REDIS_URL yo'q yoki ulanmadi. Faqat BITTA bot instance ishlating, "
-            "aks holda Telegram 'Conflict: getUpdates' xatosi keladi va bot javob bermaydi. "
-            "Redis ulang yoki replica=1 qiling."
-        )
-
-    # Telegram polling Conflict fix:
-    # Bir xil bot token bilan 2+ instance polling qilsa, telegram Conflict qaytaradi.
-    # Shuning uchun faqat bitta instance pollingni boshlasin.
-    if redis_ok:
-        import asyncio, hashlib
-        from shared.cache.redis_cache import lock_ol, lock_qo_yber, lock_refresh
-
-        token_hash = hashlib.sha256((_CFG.bot_token or "").encode("utf-8")).hexdigest()[:12]
-        lock_key = f"bot_polling:{token_hash}"
-        lock_ttl_s = int(_os.getenv("BOT_POLL_LOCK_TTL_S", "86400"))  # 24 soat
-        lock_wait_s = int(_os.getenv("BOT_POLL_LOCK_WAIT_S", "0"))  # 0 => cheksiz kutish
-
-        start = time.monotonic()
-        while True:
-            got = await lock_ol(lock_key, ttl=lock_ttl_s)
-            if got:
-                log.info("✅ Polling lock olindi (%s).", lock_key)
-                app.bot_data["_poll_lock_key"] = lock_key
-                app.bot_data["_poll_lock_ttl"] = lock_ttl_s
-
-                async def _release_poll_lock(application):
-                    k = application.bot_data.pop("_poll_lock_key", None)
-                    if k:
-                        try:
-                            await lock_qo_yber(k)
-                            log.info("✅ Polling lock bo'shatildi (%s).", k)
-                        except Exception as ex:
-                            log.warning("Lock bo'shatish: %s", ex)
-
-                if getattr(app, "post_shutdown", None) is None:
-                    app.post_shutdown = []
-                app.post_shutdown.append(_release_poll_lock)
-                break
-
-            if lock_wait_s > 0 and time.monotonic() - start > lock_wait_s:
-                log.error(
-                    "⛔ Polling lock band (%s). Boshqa instance polling qilmoqda — bu instance to'xtaydi.",
-                    lock_key,
-                )
-                raise RuntimeError(
-                    "Another bot instance is polling (Telegram getUpdates conflict avoidance)."
-                )
-
-            await asyncio.sleep(2)
     # Vision AI (ixtiyoriy — Gemini key bilan ishlaydi)
     try:
         from shared.services.vision import ishga_tushir as vision_init
@@ -2812,22 +3140,14 @@ async def boshlash(app:Application) -> None:
         BotCommand("shogird_qosh",    "Shogird qo'shish (admin)"),
         BotCommand("shogirdlar",      "Shogirdlar ro'yxati (admin)"),
         BotCommand("xarajatlar",      "Xarajatlar nazorati (admin)"),
+        BotCommand("narx_guruh",      "Narx guruhi yaratish"),
+        BotCommand("narx_qoy",        "Guruh narxi qo'yish"),
+        BotCommand("klient_narx",     "Klient shaxsiy narx"),
+        BotCommand("klient_guruh",    "Klient guruhga biriktirish"),
     ])
 
     job_queue=app.job_queue
     if job_queue:
-        # Polling lock TTL yangilash (bitta instance lock ni ushlab tursin, 24h da tugamasin)
-        if app.bot_data.get("_poll_lock_key"):
-            from shared.cache.redis_cache import lock_refresh as _lock_refresh
-            _key = app.bot_data["_poll_lock_key"]
-            _ttl = app.bot_data.get("_poll_lock_ttl", 86400)
-            async def _poll_lock_refresh_cb(ctx):
-                try:
-                    await _lock_refresh(_key, _ttl)
-                    log.debug("Polling lock yangilandi (%s).", _key)
-                except Exception as ex:
-                    log.warning("Lock refresh: %s", ex)
-            job_queue.run_repeating(_poll_lock_refresh_cb, interval=600, first=600)  # har 10 min
         # Bot standalone rejim — Worker mavjud bo'lsa u boshqaradi
         _worker_url = _os.getenv("WORKER_URL", "")
         if _worker_url:
@@ -2874,6 +3194,16 @@ async def boshlash(app:Application) -> None:
 def ilovani_qur(conf:Config) -> Application:
     app=(Application.builder().token(conf.bot_token).post_init(boshlash).build())
     app.bot_data["cfg"]=conf
+    # /ping — debug, barcha tekshiruvlarni bypass qiladi
+    async def cmd_ping(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
+        import time as _pt
+        await update.message.reply_text(
+            f"🏓 Pong!\n"
+            f"📱 UID: {update.effective_user.id}\n"
+            f"🤖 Bot: v{__version__}\n"
+            f"⏰ {_pt.strftime('%H:%M:%S')}")
+    app.add_handler(CommandHandler("ping", cmd_ping))
+
     royxat=ConversationHandler(
         entry_points=[CommandHandler("start",cmd_start)],
         states={
@@ -2882,7 +3212,7 @@ def ilovani_qur(conf:Config) -> Application:
             H_TELEFON:[MessageHandler(filters.TEXT & ~filters.COMMAND,h_telefon)],
         },
         fallbacks=[CommandHandler("start",cmd_start)],
-        allow_reentry=True,per_message=False,block=False,
+        allow_reentry=True,per_message=False,
     )
     app.add_handler(royxat)
     app.add_handler(MessageHandler(filters.VOICE,ovoz_qabul))
@@ -2970,10 +3300,19 @@ def ilovani_qur(conf:Config) -> Application:
     app.add_handler(CommandHandler("statistika",       cmd_statistika))
     app.add_handler(CommandHandler("health", health_check))
     # Shogird xarajat
+    app.add_handler(CommandHandler("narx_guruh",       cmd_narx_guruh))
+    app.add_handler(CommandHandler("narx_qoy",         cmd_narx_qoy))
+    app.add_handler(CommandHandler("klient_narx",      cmd_klient_narx))
+    app.add_handler(CommandHandler("klient_guruh",     cmd_klient_guruh))
     app.add_handler(CommandHandler("shogird_qosh",     cmd_shogird_qosh))
     app.add_handler(CommandHandler("shogirdlar",       cmd_shogirdlar))
     app.add_handler(CommandHandler("xarajatlar",       cmd_xarajatlar))
     app.add_handler(CallbackQueryHandler(shogird_xarajat_cb, pattern=r"^sx:"))
+    # Narx guruhlari
+    app.add_handler(CommandHandler("narx_guruh",       cmd_narx_guruh))
+    app.add_handler(CommandHandler("narx_qoy",         cmd_narx_qoy))
+    app.add_handler(CommandHandler("klient_narx",      cmd_klient_narx))
+    app.add_handler(CommandHandler("klient_guruh",     cmd_klient_guruh))
     app.add_error_handler(xato_handler)
     return app
 
@@ -2981,13 +3320,17 @@ def ilovani_qur(conf:Config) -> Application:
 def main() -> None:
     conf=config_init(); app=ilovani_qur(conf)
     log.info("▶️  Polling boshlandi...")
+    # Webhook tozalash (agar webhook qolgan bo'lsa — polling ishlamaydi!)
     try:
-        # drop_pending_updates=False: restart da xabarlar yo'qolmaydi
-        # Faqat debug/test uchun True ga o'zgartiring
-        _drop = _os.getenv("DROP_PENDING", "false").lower() == "true"
+        import httpx
+        r = httpx.get(f"https://api.telegram.org/bot{conf.bot_token}/deleteWebhook?drop_pending_updates=true", timeout=10)
+        log.info("🔄 Webhook tozalandi: %s", r.text[:100])
+    except Exception as _wh:
+        log.warning("Webhook tozalash: %s", _wh)
+    try:
         app.run_polling(
             allowed_updates=Update.ALL_TYPES,
-            drop_pending_updates=_drop,
+            drop_pending_updates=True,
             close_loop=False,
         )
     except KeyboardInterrupt:
