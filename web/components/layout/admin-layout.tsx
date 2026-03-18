@@ -1,0 +1,25 @@
+"use client"
+
+import { Sidebar } from "./sidebar"
+import { TopHeader } from "./top-header"
+
+interface AdminLayoutProps {
+  children: React.ReactNode
+  title: string
+}
+
+export function AdminLayout({ children, title }: AdminLayoutProps) {
+  return (
+    <div className="flex h-screen bg-background overflow-hidden">
+      <Sidebar />
+      <div className="flex flex-col flex-1 min-w-0">
+        <TopHeader title={title} />
+        <main className="flex-1 overflow-y-auto p-6">
+          <div className="max-w-7xl mx-auto">
+            {children}
+          </div>
+        </main>
+      </div>
+    </div>
+  )
+}
