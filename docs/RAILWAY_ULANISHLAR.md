@@ -1,5 +1,20 @@
 # Railway: Postgres va Redis ulanishlari
 
+## Rasimdagi muammo (savdoai-bot javob bermaydi)
+
+Agar grafikda **savdoai-bot** dan faqat **Redis** ga chiziq bor, **Postgres** ga chiziq yo‘q bo‘lsa — bot **DATABASE_URL** olmayapti va `/start` ga javob bermaydi. Quyidagilarni bajaring:
+
+1. **savdoai-bot** blokini bosing (chapda).
+2. Yuqorida **Variables** tabini oching.
+3. **+ New Variable** yoki **Add Variable** bosing.
+4. **Reference** (yoki "Add a variable from another service") tanlang.
+5. **Postgres** servisini tanlang, keyin **DATABASE_URL** ni tanlang va saqlang.
+6. **Redeploy** qiling (savdoai-bot → Deployments → ... → Redeploy yoki avtomatik yangilanadi).
+
+Shundan keyin grafikda Postgres bilan bot o‘rtasida ham ulanish paydo bo‘lishi mumkin, logda esa `✅ Ma'lumotlar bazasi ulandi` chiqadi.
+
+---
+
 Bot javob bermasa, ko‘pincha **Postgres** yoki **Redis** servisga ulanmagan bo‘ladi. Barcha ilova servislari ikkalasiga ham ulanishi kerak.
 
 ## Kim nima uchun kerak
