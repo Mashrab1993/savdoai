@@ -2672,13 +2672,46 @@ async def boshlash(app:Application) -> None:
         raise RuntimeError(f"AI xizmat init muvaffaqiyatsiz: {_e}") from _e
     log.info("✅ Bot xizmatlar tayyor")
     # Redis cache (ixtiyoriy — yo'q bo'lsa ham bot ishlaydi)
+    redis_ok = False
     try:
         redis_url = _os.environ.get("REDIS_URL", "")
         if redis_url:
             from shared.cache.redis_cache import redis_init
             await redis_init(redis_url)
+            redis_ok = True
     except Exception as _e:
         log.warning("Redis ulana olmadi (cache o'chirildi): %s", _e)
+        redis_ok = False
+
+    # Telegram polling Conflict fix:
+    # Bir xil bot token bilan 2+ instance polling qilsa, telegram Conflict qaytaradi.
+    # Shuning uchun faqat bitta instance pollingni boshlasin.
+    if redis_ok:
+        import asyncio, hashlib
+        from shared.cache.redis_cache import lock_ol
+
+        token_hash = hashlib.sha256((_CFG.bot_token or "").encode("utf-8")).hexdigest()[:12]
+        lock_key = f"bot_polling:{token_hash}"
+        lock_ttl_s = int(_os.getenv("BOT_POLL_LOCK_TTL_S", "3600"))  # 1 soat
+        lock_wait_s = int(_os.getenv("BOT_POLL_LOCK_WAIT_S", "120"))  # 2 daqiqa
+
+        start = time.monotonic()
+        while True:
+            got = await lock_ol(lock_key, ttl=lock_ttl_s)
+            if got:
+                log.info("✅ Polling lock olindi (%s).", lock_key)
+                break
+
+            if time.monotonic() - start > lock_wait_s:
+                log.error(
+                    "⛔ Polling lock band (%s). Boshqa instance polling qilmoqda — bu instance to'xtaydi.",
+                    lock_key,
+                )
+                raise RuntimeError(
+                    "Another bot instance is polling (Telegram getUpdates conflict avoidance)."
+                )
+
+            await asyncio.sleep(2)
     # Vision AI (ixtiyoriy — Gemini key bilan ishlaydi)
     try:
         from shared.services.vision import ishga_tushir as vision_init
