@@ -83,6 +83,10 @@ def config_init() -> Config:
 
     if xatolar:
         log.critical("❌ Muhim o'zgaruvchilar yo'q: %s", ", ".join(xatolar))
+        if "DATABASE_URL" in xatolar:
+            log.critical("   → Railway: savdoai-bot ga Postgres ni ulang (Variables → Add Reference → Postgres → DATABASE_URL)")
+        if not os.getenv("REDIS_URL", "").strip():
+            log.warning("   → REDIS_URL ham yo'q — Redis ulang; aks holda bir nechta instance Conflict beradi")
         sys.exit(1)
 
     admin_ids: frozenset[int] = frozenset(

@@ -174,6 +174,15 @@ async def xato_handler(update: object,
     tb   = "".join(traceback.format_exception(type(xato), xato, xato.__traceback__))
     log.error("⛔ Global xato:\n%s", tb)
 
+    # Foydalanuvchiga qisqa javob (xato bo'lsa ham javob bor bo'lsin)
+    try:
+        if update and getattr(update, "message", None) and update.message:
+            await update.message.reply_text("❌ Xato yuz berdi. Qayta urinib ko'ring.")
+        elif update and getattr(update, "callback_query", None) and update.callback_query:
+            await update.callback_query.answer("❌ Xato yuz berdi.", show_alert=True)
+    except Exception as _exc:
+        log.debug("xato_handler user reply: %s", _exc)
+
     # Adminlarga xabar berish
     try:
         if _CFG:
@@ -265,47 +274,64 @@ async def _yuborish(update:Update, matn:str, **kw) -> None:
 # ════════════ START + RO'YXAT ════════════
 
 async def cmd_start(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
-    uid=update.effective_user.id
-    user=await _user_ol_kesh(uid)
-    if user and user["faol"]:
-        kam=await db.kam_qoldiq_tovarlar(uid)
-        ogoh=""
-        if kam: ogoh=f"\n\n⚠️ Kam qoldiq: {', '.join(t['nomi'] for t in kam[:3])}"
+    uid = update.effective_user.id
+    log.info("📩 /start qabul qilindi — user_id=%s", uid)
+    try:
+        user=await _user_ol_kesh(uid)
+    except Exception as e:
+        log.exception("cmd_start: user_ol_kesh xato")
+        try:
+            await update.message.reply_text("❌ Xato yuz berdi. Qayta urinib ko'ring yoki admin bilan bog'laning.")
+        except Exception:
+            pass
+        return ConversationHandler.END
+    try:
+        if user and user["faol"]:
+            kam=await db.kam_qoldiq_tovarlar(uid)
+            ogoh=""
+            if kam: ogoh=f"\n\n⚠️ Kam qoldiq: {', '.join(t['nomi'] for t in kam[:3])}"
+            await update.message.reply_text(
+                f"👋 Xush kelibsiz, *{user['to_liq_ism']}*!\n"
+                f"🏪 {user['dokon_nomi']}  |  "
+                f"{SEGMENT_NOMI.get(user['segment'],'')}\n\n"
+                f"🤖 *Mashrab Moliya v{__version__}*\n"
+                "━━━━━━━━━━━━━━━━━━━━━\n"
+                "🎤 *OVOZ YUBORING* — bot hamma ishni qiladi!\n\n"
+                "📋 *Namunalar:*\n"
+                "• _\"Salimovga 50 Ariel, 20 Tide, qarzga\"_\n"
+                "• _\"100 ta un kirdi, narxi 35,000\"_\n"
+                "• _\"Salimov 500,000 to'ladi\"_\n"
+                "• _\"Bugungi hisobot\"_\n"
+                f"━━━━━━━━━━━━━━━━━━━━━{ogoh}\n\n"
+                "👇 Menyu yoki /yangilik — yangiliklar",
+                parse_mode=ParseMode.MARKDOWN, reply_markup=asosiy_menyu(),
+            )
+            return ConversationHandler.END
+        if user and not user["faol"]:
+            await update.message.reply_text("⏳ Hisobingiz tasdiqlanmagan.")
+            return ConversationHandler.END
+        await db.user_yoz(uid,
+            update.effective_user.full_name or "Nomsiz",
+            update.effective_user.username)
         await update.message.reply_text(
-            f"👋 Xush kelibsiz, *{user['to_liq_ism']}*!\n"
-            f"🏪 {user['dokon_nomi']}  |  "
-            f"{SEGMENT_NOMI.get(user['segment'],'')}\n\n"
-            f"🤖 *Mashrab Moliya v{__version__}*\n"
-            "━━━━━━━━━━━━━━━━━━━━━\n"
-            "🎤 *OVOZ YUBORING* — bot hamma ishni qiladi!\n\n"
-            "📋 *Namunalar:*\n"
-            "• _\"Salimovga 50 Ariel, 20 Tide, qarzga\"_\n"
-            "• _\"100 ta un kirdi, narxi 35,000\"_\n"
-            "• _\"Salimov 500,000 to'ladi\"_\n"
-            "• _\"Bugungi hisobot\"_\n"
-            f"━━━━━━━━━━━━━━━━━━━━━{ogoh}\n\n"
-            "👇 Menyu yoki /yangilik — yangiliklar",
-            parse_mode=ParseMode.MARKDOWN, reply_markup=asosiy_menyu(),
+            "👋 *Mashrab Moliya*ga xush kelibsiz!\n\nBiznes turini tanlang:",
+            parse_mode=ParseMode.MARKDOWN,
+            reply_markup=tg(
+                [("🏭 Optom (ulgurji)",     "seg:optom")],
+                [("🏪 Chakana (mayda)",     "seg:chakana")],
+                [("🍽️ Oshxona / Kafe",     "seg:oshxona")],
+                [("🍦 Xo'zmak / Fast-food","seg:xozmak")],
+                [("🛒 Universal savdo",    "seg:universal")],
+            ),
         )
+        return H_SEGMENT
+    except Exception as e:
+        log.exception("cmd_start xato")
+        try:
+            await update.message.reply_text("❌ Xato yuz berdi. Qayta urinib ko'ring yoki admin bilan bog'laning.")
+        except Exception:
+            pass
         return ConversationHandler.END
-    if user and not user["faol"]:
-        await update.message.reply_text("⏳ Hisobingiz tasdiqlanmagan.")
-        return ConversationHandler.END
-    await db.user_yoz(uid,
-        update.effective_user.full_name or "Nomsiz",
-        update.effective_user.username)
-    await update.message.reply_text(
-        "👋 *Mashrab Moliya*ga xush kelibsiz!\n\nBiznes turini tanlang:",
-        parse_mode=ParseMode.MARKDOWN,
-        reply_markup=tg(
-            [("🏭 Optom (ulgurji)",     "seg:optom")],
-            [("🏪 Chakana (mayda)",     "seg:chakana")],
-            [("🍽️ Oshxona / Kafe",     "seg:oshxona")],
-            [("🍦 Xo'zmak / Fast-food","seg:xozmak")],
-            [("🛒 Universal savdo",    "seg:universal")],
-        ),
-    )
-    return H_SEGMENT
 
 
 async def h_segment(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
@@ -2691,16 +2717,23 @@ async def boshlash(app:Application) -> None:
         log.warning("Redis ulana olmadi (cache o'chirildi): %s", _e)
         redis_ok = False
 
+    if not redis_ok:
+        log.warning(
+            "⚠️ REDIS_URL yo'q yoki ulanmadi. Faqat BITTA bot instance ishlating, "
+            "aks holda Telegram 'Conflict: getUpdates' xatosi keladi va bot javob bermaydi. "
+            "Redis ulang yoki replica=1 qiling."
+        )
+
     # Telegram polling Conflict fix:
     # Bir xil bot token bilan 2+ instance polling qilsa, telegram Conflict qaytaradi.
     # Shuning uchun faqat bitta instance pollingni boshlasin.
     if redis_ok:
         import asyncio, hashlib
-        from shared.cache.redis_cache import lock_ol
+        from shared.cache.redis_cache import lock_ol, lock_qo_yber, lock_refresh
 
         token_hash = hashlib.sha256((_CFG.bot_token or "").encode("utf-8")).hexdigest()[:12]
         lock_key = f"bot_polling:{token_hash}"
-        lock_ttl_s = int(_os.getenv("BOT_POLL_LOCK_TTL_S", "86400"))  # 24 soat (odatda kerakmas, lekin conflict chiqmasin)
+        lock_ttl_s = int(_os.getenv("BOT_POLL_LOCK_TTL_S", "86400"))  # 24 soat
         lock_wait_s = int(_os.getenv("BOT_POLL_LOCK_WAIT_S", "0"))  # 0 => cheksiz kutish
 
         start = time.monotonic()
@@ -2708,6 +2741,19 @@ async def boshlash(app:Application) -> None:
             got = await lock_ol(lock_key, ttl=lock_ttl_s)
             if got:
                 log.info("✅ Polling lock olindi (%s).", lock_key)
+                app.bot_data["_poll_lock_key"] = lock_key
+                app.bot_data["_poll_lock_ttl"] = lock_ttl_s
+
+                async def _release_poll_lock(application):
+                    k = application.bot_data.pop("_poll_lock_key", None)
+                    if k:
+                        try:
+                            await lock_qo_yber(k)
+                            log.info("✅ Polling lock bo'shatildi (%s).", k)
+                        except Exception as ex:
+                            log.warning("Lock bo'shatish: %s", ex)
+
+                app.post_shutdown.append(_release_poll_lock)
                 break
 
             if lock_wait_s > 0 and time.monotonic() - start > lock_wait_s:
@@ -2768,6 +2814,18 @@ async def boshlash(app:Application) -> None:
 
     job_queue=app.job_queue
     if job_queue:
+        # Polling lock TTL yangilash (bitta instance lock ni ushlab tursin, 24h da tugamasin)
+        if app.bot_data.get("_poll_lock_key"):
+            from shared.cache.redis_cache import lock_refresh as _lock_refresh
+            _key = app.bot_data["_poll_lock_key"]
+            _ttl = app.bot_data.get("_poll_lock_ttl", 86400)
+            async def _poll_lock_refresh_cb(ctx):
+                try:
+                    await _lock_refresh(_key, _ttl)
+                    log.debug("Polling lock yangilandi (%s).", _key)
+                except Exception as ex:
+                    log.warning("Lock refresh: %s", ex)
+            job_queue.run_repeating(_poll_lock_refresh_cb, interval=600, first=600)  # har 10 min
         # Bot standalone rejim — Worker mavjud bo'lsa u boshqaradi
         _worker_url = _os.getenv("WORKER_URL", "")
         if _worker_url:

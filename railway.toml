@@ -1,7 +1,15 @@
 # ════════════════════════════════════════════════════════════
-#  SAVDOAI MASHRAB MOLIYA v24.0 — Railway Config
+#  SAVDOAI MASHRAB MOLIYA v25.0 — Railway Config
 #  URL: https://savdoai-production.up.railway.app/
 #  Bot: @savdoai_mashrab_bot
+#
+#  MUHIM — RAILWAY DASHBOARD DA ULanishlar:
+#  Har bir servis (savdoai-api, savdoai-bot, savdoai-worker) uchun
+#  Postgres VA Redis ikkalasini ham ULANG (Variables yoki References):
+#    • Postgres → DATABASE_URL (bot DB siz ishlamaydi!)
+#    • Redis   → REDIS_URL (polling Conflict oldini olish uchun)
+#  Agar savdoai-bot ga faqat Redis ulansa, Postgres ulanishi yo'q
+#  bo'lib qoladi — bot javob bermaydi. Ikkalasini ham ulang.
 # ════════════════════════════════════════════════════════════
 
 [build]

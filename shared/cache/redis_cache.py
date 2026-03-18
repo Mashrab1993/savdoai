@@ -194,6 +194,18 @@ async def lock_qo_yber(kalit: str) -> None:
     await cache_del(f"lock:{kalit}")
 
 
+async def lock_refresh(kalit: str, ttl: int = TTL_LOCK) -> bool:
+    """Lock TTL ni yangilash (egasi davriy chaqiradi, shunda lock muddati tugamasin)"""
+    if not _r():
+        return False
+    try:
+        key = f"lock:{kalit}"
+        await _r().setex(key, ttl, "1")
+        return True
+    except Exception:
+        return False
+
+
 # ════════════════════════════════════════════════════════════
 #  PIPELINE (BATCH) — Nur tezligida bir necha operatsiya
 # ════════════════════════════════════════════════════════════
