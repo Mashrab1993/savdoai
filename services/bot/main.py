@@ -2753,6 +2753,8 @@ async def boshlash(app:Application) -> None:
                         except Exception as ex:
                             log.warning("Lock bo'shatish: %s", ex)
 
+                if getattr(app, "post_shutdown", None) is None:
+                    app.post_shutdown = []
                 app.post_shutdown.append(_release_poll_lock)
                 break
 
