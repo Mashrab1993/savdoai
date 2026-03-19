@@ -61,6 +61,9 @@ import services.bot.db  as db
 from shared.database.pool import rls_conn as _rls_conn, pool_init as _pool_init
 import services.bot.bot_services.voice      as ovoz_xizmat
 import services.bot.bot_services.analyst    as ai_xizmat
+from services.bot.bot_services.voice_pipeline import process_voice
+from services.bot.bot_services.fuzzy_matcher import fuzzy_matcher
+import services.bot.bot_services.text_fixer as text_fixer
 import services.bot.bot_services.export_pdf   as pdf_xizmat
 import services.bot.bot_services.export_excel as excel_xizmat
 import services.bot.bot_services.nakladnoy    as nakl_xizmat
@@ -426,6 +429,21 @@ async def ovoz_qabul(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
         if not matn:
             await holat.edit_text("❌ Ovoz tushunilmadi. Qaytadan yuboring.")
             return
+        pipeline_result = await process_voice(matn)
+        if pipeline_result.get("confidence") == "none":
+            await holat.edit_text(
+                "🔇 Tushunmadim. Iltimos qayta ayting.\n"
+                "💡 Masalan: \"Nasriddin akaga 2 Ariel 56000\""
+            )
+            return
+        if pipeline_result.get("confidence") == "low":
+            await holat.edit_text(
+                "🤔 Ovozni aniq tushunmadim.\n"
+                f"📝 Taxmin: {pipeline_result.get('text', '')}\n"
+                "Iltimos bir marta yana ravonroq ayting."
+            )
+            return
+        matn = pipeline_result.get("text") or matn
 
         # Shogird xarajat tekshiruvi (ovoz uchun)
         if not cfg().is_admin(uid):
@@ -3292,6 +3310,20 @@ async def boshlash(app:Application) -> None:
         log.error("⚠️ Schema init xato (bot davom etadi): %s", _e)
     try:
         ovoz_xizmat.ishga_tushir(_CFG.gemini_key, _CFG.gemini_model)
+        try:
+            from shared.database.pool import get_pool
+            shared_pool = get_pool()
+            await ovoz_xizmat.stt_prompt_yangilash(shared_pool)
+            await fuzzy_matcher.load_from_db(shared_pool)
+            text_fixer.KNOWN_PRODUCTS = fuzzy_matcher.products
+            text_fixer.KNOWN_CLIENTS = fuzzy_matcher.clients
+            log.info(
+                "✅ Voice Pipeline tayyor: %d tovar, %d klient",
+                len(fuzzy_matcher.products),
+                len(fuzzy_matcher.clients),
+            )
+        except Exception as _voice_e:
+            log.warning("Voice pipeline init xato: %s", _voice_e)
     except Exception as _e:
         log.warning("Gemini ishga tushmadi (ovoz xizmati o'chirildi): %s", _e)
     try:

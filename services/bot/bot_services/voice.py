@@ -9,6 +9,7 @@ Pipeline:
 """
 from __future__ import annotations
 import asyncio, logging, os, tempfile
+import time
 from pathlib import Path
 from typing import Optional, Callable
 from tenacity import (
@@ -20,42 +21,108 @@ from tenacity import (
 log = logging.getLogger(__name__)
 
 _client    = None
-MODEL      = os.getenv("GEMINI_MODEL", "gemini-2.5-flash-lite")
+MODEL      = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
 MAX_MB     = 100
 TIMEOUT_S  = 60
 MAX_PARALLEL = 3
 _semaphore = None
+_pool = None
+_prompt_cache_ts = 0.0
+_PROMPT_CACHE_TTL_S = 300
 
-_PROMPT_SYSTEM = (
-    "Sen O'zbek tilining barcha shevalarini 100% tushunadigan professional Lingvistsan. "
-    "Toshkent, Farg'ona, Samarqand, Buxoro, Xorazm, Qashqadaryo, Surxondaryo, Qoraqalpoq.\n\n"
-    "QAT'IY QOIDALAR:\n"
-    "1. Fon shovqinlarini MUTLAQO e'tiborsiz qoldir\n"
-    "2. Faqat INSON GAPLARINI yoz\n"
-    "3. RAQAMLARNI aniq: 'qirq besh ming' = 45000\n"
-    "4. MAHSULOT NOMLARINI to'liq va ANIQ yoz (quyidagi ro'yxatdan):\n"
-    "   Kir yuvish: Ariel, Tide, Persil, Mif, Losk, Ushi\n"
-    "   Idish yuvish: Fairy, AOS, Sorti, Pril\n"
-    "   Gigiyena: Safeguard, Dove, Lux, Palmolive, Colgate\n"
-    "   Shampun: Head & Shoulders, Clear, Pantene\n"
-    "   Oziq-ovqat: Makfa, Barilla, Nestle, Oreo\n"
-    "   Ichimlik: Coca-Cola, Pepsi, Fanta, Sprite\n"
-    "   Don: Un, Guruch, Bug'doy, Mosh, Loviya\n"
-    "   Yog': Oltin, Podsolnechnoye\n"
-    "   AGAR mahsulot nomi yuqoridagi ro'yxatda bo'lsa — FAQAT ro'yxatdagi yozilishda yoz!\n"
-    "5. PUL SUMMALARINI aniq: 'besh yuz ming' = 500000\n"
-    "6. KLIENT ISMLARINI bosh harfda: salimovga = Salimovga\n"
-    "7. Hech narsani TUSHIRIB QOLDIRMA\n"
-    "8. Natija FAQAT transkripsiya — izoh YOZMA\n"
-    "9. XATO QILMA: 'Ariel' ni 'Tariq' deb yozma! Tovar nomini aniq eshit.\n"
-    "10. O'zbek shevalarida 'r' va 't' ovozlari aralashadi — kontekstga qarab tuzat"
-)
+STT_SYSTEM_PROMPT = """Sen o'zbek tilida savdo ovozini matnga o'girayapsan.
+
+KONTEKST: Sotuvchi bozorda klientga tovar yozyapti. Har bir gap odatda:
+"[Klient ismi] + [miqdor] + [tovar nomi] + [narx]" formatida bo'ladi.
+
+MUHIM QO'IDALAR:
+1. Timestamp QOSHMA (00:00, 00:01 kabi)
+2. Faqat toza matn qaytar
+3. Raqamlarni son shaklida yoz (1, 2, 56000)
+4. "karobka", "dona", "shtuk", "paket" — o'lchov birliklari
+5. "aka", "opa", "brat" — hurmat qo'shimchalari, ismga yopishtir
+
+TEZ-TEZ UCHRAYDIGAN TOVAR NOMLARI (agar ovozda shunga o'xshash eshitsang, SHU NOMLARNI YOZ):
+- Ariel, Persil, Tide, Omo, Sarma, Bimax, Losk
+- Fairy, Pril, AOS, Sorti, Dozor, Sanfor
+- Domestos, Bref, Cillit Bang, Mr.Proper, Glorix
+- Dollex, Escuro, Cler, Head&Shoulders, Pantene, Clear
+- Colgate, Blend-a-med, Signal, Aquafresh
+- Pampers, Huggies, Molfix, Happy
+- Zewa, Familia, Obuxov, Selpak
+
+TEZ-TEZ UCHRAYDIGAN KLIENT ISMLARI:
+- Nasriddin aka, Farhod aka, Sardor aka, Botir aka, Rustam aka
+- Lobar opa, Nilufar opa, Madina opa, Gulnora opa
+- (va boshqa o'zbek ismlari)
+
+MISOL:
+Ovoz: "nasridin akaga bitta ariyel ellik olti ming"
+Natija: Nasriddin akaga 1 Ariel 56000
+
+Ovoz: "lobar opaga ikkita kler ottiz ikki ming"
+Natija: Lobar opaga 2 Cler 32000"""
 
 _PROMPT_USER = (
     "Bu O'zbek tilida savdo haqida gapirilgan ovoz xabari. "
     "Faqat aytilganlarni so'zma-so'z ANIQ yoz. "
     "Raqamlar, mahsulotlar, ismlar, pullarni XATOSIZ yoz."
 )
+
+
+async def build_stt_prompt(pool) -> str:
+    """DB dan tovar/klientlarni olib, STT promptni dinamik qurish."""
+    async with pool.acquire() as conn:
+        try:
+            products = await conn.fetch(
+                "SELECT nomi FROM tovarlar ORDER BY COALESCE(sotilgan_soni, 0) DESC NULLS LAST, nomi ASC LIMIT 50"
+            )
+        except Exception:
+            products = await conn.fetch(
+                "SELECT nomi FROM tovarlar ORDER BY nomi ASC LIMIT 50"
+            )
+        try:
+            clients = await conn.fetch(
+                "SELECT ism FROM klientlar ORDER BY COALESCE(oxirgi_sotib, yaratilgan) DESC NULLS LAST, ism ASC LIMIT 30"
+            )
+        except Exception:
+            clients = await conn.fetch(
+                "SELECT ism FROM klientlar ORDER BY ism ASC LIMIT 30"
+            )
+
+    product_names = ", ".join([r["nomi"] for r in products if r.get("nomi")])
+    client_names = ", ".join([r["ism"] for r in clients if r.get("ism")])
+
+    return f"""Sen o'zbek tilida savdo ovozini matnga o'girayapsan.
+
+KONTEKST: Sotuvchi bozorda klientga tovar yozyapti.
+
+TOVAR NOMLARI (agar ovozda shunga o'xshash eshitsang, SHU NOMLARNI YOZ):
+{product_names}
+
+KLIENT ISMLARI:
+{client_names}
+
+QOIDALAR:
+1. Timestamp QOSHMA
+2. Faqat toza matn qaytar
+3. Raqamlarni son shaklida yoz
+4. O'lchov: karobka, dona, shtuk, paket"""
+
+
+async def stt_prompt_yangilash(pool=None) -> None:
+    """STT promptni DB ma'lumotlari bilan yangilash."""
+    global STT_SYSTEM_PROMPT, _pool, _prompt_cache_ts
+    if pool is not None:
+        _pool = pool
+    if _pool is None:
+        return
+    try:
+        STT_SYSTEM_PROMPT = await build_stt_prompt(_pool)
+        _prompt_cache_ts = time.time()
+        log.info("STT prompt yangilandi (DB dan)")
+    except Exception as e:
+        log.warning("STT prompt DB dan yangilanmadi: %s", e)
 
 
 def ishga_tushir(api_key: str, model: str = "") -> None:
@@ -89,7 +156,7 @@ def _gemini_sync(audio_bytes: bytes, mime: str) -> str:
                 _PROMPT_USER,
             ],
             config=types.GenerateContentConfig(
-                system_instruction=_PROMPT_SYSTEM,
+                system_instruction=STT_SYSTEM_PROMPT,
                 temperature=0.1,
                 max_output_tokens=4096,
             ),
@@ -100,7 +167,7 @@ def _gemini_sync(audio_bytes: bytes, mime: str) -> str:
             model=MODEL,
             contents=[
                 types.Part.from_bytes(data=audio_bytes, mime_type=mime),
-                _PROMPT_SYSTEM + "\n\n" + _PROMPT_USER,
+                STT_SYSTEM_PROMPT + "\n\n" + _PROMPT_USER,
             ],
         )
     return (response.text or "").strip()
@@ -122,17 +189,12 @@ async def ovoz_matn(fayl_yoli: str, uid: int = 0) -> Optional[str]:
         log.error("Gemini ishga tushirilmagan")
         return None
     try:
+        if _pool is not None and (time.time() - _prompt_cache_ts) > _PROMPT_CACHE_TTL_S:
+            await stt_prompt_yangilash()
         from services.bot.bot_services.audio_engine import process_short_audio
         audio_bytes, mime = await process_short_audio(fayl_yoli)
         natija = await _gemini_async(audio_bytes, mime)
         if natija:
-            # Post-processing: mahsulot nomlari tuzatish
-            try:
-                from shared.services.voice_correction import ovoz_tuzat, tovar_nomlarini_ol
-                db_tovarlar = await tovar_nomlarini_ol(uid) if uid else []
-                natija = ovoz_tuzat(natija, db_tovarlar)
-            except Exception as e:
-                log.debug("Voice correction: %s", e)
             log.info("Ovoz -> matn (%d belgi): %s...", len(natija), natija[:50])
             return natija
         log.warning("Gemini bosh javob")
