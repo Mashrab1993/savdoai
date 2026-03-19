@@ -246,7 +246,30 @@ def _md_safe(text: str) -> str:
     return text
 
 
+def _truncate(text: str, limit: int = 4000) -> str:
+    """Telegram 4096 limit — xavfsiz qisqartirish"""
+    if len(text) <= limit:
+        return text
+    return text[:limit] + "\n\n... (qisqartirildi)"
+
+
+async def _safe_reply(update_or_msg, matn: str, **kw) -> None:
+    """Xavfsiz xabar yuborish — truncation + MARKDOWN fallback"""
+    matn = _truncate(matn)
+    msg = update_or_msg.message if hasattr(update_or_msg, 'message') else update_or_msg
+    try:
+        await msg.reply_text(matn, **kw)
+    except BadRequest as e:
+        if "parse" in str(e).lower() or "entities" in str(e).lower():
+            kw.pop("parse_mode", None)
+            clean = matn.replace("*","").replace("_","").replace("`","")
+            await msg.reply_text(_truncate(clean), **kw)
+        else:
+            log.warning("safe_reply: %s", e)
+
+
 async def xat(q, matn:str, **kw) -> None:
+    matn = _truncate(matn)
     try:
         await q.edit_message_text(matn, **kw)
     except BadRequest as e:
@@ -254,7 +277,6 @@ async def xat(q, matn:str, **kw) -> None:
         if "not modified" in err:
             return
         if "parse" in err or "can't" in err or "entities" in err:
-            # MARKDOWN xato — plain text ga fallback
             kw.pop("parse_mode", None)
             try:
                 clean = matn.replace("*","").replace("_","").replace("`","")
@@ -2688,9 +2710,12 @@ async def cmd_kassa(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
                 belgi = "📥" if r["tur"] == "kirim" else "📤"
                 usul_belgi = {"naqd": "💵", "karta": "💳", "otkazma": "🏦"}.get(r["usul"], "💰")
                 matn += f"  {belgi} {usul_belgi} {pul(r['summa'])}"
-                if r.get("tavsif"): matn += f" — {r['tavsif'][:30]}"
+                try:
+                    if r["tavsif"]: matn += f" — {r['tavsif'][:30]}"
+                except (KeyError, TypeError):
+                    pass
                 matn += "\n"
-        await update.message.reply_text(matn, parse_mode=ParseMode.MARKDOWN)
+        await update.message.reply_text(_truncate(matn), parse_mode=ParseMode.MARKDOWN)
     except Exception as e:
         log.warning("cmd_kassa: %s", e)
         await update.message.reply_text(

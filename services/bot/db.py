@@ -281,7 +281,8 @@ async def schema_init() -> None:
         "shared", "database", "schema.sql"
     )
     if _os2.path.exists(_schema_path):
-        sql = open(_schema_path, encoding="utf-8").read()
+        with open(_schema_path, encoding="utf-8") as _sf:
+            sql = _sf.read()
     else:
         sql = _SCHEMA  # fallback: embedded schema
 

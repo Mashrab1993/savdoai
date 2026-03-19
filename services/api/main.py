@@ -170,13 +170,16 @@ app.add_middleware(
     allow_origins=[
         os.getenv("WEB_URL", "https://savdoai-production.up.railway.app"),
         "https://savdoai-production.up.railway.app",
+        "https://*.up.railway.app",
         "https://mashrab-moliya.vercel.app",
         "http://localhost:3000",
         "http://localhost:5173",
+        "http://localhost:8000",
+        "*",  # Telegram Mini App uchun
     ],
     allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-    allow_headers=["Authorization", "Content-Type", "X-API-Key"],
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # ═══ v21.3 YANGI ROUTELAR ═══

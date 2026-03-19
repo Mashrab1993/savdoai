@@ -2,17 +2,8 @@
 Smoke tests for repaired critical paths.
 Run: python -m pytest tests/test_smoke.py -v
 """
-import sys
-import os
-import builtins
-
-# Ensure file reads use UTF-8 on all platforms (Windows cp1252 otherwise)
-_original_open = builtins.open
-def _open(path, *args, **kwargs):
-    if "encoding" not in kwargs and len(args) < 2:
-        kwargs["encoding"] = "utf-8"
-    return _original_open(path, *args, **kwargs)
-builtins.open = _open
+import sys, os
+# conftest.py handles sys.path already
 
 import pytest
 import ast
