@@ -33,11 +33,22 @@ _PROMPT_SYSTEM = (
     "1. Fon shovqinlarini MUTLAQO e'tiborsiz qoldir\n"
     "2. Faqat INSON GAPLARINI yoz\n"
     "3. RAQAMLARNI aniq: 'qirq besh ming' = 45000\n"
-    "4. MAHSULOT NOMLARINI to'liq: Ariel, Tide, Fairy\n"
+    "4. MAHSULOT NOMLARINI to'liq va ANIQ yoz (quyidagi ro'yxatdan):\n"
+    "   Kir yuvish: Ariel, Tide, Persil, Mif, Losk, Ushi\n"
+    "   Idish yuvish: Fairy, AOS, Sorti, Pril\n"
+    "   Gigiyena: Safeguard, Dove, Lux, Palmolive, Colgate\n"
+    "   Shampun: Head & Shoulders, Clear, Pantene\n"
+    "   Oziq-ovqat: Makfa, Barilla, Nestle, Oreo\n"
+    "   Ichimlik: Coca-Cola, Pepsi, Fanta, Sprite\n"
+    "   Don: Un, Guruch, Bug'doy, Mosh, Loviya\n"
+    "   Yog': Oltin, Podsolnechnoye\n"
+    "   AGAR mahsulot nomi yuqoridagi ro'yxatda bo'lsa — FAQAT ro'yxatdagi yozilishda yoz!\n"
     "5. PUL SUMMALARINI aniq: 'besh yuz ming' = 500000\n"
     "6. KLIENT ISMLARINI bosh harfda: salimovga = Salimovga\n"
     "7. Hech narsani TUSHIRIB QOLDIRMA\n"
-    "8. Natija FAQAT transkripsiya — izoh YOZMA"
+    "8. Natija FAQAT transkripsiya — izoh YOZMA\n"
+    "9. XATO QILMA: 'Ariel' ni 'Tariq' deb yozma! Tovar nomini aniq eshit.\n"
+    "10. O'zbek shevalarida 'r' va 't' ovozlari aralashadi — kontekstga qarab tuzat"
 )
 
 _PROMPT_USER = (
@@ -105,8 +116,8 @@ async def _gemini_async(audio_bytes: bytes, mime: str) -> str:
         )
 
 
-async def ovoz_matn(fayl_yoli: str) -> Optional[str]:
-    """Qisqa ovoz (< 30s) -> matn"""
+async def ovoz_matn(fayl_yoli: str, uid: int = 0) -> Optional[str]:
+    """Qisqa ovoz (< 30s) -> matn (+ tuzatish)"""
     if not _client:
         log.error("Gemini ishga tushirilmagan")
         return None
@@ -115,6 +126,13 @@ async def ovoz_matn(fayl_yoli: str) -> Optional[str]:
         audio_bytes, mime = await process_short_audio(fayl_yoli)
         natija = await _gemini_async(audio_bytes, mime)
         if natija:
+            # Post-processing: mahsulot nomlari tuzatish
+            try:
+                from shared.services.voice_correction import ovoz_tuzat, tovar_nomlarini_ol
+                db_tovarlar = await tovar_nomlarini_ol(uid) if uid else []
+                natija = ovoz_tuzat(natija, db_tovarlar)
+            except Exception as e:
+                log.debug("Voice correction: %s", e)
             log.info("Ovoz -> matn (%d belgi): %s...", len(natija), natija[:50])
             return natija
         log.warning("Gemini bosh javob")

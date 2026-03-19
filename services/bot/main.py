@@ -419,7 +419,7 @@ async def ovoz_qabul(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
         with tempfile.NamedTemporaryFile(suffix=".ogg", delete=False) as tmp:
             tmp.write(audio)
             tmp_path = tmp.name
-        matn=await ovoz_xizmat.matnga_aylantir(tmp_path)
+        matn=await ovoz_xizmat.matnga_aylantir(tmp_path, uid=uid)
         if not matn:
             await holat.edit_text("❌ Ovoz tushunilmadi. Qaytadan yuboring.")
             return
@@ -593,6 +593,65 @@ async def matn_qabul(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
                     return
         except Exception as _se:
             log.debug("Shogird tekshiruv: %s", _se)
+
+    # ═══ OCHIQ SAVAT BUYRUQLARI ═══
+
+    # 1. "Klient bo'ldi / tugadi" → savat yopish
+    import re as _re_savat
+    _boldi_pattern = _re_savat.match(
+        r"^(.+?)\s+(boldi|bo'ldi|tugadi|yopish|tamom|yop|nakladnoy|chek)\s*$",
+        matn, _re_savat.IGNORECASE
+    )
+    if _boldi_pattern:
+        _savat_klient = _boldi_pattern.group(1).strip()
+        try:
+            from shared.services.ochiq_savat import savat_ol
+            async with _rls_conn(uid) as _sc:
+                _savat = await savat_ol(_sc, uid, _savat_klient)
+            if _savat:
+                await _savat_yop_va_nakladnoy(update, uid, _savat_klient)
+                return
+        except Exception as _se:
+            log.debug("Savat boldi: %s", _se)
+
+    # 2. "Klient savat / savati" → ko'rish
+    _savat_kor = _re_savat.match(
+        r"^(.+?)\s+(savat|savati|yuklari)\s*$",
+        matn, _re_savat.IGNORECASE
+    )
+    if _savat_kor:
+        _sk_klient = _savat_kor.group(1).strip()
+        try:
+            from shared.services.ochiq_savat import savat_korish, savat_matn
+            async with _rls_conn(uid) as _sc2:
+                _sk_data = await savat_korish(_sc2, uid, _sk_klient)
+            if _sk_data:
+                await update.message.reply_text(savat_matn(_sk_data))
+                return
+        except Exception as _se2:
+            log.debug("Savat korish: %s", _se2)
+
+    # 3. "savatlar" → ochiq savatlar
+    if matn.lower().strip() in ("savatlar", "savatlarim", "ochiq savatlar"):
+        try:
+            from shared.services.ochiq_savat import ochiq_savatlar, ochiq_savatlar_matn
+            async with _rls_conn(uid) as _sc3:
+                _svtlr = await ochiq_savatlar(_sc3, uid)
+            await update.message.reply_text(ochiq_savatlar_matn(_svtlr))
+            return
+        except Exception as _se3:
+            log.debug("Savatlar: %s", _se3)
+
+    # 4. "kunlik yakuniy" → statistika
+    if matn.lower().strip() in ("kunlik yakuniy", "yakuniy", "bugungi yakuniy"):
+        try:
+            from shared.services.ochiq_savat import kunlik_yakuniy, kunlik_yakuniy_matn
+            async with _rls_conn(uid) as _sc4:
+                _yk = await kunlik_yakuniy(_sc4, uid)
+            await update.message.reply_text(kunlik_yakuniy_matn(_yk))
+            return
+        except Exception as _se4:
+            log.debug("Yakuniy: %s", _se4)
 
     # ═══ O'ZBEK BUYRUQ TEKSHIRUVI (AI ga yubormasdan) ═══
     from shared.services.voice_commands import detect_voice_command, is_quick_command
@@ -858,12 +917,47 @@ async def _qayta_ishlash(update:Update, ctx:ContextTypes.DEFAULT_TYPE,
     draft = create_draft(natija, tx_type, uid, db_ctx)
 
     # ═══ KRITIK: CORRECTED data saqlanadi, RAW AI emas! ═══
-    # draft.corrected = Python Decimal bilan qayta hisoblangan
-    # natija = xom AI natijasi (xato bo'lishi mumkin!)
     corrected_natija = dict(natija)
     if draft.corrected:
-        # Python hisob natijasini ustiga yozish
         corrected_natija.update(draft.corrected)
+
+    # ═══════════════════════════════════════════════════════════
+    #  AVTOMATIK SAVAT REJIM (OPTOM DO'KONCHILAR UCHUN)
+    #  Klient ismi + tovar bor → avtomatik savatga qo'shiladi
+    #  Tugma bosish KERAK EMAS — bot o'zi qiladi!
+    # ═══════════════════════════════════════════════════════════
+    _savat_klient = corrected_natija.get("klient", "")
+    _savat_tovarlar = corrected_natija.get("tovarlar", [])
+    _savat_amal = corrected_natija.get("amal", "")
+
+    if _savat_klient and _savat_tovarlar and _savat_amal in ("chiqim", "sotuv", "nakladnoy"):
+        try:
+            from shared.services.ochiq_savat import savatga_qosh, savat_korish
+            from shared.services.ochiq_savat import savat_qisqa_matn, savat_matn
+            async with _rls_conn(uid) as _sc:
+                result = await savatga_qosh(_sc, uid, _savat_klient, _savat_tovarlar)
+                savat_data = await savat_korish(_sc, uid, _savat_klient)
+
+            if result and savat_data:
+                # Qisqa javob + savat holati
+                qisqa = savat_qisqa_matn(result)
+                to_liq = savat_matn(savat_data)
+
+                javob = f"{qisqa}\n\n{to_liq}"
+
+                markup = tg(
+                    [(f"📋 {result['klient']} nakladnoy", f"t:savat_yop:{result['klient']}")],
+                    [("🛒 Savatlar", "t:savatlar"), ("❌ Bekor", f"t:savat_bekor:{result['klient']}")],
+                )
+                if tahrirlash:
+                    await tahrirlash.edit_text(javob, reply_markup=markup)
+                else:
+                    await update.message.reply_text(javob, reply_markup=markup)
+                return
+        except Exception as _savat_e:
+            log.warning("Avto-savat xato (oddiy rejimga o'tiladi): %s", _savat_e)
+    # ═══════════════════════════════════════════════════════════
+
     ctx.user_data["kutilayotgan"] = corrected_natija
     ctx.user_data["draft_info"] = {
         "confidence": draft.confidence.overall if draft.confidence else 0,
@@ -882,7 +976,7 @@ async def _qayta_ishlash(update:Update, ctx:ContextTypes.DEFAULT_TYPE,
         oldindan += "\n\n💡 *Narxlar avtomatik:*\n" + "\n".join(f"  {m}" for m in narx_manba)
 
     markup=tg(
-        [("✅ Saqlash","t:ha"),("❌ Bekor","t:yoq")],
+        [("✅ Saqlash","t:ha"),("🛒 Savatga","t:savatga"),("❌ Bekor","t:yoq")],
         [("✏️ Klient","t:tahr:klient"),("✏️ Narx","t:tahr:narx")],
         [("✏️ Miqdor","t:tahr:miqdor"),("✏️ Qarz","t:tahr:qarz")],
     )
@@ -1083,6 +1177,48 @@ async def tasdiq_cb(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
         ctx.user_data.pop("draft_info",None)
         ctx.user_data.pop("_tahr_rejim",None)
         await xat(q,"❌ Bekor qilindi."); return
+
+    # ═══ SAVAT TUGMALARI ═══
+    if q.data == "t:savatga":
+        natija = ctx.user_data.get("kutilayotgan")
+        if not natija:
+            await xat(q, "❌ Ma'lumot yo'q"); return
+        ok = await _savat_qosh_va_javob(update, uid, natija, q)
+        if ok:
+            ctx.user_data.pop("kutilayotgan", None)
+        else:
+            await xat(q, "❌ Savatga qo'shib bo'lmadi (klient nomi kerak)")
+        return
+
+    if q.data.startswith("t:savat_yop:"):
+        klient = q.data.replace("t:savat_yop:", "")
+        await xat(q, f"📋 {klient} nakladnoy tayyorlanmoqda...")
+        await _savat_yop_va_nakladnoy(update, uid, klient)
+        return
+
+    if q.data.startswith("t:savat_bekor:"):
+        klient = q.data.replace("t:savat_bekor:", "")
+        try:
+            from shared.services.ochiq_savat import savat_bekor
+            async with _rls_conn(uid) as _sbc:
+                ok = await savat_bekor(_sbc, uid, klient)
+            if ok:
+                await xat(q, f"❌ {klient} savati bekor qilindi")
+            else:
+                await xat(q, f"🛒 {klient} uchun ochiq savat yo'q")
+        except Exception as e:
+            await xat(q, f"❌ Xato: {e}")
+        return
+
+    if q.data == "t:savatlar":
+        try:
+            from shared.services.ochiq_savat import ochiq_savatlar, ochiq_savatlar_matn
+            async with _rls_conn(uid) as c:
+                savatlar_r = await ochiq_savatlar(c, uid)
+            await xat(q, ochiq_savatlar_matn(savatlar_r))
+        except Exception as e:
+            await xat(q, "🛒 Ochiq savat yo'q")
+        return
 
     # ═══ TAHRIRLASH TUGMALARI ═══
     if q.data.startswith("t:tahr:"):
@@ -3211,6 +3347,8 @@ async def boshlash(app:Application) -> None:
         BotCommand("narx_qoy",        "Guruh narxi qo'yish"),
         BotCommand("klient_narx",     "Klient shaxsiy narx"),
         BotCommand("klient_guruh",    "Klient guruhga biriktirish"),
+        BotCommand("savatlar",        "Ochiq savatlar ko'rish"),
+        BotCommand("savat",           "Klient savati ko'rish"),
     ])
 
     job_queue=app.job_queue
@@ -3255,6 +3393,126 @@ async def boshlash(app:Application) -> None:
             log.info("✅ Standalone: kunlik/haftalik/qarz/obuna joblar yoqildi")
         else:
             log.info("✅ Worker rejim: scheduling Worker/Beat tomonida boshqariladi")
+# ════════════ OCHIQ SAVAT (Multi-Klient) ════════════
+
+async def cmd_savatlar(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    """Barcha ochiq savatlar ko'rish"""
+    if not await faol_tekshir(update): return
+    uid = update.effective_user.id
+    try:
+        from shared.services.ochiq_savat import ochiq_savatlar, ochiq_savatlar_matn
+        async with _rls_conn(uid) as c:
+            savatlar = await ochiq_savatlar(c, uid)
+        await update.message.reply_text(ochiq_savatlar_matn(savatlar))
+    except Exception as e:
+        log.warning("cmd_savatlar: %s", e)
+        await update.message.reply_text("🛒 Ochiq savat yo'q\n\nOvoz yuboring:\n\"Salimovga 1 Ariel 45000\"")
+
+
+async def cmd_savat(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    """Klient savati ko'rish: /savat Nasriddin aka"""
+    if not await faol_tekshir(update): return
+    uid = update.effective_user.id
+    matn = (update.message.text or "").replace("/savat", "").strip()
+    if not matn:
+        await update.message.reply_text("📦 Klient ismini yozing:\n/savat Nasriddin aka")
+        return
+    try:
+        from shared.services.ochiq_savat import savat_korish, savat_matn
+        async with _rls_conn(uid) as c:
+            data = await savat_korish(c, uid, matn)
+        if data:
+            await update.message.reply_text(savat_matn(data))
+        else:
+            await update.message.reply_text(f"🛒 {matn} uchun ochiq savat yo'q")
+    except Exception as e:
+        log.warning("cmd_savat: %s", e)
+        await update.message.reply_text("❌ Xato yuz berdi")
+
+
+async def _savat_qosh_va_javob(update: Update, uid: int, natija: dict, tahrirlash=None):
+    """Sotuv natijasini savatga qo'shish va javob berish"""
+    klient = natija.get("klient", "")
+    tovarlar = natija.get("tovarlar", [])
+    if not klient or not tovarlar:
+        return False
+
+    try:
+        from shared.services.ochiq_savat import savatga_qosh, savat_korish, savat_matn
+        async with _rls_conn(uid) as c:
+            result = await savatga_qosh(c, uid, klient, tovarlar)
+            savat_data = await savat_korish(c, uid, klient)
+
+        if result and savat_data:
+            matn = (
+                f"🛒 Savatga qo'shildi!\n\n"
+                f"{savat_matn(savat_data)}\n\n"
+                f"\"Yana tovar qo'shish\" — ovoz yuboring\n"
+                f"\"{klient} bo'ldi\" — nakladnoy chiqadi"
+            )
+            markup = tg(
+                [(f"📋 {klient} nakladnoy", f"t:savat_yop:{klient}")],
+                [(f"🛒 Savatlar", "t:savatlar")],
+            )
+            if tahrirlash:
+                await tahrirlash.edit_text(matn, reply_markup=markup)
+            else:
+                await update.message.reply_text(matn, reply_markup=markup)
+            return True
+    except Exception as e:
+        log.warning("savat_qosh: %s", e)
+
+    return False
+
+
+async def _savat_yop_va_nakladnoy(update_or_query, uid: int, klient_ismi: str):
+    """Savatni yopish va nakladnoy generatsiya"""
+    try:
+        from shared.services.ochiq_savat import savat_yop
+        from services.bot.bot_services import nakladnoy as nak_xizmat
+        from services.bot.bot_services import export_pdf as pdf_xizmat
+        import io
+        from telegram import InputFile
+
+        async with _rls_conn(uid) as c:
+            natija = await savat_yop(c, uid, klient_ismi)
+
+        if not natija:
+            msg = hasattr(update_or_query, 'message') and update_or_query.message
+            if msg:
+                await msg.reply_text(f"🛒 {klient_ismi} uchun ochiq savat yo'q")
+            return
+
+        # Nakladnoy PDF
+        user = await db.user_ol(uid)
+        dokon = user.get("dokon_nomi", "") if user else ""
+
+        try:
+            pdf_b = pdf_xizmat.chek_pdf(natija, dokon)
+            msg = hasattr(update_or_query, 'message') and update_or_query.message
+            if msg:
+                await msg.reply_document(
+                    document=InputFile(io.BytesIO(pdf_b), filename=f"nakladnoy_{klient_ismi}.pdf"),
+                    caption=(
+                        f"📋 NAKLADNOY — {klient_ismi}\n"
+                        f"📦 {len(natija['tovarlar'])} xil tovar\n"
+                        f"💰 Jami: {natija['jami_summa']:,.0f} so'm\n"
+                        f"✅ Saqlandi va nakladnoy tayyor!"
+                    )
+                )
+        except Exception as pdf_e:
+            log.warning("Savat nakladnoy PDF: %s", pdf_e)
+            msg = hasattr(update_or_query, 'message') and update_or_query.message
+            if msg:
+                await msg.reply_text(
+                    f"📋 {klient_ismi} — SAQLANDI!\n"
+                    f"📦 {len(natija['tovarlar'])} xil tovar\n"
+                    f"💰 Jami: {natija['jami_summa']:,.0f} so'm"
+                )
+    except Exception as e:
+        log.error("savat_yop: %s", e, exc_info=True)
+
+
     log.info("🚀 SavdoAI Mashrab Moliya v25.3 PRODUCTION — TAYYOR!")
 
 
@@ -3374,6 +3632,8 @@ def ilovani_qur(conf:Config) -> Application:
     app.add_handler(CommandHandler("shogird_qosh",     cmd_shogird_qosh))
     app.add_handler(CommandHandler("shogirdlar",       cmd_shogirdlar))
     app.add_handler(CommandHandler("xarajatlar",       cmd_xarajatlar))
+    app.add_handler(CommandHandler("savatlar",         cmd_savatlar))
+    app.add_handler(CommandHandler("savat",            cmd_savat))
     app.add_handler(CallbackQueryHandler(shogird_xarajat_cb, pattern=r"^sx:"))
     # Narx guruhlari
     app.add_handler(CommandHandler("narx_guruh",       cmd_narx_guruh))

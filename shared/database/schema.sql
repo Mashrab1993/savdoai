@@ -625,3 +625,42 @@ ALTER TABLE users ADD COLUMN IF NOT EXISTS to_liq_ism TEXT DEFAULT '';
 DO $$ BEGIN
   UPDATE users SET to_liq_ism = ism WHERE to_liq_ism = '' AND ism != '';
 EXCEPTION WHEN OTHERS THEN NULL; END $$;
+
+-- ═══════════════════════════════════════════════════════════════
+--  OCHIQ SAVAT (Multi-Klient Sessiya) v25.4
+--  Optom do'konchilar uchun — 100 ta klient parallel
+-- ═══════════════════════════════════════════════════════════════
+
+CREATE TABLE IF NOT EXISTS ochiq_savatlar (
+    id          BIGSERIAL   PRIMARY KEY,
+    user_id     BIGINT      NOT NULL REFERENCES users(id),
+    klient_id   BIGINT      REFERENCES klientlar(id),
+    klient_ismi TEXT        NOT NULL,
+    holat       TEXT        NOT NULL DEFAULT 'ochiq',  -- ochiq, yopilgan, bekor
+    jami_summa  DECIMAL(18,2) NOT NULL DEFAULT 0,
+    tovar_soni  INT         NOT NULL DEFAULT 0,
+    izoh        TEXT,
+    ochilgan    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    yopilgan    TIMESTAMPTZ,
+    sessiya_id  BIGINT      REFERENCES sotuv_sessiyalar(id)  -- yopilganda ulash
+);
+CREATE INDEX IF NOT EXISTS idx_savat_uid_holat ON ochiq_savatlar(user_id, holat);
+CREATE INDEX IF NOT EXISTS idx_savat_uid_klient ON ochiq_savatlar(user_id, klient_ismi);
+SELECT enable_rls('ochiq_savatlar');
+
+CREATE TABLE IF NOT EXISTS savat_tovarlar (
+    id          BIGSERIAL   PRIMARY KEY,
+    savat_id    BIGINT      NOT NULL REFERENCES ochiq_savatlar(id) ON DELETE CASCADE,
+    user_id     BIGINT      NOT NULL REFERENCES users(id),
+    tovar_nomi  TEXT        NOT NULL,
+    tovar_id    BIGINT      REFERENCES tovarlar(id),
+    miqdor      DECIMAL(18,3) NOT NULL DEFAULT 0,
+    birlik      TEXT        NOT NULL DEFAULT 'dona',
+    narx        DECIMAL(18,2) NOT NULL DEFAULT 0,
+    jami        DECIMAL(18,2) NOT NULL DEFAULT 0,
+    kategoriya  TEXT        NOT NULL DEFAULT 'Boshqa',
+    qo_shilgan  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_st_savat ON savat_tovarlar(savat_id);
+CREATE INDEX IF NOT EXISTS idx_st_uid ON savat_tovarlar(user_id);
+SELECT enable_rls('savat_tovarlar');
