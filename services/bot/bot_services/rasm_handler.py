@@ -19,7 +19,7 @@ async def rasm_qabul(update, ctx) -> None:
         return
 
     uid = update.effective_user.id
-    holat = await update.message.reply_text("📸 Rasm tahlil qilinmoqda...")
+    holat = await update.message.reply_text("⏳")
 
     try:
         # Eng katta rasm (oxirgi element)

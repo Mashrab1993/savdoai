@@ -406,29 +406,27 @@ async def ovoz_qabul(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
     uid=update.effective_user.id
     if not _flood_ok(uid): return
     if not await faol_tekshir(update): return
-    # 🛡️ Duplicate voice guard
     from shared.services.guards import is_duplicate_message
     if is_duplicate_message(uid, f"voice:{update.message.voice.file_id}"): return
-    holat=await update.message.reply_text("🎤 Ovoz tahlil qilinmoqda...")
+
+    # Faqat ⏳ — matn yo'q
+    holat = await update.message.reply_text("⏳")
+
     tmp_path = None
     try:
         fayl=await ctx.bot.get_file(update.message.voice.file_id)
         audio=bytes(await fayl.download_as_bytearray())
-        # Tez yo'l: vaqtinchalik faylga yozish (STT fayl yo'lini kutadi)
         import tempfile
         with tempfile.NamedTemporaryFile(suffix=".ogg", delete=False) as tmp:
             tmp.write(audio)
             tmp_path = tmp.name
+
         matn=await ovoz_xizmat.matnga_aylantir(tmp_path, uid=uid)
+
         if not matn:
             await holat.edit_text("❌ Ovoz tushunilmadi. Qaytadan yuboring.")
             return
-        try:
-            safe_matn = _md_safe(matn)
-            await holat.edit_text(f"🎤 _{safe_matn}_\n\n🤖 Tahlil qilinmoqda...",
-                                   parse_mode=ParseMode.MARKDOWN)
-        except Exception:
-            await holat.edit_text(f"🎤 {matn}\n\n🤖 Tahlil qilinmoqda...")
+
         # Shogird xarajat tekshiruvi (ovoz uchun)
         if not cfg().is_admin(uid):
             try:
@@ -440,14 +438,23 @@ async def ovoz_qabul(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
                 if shogird:
                     handled = await _shogird_xarajat_qabul(update, ctx, matn, shogird)
                     if handled:
-                        await holat.delete()
+                        try: await holat.delete()
+                        except Exception: pass
                         return
             except Exception as _se:
                 log.debug("Shogird ovoz: %s", _se)
-        await _qayta_ishlash(update,ctx,matn,holat)
+
+        # ⏳ o'chirib, natija yuborish
+        try: await holat.delete()
+        except Exception: pass
+        await _qayta_ishlash(update,ctx,matn)
     except Exception as xato:
         log.error("ovoz_qabul: %s",xato,exc_info=True)
-        await holat.edit_text("❌ Saqlashda xato yuz berdi")
+        try:
+            await holat.edit_text("❌ Xato yuz berdi")
+        except Exception:
+            try: await update.message.reply_text("❌ Xato yuz berdi")
+            except Exception: pass
     finally:
         if tmp_path:
             try: __import__("os").unlink(tmp_path)
@@ -661,6 +668,8 @@ async def matn_qabul(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
         return
 
     # Agar buyruq emas — AI ga yuborish
+    from telegram.constants import ChatAction as _CA
+    await update.message.chat.send_action(_CA.TYPING)
     await _qayta_ishlash(update,ctx,matn)
 
 
@@ -1192,7 +1201,7 @@ async def tasdiq_cb(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
 
     if q.data.startswith("t:savat_yop:"):
         klient = q.data.replace("t:savat_yop:", "")
-        await xat(q, f"📋 {klient} nakladnoy tayyorlanmoqda...")
+        await xat(q, f"📋 {klient} — bir daqiqa...")
         await _savat_yop_va_nakladnoy(update, uid, klient)
         return
 
@@ -2905,7 +2914,7 @@ async def hujjat_qabul(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
     if not fname.endswith(('.xlsx', '.xls')):
         return  # Boshqa fayllarni o'tkazib yuborish
 
-    holat = await update.message.reply_text("📊 Excel fayl tahlil qilinmoqda...")
+    holat = await update.message.reply_text("⏳")
     try:
         fayl = await ctx.bot.get_file(doc.file_id)
         data = bytes(await fayl.download_as_bytearray())

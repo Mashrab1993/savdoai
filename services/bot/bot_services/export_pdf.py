@@ -145,130 +145,226 @@ def sotuv_pdf(data: dict, dokon_nomi: str) -> bytes:
     return buf.getvalue()
 
 
-# ─── MINI PRINTER CHEK (58mm / 80mm termal printer) ──────
+
+# === UNIVERSAL MINI PRINTER CHEK (Professional) ===
+
+_nakladnoy_counter = 0
+
+def _nakladnoy_raqam() -> str:
+    global _nakladnoy_counter
+    _nakladnoy_counter += 1
+    s = datetime.now(TZ)
+    return f"N-{s.strftime('%y%m%d')}-{_nakladnoy_counter:04d}"
+
 
 def chek_pdf(data: dict, dokon_nomi: str, width_mm: int = 80) -> bytes:
-    """
-    Termal printer uchun chek PDF.
-    width_mm: 58 (kichik) yoki 80 (standart) mm
-    """
     from reportlab.lib.units import mm as MM
+    from reportlab.pdfgen import canvas as cv
 
-    page_w = width_mm * MM
-    margin = 3 * MM
-    content_w = page_w - 2 * margin
+    pw = width_mm * MM
+    mg = 3 * MM
+    rx = pw - mg
+    cx = pw / 2
+    iw = pw - 2 * mg
 
     tovarlar = data.get("tovarlar", [])
-    # Chek balandligini hisoblash
-    n_items = max(len(tovarlar), 1)
-    base_h = 60 * MM  # header + footer
-    item_h = 8 * MM   # har tovar uchun
-    qarz_h = 15 * MM if float(data.get("qarz", 0)) > 0 else 0
-    page_h = base_h + (n_items * item_h) + qarz_h
+    nt = max(len(tovarlar), 1)
+    klient = data.get("klient", "")
+    amal = data.get("amal", "chiqim")
+    jami_s = float(data.get("jami_summa", 0))
+    qarz = float(data.get("qarz", 0))
+    tol = float(data.get("tolangan", 0) or jami_s)
+    sana = _hozir()
+    nak = _nakladnoy_raqam()
+
+    # Balandlik
+    ph = 14*MM + 11*MM + (7*MM if klient else 0) + 5*MM + nt*8*MM + 16*MM + (13*MM if qarz > 0 else 0) + 4*MM
 
     buf = io.BytesIO()
-    from reportlab.pdfgen import canvas as cv
-    c = cv.Canvas(buf, pagesize=(page_w, page_h))
+    c = cv.Canvas(buf, pagesize=(pw, ph))
+    y = ph - mg - 1
 
-    y = page_h - margin
-    cx = page_w / 2  # center x
+    BLACK = colors.black
+    GRAY = colors.HexColor("#888888")
+    LGRAY = colors.HexColor("#cccccc")
+    RED = colors.HexColor("#cc0000")
 
-    # ═══ DO'KON NOMI ═══
-    c.setFont("Helvetica-Bold", 14)
-    c.drawCentredString(cx, y, dokon_nomi or "SAVDOAI")
-    y -= 14
+    # --- HEADER ---
+    # Qora banner
+    c.setFillColor(BLACK)
+    c.rect(0, y - 4, pw, 18, fill=1, stroke=0)
+    c.setFillColor(colors.white)
+    c.setFont("Helvetica-Bold", 12 if len(dokon_nomi or "") <= 22 else 10)
+    c.drawCentredString(cx, y, (dokon_nomi or "SAVDOAI").upper())
+    c.setFillColor(BLACK)
+    y -= 20
 
+    # Firma nomi
     c.setFont("Helvetica", 7)
-    c.drawCentredString(cx, y, "@savdoai_mashrab_bot")
-    y -= 12
-
-    # ═══ SANA + KLIENT ═══
-    c.setFont("Helvetica", 8)
-    sana = _hozir()
-    c.drawString(margin, y, f"Sana: {sana}")
+    c.setFillColor(GRAY)
+    c.drawCentredString(cx, y, "MASHRAB MOLIYA")
+    c.setFillColor(BLACK)
     y -= 10
 
-    klient = data.get("klient")
-    if klient:
-        c.drawString(margin, y, f"Klient: {klient}")
-        y -= 10
-
-    amal = data.get("amal", "chiqim")
-    amal_nom = {"kirim": "KIRIM", "chiqim": "SOTUV", "qaytarish": "QAYTARISH"}.get(amal, "SOTUV")
-    c.setFont("Helvetica-Bold", 9)
-    c.drawCentredString(cx, y, amal_nom)
+    # Chek info — ikkita ustun
+    c.setFont("Helvetica", 6.5)
+    c.setFillColor(GRAY)
+    c.drawString(mg, y, f"Chek: {nak}")
+    c.drawRightString(rx, y, sana)
+    c.setFillColor(BLACK)
     y -= 8
 
-    # ═══ CHIZIQ ═══
-    c.setDash(1, 2)
-    c.line(margin, y, page_w - margin, y)
-    c.setDash()
+    # Amal turi
+    amal_map = {"kirim":"KIRIM","chiqim":"SOTUV","qaytarish":"QAYTARISH",
+                "qarz_tolash":"QARZ TOLASH","nakladnoy":"NAKLADNOY"}
+    amal_nom = amal_map.get(amal, "SOTUV")
+    c.setFont("Helvetica-Bold", 8)
+    c.drawCentredString(cx, y, amal_nom)
     y -= 10
 
-    # ═══ TOVARLAR ═══
-    c.setFont("Helvetica", 8)
+    # Ingichka chiziq
+    c.setStrokeColor(BLACK)
+    c.setLineWidth(0.8)
+    c.line(mg, y, rx, y)
+    y -= 5
+
+    # Klient
+    if klient:
+        c.setFont("Helvetica-Bold", 9)
+        c.drawString(mg, y, klient[:24])
+        y -= 11
+
+    # --- TOVARLAR ---
+    # Sarlavha fon
+    c.setFillColor(colors.HexColor("#f0f0f0"))
+    c.rect(mg, y - 2, iw, 10, fill=1, stroke=0)
+    c.setFillColor(BLACK)
+    c.setFont("Helvetica-Bold", 6)
+    c.drawString(mg + 2, y, "TOVAR")
+    c.drawRightString(rx - 2, y, "SUMMA")
+    y -= 12
+
     for i, t in enumerate(tovarlar, 1):
-        nomi = t.get("nomi", "")[:25]
+        nomi = t.get("nomi", "?")
         miq = float(t.get("miqdor", 0))
         narx = float(t.get("narx", 0))
         jami = float(t.get("jami", 0))
         birlik = t.get("birlik", "dona")
-
-        # Miq formatini soddalashtirish
         miq_s = f"{miq:.1f}".rstrip("0").rstrip(".")
 
-        # 1-qator: raqam + nom
-        c.setFont("Helvetica", 8)
-        c.drawString(margin, y, f"{i}. {nomi}")
+        # Tovar nomi + summa (1 qator)
+        disp = f"{i}  {nomi}"
+        mx = 28 if width_mm >= 80 else 18
+        if len(disp) > mx:
+            disp = disp[:mx-1] + ".."
+
+        # Nomi va summa — bitta qatorda
+        s_str = f"{jami:,.0f}"
+        
+        # Summa kengligi
+        c.setFont("Helvetica-Bold", 9)
+        sw = c.stringWidth(s_str, "Helvetica-Bold", 9)
+        
+        # Nomi — sig'adigan shrift
+        max_name_w = iw - sw - 4
+        c.setFont("Helvetica-Bold", 8)
+        nw = c.stringWidth(disp, "Helvetica-Bold", 8)
+        if nw > max_name_w:
+            c.setFont("Helvetica-Bold", 7)
+        c.drawString(mg, y, disp)
+
+        # Summa (o'ng) — KATTA, QALIN
+        c.setFont("Helvetica-Bold", 9)
+        c.drawRightString(rx, y, s_str)
         y -= 9
 
-        # 2-qator: miqdor × narx = jami (o'ngga tekislangan)
-        c.setFont("Helvetica", 7)
-        hisob = f"{miq_s} {birlik} x {narx:,.0f} = {jami:,.0f}"
-        c.drawRightString(page_w - margin, y, hisob)
-        y -= 9
+        # Detay — kulrang, kichik
+        det = f"  {miq_s} {birlik} x {narx:,.0f}"
+        c.setFont("Helvetica", 6)
+        c.setFillColor(GRAY)
+        c.drawString(mg + 3, y, det)
+        c.setFillColor(BLACK)
+        y -= 7
 
-    # ═══ CHIZIQ ═══
-    y -= 2
-    c.setDash(1, 2)
-    c.line(margin, y, page_w - margin, y)
-    c.setDash()
-    y -= 12
+        # Ajratgich (oxirgi emas)
+        if i < len(tovarlar):
+            c.setStrokeColor(LGRAY)
+            c.setLineWidth(0.15)
+            c.line(mg + 5, y + 1, rx - 5, y + 1)
+            c.setStrokeColor(BLACK)
+            c.setLineWidth(0.5)
+            y -= 1
 
-    # ═══ JAMI ═══
-    jami_s = float(data.get("jami_summa", 0))
-    c.setFont("Helvetica-Bold", 12)
-    c.drawString(margin, y, "JAMI:")
-    c.drawRightString(page_w - margin, y, f"{jami_s:,.0f}")
-    y -= 12
+    # --- JAMI ---
+    y -= 3
+    c.setStrokeColor(BLACK)
+    c.setLineWidth(1.2)
+    c.line(mg, y, rx, y)
+    c.setLineWidth(0.5)
+    y -= 5
 
-    # ═══ QARZ ═══
-    qarz = float(data.get("qarz", 0))
-    tolangan = float(data.get("tolangan", 0) or data.get("tolandan", 0) or jami_s)
-    if qarz > 0:
-        c.setFont("Helvetica", 9)
-        c.drawString(margin, y, "To'landi:")
-        c.drawRightString(page_w - margin, y, f"{tolangan:,.0f}")
-        y -= 10
-        c.setFont("Helvetica-Bold", 10)
-        c.drawString(margin, y, "QARZ:")
-        c.drawRightString(page_w - margin, y, f"{qarz:,.0f}")
-        y -= 12
-
-    # ═══ PASTKI CHIZIQ ═══
-    c.setDash(1, 2)
-    c.line(margin, y, page_w - margin, y)
-    c.setDash()
-    y -= 10
-
-    # ═══ FOOTER ═══
+    # JAMI qora banner
+    bh = 16
+    c.setFillColor(BLACK)
+    c.roundRect(mg, y - 3, iw, bh, 3, fill=1, stroke=0)
+    c.setFillColor(colors.white)
+    c.setFont("Helvetica-Bold", 11)
+    c.drawString(mg + 4, y, "JAMI:")
+    c.setFont("Helvetica-Bold", 13)
+    c.drawRightString(rx - 4, y, f"{jami_s:,.0f}")
     c.setFont("Helvetica", 6)
-    c.drawCentredString(cx, y, "Mashrab Moliya | @savdoai_mashrab_bot")
+    c.drawRightString(rx - 4, y - 10, "so'm")
+    c.setFillColor(BLACK)
+    y -= (bh + 5)
+
+    # Tovar soni
+    c.setFont("Helvetica", 6)
+    c.setFillColor(GRAY)
+    c.drawCentredString(cx, y, f"{len(tovarlar)} xil tovar")
+    c.setFillColor(BLACK)
+    y -= 7
+
+    # --- QARZ ---
+    if qarz > 0:
+        # Naqd
+        c.setFont("Helvetica", 7)
+        c.drawString(mg, y, "Naqd:")
+        c.setFont("Helvetica-Bold", 8)
+        c.drawRightString(rx, y, f"{tol:,.0f}")
+        y -= 11
+
+        # QARZ qizil banner
+        bq = 14
+        c.setFillColor(RED)
+        c.roundRect(mg, y - 2, iw, bq, 3, fill=1, stroke=0)
+        c.setFillColor(colors.white)
+        c.setFont("Helvetica-Bold", 10)
+        c.drawString(mg + 4, y, "QARZ:")
+        c.setFont("Helvetica-Bold", 12)
+        c.drawRightString(rx - 4, y, f"{qarz:,.0f}")
+        c.setFont("Helvetica", 5)
+        c.drawRightString(rx - 4, y - 9, "so'm")
+        c.setFillColor(BLACK)
+        y -= (bq + 5)
+
+    # --- FOOTER ---
+    y -= 2
+    c.setStrokeColor(BLACK)
+    c.setLineWidth(0.5)
+    c.line(mg, y, rx, y)
+    y -= 7
+
+    c.setFont("Helvetica-Bold", 7)
+    c.drawCentredString(cx, y, "Xaridingiz uchun rahmat!")
     y -= 8
-    c.drawCentredString(cx, y, sana)
+    c.setFont("Helvetica", 5.5)
+    c.setFillColor(GRAY)
+    c.drawCentredString(cx, y, "@savdoai_mashrab_bot")
+    c.setFillColor(BLACK)
 
     c.save()
     return buf.getvalue()
+
 
 def klient_hisobi_pdf(data: dict, dokon_nomi: str) -> bytes:
     if not data:
