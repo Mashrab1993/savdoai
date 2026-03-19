@@ -1,10 +1,14 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { AdminLayout } from "@/components/layout/admin-layout"
 import { StatusBadge } from "@/components/ui/status-badge"
+import { PageLoading, PageError } from "@/components/ui/loading"
+import { api } from "@/lib/api"
+import { useApi } from "@/lib/use-api"
+import { adaptApprentice } from "@/lib/adapters"
 import {
-  apprentices as initialApprentices,
+  apprentices as mockApprentices,
   apprenticeExpenses,
   type Apprentice,
 } from "@/lib/mock-data"
@@ -55,7 +59,17 @@ const emptyForm = { name: "", role: "", phone: "", status: "active" as Apprentic
 export default function ApprenticesPage() {
   const { locale } = useLocale()
   const L = translations.apprentices
-  const [apprentices, setApprentices] = useState<Apprentice[]>(initialApprentices)
+  const { data: apiData, loading, error, reload } = useApi(() => api.getShogirdlar(), [])
+  const [apprentices, setApprentices] = useState<Apprentice[]>(mockApprentices)
+
+  useEffect(() => {
+    if (apiData && Array.isArray(apiData)) {
+      setApprentices(apiData.map((x: Record<string, unknown>) => adaptApprentice(x) as Apprentice))
+    } else if (apiData && typeof apiData === "object" && "items" in apiData && Array.isArray((apiData as { items: unknown[] }).items)) {
+      setApprentices((apiData as { items: Record<string, unknown>[] }).items.map(x => adaptApprentice(x) as Apprentice))
+    }
+  }, [apiData])
+
   const [search, setSearch] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
   const [selected, setSelected] = useState<Apprentice | null>(null)
@@ -74,6 +88,9 @@ export default function ApprenticesPage() {
   const totalMonthlyBudget = apprentices.reduce((s, a) => s + a.monthlyLimit, 0)
   const totalSpentToday = apprentices.reduce((s, a) => s + a.spentToday, 0)
   const activeCount = apprentices.filter(a => a.status === "active").length
+
+  if (loading) return <AdminLayout title={L.title[locale]}><PageLoading /></AdminLayout>
+  if (error) return <AdminLayout title={L.title[locale]}><PageError message={error} onRetry={reload} /></AdminLayout>
 
   function openAdd() {
     setEditing(null)

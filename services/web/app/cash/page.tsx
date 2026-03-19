@@ -1,8 +1,12 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { AdminLayout } from "@/components/layout/admin-layout"
-import { cashTransactions as initialTx, type CashTransaction } from "@/lib/mock-data"
+import { PageLoading, PageError } from "@/components/ui/loading"
+import { api } from "@/lib/api"
+import { useApi } from "@/lib/use-api"
+import { adaptCashTransaction } from "@/lib/adapters"
+import { cashTransactions as mockTx, type CashTransaction } from "@/lib/mock-data"
 import { useLocale } from "@/lib/locale-context"
 import { translations } from "@/lib/i18n"
 import { Button } from "@/components/ui/button"
@@ -57,7 +61,18 @@ const emptyForm = {
 export default function CashPage() {
   const { locale } = useLocale()
   const L = translations.cash
-  const [transactions, setTransactions] = useState<CashTransaction[]>(initialTx)
+  const { data: apiData, loading, error, reload } = useApi(() => api.getDashboard(), [])
+  const [transactions, setTransactions] = useState<CashTransaction[]>(mockTx)
+
+  useEffect(() => {
+    if (apiData && typeof apiData === "object") {
+      const dash = apiData as Record<string, unknown>
+      const list = dash.kassa_harakatlar ?? dash.transactions ?? dash.cash ?? (Array.isArray(dash) ? dash : [])
+      if (Array.isArray(list) && list.length > 0) {
+        setTransactions(list.map((x: Record<string, unknown>) => adaptCashTransaction(x) as CashTransaction))
+      }
+    }
+  }, [apiData])
   const [search, setSearch] = useState("")
   const [typeFilter, setTypeFilter] = useState("all")
   const [categoryFilter, setCategoryFilter] = useState("all")
@@ -75,6 +90,9 @@ export default function CashPage() {
   })
 
   // KPI derivations
+  if (loading) return <AdminLayout title={L.title[locale]}><PageLoading /></AdminLayout>
+  if (error) return <AdminLayout title={L.title[locale]}><PageError message={error} onRetry={reload} /></AdminLayout>
+
   const todayIncome = transactions.filter(t => t.date === todayStr && t.type === "income")
     .reduce((s, t) => s + t.amount, 0)
   const todayOutcome = transactions.filter(t => t.date === todayStr && t.type === "outcome")

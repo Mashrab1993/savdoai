@@ -1,9 +1,13 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { AdminLayout } from "@/components/layout/admin-layout"
 import { StatusBadge } from "@/components/ui/status-badge"
-import { products as initialProducts, type Product } from "@/lib/mock-data"
+import { PageLoading, PageError } from "@/components/ui/loading"
+import { api } from "@/lib/api"
+import { useApi } from "@/lib/use-api"
+import { adaptProduct } from "@/lib/adapters"
+import { products as mockProducts, type Product } from "@/lib/mock-data"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -37,7 +41,16 @@ function getStockStatus(p: Product): Product["status"] {
 export default function ProductsPage() {
   const { locale } = useLocale()
   const L = translations.products
-  const [products, setProducts] = useState<Product[]>(initialProducts)
+  const { data: apiData, loading, error, reload } = useApi(() => api.getTovarlar(), [])
+  const [products, setProducts] = useState<Product[]>(mockProducts)
+
+  useEffect(() => {
+    if (apiData && Array.isArray(apiData)) {
+      setProducts(apiData.map((x: Record<string, unknown>) => adaptProduct(x) as Product))
+    } else if (apiData && typeof apiData === "object" && "items" in apiData && Array.isArray((apiData as { items: unknown[] }).items)) {
+      setProducts((apiData as { items: Record<string, unknown>[] }).items.map(x => adaptProduct(x) as Product))
+    }
+  }, [apiData])
   const [search, setSearch] = useState("")
   const [categoryFilter, setCategoryFilter] = useState("All")
   const [modalOpen, setModalOpen] = useState(false)
@@ -91,6 +104,9 @@ export default function ProductsPage() {
   const inStock = products.filter(p => p.status === "in-stock").length
   const lowStock = products.filter(p => p.status === "low-stock").length
   const outOfStock = products.filter(p => p.status === "out-of-stock").length
+
+  if (loading) return <AdminLayout title={L.title[locale]}><PageLoading /></AdminLayout>
+  if (error) return <AdminLayout title={L.title[locale]}><PageError message={error} onRetry={reload} /></AdminLayout>
 
   return (
     <AdminLayout title={L.title[locale]}>

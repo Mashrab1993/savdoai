@@ -1,9 +1,13 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { AdminLayout } from "@/components/layout/admin-layout"
 import { StatusBadge } from "@/components/ui/status-badge"
-import { expenses as initialExpenses, type Expense } from "@/lib/mock-data"
+import { PageLoading, PageError } from "@/components/ui/loading"
+import { api } from "@/lib/api"
+import { useApi } from "@/lib/use-api"
+import { adaptExpense } from "@/lib/adapters"
+import { expenses as mockExpenses, type Expense } from "@/lib/mock-data"
 import { useLocale } from "@/lib/locale-context"
 import { translations } from "@/lib/i18n"
 import { Button } from "@/components/ui/button"
@@ -50,7 +54,21 @@ const emptyForm = { title: "", category: "Transport", amount: 0, requestedBy: "A
 export default function ExpensesPage() {
   const { locale } = useLocale()
   const L = translations.expenses
-  const [expenses, setExpenses] = useState<Expense[]>(initialExpenses)
+  const { data: apiData, loading, error, reload } = useApi(
+    () => Promise.all([api.getBugungiXarajatlar(), api.getOylikXarajatlar()]).then(([bugun, oylik]) => {
+      const a = Array.isArray(bugun) ? bugun : (bugun && typeof bugun === "object" && "items" in bugun) ? (bugun as { items: unknown[] }).items : []
+      const b = Array.isArray(oylik) ? oylik : (oylik && typeof oylik === "object" && "items" in oylik) ? (oylik as { items: unknown[] }).items : []
+      return [...a, ...b]
+    }),
+    []
+  )
+  const [expenses, setExpenses] = useState<Expense[]>(mockExpenses)
+
+  useEffect(() => {
+    if (apiData && Array.isArray(apiData) && apiData.length > 0) {
+      setExpenses(apiData.map((x: Record<string, unknown>) => adaptExpense(x) as Expense))
+    }
+  }, [apiData])
   const [search, setSearch] = useState("")
   const [categoryFilter, setCategoryFilter] = useState("all")
   const [statusFilter, setStatusFilter] = useState("all")
@@ -79,6 +97,9 @@ export default function ExpensesPage() {
     value: expenses.filter(e => e.category === cat && e.status !== "rejected")
       .reduce((s, e) => s + e.amount, 0),
   })).filter(d => d.value > 0)
+
+  if (loading) return <AdminLayout title={L.title[locale]}><PageLoading /></AdminLayout>
+  if (error) return <AdminLayout title={L.title[locale]}><PageError message={error} onRetry={reload} /></AdminLayout>
 
   function approve(id: string) {
     setExpenses(prev => prev.map(e =>

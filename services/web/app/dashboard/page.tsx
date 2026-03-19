@@ -3,6 +3,10 @@
 import { AdminLayout } from "@/components/layout/admin-layout"
 import { KpiCard } from "@/components/ui/kpi-card"
 import { StatusBadge } from "@/components/ui/status-badge"
+import { PageLoading } from "@/components/ui/loading"
+import { api } from "@/lib/api"
+import { useApi } from "@/lib/use-api"
+import { adaptDashboard } from "@/lib/adapters"
 import {
   DollarSign, Users, Package, CreditCard, FileText,
   TrendingUp, ArrowRight, AlertCircle, Clock, CheckCircle2,
@@ -40,15 +44,23 @@ function fmt(n: number) {
 export default function DashboardPage() {
   const { locale } = useLocale()
   const d = translations.dashboard
+  const { data: apiDashboard, loading, error, reload } = useApi(() => api.getDashboard(), [])
 
   const paidInvoices = invoices.filter(i => i.status === "paid")
-  const totalRevenue = paidInvoices.reduce((s, i) => s + i.total, 0)
-  const totalDebt = debts.filter(d => d.status !== "paid").reduce((s, d) => s + (d.amount - d.paid), 0)
-  const overdueCount = debts.filter(d => d.status === "overdue").length
-  const activeClients = clients.filter(c => c.status === "active").length
+  const mockTotalRevenue = paidInvoices.reduce((s, i) => s + i.total, 0)
+  const mockTotalDebt = debts.filter(dd => dd.status !== "paid").reduce((s, dd) => s + (dd.amount - dd.paid), 0)
+  const mockOverdueCount = debts.filter(dd => dd.status === "overdue").length
+  const mockActiveClients = clients.filter(c => c.status === "active").length
   const pendingExpenses = expenses.filter(e => e.status === "pending").length
   const todayCashIncome = cashTransactions.filter(t => t.type === "income" && t.date === "2025-03-19").reduce((s, t) => s + t.amount, 0)
   const activeApprentices = apprentices.filter(a => a.status === "active").length
+
+  const dash = apiDashboard ? adaptDashboard(apiDashboard as Record<string, unknown>) : null
+  const totalRevenue = dash ? dash.totalRevenue : mockTotalRevenue
+  const totalDebt = dash ? dash.totalDebt : mockTotalDebt
+  const overdueCount = dash ? 0 : mockOverdueCount
+  const activeClients = dash ? dash.activeClients : mockActiveClients
+  const todayCashIncomeVal = dash ? dash.todayIncome : todayCashIncome
 
   const tooltipStyle = {
     background: "hsl(var(--card))",
@@ -58,6 +70,8 @@ export default function DashboardPage() {
   }
 
   const title = d.title[locale]
+
+  if (loading) return <AdminLayout title={title}><PageLoading /></AdminLayout>
 
   return (
     <AdminLayout title={title}>
@@ -104,7 +118,7 @@ export default function DashboardPage() {
           {[
             {
               label: locale === "uz" ? "Bugungi kassa kirimi" : "Приход кассы сегодня",
-              value: `${fmt(todayCashIncome)} so'm`,
+              value: `${fmt(todayCashIncomeVal)} so'm`,
               icon: Landmark,
               color: "text-green-500",
             },
