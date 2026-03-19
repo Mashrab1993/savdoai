@@ -2,8 +2,17 @@
 Smoke tests for repaired critical paths.
 Run: python -m pytest tests/test_smoke.py -v
 """
-import sys, os
-# conftest.py handles sys.path already
+import sys
+import os
+import builtins
+
+# Ensure file reads use UTF-8 on all platforms (Windows cp1252 otherwise)
+_original_open = builtins.open
+def _open(path, *args, **kwargs):
+    if "encoding" not in kwargs and len(args) < 2:
+        kwargs["encoding"] = "utf-8"
+    return _original_open(path, *args, **kwargs)
+builtins.open = _open
 
 import pytest
 import ast
@@ -354,7 +363,7 @@ class TestHealthCommand:
     def test_bot_version_is_current(self):
         """bot __version__ is 23.0"""
         src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py')).read()
-        assert '__version__ = "25.0"' in src, "bot __version__ not updated to 23.0"
+        assert '__version__ = "25.3"' in src, "bot __version__ not updated to 23.0"
 
 
 class TestExportCrossContainer:
@@ -408,7 +417,7 @@ class TestStartupSafety:
             src = open(path).read()
             import re
             v = re.search(r'__version__\s*=\s*"([^"]+)"', src)
-            if v and v.group(1) not in ('21.3', '21.4', '21.5', '22.0', '23.0', '25.0', ''):
+            if v and v.group(1) not in ('21.3', '21.4', '21.5', '22.0', '23.0', '25.3', ''):
                 assert False, f"{path}: __version__={v.group(1)} (expected 21.3-21.5)"
 
     def test_cognitive_api_version(self):
@@ -1264,15 +1273,15 @@ class TestGemini31:
     """Gemini model upgraded to 3.1."""
     def test_gemini_31_in_voice(self):
         src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'bot_services', 'voice.py')).read()
-        assert 'gemini-2.5-flash-lite' in src, "Voice not using Gemini 3.1"
+        assert 'gemini-3.1-flash-lite' in src, "Voice not using Gemini 3.1"
 
     def test_gemini_31_in_router(self):
         src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'cognitive', 'ai_router.py')).read()
-        assert 'gemini-2.5-flash-lite' in src, "Router not using Gemini 3.1"
+        assert 'gemini-3.1-flash-lite' in src, "Router not using Gemini 3.1"
 
     def test_gemini_31_in_config(self):
         src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'config.py')).read()
-        assert 'gemini-2.5-flash-lite' in src, "Config not using Gemini 3.1"
+        assert 'gemini-3.1-flash-lite' in src, "Config not using Gemini 3.1"
 
 
 class TestVoiceCommands:
@@ -1455,7 +1464,7 @@ class TestSAPGradeLedger:
 
     def test_version_21_5(self):
         src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py')).read()
-        assert '__version__ = "25.0"' in src
+        assert '__version__ = "25.3"' in src
 
 
 class TestV215Upgrades:

@@ -1,6 +1,6 @@
 """
 ╔══════════════════════════════════════════════════════════════════╗
-║  SAVDOAI MASHRAB MOLIYA  v25.0  PRODUCTION GRADE               ║
+║  SAVDOAI MASHRAB MOLIYA  v25.3  PRODUCTION GRADE               ║
 ║  @savdoai_mashrab_bot                                            ║
 ║                                                                  ║
 ║  🎤 OVOZ-BIRINCHI: Ovoz yuboring — bot hamma ishni qiladi      ║
@@ -12,7 +12,7 @@
 ║  🔒 HIMOYA: RLS + JWT + Decimal + FK + Audit Log                ║
 ║  📊 SAP-GRADE: Double-Entry Ledger + Reconciliation             ║
 ║                                                                  ║
-║  v25.0 PRODUCTION YANGILIKLAR:                                   ║
+║  v25.3 PRODUCTION YANGILIKLAR:                                   ║
 ║  ✅ Railway production deploy — crash-proof schema_init          ║
 ║  ✅ Bulletproof startup (hech qachon crash qilmaydi)            ║
 ║  ✅ Nixpacks + Procfile + railway.toml — 3x fallback            ║
@@ -90,7 +90,7 @@ logging.basicConfig(
 )
 for _s in ("httpx","httpcore","telegram.ext._application"):
     logging.getLogger(_s).setLevel(logging.WARNING)
-__version__ = "25.0"
+__version__ = "25.3"
 __author__  = "Mashrab Moliya"
 
 # Segment nomi matnlari
@@ -143,7 +143,7 @@ async def _user_ol_kesh(uid: int):
 
 
 async def health_check(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
-    """Railway health monitoring — v25.0"""
+    """Railway health monitoring — v25.3"""
     import time as _t
     start = _t.monotonic()
     # DB ping
@@ -239,10 +239,30 @@ def asosiy_menyu() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(buttons)
 
 
+def _md_safe(text: str) -> str:
+    """MARKDOWN maxsus belgilarni escape qilish"""
+    for ch in ('_', '*', '`', '[', ']', '(', ')', '~', '>', '#', '+', '-', '=', '|', '{', '}', '.', '!'):
+        text = text.replace(ch, '\\' + ch)
+    return text
+
+
 async def xat(q, matn:str, **kw) -> None:
-    try: await q.edit_message_text(matn,**kw)
+    try:
+        await q.edit_message_text(matn, **kw)
     except BadRequest as e:
-        if "not modified" not in str(e).lower(): log.warning("xat: %s",e)
+        err = str(e).lower()
+        if "not modified" in err:
+            return
+        if "parse" in err or "can't" in err or "entities" in err:
+            # MARKDOWN xato — plain text ga fallback
+            kw.pop("parse_mode", None)
+            try:
+                clean = matn.replace("*","").replace("_","").replace("`","")
+                await q.edit_message_text(clean, **kw)
+            except Exception:
+                pass
+        else:
+            log.warning("xat: %s", e)
 
 
 async def faol_tekshir(update:Update) -> bool:
@@ -381,8 +401,12 @@ async def ovoz_qabul(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
         if not matn:
             await holat.edit_text("❌ Ovoz tushunilmadi. Qaytadan yuboring.")
             return
-        await holat.edit_text(f"🎤 _{matn}_\n\n🤖 Tahlil qilinmoqda...",
-                               parse_mode=ParseMode.MARKDOWN)
+        try:
+            safe_matn = _md_safe(matn)
+            await holat.edit_text(f"🎤 _{safe_matn}_\n\n🤖 Tahlil qilinmoqda...",
+                                   parse_mode=ParseMode.MARKDOWN)
+        except Exception:
+            await holat.edit_text(f"🎤 {matn}\n\n🤖 Tahlil qilinmoqda...")
         # Shogird xarajat tekshiruvi (ovoz uchun)
         if not cfg().is_admin(uid):
             try:
@@ -418,8 +442,122 @@ async def matn_qabul(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
     from shared.services.guards import is_duplicate_message
     if is_duplicate_message(uid, matn): return
 
+    # ═══ TAHRIRLASH REJIMI (BIRINCHI tekshiriladi!) ═══
+    tahr_rejim = ctx.user_data.get("_tahr_rejim")
+    if tahr_rejim and ctx.user_data.get("kutilayotgan"):
+      try:
+        natija = ctx.user_data["kutilayotgan"]
+        tovarlar = natija.get("tovarlar", [])
+        xabar = ""
+        
+        if tahr_rejim == "klient":
+            eski = natija.get("klient", "yo'q")
+            natija["klient"] = matn.strip()
+            xabar = f"✅ Klient: {eski} → {matn.strip()}"
+        
+        elif tahr_rejim == "narx":
+            qismlar = matn.strip().split()
+            if len(qismlar) >= 2 and qismlar[0].lower() == "hammasi":
+                narx = float(qismlar[1].replace(",","").replace(".",""))
+                for t in tovarlar:
+                    t["narx"] = narx
+                    t["jami"] = narx * float(t.get("miqdor", 0))
+                xabar = f"✅ Barcha narxlar: {narx:,.0f} so'm"
+            elif len(qismlar) >= 2:
+                try:
+                    idx = int(qismlar[0]) - 1
+                    narx = float(qismlar[1].replace(",","").replace(".",""))
+                    if 0 <= idx < len(tovarlar):
+                        tovarlar[idx]["narx"] = narx
+                        tovarlar[idx]["jami"] = narx * float(tovarlar[idx].get("miqdor", 0))
+                        xabar = f"✅ {tovarlar[idx]['nomi']} narxi: {narx:,.0f} so'm"
+                    else:
+                        xabar = f"❌ Tovar #{qismlar[0]} topilmadi (1-{len(tovarlar)})"
+                except ValueError:
+                    xabar = "❌ Noto'g'ri format. Masalan: 1 45000 yoki hammasi 50000"
+            else:
+                try:
+                    narx = float(matn.replace(",","").replace(".","").replace(" ",""))
+                    for t in tovarlar:
+                        t["narx"] = narx
+                        t["jami"] = narx * float(t.get("miqdor", 0))
+                    xabar = f"✅ Barcha narxlar: {narx:,.0f} so'm"
+                except ValueError:
+                    xabar = "❌ Raqam kiriting. Masalan: 45000 yoki 1 45000"
+        
+        elif tahr_rejim == "miqdor":
+            qismlar = matn.strip().split()
+            if len(qismlar) >= 2 and qismlar[0].lower() == "hammasi":
+                miqdor = float(qismlar[1].replace(",",""))
+                for t in tovarlar:
+                    t["miqdor"] = miqdor
+                    t["jami"] = float(t.get("narx", 0)) * miqdor
+                xabar = f"✅ Barcha miqdorlar: {miqdor:,.0f}"
+            elif len(qismlar) >= 2:
+                try:
+                    idx = int(qismlar[0]) - 1
+                    miqdor = float(qismlar[1].replace(",",""))
+                    if 0 <= idx < len(tovarlar):
+                        tovarlar[idx]["miqdor"] = miqdor
+                        tovarlar[idx]["jami"] = float(tovarlar[idx].get("narx", 0)) * miqdor
+                        xabar = f"✅ {tovarlar[idx]['nomi']} miqdori: {miqdor:,.0f}"
+                    else:
+                        xabar = f"❌ Tovar #{qismlar[0]} topilmadi (1-{len(tovarlar)})"
+                except ValueError:
+                    xabar = "❌ Noto'g'ri format. Masalan: 1 100 yoki hammasi 50"
+            else:
+                xabar = "❌ Masalan: 1 100 yoki hammasi 50"
+        
+        elif tahr_rejim == "qarz":
+            matn_t = matn.strip().lower().replace(",","").replace(".","").replace(" ","")
+            jami = float(natija.get("jami_summa", 0))
+            if matn_t == "hammasi":
+                natija["qarz"] = jami
+                natija["tolangan"] = 0
+                xabar = f"✅ To'liq qarzga: {jami:,.0f} so'm"
+            else:
+                try:
+                    qarz_y = float(matn_t)
+                    if qarz_y > jami:
+                        qarz_y = jami
+                    natija["qarz"] = qarz_y
+                    natija["tolangan"] = max(jami - qarz_y, 0)
+                    xabar = f"✅ Qarz: {qarz_y:,.0f} | To'langan: {jami - qarz_y:,.0f}"
+                except ValueError:
+                    xabar = "❌ Raqam kiriting. Masalan: 500000 yoki hammasi"
+        
+        # Jami summani qayta hisoblash
+        if tovarlar:
+            natija["jami_summa"] = sum(float(t.get("jami", 0)) for t in tovarlar)
+            if tahr_rejim != "qarz":
+                qarz = float(natija.get("qarz", 0))
+                natija["tolangan"] = max(natija["jami_summa"] - qarz, 0)
+        
+        ctx.user_data["kutilayotgan"] = natija
+        ctx.user_data.pop("_tahr_rejim", None)
+        
+        # Yangilangan preview (MARKDOWN o'chirildi — xavfsiz)
+        try:
+            oldindan = ai_xizmat.oldindan_korinish(natija)
+        except Exception:
+            oldindan = f"Klient: {natija.get('klient','')}\nJami: {natija.get('jami_summa',0):,.0f}"
+        markup=tg(
+            [("✅ Saqlash","t:ha"),("❌ Bekor","t:yoq")],
+            [("✏️ Klient","t:tahr:klient"),("✏️ Narx","t:tahr:narx")],
+            [("✏️ Miqdor","t:tahr:miqdor"),("✏️ Qarz","t:tahr:qarz")],
+        )
+        await update.message.reply_text(
+            f"{xabar}\n\n{'─'*26}\n\n{oldindan}",
+            reply_markup=markup
+        )
+        return
+      except Exception as _tahr_e:
+        log.error("Tahrirlash xato: %s", _tahr_e, exc_info=True)
+        ctx.user_data.pop("_tahr_rejim", None)
+        await update.message.reply_text("❌ Tahrirlash xatosi. Qaytadan yuboring.")
+        return
+
     # ═══ SHOGIRD XARAJAT TEKSHIRUVI ═══
-    # Agar foydalanuvchi shogird bo'lsa — xarajat sifatida qayta ishlash
     if not cfg().is_admin(uid):
         try:
             from shared.services.shogird_xarajat import shogird_topish_tg
@@ -433,112 +571,6 @@ async def matn_qabul(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
                     return
         except Exception as _se:
             log.debug("Shogird tekshiruv: %s", _se)
-
-    # ═══ TAHRIRLASH REJIMI ═══
-    tahr_rejim = ctx.user_data.get("_tahr_rejim")
-    if tahr_rejim and ctx.user_data.get("kutilayotgan"):
-        natija = ctx.user_data["kutilayotgan"]
-        tovarlar = natija.get("tovarlar", [])
-        xabar = ""
-        
-        if tahr_rejim == "klient":
-            eski = natija.get("klient", "yo'q")
-            natija["klient"] = matn.strip()
-            xabar = f"✅ Klient o'zgartirildi: *{eski}* → *{matn.strip()}*"
-        
-        elif tahr_rejim == "narx":
-            qismlar = matn.strip().split()
-            if len(qismlar) >= 2 and qismlar[0].lower() == "hammasi":
-                narx = float(qismlar[1].replace(",","").replace(".",""))
-                for t in tovarlar:
-                    t["narx"] = narx
-                    t["jami"] = narx * float(t.get("miqdor", 0))
-                xabar = f"✅ Barcha narxlar: *{narx:,.0f}* so'm"
-            elif len(qismlar) >= 2:
-                try:
-                    idx = int(qismlar[0]) - 1
-                    narx = float(qismlar[1].replace(",","").replace(".",""))
-                    if 0 <= idx < len(tovarlar):
-                        tovarlar[idx]["narx"] = narx
-                        tovarlar[idx]["jami"] = narx * float(tovarlar[idx].get("miqdor", 0))
-                        xabar = f"✅ *{tovarlar[idx]['nomi']}* narxi: *{narx:,.0f}* so'm"
-                    else:
-                        xabar = f"❌ Tovar #{qismlar[0]} topilmadi (1-{len(tovarlar)})"
-                except ValueError:
-                    xabar = "❌ Noto'g'ri format. Masalan: _1 45000_ yoki _hammasi 50000_"
-            else:
-                try:
-                    narx = float(matn.replace(",","").replace(".","").replace(" ",""))
-                    for t in tovarlar:
-                        t["narx"] = narx
-                        t["jami"] = narx * float(t.get("miqdor", 0))
-                    xabar = f"✅ Barcha narxlar: *{narx:,.0f}* so'm"
-                except ValueError:
-                    xabar = "❌ Raqam kiriting. Masalan: _45000_ yoki _1 45000_"
-        
-        elif tahr_rejim == "miqdor":
-            qismlar = matn.strip().split()
-            if len(qismlar) >= 2 and qismlar[0].lower() == "hammasi":
-                miqdor = float(qismlar[1].replace(",",""))
-                for t in tovarlar:
-                    t["miqdor"] = miqdor
-                    t["jami"] = float(t.get("narx", 0)) * miqdor
-                xabar = f"✅ Barcha miqdorlar: *{miqdor:,.0f}*"
-            elif len(qismlar) >= 2:
-                try:
-                    idx = int(qismlar[0]) - 1
-                    miqdor = float(qismlar[1].replace(",",""))
-                    if 0 <= idx < len(tovarlar):
-                        tovarlar[idx]["miqdor"] = miqdor
-                        tovarlar[idx]["jami"] = float(tovarlar[idx].get("narx", 0)) * miqdor
-                        xabar = f"✅ *{tovarlar[idx]['nomi']}* miqdori: *{miqdor:,.0f}*"
-                    else:
-                        xabar = f"❌ Tovar #{qismlar[0]} topilmadi (1-{len(tovarlar)})"
-                except ValueError:
-                    xabar = "❌ Noto'g'ri format. Masalan: _1 100_ yoki _hammasi 50_"
-            else:
-                xabar = "❌ Masalan: _1 100_ yoki _hammasi 50_"
-        
-        elif tahr_rejim == "qarz":
-            matn_t = matn.strip().lower().replace(",","").replace(".","").replace(" ","")
-            jami = float(natija.get("jami_summa", 0))
-            if matn_t == "hammasi":
-                natija["qarz"] = jami
-                natija["tolangan"] = 0
-                xabar = f"✅ To'liq qarzga: *{jami:,.0f}* so'm"
-            else:
-                try:
-                    qarz_y = float(matn_t)
-                    if qarz_y > jami:
-                        qarz_y = jami
-                    natija["qarz"] = qarz_y
-                    natija["tolangan"] = max(jami - qarz_y, 0)
-                    xabar = f"✅ Qarz: *{qarz_y:,.0f}* | To'langan: *{jami - qarz_y:,.0f}*"
-                except ValueError:
-                    xabar = "❌ Raqam kiriting. Masalan: _500000_ yoki _hammasi_"
-        
-        # Jami summani qayta hisoblash
-        if tovarlar:
-            natija["jami_summa"] = sum(float(t.get("jami", 0)) for t in tovarlar)
-            if tahr_rejim != "qarz":
-                qarz = float(natija.get("qarz", 0))
-                natija["tolangan"] = max(natija["jami_summa"] - qarz, 0)
-        
-        ctx.user_data["kutilayotgan"] = natija
-        ctx.user_data.pop("_tahr_rejim", None)
-        
-        # Yangilangan preview
-        oldindan = ai_xizmat.oldindan_korinish(natija)
-        markup=tg(
-            [("✅ Saqlash","t:ha"),("❌ Bekor","t:yoq")],
-            [("✏️ Klient","t:tahr:klient"),("✏️ Narx","t:tahr:narx")],
-            [("✏️ Miqdor","t:tahr:miqdor"),("✏️ Qarz","t:tahr:qarz")],
-        )
-        await update.message.reply_text(
-            f"{xabar}\n\n{'─'*26}\n\n{oldindan}",
-            parse_mode=ParseMode.MARKDOWN, reply_markup=markup
-        )
-        return
 
     # ═══ O'ZBEK BUYRUQ TEKSHIRUVI (AI ga yubormasdan) ═══
     from shared.services.voice_commands import detect_voice_command, is_quick_command
@@ -832,8 +864,17 @@ async def _qayta_ishlash(update:Update, ctx:ContextTypes.DEFAULT_TYPE,
         [("✏️ Klient","t:tahr:klient"),("✏️ Narx","t:tahr:narx")],
         [("✏️ Miqdor","t:tahr:miqdor"),("✏️ Qarz","t:tahr:qarz")],
     )
-    if tahrirlash: await tahrirlash.edit_text(oldindan,parse_mode=ParseMode.MARKDOWN,reply_markup=markup)
-    else: await update.message.reply_text(oldindan,parse_mode=ParseMode.MARKDOWN,reply_markup=markup)
+    try:
+        if tahrirlash: await tahrirlash.edit_text(oldindan,parse_mode=ParseMode.MARKDOWN,reply_markup=markup)
+        else: await update.message.reply_text(oldindan,parse_mode=ParseMode.MARKDOWN,reply_markup=markup)
+    except Exception:
+        # MARKDOWN xato — plain text fallback
+        plain = oldindan.replace("*","").replace("_","").replace("`","")
+        try:
+            if tahrirlash: await tahrirlash.edit_text(plain,reply_markup=markup)
+            else: await update.message.reply_text(plain,reply_markup=markup)
+        except Exception as _pe:
+            log.warning("Preview yuborish: %s", _pe)
 
 
 # ════════════ NAKLADNOY ════════════
@@ -2580,7 +2621,7 @@ async def cmd_status(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
         db_ms = f"{info.get('ping_ms', '?')}ms (pool: {info.get('used',0)}/{info.get('size',0)})"
     except Exception: pass
     matn = (
-        "⚙️ *BOT HOLATI (v25.0 PRODUCTION)*\n\n"
+        "⚙️ *BOT HOLATI (v25.3 PRODUCTION)*\n\n"
         + f"📅 Vaqt: `{hozir}`\n"
         + f"🐍 Python: `{sys.version.split()[0]}`\n"
         + f"💻 OS: `{platform.system()} {platform.release()}`\n\n"
@@ -2860,7 +2901,7 @@ async def cmd_tovar(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
 
 
 async def cmd_yangilik(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
-    """v25.0 PRODUCTION yangiliklari"""
+    """v25.3 PRODUCTION yangiliklari"""
     await update.message.reply_text(
         f"🆕 *SAVDOAI MASHRAB MOLIYA v{__version__} YANGILIKLAR*\n"
         "━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
@@ -3118,7 +3159,7 @@ async def boshlash(app:Application) -> None:
     await app.bot.set_my_commands([
         BotCommand("start",            "Botni boshlash"),
         BotCommand("menyu",            "Asosiy menyu"),
-        BotCommand("yangilik",         "🆕 v25.0 yangiliklari"),
+        BotCommand("yangilik",         "🆕 v25.3 yangiliklari"),
         BotCommand("imkoniyatlar",     "📋 Barcha imkoniyatlar"),
         BotCommand("yordam",           "❓ Qanday ishlatish"),
         BotCommand("nakladnoy",        "Nakladnoy (Word+Excel+PDF)"),
@@ -3189,7 +3230,7 @@ async def boshlash(app:Application) -> None:
             log.info("✅ Standalone: kunlik/haftalik/qarz/obuna joblar yoqildi")
         else:
             log.info("✅ Worker rejim: scheduling Worker/Beat tomonida boshqariladi")
-    log.info("🚀 SavdoAI Mashrab Moliya v25.0 PRODUCTION — TAYYOR!")
+    log.info("🚀 SavdoAI Mashrab Moliya v25.3 PRODUCTION — TAYYOR!")
 
 
 def ilovani_qur(conf:Config) -> Application:

@@ -116,6 +116,26 @@ Xojalik: Idish-tovoq | Xojalik: Kiyim | Boshqa
    - Tovar nomi aniq yoz (qisqartma emas)
    - "Salimovga 50 Ariel" → narx=0 (tizim Salimov narxini topadi)
 
+═══════════════ MATEMATIKA — CHAIN OF THOUGHT ═══════════════
+XATO QILISHGA MUTLAQO HAQQING YO'Q! Qadam-ba-qadam hisobla:
+
+1-qadam: Har tovar uchun: narx × miqdor = jami
+   Masalan: 50 × 45000 = 2,250,000 ✓
+2-qadam: Barcha tovarlar jamini qo'sh:
+   Masalan: 2,250,000 + 800,000 = 3,050,000 ✓
+3-qadam: Qarz hisoblash:
+   tolangan + qarz = jami_summa (DOIM TENG!)
+   Masalan: 2,550,000 + 500,000 = 3,050,000 ✓
+4-qadam: TEKSHIR — agar teng bo'lmasa, qayerda xato ekanini top va tuzat!
+
+GRAMM HISOB:
+   "350 gramm, kilo narxi 45000" → jami = 45000 / 1000 × 350 = 15,750
+   "yarim kilo, kilo narxi 30000" → jami = 30000 × 0.5 = 15,000
+
+CHEGIRMA:
+   "10% chegirma" → jami = jami × 0.9
+   "5000 chegirma" → jami = jami - 5000
+
 ═══════════════ JAVOB FORMATI ═══════════════
 FAQAT SOF JSON (markdown, ```, izoh YO'Q):
 

@@ -97,7 +97,7 @@ fi
 # 9. Version
 echo ""
 echo "9. Versiya v24.0..."
-if grep -q '__version__ = "25.0"' services/bot/main.py 2>/dev/null; then
+if grep -q '__version__ = "25.3"' services/bot/main.py 2>/dev/null; then
   echo "   ✅ bot v24.0"
 else
   echo "   ❌ bot versiya 23.0 emas!"

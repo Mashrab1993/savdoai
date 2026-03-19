@@ -440,10 +440,11 @@ async def faol_users() -> list:
 async def obuna_tugayotganlar(kun: int = 3) -> list:
     chegara = _bugun() + timedelta(days=kun)
     async with _P().acquire() as c:
-        return await c.fetch(
+        _rows = await c.fetch(
             "SELECT * FROM users WHERE faol = TRUE AND obuna_tugash = $1",
             chegara
         )
+        return [dict(r) for r in _rows]
 
 
 # ════════════════════════════════════════════════════════════════
@@ -500,12 +501,13 @@ async def klientlar_soni(uid: int) -> int:
 async def klient_qidirish(uid: int, qidiruv: str) -> list:
     q = qidiruv.strip()
     async with _P().acquire() as c:
-        return await c.fetch("""
+        _rows = await c.fetch("""
             SELECT * FROM klientlar
             WHERE user_id = $1
               AND (lower(ism) LIKE lower($2) OR telefon LIKE $3)
             ORDER BY jami_sotib DESC LIMIT 10
         """, uid, f"%{q}%", f"%{q}%")
+        return [dict(r) for r in _rows]
 
 
 async def klient_to_liq_hisobi(uid: int, klient_id: int) -> Optional[dict]:
@@ -538,7 +540,7 @@ async def klient_to_liq_hisobi(uid: int, klient_id: int) -> Optional[dict]:
 
 async def top_klientlar(uid: int, limit: int = 10) -> list:
     async with _P().acquire() as c:
-        return await c.fetch("""
+        _rows = await c.fetch("""
             SELECT
                 k.id, k.ism, k.telefon,
                 COALESCE(k.jami_sotib, 0) AS jami_sotib,
@@ -552,6 +554,7 @@ async def top_klientlar(uid: int, limit: int = 10) -> list:
             GROUP BY k.id, k.ism, k.telefon, k.jami_sotib
             ORDER BY k.jami_sotib DESC LIMIT $2
         """, uid, limit)
+        return [dict(r) for r in _rows]
 
 
 async def klient_kredit_tekshir(uid: int,
@@ -562,6 +565,7 @@ async def klient_kredit_tekshir(uid: int,
             "SELECT * FROM klientlar WHERE id=$1 AND user_id=$2",
             klient_id, uid)
         if not k: return {"ok": True, "xato": None}
+        k = dict(k)
         limit = float(k.get("kredit_limit") or 0)
         if limit <= 0: return {"ok": True, "xato": None}
         aktiv = float(await c.fetchval("""
@@ -622,10 +626,11 @@ async def tovar_olish_yaratish(uid: int, nomi: str,
 
 async def tovarlar_ol(uid: int, limit: int = 20, offset: int = 0) -> list:
     async with _P().acquire() as c:
-        return await c.fetch("""
+        _rows = await c.fetch("""
             SELECT * FROM tovarlar WHERE user_id=$1
             ORDER BY kategoriya, nomi LIMIT $2 OFFSET $3
         """, uid, limit, offset)
+        return [dict(r) for r in _rows]
 
 
 async def tovarlar_soni(uid: int) -> int:
@@ -672,11 +677,12 @@ async def tovar_qoldiq_atomic_tekshir(uid: int, tovarlar: list) -> list:
 
 async def kam_qoldiq_tovarlar(uid: int) -> list:
     async with _P().acquire() as c:
-        return await c.fetch("""
+        _rows = await c.fetch("""
             SELECT * FROM tovarlar
             WHERE user_id=$1 AND min_qoldiq > 0 AND qoldiq <= min_qoldiq
             ORDER BY (qoldiq / NULLIF(min_qoldiq, 0)) ASC
         """, uid)
+        return [dict(r) for r in _rows]
 
 
 async def zarar_sotuv_tekshir(uid: int, tovarlar_r: list) -> list[dict]:
@@ -689,6 +695,7 @@ async def zarar_sotuv_tekshir(uid: int, tovarlar_r: list) -> list[dict]:
                 WHERE user_id=$1 AND lower(nomi) LIKE lower($2) LIMIT 1
             """, uid, f"%{t.get('nomi','')}%")
             if not tv: continue
+            tv = dict(tv)
             olish_n  = float(tv.get("olish_narxi") or 0)
             sotish_n = float(t.get("narx") or 0)
             if olish_n <= 0 or sotish_n <= 0: continue
@@ -892,7 +899,7 @@ async def qaytarish_tovarlar_ol(uid: int,
                                   klient: str,
                                   tovar_nomi: str) -> list:
     async with _P().acquire() as c:
-        return await c.fetch("""
+        _rows = await c.fetch("""
             SELECT ch.*, ss.sana AS sotuv_sana
             FROM chiqimlar ch
             JOIN sotuv_sessiyalar ss ON ss.id = ch.sessiya_id
@@ -902,6 +909,7 @@ async def qaytarish_tovarlar_ol(uid: int,
               AND ch.miqdor > ch.qaytarilgan
             ORDER BY ch.sana DESC LIMIT 10
         """, uid, klient.strip(), f"%{tovar_nomi.strip()}%")
+        return [dict(r) for r in _rows]
 
 
 async def qaytarish_saqlash(uid: int,
@@ -917,6 +925,7 @@ async def qaytarish_saqlash(uid: int,
                     "SELECT * FROM chiqimlar WHERE id=$1", q["chiqim_id"])
                 if not chiqim:
                     continue
+                chiqim = dict(chiqim)
 
                 hisob = qaytarish_hisob(
                     chiqim["miqdor"], chiqim["qaytarilgan"],
@@ -962,7 +971,7 @@ async def qaytarish_saqlash(uid: int,
 async def qarzlar_ol(uid: int) -> list:
     """Faol qarzlar — klient bo'yicha guruhlangan"""
     async with _P().acquire() as c:
-        return await c.fetch("""
+        _rows = await c.fetch("""
             SELECT
                 klient_ismi,
                 SUM(qolgan)  AS qolgan,
@@ -973,6 +982,7 @@ async def qarzlar_ol(uid: int) -> list:
             GROUP BY klient_ismi
             ORDER BY qolgan DESC
         """, uid)
+        return [dict(r) for r in _rows]
 
 
 async def qarz_tolash(uid: int,
@@ -1038,12 +1048,13 @@ async def qarz_tolash(uid: int,
 async def muddatli_qarzlar(uid: int, kun: int = 3) -> list:
     chegara = _bugun() + timedelta(days=kun)
     async with _P().acquire() as c:
-        return await c.fetch("""
+        _rows = await c.fetch("""
             SELECT * FROM qarzlar
             WHERE user_id=$1 AND yopildi=FALSE
               AND muddat IS NOT NULL AND muddat <= $2
             ORDER BY muddat ASC
         """, uid, chegara)
+        return [dict(r) for r in _rows]
 
 
 # ════════════════════════════════════════════════════════════════
@@ -1081,10 +1092,11 @@ async def nakladnoy_saqlash(uid: int, sessiya_id: Optional[int],
 
 async def menyu_ol(uid: int) -> list:
     async with _P().acquire() as c:
-        return await c.fetch("""
+        _rows = await c.fetch("""
             SELECT * FROM menyu WHERE user_id=$1 AND mavjud=TRUE
             ORDER BY kategoriya, nomi
         """, uid)
+        return [dict(r) for r in _rows]
 
 
 async def menyu_qoshish(uid: int, nomi: str,

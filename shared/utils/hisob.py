@@ -179,10 +179,9 @@ def ai_hisob_tekshir(ai_data: dict) -> dict:
     qarz_nat = qarz_hisob(aniq, ai_qarz)
 
     # AI response uchun serialization (JSON da Decimal yuborilmaydi)
-    # Bu faqat AI javob formatlash — DB ga YOZILMAYDI
     def _f(v):
         if isinstance(v, Decimal):
-            return str(v)  # str saqlaydi aniqlikni
+            return float(v)  # float — matematik amallar to'g'ri ishlaydi
         return v
     yangi_t = []
     for t in hisob["tovarlar"]:
