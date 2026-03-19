@@ -20,7 +20,7 @@ from tenacity import (
 log = logging.getLogger(__name__)
 
 _client    = None
-MODEL      = os.getenv("GEMINI_MODEL", "gemini-3.1-flash-lite")
+MODEL      = os.getenv("GEMINI_MODEL", "gemini-2.5-flash-lite")
 MAX_MB     = 100
 TIMEOUT_S  = 60
 MAX_PARALLEL = 3

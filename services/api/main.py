@@ -298,14 +298,13 @@ async def health():
 
 
 @app.get("/dashboard", include_in_schema=False)
-async def dashboard():
-    """Web Dashboard — Shogird xarajat + Savdo + Ombor"""
-    from fastapi.responses import HTMLResponse
-    import os as _os2
-    html_path = _os2.path.join(_os2.path.dirname(_os2.path.abspath(__file__)), "static", "dashboard.html")
-    if _os2.path.exists(html_path):
-        return HTMLResponse(content=open(html_path, encoding="utf-8").read())
-    return HTMLResponse(content="<h1>Dashboard yuklanmadi</h1>", status_code=500)
+async def dashboard_redirect():
+    """Redirect to Next.js Web Dashboard"""
+    from fastapi.responses import RedirectResponse
+    web_url = os.getenv("WEB_DASHBOARD_URL", "")
+    if web_url:
+        return RedirectResponse(url=web_url)
+    return {"message": "Dashboard: WEB_DASHBOARD_URL sozlang"}
 
 
 @app.post("/auth/telegram")

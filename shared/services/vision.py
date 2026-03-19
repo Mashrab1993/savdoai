@@ -19,7 +19,7 @@ from typing import Any, Optional
 log = logging.getLogger(__name__)
 
 _gemini_client = None
-_VISION_MODEL = "gemini-3.1-flash-lite"
+_VISION_MODEL = "gemini-2.5-flash-lite"
 
 _PROMPT_RASM = """Bu O'zbek biznesga tegishli rasm (nakladnoy, chek, kvitansiya yoki hujjat).
 

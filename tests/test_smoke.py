@@ -1264,15 +1264,15 @@ class TestGemini31:
     """Gemini model upgraded to 3.1."""
     def test_gemini_31_in_voice(self):
         src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'bot_services', 'voice.py')).read()
-        assert 'gemini-3.1-flash-lite' in src, "Voice not using Gemini 3.1"
+        assert 'gemini-2.5-flash-lite' in src, "Voice not using Gemini 3.1"
 
     def test_gemini_31_in_router(self):
         src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'cognitive', 'ai_router.py')).read()
-        assert 'gemini-3.1-flash-lite' in src, "Router not using Gemini 3.1"
+        assert 'gemini-2.5-flash-lite' in src, "Router not using Gemini 3.1"
 
     def test_gemini_31_in_config(self):
         src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'config.py')).read()
-        assert 'gemini-3.1-flash-lite' in src, "Config not using Gemini 3.1"
+        assert 'gemini-2.5-flash-lite' in src, "Config not using Gemini 3.1"
 
 
 class TestVoiceCommands:

@@ -1,8 +1,5 @@
-# ════════════════════════════════════════════════════════════
-#  SAVDOAI MASHRAB MOLIYA v24.0 — Railway Config
-#  URL: https://savdoai-production.up.railway.app/
-#  Bot: @savdoai_mashrab_bot
-# ════════════════════════════════════════════════════════════
+# SAVDOAI v25.3 — Railway Config
+# 5 servis: API + Bot + Web + Postgres + Redis
 
 [build]
 builder = "NIXPACKS"
@@ -39,25 +36,21 @@ REDIS_URL         = "${{Redis.REDIS_URL}}"
 ANTHROPIC_API_KEY = "${{ANTHROPIC_API_KEY}}"
 GEMINI_API_KEY    = "${{GEMINI_API_KEY}}"
 ADMIN_IDS         = "${{ADMIN_IDS}}"
-GEMINI_MODEL      = "gemini-3.1-flash-lite"
+GEMINI_MODEL      = "gemini-2.5-flash-lite"
 DB_MIN            = "2"
 DB_MAX            = "10"
 DROP_PENDING      = "true"
 PYTHONPATH        = "/app"
 
 [[services]]
-name = "savdoai-worker"
+name = "savdoai-web"
+rootDirectory = "services/web"
 [services.build]
-dockerfilePath = "services/worker/Dockerfile"
+dockerfilePath = "Dockerfile"
 [services.deploy]
-startCommand = "cd /app/services/worker && celery -A tasks worker --loglevel=info --concurrency=2"
+healthCheckPath = "/"
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 3
 [services.variables]
-DATABASE_URL = "${{Postgres.DATABASE_URL}}"
-REDIS_URL    = "${{Redis.REDIS_URL}}"
-BOT_TOKEN    = "${{BOT_TOKEN}}"
-ADMIN_IDS    = "${{ADMIN_IDS}}"
-DB_MIN       = "1"
-DB_MAX       = "5"
-PYTHONPATH   = "/app"
+NEXT_PUBLIC_API_URL = "${{savdoai-api.URL}}"
+PORT                = "3000"

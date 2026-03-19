@@ -562,7 +562,7 @@ async def matn_qabul(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
         try:
             oldindan = ai_xizmat.oldindan_korinish(natija)
         except Exception:
-            oldindan = f"Klient: {natija.get('klient','')}\nJami: {natija.get('jami_summa',0):,.0f}"
+            oldindan = f"Klient: {natija.get('klient','')}\nJami: {float(natija.get('jami_summa',0) or 0):,.0f}"
         markup=tg(
             [("✅ Saqlash","t:ha"),("❌ Bekor","t:yoq")],
             [("✏️ Klient","t:tahr:klient"),("✏️ Narx","t:tahr:narx")],

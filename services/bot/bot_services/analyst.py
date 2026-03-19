@@ -272,27 +272,33 @@ def oldindan_korinish(data: dict) -> str:
     NOMLAR   = {"kirim":"KIRIM","chiqim":"SOTUV","qaytarish":"QAYTARISH",
                 "qarz_tolash":"QARZ TO'LASH","nakladnoy":"NAKLADNOY",
                 "hisobot":"HISOBOT","boshqa":"NOMA'LUM"}
+    def _n(v):
+        """Har qanday qiymatni float ga aylantirish"""
+        try: return float(v) if v else 0.0
+        except (ValueError, TypeError): return 0.0
+
     amal  = data.get("amal", "boshqa")
-    qator = [f"{BELGILAR.get(amal,'❓')} *{NOMLAR.get(amal,'?')}*\n"]
-    if data.get("klient"): qator.append(f"👤 Klient: *{data['klient']}*")
-    if data.get("manba"):  qator.append(f"🏭 Manba: {data['manba']}")
+    qator = [f"{BELGILAR.get(amal,'❓')} {NOMLAR.get(amal,'?')}\n"]
+    if data.get("klient"): qator.append(f"Klient: {data['klient']}")
+    if data.get("manba"):  qator.append(f"Manba: {data['manba']}")
     if data.get("tovarlar"):
         qator.append("─" * 26)
-        for t in data["tovarlar"]:
-            miq=t.get("miqdor",0); bir=t.get("birlik","dona")
-            narx=t.get("narx",0); jami=t.get("jami",0)
-            qator.append(f"📦 *{t['nomi']}*")
+        for t in (data.get("tovarlar") or []):
+            miq=_n(t.get("miqdor",0)); bir=t.get("birlik","dona")
+            narx=_n(t.get("narx",0)); jami=_n(t.get("jami",0))
+            qator.append(f"📦 {t.get('nomi','?')}")
             if narx:
-                qator.append(f"   {miq} {bir} × {narx:,.0f} = *{jami:,.0f} so'm*")
+                qator.append(f"   {miq:,.0f} {bir} × {narx:,.0f} = {jami:,.0f} so'm")
             else:
-                qator.append(f"   {miq} {bir}")
-            qator.append(f"   🏷 _{t.get('kategoriya','')}_")
-    j=data.get("jami_summa",0); q=data.get("qarz",0); tl=data.get("tolangan",j)
+                qator.append(f"   {miq:,.0f} {bir}")
+            kat = t.get('kategoriya','')
+            if kat: qator.append(f"   {kat}")
+    j=_n(data.get("jami_summa",0)); q=_n(data.get("qarz",0)); tl=_n(data.get("tolangan",j))
     if j:
         qator.append("─"*26)
-        qator.append(f"💵 JAMI: *{j:,.0f} so'm*")
+        qator.append(f"JAMI: {j:,.0f} so'm")
     if q:
-        qator.append(f"✅ To'landi: {tl:,.0f} so'm")
-        qator.append(f"⚠️ QARZ: *{q:,.0f} so'm*")
-    if data.get("izoh"): qator.append(f"📝 {data['izoh']}")
+        qator.append(f"To'landi: {tl:,.0f} so'm")
+        qator.append(f"QARZ: {q:,.0f} so'm")
+    if data.get("izoh"): qator.append(f"{data['izoh']}")
     return "\n".join(qator)
