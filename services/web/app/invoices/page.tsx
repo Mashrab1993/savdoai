@@ -1,13 +1,9 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { AdminLayout } from "@/components/layout/admin-layout"
 import { StatusBadge } from "@/components/ui/status-badge"
-import { PageLoading, PageError } from "@/components/ui/loading"
-import { api } from "@/lib/api"
-import { useApi } from "@/lib/use-api"
-import { adaptInvoice } from "@/lib/adapters"
-import { invoices as mockInvoices, clients, type Invoice, type InvoiceItem } from "@/lib/mock-data"
+import { invoices as initialInvoices, clients, type Invoice, type InvoiceItem } from "@/lib/mock-data"
 import { useLocale } from "@/lib/locale-context"
 import { translations } from "@/lib/i18n"
 import { Button } from "@/components/ui/button"
@@ -33,18 +29,8 @@ function fmt(n: number) {
 export default function InvoicesPage() {
   const { locale } = useLocale()
   const L = translations.invoices
-  const { data: apiData, loading, error, reload } = useApi(() => api.getKunlik(), [])
-  const [invoices, setInvoices] = useState<Invoice[]>(mockInvoices)
 
-  useEffect(() => {
-    if (apiData && Array.isArray(apiData)) {
-      setInvoices(apiData.map((x: Record<string, unknown>) => adaptInvoice(x) as Invoice))
-    } else if (apiData && typeof apiData === "object" && "items" in apiData && Array.isArray((apiData as { items: unknown[] }).items)) {
-      setInvoices((apiData as { items: Record<string, unknown>[] }).items.map(x => adaptInvoice(x) as Invoice))
-    } else if (apiData && typeof apiData === "object" && "sotuvlar" in apiData && Array.isArray((apiData as { sotuvlar: unknown[] }).sotuvlar)) {
-      setInvoices((apiData as { sotuvlar: Record<string, unknown>[] }).sotuvlar.map(x => adaptInvoice(x) as Invoice))
-    }
-  }, [apiData])
+  const [invoices, setInvoices] = useState<Invoice[]>(initialInvoices)
   const [search, setSearch] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
   const [createOpen, setCreateOpen] = useState(false)
@@ -108,9 +94,6 @@ export default function InvoicesPage() {
     { label: L.pending[locale],      value: fmt(totalPending), icon: Clock,        color: "text-yellow-500" },
     { label: L.overdue[locale],      value: fmt(totalOverdue), icon: FileText,     color: "text-destructive" },
   ]
-
-  if (loading) return <AdminLayout title={L.title[locale]}><PageLoading /></AdminLayout>
-  if (error) return <AdminLayout title={L.title[locale]}><PageError message={error} onRetry={reload} /></AdminLayout>
 
   return (
     <AdminLayout title={L.title[locale]}>

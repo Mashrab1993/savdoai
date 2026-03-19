@@ -10,7 +10,6 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
-import { api } from "@/lib/api"
 import { useLocale } from "@/lib/locale-context"
 import { translations } from "@/lib/i18n"
 import { LanguageSwitcher } from "@/components/ui/language-switcher"
@@ -40,21 +39,7 @@ export default function LoginPage() {
 
   async function handleTelegramLogin() {
     setTelegramLoading(true)
-    try {
-      if (typeof window !== "undefined" && (window as unknown as { Telegram?: { WebApp?: { initData: string } } }).Telegram?.WebApp?.initData) {
-        const initData = (window as unknown as { Telegram: { WebApp: { initData: string } } }).Telegram.WebApp.initData
-        const res = await api.loginTelegram(initData) as { token?: string }
-        if (res?.token) {
-          api.setToken(res.token)
-          router.push("/dashboard")
-          return
-        }
-      }
-    } catch (e) {
-      console.warn("[Telegram login fallback]", (e as Error)?.message)
-    }
-    setTelegramLoading(false)
-    await new Promise(r => setTimeout(r, 400))
+    await new Promise(r => setTimeout(r, 1400))
     router.push("/dashboard")
   }
 

@@ -1,10 +1,7 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { AdminLayout } from "@/components/layout/admin-layout"
-import { PageLoading } from "@/components/ui/loading"
-import { api } from "@/lib/api"
-import { useApi } from "@/lib/use-api"
 import { useLocale } from "@/lib/locale-context"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -101,7 +98,6 @@ const regions = {
 export default function SettingsPage() {
   const { locale } = useLocale()
   const { theme, setTheme } = useTheme()
-  const { data: meData, loading: meLoading } = useApi(() => api.getMe(), [])
   const [saved, setSaved] = useState(false)
 
   const [profile, setProfile] = useState({
@@ -111,20 +107,6 @@ export default function SettingsPage() {
     phone: "+998 90 100-0001",
     role: "Administrator",
   })
-
-  useEffect(() => {
-    if (meData && typeof meData === "object" && meData !== null) {
-      const m = meData as Record<string, unknown>
-      if (m.ism || m.email) setProfile(prev => ({
-        ...prev,
-        firstName: String(m.ism ?? m.first_name ?? prev.firstName).split(" ")[0] || prev.firstName,
-        lastName: String(m.familiya ?? m.last_name ?? prev.lastName).split(" ").slice(1).join(" ") || prev.lastName,
-        email: String(m.email ?? prev.email),
-        phone: String(m.telefon ?? m.phone ?? prev.phone),
-        role: String(m.lavozim ?? m.role ?? prev.role),
-      }))
-    }
-  }, [meData])
 
   const [company, setCompany] = useState({
     name: "SavdoAI MChJ",
@@ -155,8 +137,6 @@ export default function SettingsPage() {
       {saved ? S.saved[locale] : label}
     </Button>
   )
-
-  if (meLoading) return <AdminLayout title={S.title[locale]}><PageLoading /></AdminLayout>
 
   return (
     <AdminLayout title={S.title[locale]}>

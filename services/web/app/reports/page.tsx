@@ -1,10 +1,7 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { AdminLayout } from "@/components/layout/admin-layout"
-import { PageLoading, PageError } from "@/components/ui/loading"
-import { api } from "@/lib/api"
-import { useApi } from "@/lib/use-api"
 import { monthlyRevenue, revenueByCategory, salesByClient, invoices, clients, products } from "@/lib/mock-data"
 import { useLocale } from "@/lib/locale-context"
 import { translations } from "@/lib/i18n"
@@ -48,7 +45,7 @@ function fmt(n: number) {
 export default function ReportsPage() {
   const { locale } = useLocale()
   const L = translations.reports
-  const { data: apiData, loading, error, reload } = useApi(() => api.getOylik(), [])
+
   const [dateRange, setDateRange] = useState("last-8-months")
 
   const totalRevenue = invoices.filter(i => i.status === "paid").reduce((s, i) => s + i.total, 0)
@@ -63,9 +60,6 @@ export default function ReportsPage() {
     { label: L.totalProducts[locale], value: String(totalProducts),      icon: Package,     color: "text-yellow-500" },
     { label: L.avgOrder[locale],      value: fmt(avgOrderValue),         icon: TrendingUp,  color: "text-green-500" },
   ]
-
-  if (loading) return <AdminLayout title={L.title[locale]}><PageLoading /></AdminLayout>
-  if (error) return <AdminLayout title={L.title[locale]}><PageError message={error} onRetry={reload} /></AdminLayout>
 
   return (
     <AdminLayout title={L.title[locale]}>

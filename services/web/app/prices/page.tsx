@@ -1,13 +1,9 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { AdminLayout } from "@/components/layout/admin-layout"
-import { PageLoading, PageError } from "@/components/ui/loading"
-import { api } from "@/lib/api"
-import { useApi } from "@/lib/use-api"
-import { adaptPriceGroup } from "@/lib/adapters"
 import {
-  priceGroups as mockGroups,
+  priceGroups as initialGroups,
   clients,
   products,
   type PriceGroup,
@@ -59,16 +55,7 @@ const emptyForm = { name: "", discount: 0, description: "" }
 export default function PricesPage() {
   const { locale } = useLocale()
   const L = translations.prices
-  const { data: apiData, loading, error, reload } = useApi(() => api.getNarxGuruhlar(), [])
-  const [groups, setGroups] = useState<PriceGroup[]>(mockGroups)
-
-  useEffect(() => {
-    if (apiData && Array.isArray(apiData)) {
-      setGroups(apiData.map((x: Record<string, unknown>) => adaptPriceGroup(x) as PriceGroup))
-    } else if (apiData && typeof apiData === "object" && "items" in apiData && Array.isArray((apiData as { items: unknown[] }).items)) {
-      setGroups((apiData as { items: Record<string, unknown>[] }).items.map(x => adaptPriceGroup(x) as PriceGroup))
-    }
-  }, [apiData])
+  const [groups, setGroups] = useState<PriceGroup[]>(initialGroups)
   const [selected, setSelected] = useState<PriceGroup | null>(null)
   const [assignOpen, setAssignOpen] = useState(false)
   const [assignGroup, setAssignGroup] = useState<PriceGroup | null>(null)
@@ -151,9 +138,6 @@ export default function PricesPage() {
   const filteredProducts = products.filter(p =>
     p.name.toLowerCase().includes(productSearch.toLowerCase())
   )
-
-  if (loading) return <AdminLayout title={L.title[locale]}><PageLoading /></AdminLayout>
-  if (error) return <AdminLayout title={L.title[locale]}><PageError message={error} onRetry={reload} /></AdminLayout>
 
   return (
     <AdminLayout title={L.title[locale]}>

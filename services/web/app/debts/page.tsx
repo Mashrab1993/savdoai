@@ -1,13 +1,9 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { AdminLayout } from "@/components/layout/admin-layout"
 import { StatusBadge } from "@/components/ui/status-badge"
-import { PageLoading, PageError } from "@/components/ui/loading"
-import { api } from "@/lib/api"
-import { useApi } from "@/lib/use-api"
-import { adaptDebt } from "@/lib/adapters"
-import { debts as mockDebts, mockPaymentHistory, type Debt } from "@/lib/mock-data"
+import { debts as initialDebts, mockPaymentHistory, type Debt } from "@/lib/mock-data"
 import { useLocale } from "@/lib/locale-context"
 import { translations } from "@/lib/i18n"
 
@@ -33,16 +29,7 @@ import { cn } from "@/lib/utils"
 export default function DebtsPage() {
   const { locale } = useLocale()
   const L = translations.debts
-  const { data: apiData, loading, error, reload } = useApi(() => api.getQarzlar(), [])
-  const [debts, setDebts] = useState<Debt[]>(mockDebts)
-
-  useEffect(() => {
-    if (apiData && Array.isArray(apiData)) {
-      setDebts(apiData.map((x: Record<string, unknown>) => adaptDebt(x) as Debt))
-    } else if (apiData && typeof apiData === "object" && "items" in apiData && Array.isArray((apiData as { items: unknown[] }).items)) {
-      setDebts((apiData as { items: Record<string, unknown>[] }).items.map(x => adaptDebt(x) as Debt))
-    }
-  }, [apiData])
+  const [debts, setDebts] = useState<Debt[]>(initialDebts)
   const [statusFilter, setStatusFilter] = useState("all")
   const [search, setSearch] = useState("")
   const [selectedDebt, setSelectedDebt] = useState<Debt | null>(null)
@@ -62,9 +49,6 @@ export default function DebtsPage() {
     setDebts(prev => prev.map(d => d.id === id ? { ...d, status: "paid" as const, paid: d.amount } : d))
     setSelectedDebt(null)
   }
-
-  if (loading) return <AdminLayout title={L.title[locale]}><PageLoading /></AdminLayout>
-  if (error) return <AdminLayout title={L.title[locale]}><PageError message={error} onRetry={reload} /></AdminLayout>
 
   return (
     <AdminLayout title={L.title[locale]}>
