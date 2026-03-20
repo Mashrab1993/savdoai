@@ -3750,6 +3750,19 @@ async def hujjat_qabul(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
                 await holat.edit_text(xulosa, parse_mode=ParseMode.MARKDOWN)
             except Exception:
                 await holat.edit_text(xulosa.replace("*","").replace("_",""))
+            
+            # PDF HISOBOT yuborish
+            try:
+                from shared.services.excel_reader import excel_pdf_hisobot
+                pdf_bytes = excel_pdf_hisobot(h, fname)
+                if pdf_bytes:
+                    pdf_nom = fname.replace(".xlsx","").replace(".xls","") + "_HISOBOT.pdf"
+                    from telegram import InputFile
+                    await update.message.reply_document(
+                        document=InputFile(io.BytesIO(pdf_bytes), filename=pdf_nom),
+                        caption="📊 Mashrab Moliya — Auditor Hisoboti")
+            except Exception as _pe:
+                log.warning("Excel PDF: %s", _pe)
             return
 
         from shared.services.hujjat_oqish import hujjat_oqi, hujjat_xulosa_matn
