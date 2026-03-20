@@ -419,7 +419,7 @@ async def h_telefon(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
     try:
         from shared.services.seed_catalog import seed_tovarlar
         from shared.database.pool import get_pool
-        async with _rls_conn(uid) as c:
+        async with db._P().acquire() as c:
             seed_soni = await seed_tovarlar(c, uid, seg)
     except Exception as _seed_e:
         log.warning("Seed catalog xato uid=%d: %s", uid, _seed_e)
@@ -685,7 +685,7 @@ async def matn_qabul(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
         _savat_klient = _boldi_pattern.group(1).strip()
         try:
             from shared.services.ochiq_savat import savat_ol
-            async with _rls_conn(uid) as _sc:
+            async with db._P().acquire() as _sc:
                 _savat = await savat_ol(_sc, uid, _savat_klient)
             if _savat:
                 await _savat_yop_va_nakladnoy(update, uid, _savat_klient)
@@ -702,7 +702,7 @@ async def matn_qabul(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
         _sk_klient = _savat_kor.group(1).strip()
         try:
             from shared.services.ochiq_savat import savat_korish, savat_matn
-            async with _rls_conn(uid) as _sc2:
+            async with db._P().acquire() as _sc2:
                 _sk_data = await savat_korish(_sc2, uid, _sk_klient)
             if _sk_data:
                 await update.message.reply_text(savat_matn(_sk_data))
@@ -714,7 +714,7 @@ async def matn_qabul(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
     if matn.lower().strip() in ("savatlar", "savatlarim", "ochiq savatlar"):
         try:
             from shared.services.ochiq_savat import ochiq_savatlar, ochiq_savatlar_matn
-            async with _rls_conn(uid) as _sc3:
+            async with db._P().acquire() as _sc3:
                 _svtlr = await ochiq_savatlar(_sc3, uid)
             await update.message.reply_text(ochiq_savatlar_matn(_svtlr))
             return
@@ -725,7 +725,7 @@ async def matn_qabul(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
     if matn.lower().strip() in ("kunlik yakuniy", "yakuniy", "bugungi yakuniy"):
         try:
             from shared.services.ochiq_savat import kunlik_yakuniy, kunlik_yakuniy_matn
-            async with _rls_conn(uid) as _sc4:
+            async with db._P().acquire() as _sc4:
                 _yk = await kunlik_yakuniy(_sc4, uid)
             await update.message.reply_text(kunlik_yakuniy_matn(_yk))
             return
@@ -857,7 +857,7 @@ async def matn_qabul(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
             )
             from shared.database.pool import get_pool
             tur = hisobot_turini_aniqla(matn)
-            async with _rls_conn(uid) as _hc:
+            async with db._P().acquire() as _hc:
                 if tur == "qarz":
                     _hd = await qarz_hisobot(_hc, uid)
                     _hbody = qarz_hisobot_matn(_hd)
@@ -934,7 +934,7 @@ async def matn_qabul(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
             kl_ism = klient_nomini_ajrat(matn)
             if kl_ism:
                 from shared.database.pool import get_pool
-                async with _rls_conn(uid) as _kc:
+                async with db._P().acquire() as _kc:
                     _kd = await klient_qarz_tarix(_kc, uid, kl_ism)
                 if _kd:
                     _kbody = klient_qarz_tarix_matn(_kd)
@@ -965,7 +965,7 @@ async def matn_qabul(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
         _smart_cmd = smart_buyruq_aniqla(matn)
         if _smart_cmd:
             from shared.database.pool import get_pool
-            async with _rls_conn(uid) as _sc:
+            async with db._P().acquire() as _sc:
                 if _smart_cmd == "narx_tavsiya":
                     _tv_nom = narx_tovar_ajrat(matn)
                     if _tv_nom:
@@ -1017,15 +1017,14 @@ async def matn_qabul(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
         if ekspert_sorov_bormi(matn):
             _nom = ekspert_nom_ajrat(matn)
             if _nom:
-                async with _rls_conn(uid) as _ec:
-                    # Avval tovar tekshir
+                # db.py pool ishlatish — RLS bypass (user_id WHERE da)
+                async with db._P().acquire() as _ec:
                     log.info("🔬 Ekspert: '%s' izlash (uid=%d)", _nom, uid)
                     _tv = await tovar_ekspert_tahlil(_ec, uid, _nom)
                     if _tv.get("topildi"):
                         await update.message.reply_text(
                             tovar_ekspert_matn(_tv), parse_mode=ParseMode.MARKDOWN)
                         return
-                    # Keyin klient tekshir
                     _kl = await klient_ekspert_tahlil(_ec, uid, _nom)
                     if _kl.get("topildi"):
                         await update.message.reply_text(
@@ -1048,7 +1047,7 @@ async def matn_qabul(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
         _adv_cmd = advanced_buyruq_aniqla(matn)
         if _adv_cmd:
             from shared.database.pool import get_pool
-            async with _rls_conn(uid) as _ac:
+            async with db._P().acquire() as _ac:
                 if _adv_cmd == "tabiiy_savol":
                     _javob = await tabiiy_savol_javob(_ac, uid, matn)
                     if _javob:
@@ -1164,7 +1163,7 @@ async def _ovoz_buyruq_bajar(update:Update, ctx:ContextTypes.DEFAULT_TYPE,
                 hisobot_matn, qarz_hisobot_matn
             )
             from shared.database.pool import get_pool
-            async with _rls_conn(uid) as _rc:
+            async with db._P().acquire() as _rc:
                 if sub == "daily":
                     _rd = await kunlik(_rc, uid)
                     await update.message.reply_text(hisobot_matn(_rd), parse_mode=ParseMode.MARKDOWN)
@@ -1367,7 +1366,7 @@ async def _qayta_ishlash(update:Update, ctx:ContextTypes.DEFAULT_TYPE,
             )
             from shared.database.pool import get_pool
             tur = hisobot_turini_aniqla(matn)
-            async with _rls_conn(uid) as hc:
+            async with db._P().acquire() as hc:
                 if tur == "qarz":
                     d = await qarz_hisobot(hc, uid)
                     body = qarz_hisobot_matn(d)
@@ -1466,7 +1465,7 @@ async def _qayta_ishlash(update:Update, ctx:ContextTypes.DEFAULT_TYPE,
         try:
             from shared.services.ochiq_savat import savatga_qosh, savat_korish
             from shared.services.ochiq_savat import savat_qisqa_matn, savat_matn
-            async with _rls_conn(uid) as _sc:
+            async with db._P().acquire() as _sc:
                 result = await savatga_qosh(_sc, uid, _savat_klient, _savat_tovarlar)
                 savat_data = await savat_korish(_sc, uid, _savat_klient)
 
@@ -1512,7 +1511,7 @@ async def _qayta_ishlash(update:Update, ctx:ContextTypes.DEFAULT_TYPE,
         try:
             from shared.services.advanced_features import zarar_tekshir, zarar_ogohlantirish_matn
             from shared.database.pool import get_pool
-            async with _rls_conn(uid) as _zc:
+            async with db._P().acquire() as _zc:
                 _zararlar = await zarar_tekshir(_zc, uid, natija["tovarlar"])
                 if _zararlar:
                     oldindan += "\n" + zarar_ogohlantirish_matn(_zararlar)
@@ -1569,7 +1568,7 @@ async def _nakladnoy_yuborish(update:Update, ctx:ContextTypes.DEFAULT_TYPE,
             try:
                 from shared.services.pipeline import audit_yoz
                 from shared.services.ledger import sotuv_jurnali, jurnal_saqlash
-                async with _rls_conn(uid) as ac:
+                async with db._P().acquire() as ac:
                     await audit_yoz(ac, uid, "sotuv_nakladnoy", "sotuv_sessiyalar", 0,
                         None, {"klient":klient,"jami":str(jami),"tovarlar_soni":len(tovarlar)})
                     naqd_d = max(Decimal(str(jami)) - Decimal(str(qarz)), Decimal("0"))
@@ -1651,7 +1650,7 @@ async def _audit_sotuv(uid, klient, natija, qarz_total, sotuv):
     try:
         from shared.services.pipeline import audit_yoz
         from shared.services.ledger import sotuv_jurnali, jurnal_saqlash
-        async with _rls_conn(uid) as ac:
+        async with db._P().acquire() as ac:
             await audit_yoz(ac, uid, "sotuv", "sotuv_sessiyalar",
                 sotuv.get("sessiya_id", 0) if isinstance(sotuv, dict) else 0,
                 None, {"klient":klient,"jami":str(natija.get("jami_summa",0)),
@@ -1672,7 +1671,7 @@ async def _audit_kirim(uid, natija, tovarlar):
     try:
         from shared.services.pipeline import audit_yoz
         from shared.services.ledger import kirim_jurnali, jurnal_saqlash
-        async with _rls_conn(uid) as ac:
+        async with db._P().acquire() as ac:
             await audit_yoz(ac, uid, "kirim", "tovarlar", 0,
                 None, {"tovarlar": tovarlar, "soni": len(tovarlar)})
             jami_k = sum(Decimal(str(t.get("jami",0) or Decimal(str(t.get("miqdor",0)))*Decimal(str(t.get("narx",0))))) for t in tovarlar)
@@ -1687,7 +1686,7 @@ async def _audit_qaytarish(uid, klient, natijalar, qaytarish_royxati):
     try:
         from shared.services.pipeline import audit_yoz
         from shared.services.ledger import qaytarish_jurnali, jurnal_saqlash
-        async with _rls_conn(uid) as ac:
+        async with db._P().acquire() as ac:
             await audit_yoz(ac, uid, "qaytarish", "qaytarishlar", 0,
                 None, {"klient":klient,"soni":len(qaytarish_royxati)})
             jami_q = sum(Decimal(str(r.get("summa",0))) for r in natijalar)
@@ -1702,7 +1701,7 @@ async def _audit_qarz_tolash(uid, klient, summa, n):
     try:
         from shared.services.pipeline import audit_yoz
         from shared.services.ledger import qarz_tolash_jurnali, jurnal_saqlash
-        async with _rls_conn(uid) as ac:
+        async with db._P().acquire() as ac:
             await audit_yoz(ac, uid, "qarz_tolash", "qarzlar", 0,
                 {"klient":klient,"summa":str(summa)},
                 {"natija":str(n.get("tolandi",0)),"qolgan":str(n.get("qolgan_qarz",0))})
@@ -1744,7 +1743,7 @@ async def tasdiq_cb(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
         klient = q.data.replace("t:savat_bekor:", "")
         try:
             from shared.services.ochiq_savat import savat_bekor
-            async with _rls_conn(uid) as _sbc:
+            async with db._P().acquire() as _sbc:
                 ok = await savat_bekor(_sbc, uid, klient)
             if ok:
                 await xat(q, f"❌ {klient} savati bekor qilindi")
@@ -1757,7 +1756,7 @@ async def tasdiq_cb(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
     if q.data == "t:savatlar":
         try:
             from shared.services.ochiq_savat import ochiq_savatlar, ochiq_savatlar_matn
-            async with _rls_conn(uid) as c:
+            async with db._P().acquire() as c:
                 savatlar_r = await ochiq_savatlar(c, uid)
             await xat(q, ochiq_savatlar_matn(savatlar_r))
         except Exception as e:
@@ -1948,7 +1947,7 @@ async def tasdiq_cb(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
             if qarz_total > 0 and klient:
                 try:
                     from shared.services.guards import tekshir_qarz_limit
-                    async with _rls_conn(uid) as gc:
+                    async with db._P().acquire() as gc:
                         qarz_info = await tekshir_qarz_limit(gc, uid, klient, qarz_total)
                     if not qarz_info["ruxsat"]:
                         ctx.user_data["kutilayotgan"] = natija
@@ -2326,7 +2325,7 @@ async def menyu_cb(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
     elif akt=="kassa":
         # Kassa holati — naqd/karta/otkazma
         try:
-            async with _rls_conn(uid) as c:
+            async with db._P().acquire() as c:
                 bugun = await c.fetchrow("""
                     SELECT
                         COALESCE(SUM(CASE WHEN tur='kirim' THEN summa ELSE 0 END), 0) AS kirim,
@@ -2401,7 +2400,7 @@ async def menyu_cb(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
     elif akt=="ombor":
         # Ombor holati
         try:
-            async with _rls_conn(uid) as c:
+            async with db._P().acquire() as c:
                 stats = await c.fetchrow("""
                     SELECT COUNT(*) AS soni,
                         COALESCE(SUM(qoldiq * COALESCE(sotish_narxi,0)), 0) AS qiymat
@@ -2544,7 +2543,7 @@ async def _hisobot_excel_cb(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         from shared.database.pool import get_pool
         import services.bot.bot_services.export_excel as _exl
 
-        async with _rls_conn(uid) as _ec:
+        async with db._P().acquire() as _ec:
             if tur == "haftalik":
                 _ed = await haftalik(_ec, uid)
             elif tur == "oylik":
@@ -2640,7 +2639,7 @@ async def cmd_narx_guruh(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
     
     try:
         from shared.services.smart_narx import guruhlar_royxati, guruh_yaratish
-        async with _rls_conn(uid) as c:
+        async with db._P().acquire() as c:
             if len(qismlar) > 1:
                 # Yangi guruh yaratish
                 nom = qismlar[1].strip()
@@ -2701,7 +2700,7 @@ async def cmd_narx_qoy(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
     
     try:
         from shared.services.smart_narx import guruh_narx_qoyish
-        async with _rls_conn(uid) as c:
+        async with db._P().acquire() as c:
             # Guruh topish
             guruh = await c.fetchrow(
                 "SELECT id FROM narx_guruhlari WHERE user_id=$1 AND LOWER(nomi) LIKE LOWER($2)",
@@ -2754,7 +2753,7 @@ async def cmd_klient_narx(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
     
     try:
         from shared.services.smart_narx import shaxsiy_narx_qoyish
-        async with _rls_conn(uid) as c:
+        async with db._P().acquire() as c:
             klient = await c.fetchrow(
                 "SELECT id, ism FROM klientlar WHERE user_id=$1 AND LOWER(ism) LIKE LOWER($2)",
                 uid, f"%{klient_nom}%")
@@ -2801,7 +2800,7 @@ async def cmd_klient_guruh(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
     
     try:
         from shared.services.smart_narx import klient_guruhga_qoyish
-        async with _rls_conn(uid) as c:
+        async with db._P().acquire() as c:
             klient = await c.fetchrow(
                 "SELECT id, ism FROM klientlar WHERE user_id=$1 AND LOWER(ism) LIKE LOWER($2)",
                 uid, f"%{klient_nom}%")
@@ -2848,7 +2847,7 @@ async def cmd_narx_guruh(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
     nomi = qismlar[1].strip()
     try:
         from shared.services.smart_narx import guruh_yaratish
-        async with _rls_conn(uid) as c:
+        async with db._P().acquire() as c:
             gid = await guruh_yaratish(c, uid, nomi)
         await update.message.reply_text(
             f"✅ *Narx guruhi yaratildi!*\n\n"
@@ -2891,7 +2890,7 @@ async def cmd_narx_qoy(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("❌ Narx raqam bo'lishi kerak."); return
     
     try:
-        async with _rls_conn(uid) as c:
+        async with db._P().acquire() as c:
             # Guruh topish
             guruh = await c.fetchrow("SELECT id FROM narx_guruhlari WHERE LOWER(nomi) LIKE LOWER($1) LIMIT 1", f"%{guruh_nomi}%")
             if not guruh:
@@ -2942,7 +2941,7 @@ async def cmd_klient_narx(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("❌ Narx raqam bo'lishi kerak."); return
     
     try:
-        async with _rls_conn(uid) as c:
+        async with db._P().acquire() as c:
             klient = await c.fetchrow("SELECT id, ism FROM klientlar WHERE LOWER(ism) LIKE LOWER($1) LIMIT 1", f"%{klient_ism}%")
             if not klient:
                 await update.message.reply_text(f"❌ *{klient_ism}* klienti topilmadi.", parse_mode=ParseMode.MARKDOWN); return
@@ -2985,7 +2984,7 @@ async def cmd_klient_guruh(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
     guruh_nomi = qismlar[2]
     
     try:
-        async with _rls_conn(uid) as c:
+        async with db._P().acquire() as c:
             klient = await c.fetchrow("SELECT id, ism FROM klientlar WHERE LOWER(ism) LIKE LOWER($1) LIMIT 1", f"%{klient_ism}%")
             if not klient:
                 await update.message.reply_text(f"❌ *{klient_ism}* topilmadi.", parse_mode=ParseMode.MARKDOWN); return
@@ -3033,7 +3032,7 @@ async def cmd_shogird_qosh(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
     
     try:
         from shared.services.shogird_xarajat import shogird_qoshish
-        async with _rls_conn(uid) as c:
+        async with db._P().acquire() as c:
             result = await shogird_qoshish(c, uid, tg_id, ism)
         await update.message.reply_text(
             f"✅ *Shogird qo'shildi!*\n\n"
@@ -3057,7 +3056,7 @@ async def cmd_shogirdlar(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
     
     try:
         from shared.services.shogird_xarajat import shogirdlar_royxati
-        async with _rls_conn(uid) as c:
+        async with db._P().acquire() as c:
             shogirdlar = await shogirdlar_royxati(c, uid)
         
         if not shogirdlar:
@@ -3108,7 +3107,7 @@ async def cmd_xarajatlar(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
     
     try:
         from shared.services.shogird_xarajat import kutilmoqda_royxati
-        async with _rls_conn(uid) as c:
+        async with db._P().acquire() as c:
             kutilmoqda = await kutilmoqda_royxati(c, uid)
         
         if not kutilmoqda:
@@ -3146,7 +3145,7 @@ async def shogird_xarajat_cb(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
     
     try:
         from shared.services.shogird_xarajat import xarajat_tasdiqlash, xarajat_bekor
-        async with _rls_conn(uid) as c:
+        async with db._P().acquire() as c:
             if amal == "tasdiq":
                 ok = await xarajat_tasdiqlash(c, xarajat_id, uid)
                 await q.message.reply_text(f"✅ Xarajat #{xarajat_id} tasdiqlandi!" if ok else "❌ Topilmadi.")
@@ -3249,7 +3248,7 @@ async def avto_kunlik_hisobot(ctx:ContextTypes.DEFAULT_TYPE) -> None:
         users=await db.faol_users(); yuborildi=0
         for user in users:
             try:
-                async with _rls_conn(user["id"]) as c:
+                async with db._P().acquire() as c:
                     d=await kunlik_yakuniy_pro(c, user["id"])
                 if d["sotuv_soni"]==0: continue
                 try:
@@ -3278,7 +3277,7 @@ async def avto_haftalik_hisobot(ctx:ContextTypes.DEFAULT_TYPE) -> None:
         users=await db.faol_users(); yuborildi=0
         for user in users:
             try:
-                async with _rls_conn(user["id"]) as c:
+                async with db._P().acquire() as c:
                     h_data = await haftalik(c, user["id"])
                     t_data = await haftalik_trend(c, user["id"])
                 if h_data["sotuv_soni"]==0: continue
@@ -3299,7 +3298,7 @@ async def avto_qarz_eslatma(ctx:ContextTypes.DEFAULT_TYPE) -> None:
         users=await db.faol_users()
         for user in users:
             try:
-                async with _rls_conn(user["id"]) as c:
+                async with db._P().acquire() as c:
                     klientlar = await qarz_eslatma_royxat(c, user["id"])
                 if not klientlar: continue
                 muddati_otgan = [k for k in klientlar if k["muddati_otgan"]]
@@ -3354,7 +3353,7 @@ async def cmd_tez(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     try:
         from shared.services.advanced_features import tezkor_tugmalar
         from shared.database.pool import get_pool
-        async with _rls_conn(uid) as c:
+        async with db._P().acquire() as c:
             data = await tezkor_tugmalar(c, uid)
 
         tovarlar = data.get("tovarlar", [])
@@ -3571,7 +3570,7 @@ async def cmd_kassa(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
     if not await faol_tekshir(update): return
     uid = update.effective_user.id
     try:
-        async with _rls_conn(uid) as c:
+        async with db._P().acquire() as c:
             bugun = await c.fetchrow("""
                 SELECT
                     COALESCE(SUM(CASE WHEN tur='kirim' THEN summa ELSE 0 END), 0) AS kirim,
@@ -3639,7 +3638,7 @@ async def cmd_faktura(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
 
     # Oxirgi sotuv sessiyasini topish
     try:
-        async with _rls_conn(uid) as c:
+        async with db._P().acquire() as c:
             oxirgi = await c.fetchrow("""
                 SELECT id, klient_ismi, jami, tolangan, qarz, sana
                 FROM sotuv_sessiyalar
@@ -3759,7 +3758,7 @@ async def cmd_balans(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("🔒 Faqat admin uchun.")
         return
     try:
-        async with _rls_conn(uid) as c:
+        async with db._P().acquire() as c:
             # Jurnal balans
             row = await c.fetchrow("""
                 SELECT
@@ -3815,7 +3814,7 @@ async def cmd_jurnal(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
     if not await faol_tekshir(update): return
     uid = update.effective_user.id
     try:
-        async with _rls_conn(uid) as c:
+        async with db._P().acquire() as c:
             rows = await c.fetch("""
                 SELECT jurnal_id, tur, tavsif, jami_debit, sana
                 FROM jurnal_yozuvlar
@@ -4226,7 +4225,7 @@ async def cmd_savatlar(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     uid = update.effective_user.id
     try:
         from shared.services.ochiq_savat import ochiq_savatlar, ochiq_savatlar_matn
-        async with _rls_conn(uid) as c:
+        async with db._P().acquire() as c:
             savatlar = await ochiq_savatlar(c, uid)
         await update.message.reply_text(ochiq_savatlar_matn(savatlar))
     except Exception as e:
@@ -4244,7 +4243,7 @@ async def cmd_savat(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         return
     try:
         from shared.services.ochiq_savat import savat_korish, savat_matn
-        async with _rls_conn(uid) as c:
+        async with db._P().acquire() as c:
             data = await savat_korish(c, uid, matn)
         if data:
             await update.message.reply_text(savat_matn(data))
@@ -4264,7 +4263,7 @@ async def _savat_qosh_va_javob(update: Update, uid: int, natija: dict, tahrirlas
 
     try:
         from shared.services.ochiq_savat import savatga_qosh, savat_korish, savat_matn
-        async with _rls_conn(uid) as c:
+        async with db._P().acquire() as c:
             result = await savatga_qosh(c, uid, klient, tovarlar)
             savat_data = await savat_korish(c, uid, klient)
 
@@ -4298,7 +4297,7 @@ async def _savat_yop_va_nakladnoy(update_or_query, uid: int, klient_ismi: str):
         import io
         from telegram import InputFile
 
-        async with _rls_conn(uid) as c:
+        async with db._P().acquire() as c:
             natija = await savat_yop(c, uid, klient_ismi)
 
         if not natija:
@@ -4330,7 +4329,7 @@ async def _savat_yop_va_nakladnoy(update_or_query, uid: int, klient_ismi: str):
         try:
             from shared.services.pipeline import audit_yoz
             from shared.services.ledger import sotuv_jurnali, jurnal_saqlash
-            async with _rls_conn(uid) as ac:
+            async with db._P().acquire() as ac:
                 await audit_yoz(ac, uid, "savat_nakladnoy", "sotuv_sessiyalar", 0,
                     None, {"klient": klient_ismi, "jami": str(jami), "tovarlar_soni": len(tovarlar)})
                 naqd_d = max(Decimal(str(jami)) - Decimal(str(qarz)), Decimal("0"))
