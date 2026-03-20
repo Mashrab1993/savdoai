@@ -60,11 +60,32 @@ async def tovar_ekspert_tahlil(conn, uid: int, tovar_nomi: str) -> dict:
     - Buyurtma nuqtasi
     - Eng ko'p sotib olgan klientlar
     """
+    nom = tovar_nomi.strip().strip('"').strip("'").strip()
+    
+    # 1. Tovarlar jadvalidan izlash
     tovar = await conn.fetchrow("""
         SELECT id, nomi, olish_narxi, qoldiq, birlik, min_qoldiq
         FROM tovarlar WHERE user_id=$1 AND lower(nomi) LIKE lower($2)
         ORDER BY qoldiq DESC NULLS LAST LIMIT 1
-    """, uid, f"%{tovar_nomi.strip()}%")
+    """, uid, f"%{nom}%")
+
+    # 2. Topilmasa — chiqimlar dan izlash (sotuv ma'lumotlari)
+    if not tovar:
+        tovar = await conn.fetchrow("""
+            SELECT t.id, t.nomi, t.olish_narxi, t.qoldiq, t.birlik, t.min_qoldiq
+            FROM chiqimlar ch
+            JOIN tovarlar t ON t.id = ch.tovar_id
+            WHERE ch.user_id=$1 AND lower(t.nomi) LIKE lower($2)
+            ORDER BY ch.id DESC LIMIT 1
+        """, uid, f"%{nom}%")
+
+    # 3. Hali topilmasa — ILIKE bilan kengaytirilgan izlash
+    if not tovar:
+        tovar = await conn.fetchrow("""
+            SELECT id, nomi, olish_narxi, qoldiq, birlik, min_qoldiq
+            FROM tovarlar WHERE user_id=$1 AND nomi ILIKE $2
+            LIMIT 1
+        """, uid, f"%{nom}%")
 
     if not tovar:
         return {"topildi": False, "nomi": tovar_nomi}
@@ -283,11 +304,21 @@ def _tovar_tavsiya(d: dict) -> str:
 
 async def klient_ekspert_tahlil(conn, uid: int, klient_ismi: str) -> dict:
     """Klient bo'yicha professional tahlil."""
+    nom = klient_ismi.strip().strip('"').strip("'").strip()
+    
     klient = await conn.fetchrow("""
         SELECT * FROM klientlar
         WHERE user_id=$1 AND lower(ism) LIKE lower($2)
         ORDER BY jami_sotib DESC NULLS LAST LIMIT 1
-    """, uid, f"%{klient_ismi.strip()}%")
+    """, uid, f"%{nom}%")
+
+    # Fallback — ILIKE
+    if not klient:
+        klient = await conn.fetchrow("""
+            SELECT * FROM klientlar
+            WHERE user_id=$1 AND ism ILIKE $2
+            ORDER BY jami_sotib DESC NULLS LAST LIMIT 1
+        """, uid, f"%{nom}%")
 
     if not klient:
         return {"topildi": False, "ism": klient_ismi}

@@ -1017,9 +1017,9 @@ async def matn_qabul(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
         if ekspert_sorov_bormi(matn):
             _nom = ekspert_nom_ajrat(matn)
             if _nom:
-                from shared.database.pool import get_pool
                 async with _rls_conn(uid) as _ec:
                     # Avval tovar tekshir
+                    log.info("🔬 Ekspert: '%s' izlash (uid=%d)", _nom, uid)
                     _tv = await tovar_ekspert_tahlil(_ec, uid, _nom)
                     if _tv.get("topildi"):
                         await update.message.reply_text(
@@ -1031,6 +1031,7 @@ async def matn_qabul(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
                         await update.message.reply_text(
                             klient_ekspert_matn(_kl), parse_mode=ParseMode.MARKDOWN)
                         return
+                    log.warning("🔬 Ekspert: '%s' topilmadi (uid=%d)", _nom, uid)
                     await update.message.reply_text(f"🤔 '{_nom}' ni tovar yoki klient sifatida topolmadim.")
                     return
     except Exception as _exp_e:
@@ -3735,7 +3736,15 @@ async def hujjat_qabul(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
 
         markup = InlineKeyboardMarkup(tugmalar) if tugmalar else None
 
-        await holat.edit_text(xulosa, parse_mode=ParseMode.MARKDOWN, reply_markup=markup)
+        try:
+            await holat.edit_text(xulosa, parse_mode=ParseMode.MARKDOWN, reply_markup=markup)
+        except Exception:
+            # MARKDOWN xato — plain text
+            plain = xulosa.replace("*","").replace("_","").replace("`","")
+            try:
+                await holat.edit_text(plain, reply_markup=markup)
+            except Exception:
+                await holat.edit_text(f"📂 {fname} o'qildi. Sahifalar: {h.get('sahifalar_soni',0)}", reply_markup=markup)
 
     except Exception as e:
         log.error("hujjat_qabul: %s", e, exc_info=True)

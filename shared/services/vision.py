@@ -382,7 +382,7 @@ def _sync_tahlil(image_bytes: bytes, mime: str, prompt: str) -> dict:
         response = _gemini_client.models.generate_content(
             model=_VISION_MODEL,
             contents=[types.Part.from_bytes(data=image_bytes, mime_type=mime), prompt],
-            config=types.GenerateContentConfig(temperature=0.05, max_output_tokens=8192))
+            config=types.GenerateContentConfig(temperature=0.05, max_output_tokens=16384))
     except:
         response = _gemini_client.models.generate_content(
             model=_VISION_MODEL,
@@ -395,6 +395,15 @@ def _sync_tahlil(image_bytes: bytes, mime: str, prompt: str) -> dict:
         if j0 >= 0 and j1 > j0: matn = matn[j0:j1]
         return _validatsiya(json.loads(matn))
     except json.JSONDecodeError:
+        # Kesilgan JSON ni tuzatishga urinish
+        try:
+            # Oxirgi to'liq tovar elementigacha kesish
+            idx = matn.rfind('},')
+            if idx > 0:
+                matn_fix = matn[:idx+1] + '],"jami_summa":0,"ishonch":0.5,"izoh":"kesilgan javob"}'
+                return _validatsiya(json.loads(matn_fix))
+        except Exception:
+            pass
         log.warning("Vision JSON xato: %s", matn[:300])
         return {"tur":"noaniq","ishonch":0.0,"izoh":matn[:500]}
 
@@ -621,7 +630,7 @@ async def kop_rasm_tahlil(rasmlar: list, mime: str = "image/jpeg") -> dict:
         loop = asyncio.get_event_loop()
         def _ms():
             r = _gemini_client.models.generate_content(model=_VISION_MODEL, contents=contents,
-                config=types.GenerateContentConfig(temperature=0.05, max_output_tokens=8192))
+                config=types.GenerateContentConfig(temperature=0.05, max_output_tokens=16384))
             m = (r.text or "").strip()
             try:
                 if "```json" in m: m = m.split("```json")[1].split("```")[0].strip()
