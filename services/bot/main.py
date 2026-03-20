@@ -797,11 +797,26 @@ async def matn_qabul(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
 
     # ═══ 4.3 HUJJAT SAVOL-JAVOB — "5-bet", "Pifagor qayerda", "tushuntir" ═══
     if ctx.user_data.get("hujjat"):
+        _h = ctx.user_data["hujjat"]
+        
+        # EXCEL PRO — har qanday savol AI ga yuboriladi
+        if _h.get("tur") == "xlsx_pro":
+            try:
+                from shared.services.excel_reader import excel_ai_savol
+                _javob = await excel_ai_savol(_h, matn, _CFG.gemini_key)
+                try:
+                    await update.message.reply_text(_javob, parse_mode=ParseMode.MARKDOWN)
+                except Exception:
+                    await update.message.reply_text(_javob.replace("*","").replace("_",""))
+                return
+            except Exception as _ee:
+                log.debug("Excel AI: %s", _ee)
+        
+        # Boshqa hujjatlar (PDF, Word, EPUB...)
         try:
             from shared.services.hujjat_oqish import (
                 hujjat_sorov_bormi, hujjatdan_izlash, ai_savol_kerakmi, ai_hujjat_savol
             )
-            _h = ctx.user_data["hujjat"]
             if hujjat_sorov_bormi(matn) or ai_savol_kerakmi(matn):
                 # Avval oddiy izlash
                 _javob = hujjatdan_izlash(_h, matn)
@@ -3716,6 +3731,20 @@ async def hujjat_qabul(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
     try:
         fayl = await ctx.bot.get_file(doc.file_id)
         data = bytes(await fayl.download_as_bytearray())
+
+        # EXCEL — maxsus super reader
+        if fn_lower.endswith(('.xlsx', '.xls')):
+            from shared.services.excel_reader import excel_toliq_oqi, excel_xulosa_matn
+            h = excel_toliq_oqi(data)
+            h["tur"] = "xlsx_pro"
+            ctx.user_data["hujjat"] = h
+            ctx.user_data["hujjat_nomi"] = fname
+            xulosa = excel_xulosa_matn(h, fname)
+            try:
+                await holat.edit_text(xulosa, parse_mode=ParseMode.MARKDOWN)
+            except Exception:
+                await holat.edit_text(xulosa.replace("*","").replace("_",""))
+            return
 
         from shared.services.hujjat_oqish import hujjat_oqi, hujjat_xulosa_matn
 
