@@ -18,8 +18,16 @@ KNOWN_PRODUCTS: list[str] = []
 KNOWN_CLIENTS: list[str] = []
 
 
-async def fix_stt_text(raw_text: str, fuzzy_fixed: str) -> str:
+async def fix_stt_text(
+    raw_text: str,
+    fuzzy_fixed: str,
+    *,
+    products: list[str] | None = None,
+    clients: list[str] | None = None,
+) -> str:
     """Claude Haiku bilan yakuniy tekshirish."""
+    prods = products if products is not None else KNOWN_PRODUCTS
+    clits = clients if clients is not None else KNOWN_CLIENTS
     if not client:
         return fuzzy_fixed
     try:
@@ -31,8 +39,8 @@ async def fix_stt_text(raw_text: str, fuzzy_fixed: str) -> str:
                     "role": "user",
                     "content": f"""O'zbek savdo matnini tuzat.
 
-MA'LUM TOVARLAR: {', '.join(KNOWN_PRODUCTS[:100])}
-MA'LUM KLIENTLAR: {', '.join(KNOWN_CLIENTS[:50])}
+MA'LUM TOVARLAR: {', '.join(prods[:100])}
+MA'LUM KLIENTLAR: {', '.join(clits[:50])}
 
 QOIDALAR:
 1. FAQAT tuzatilgan matnni qaytar, boshqa hech narsa yozma

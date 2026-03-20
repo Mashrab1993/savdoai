@@ -21,7 +21,7 @@ def clean_stt_output(raw: str) -> str:
     return cleaned
 
 
-async def process_voice(raw_stt_text: str) -> dict:
+async def process_voice(raw_stt_text: str, user_id: int | None = None) -> dict:
     start = time.time()
     result = {
         "original": raw_stt_text,
@@ -41,10 +41,18 @@ async def process_voice(raw_stt_text: str) -> dict:
         result["processing_ms"] = int((time.time() - start) * 1000)
         return result
 
-    fuzzy_fixed = fuzzy_matcher.fix_text(cleaned)
+    uid = user_id or 0
+    if uid:
+        await fuzzy_matcher.ensure_loaded(uid)
+
+    fuzzy_fixed = fuzzy_matcher.fix_text(cleaned, uid)
     result["fuzzy_fixed"] = fuzzy_fixed
 
-    has_unknown_words = _has_unknown_words(fuzzy_fixed)
+    prods, clits = (
+        fuzzy_matcher.get_products_clients(uid) if uid else ([], [])
+    )
+
+    has_unknown_words = _has_unknown_words(fuzzy_fixed, uid)
     if not has_unknown_words:
         result["text"] = fuzzy_fixed
         result["haiku_fixed"] = fuzzy_fixed
@@ -53,7 +61,12 @@ async def process_voice(raw_stt_text: str) -> dict:
         return result
 
     try:
-        haiku_fixed = await fix_stt_text(raw_stt_text, fuzzy_fixed)
+        haiku_fixed = await fix_stt_text(
+            raw_stt_text,
+            fuzzy_fixed,
+            products=prods,
+            clients=clits,
+        )
         result["haiku_fixed"] = haiku_fixed
         result["text"] = haiku_fixed
         result["confidence"] = "medium" if haiku_fixed != fuzzy_fixed else "low"
@@ -66,7 +79,7 @@ async def process_voice(raw_stt_text: str) -> dict:
     return result
 
 
-def _has_unknown_words(text: str) -> bool:
+def _has_unknown_words(text: str, uid: int) -> bool:
     skip_words = {
         "ga",
         "da",
@@ -93,9 +106,9 @@ def _has_unknown_words(text: str) -> bool:
     for word in words:
         if word.isdigit() or word in skip_words:
             continue
-        if fuzzy_matcher.match_product(word, threshold=80):
+        if uid and fuzzy_matcher.match_product(word, uid, threshold=80):
             continue
-        if fuzzy_matcher.match_client(word, threshold=80):
+        if uid and fuzzy_matcher.match_client(word, uid, threshold=80):
             continue
         return True
     return False

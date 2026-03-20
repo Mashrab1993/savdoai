@@ -1,92 +1,137 @@
 """
-Fuzzy Matcher - STT natijasidagi tovar va klient nomlarini
+Fuzzy Matcher — STT natijasidagi tovar va klient nomlarini
 DB dagi haqiqiy nomlar bilan solishtiradi va tuzatadi.
+
+MUHIM: tovarlar/klientlar jadvallari RLS bilan himoyalangan (user_id = current_uid()).
+Shuning uchun ma'lumotlar faqat rls_conn(tg_user_id) orqali yuklanadi — global pool bilan emas.
 """
 from __future__ import annotations
 
-from typing import Optional
+import time
 import logging
+from typing import Optional
 
 from thefuzz import fuzz, process
 
+from shared.database.pool import rls_conn
+
 logger = logging.getLogger(__name__)
+
+_CACHE_TTL_S = 300.0
 
 
 class FuzzyMatcher:
+    """Har bir Telegram foydalanuvchisi uchun keshlangan fuzzy ro'yxatlar."""
+
     def __init__(self) -> None:
-        self.products: list[str] = []
-        self.clients: list[str] = []
-        self.product_aliases: dict[str, str] = {}
-        self._loaded = False
+        # uid -> (timestamp, products, clients, product_aliases)
+        self._cache: dict[int, tuple[float, list[str], list[str], dict[str, str]]] = {}
 
-    async def load_from_db(self, pool) -> None:
-        """DB dan tovar va klient nomlarini yuklash."""
+    async def ensure_loaded(self, uid: int) -> None:
+        """RLS kontekstida shu foydalanuvchining tovar/klientlarini yuklash."""
+        if not uid:
+            return
+        now = time.time()
+        hit = self._cache.get(uid)
+        if hit and (now - hit[0]) < _CACHE_TTL_S:
+            return
         try:
-            async with pool.acquire() as conn:
-                try:
-                    rows = await conn.fetch(
-                        "SELECT DISTINCT nomi FROM tovarlar WHERE active = true"
-                    )
-                except Exception:
-                    rows = await conn.fetch("SELECT DISTINCT nomi FROM tovarlar")
-                self.products = [r["nomi"] for r in rows if r.get("nomi")]
-
-                try:
-                    rows = await conn.fetch(
-                        "SELECT DISTINCT ism FROM klientlar WHERE active = true"
-                    )
-                except Exception:
-                    rows = await conn.fetch("SELECT DISTINCT ism FROM klientlar")
-                self.clients = [r["ism"] for r in rows if r.get("ism")]
-
-            self.product_aliases.clear()
-            for p in self.products:
-                p_lower = p.lower()
-                self.product_aliases[p_lower] = p
-                self.product_aliases[p_lower.replace("e", "a")] = p
-                self.product_aliases[p_lower.replace("i", "e")] = p
-
-            self._loaded = True
+            async with rls_conn(uid) as conn:
+                prows = await conn.fetch(
+                    "SELECT DISTINCT nomi FROM tovarlar WHERE nomi IS NOT NULL AND nomi != ''"
+                )
+                crows = await conn.fetch(
+                    "SELECT DISTINCT ism FROM klientlar WHERE ism IS NOT NULL AND ism != ''"
+                )
+            products = [r["nomi"] for r in prows]
+            clients = [r["ism"] for r in crows]
+            aliases: dict[str, str] = {}
+            for p in products:
+                pl = p.lower()
+                aliases[pl] = p
+                aliases[pl.replace("e", "a")] = p
+                aliases[pl.replace("i", "e")] = p
+            self._cache[uid] = (now, products, clients, aliases)
             logger.info(
-                "FuzzyMatcher yuklandi: %d tovar, %d klient",
-                len(self.products),
-                len(self.clients),
+                "FuzzyMatcher uid=%s: %d tovar, %d klient",
+                uid,
+                len(products),
+                len(clients),
             )
         except Exception as e:
-            logger.error("FuzzyMatcher yuklash xatosi: %s", e)
+            logger.error("FuzzyMatcher yuklash xatosi (uid=%s): %s", uid, e)
 
-    def match_product(self, raw_name: str, threshold: int = 65) -> Optional[str]:
-        if not self.products:
+    def _snapshot(self, uid: int) -> tuple[list[str], list[str], dict[str, str]] | None:
+        hit = self._cache.get(uid)
+        if not hit:
+            return None
+        return hit[1], hit[2], hit[3]
+
+    def get_products_clients(self, uid: int) -> tuple[list[str], list[str]]:
+        snap = self._snapshot(uid)
+        if not snap:
+            return [], []
+        return snap[0], snap[1]
+
+    def match_product(self, raw_name: str, uid: int, threshold: int = 65) -> Optional[str]:
+        snap = self._snapshot(uid)
+        if not snap:
+            return None
+        products, _, aliases = snap
+        if not products:
             return None
         raw_lower = raw_name.lower().strip()
-        if raw_lower in self.product_aliases:
-            return self.product_aliases[raw_lower]
-
-        product_lowers = [p.lower() for p in self.products]
+        if raw_lower in aliases:
+            return aliases[raw_lower]
+        product_lowers = [p.lower() for p in products]
         result = process.extractOne(raw_lower, product_lowers, scorer=fuzz.ratio)
         if result and result[1] >= threshold:
             idx = product_lowers.index(result[0])
-            matched = self.products[idx]
-            logger.info("Fuzzy product: '%s' -> '%s' (%s%%)", raw_name, matched, result[1])
+            matched = products[idx]
+            logger.info(
+                "Fuzzy product: '%s' -> '%s' (%s%%)",
+                raw_name,
+                matched,
+                result[1],
+            )
             return matched
         return None
 
-    def match_client(self, raw_name: str, threshold: int = 60) -> Optional[str]:
-        if not self.clients:
+    def match_client(self, raw_name: str, uid: int, threshold: int = 60) -> Optional[str]:
+        snap = self._snapshot(uid)
+        if not snap:
+            return None
+        _, clients, _ = snap
+        if not clients:
             return None
         raw_lower = raw_name.lower().strip()
-        client_lowers = [c.lower() for c in self.clients]
-        result = process.extractOne(raw_lower, client_lowers, scorer=fuzz.token_sort_ratio)
+        client_lowers = [c.lower() for c in clients]
+        result = process.extractOne(
+            raw_lower, client_lowers, scorer=fuzz.token_sort_ratio
+        )
         if result and result[1] >= threshold:
             idx = client_lowers.index(result[0])
-            matched = self.clients[idx]
-            logger.info("Fuzzy klient: '%s' -> '%s' (%s%%)", raw_name, matched, result[1])
+            matched = clients[idx]
+            logger.info(
+                "Fuzzy klient: '%s' -> '%s' (%s%%)",
+                raw_name,
+                matched,
+                result[1],
+            )
             return matched
         return None
 
-    def fix_text(self, stt_text: str) -> str:
-        if not self._loaded:
+    def fix_text(self, stt_text: str, uid: int) -> str:
+        """uid bo'lmasa yoki kesh bo'lmasa — matn o'zgartirilmasin."""
+        if not uid:
             return stt_text
+        snap = self._snapshot(uid)
+        if not snap:
+            return stt_text
+        products, clients, aliases = snap
+        if not products and not clients:
+            return stt_text
+
         words = stt_text.split()
         fixed_words: list[str] = []
         i = 0
@@ -105,13 +150,13 @@ class FuzzyMatcher:
                 "amaki",
             ):
                 client_name = f"{word} {words[i + 1]}"
-                matched = self.match_client(client_name)
+                matched = self.match_client(client_name, uid)
                 if matched:
                     fixed_words.append(matched)
                     i += 2
                     continue
 
-            matched_product = self.match_product(word)
+            matched_product = self.match_product(word, uid)
             if matched_product:
                 fixed_words.append(matched_product)
                 i += 1
