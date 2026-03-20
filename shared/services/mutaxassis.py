@@ -53,39 +53,57 @@ def _kun_boshi(d=None):
 
 async def tovar_ekspert_tahlil(conn, uid: int, tovar_nomi: str) -> dict:
     """
-    Tovar bo'yicha professional tahlil:
-    - Narx tarixi, foyda margin
-    - Sotilish tezligi (kuniga nechta)
-    - Qoldiq necha kunga yetadi
-    - Buyurtma nuqtasi
-    - Eng ko'p sotib olgan klientlar
+    Tovar bo'yicha professional tahlil.
     """
     nom = tovar_nomi.strip().strip('"').strip("'").strip()
     
-    # 1. Tovarlar jadvalidan izlash
+    # DEBUG: tovarlar soni tekshirish
+    try:
+        cnt = await conn.fetchval("SELECT count(*) FROM tovarlar WHERE user_id=$1", uid)
+        log.info("🔬 Ekspert DB: uid=%d, tovarlar=%s, izlash='%s'", uid, cnt, nom)
+    except Exception as _de:
+        log.warning("🔬 Ekspert DB debug xato: %s", _de)
+    
+    # 1. Tovarlar jadvalidan — RLS + explicit user_id
     tovar = await conn.fetchrow("""
         SELECT id, nomi, olish_narxi, qoldiq, birlik, min_qoldiq
         FROM tovarlar WHERE user_id=$1 AND lower(nomi) LIKE lower($2)
         ORDER BY qoldiq DESC NULLS LAST LIMIT 1
     """, uid, f"%{nom}%")
 
-    # 2. Topilmasa — chiqimlar dan izlash (sotuv ma'lumotlari)
+    # 2. user_id siz — faqat RLS ga tayangan holda
     if not tovar:
-        tovar = await conn.fetchrow("""
-            SELECT t.id, t.nomi, t.olish_narxi, t.qoldiq, t.birlik, t.min_qoldiq
-            FROM chiqimlar ch
-            JOIN tovarlar t ON t.id = ch.tovar_id
-            WHERE ch.user_id=$1 AND lower(t.nomi) LIKE lower($2)
-            ORDER BY ch.id DESC LIMIT 1
-        """, uid, f"%{nom}%")
+        try:
+            tovar = await conn.fetchrow("""
+                SELECT id, nomi, olish_narxi, qoldiq, birlik, min_qoldiq
+                FROM tovarlar WHERE lower(nomi) LIKE lower($1)
+                ORDER BY qoldiq DESC NULLS LAST LIMIT 1
+            """, f"%{nom}%")
+        except Exception:
+            pass
 
-    # 3. Hali topilmasa — ILIKE bilan kengaytirilgan izlash
+    # 3. chiqimlar orqali
     if not tovar:
-        tovar = await conn.fetchrow("""
-            SELECT id, nomi, olish_narxi, qoldiq, birlik, min_qoldiq
-            FROM tovarlar WHERE user_id=$1 AND nomi ILIKE $2
-            LIMIT 1
-        """, uid, f"%{nom}%")
+        try:
+            tovar = await conn.fetchrow("""
+                SELECT t.id, t.nomi, t.olish_narxi, t.qoldiq, t.birlik, t.min_qoldiq
+                FROM chiqimlar ch
+                JOIN tovarlar t ON t.id = ch.tovar_id
+                WHERE ch.user_id=$1 AND lower(t.nomi) LIKE lower($2)
+                ORDER BY ch.id DESC LIMIT 1
+            """, uid, f"%{nom}%")
+        except Exception:
+            pass
+
+    # 4. ILIKE fallback
+    if not tovar:
+        try:
+            tovar = await conn.fetchrow("""
+                SELECT id, nomi, olish_narxi, qoldiq, birlik, min_qoldiq
+                FROM tovarlar WHERE nomi ILIKE $1 LIMIT 1
+            """, f"%{nom}%")
+        except Exception:
+            pass
 
     if not tovar:
         return {"topildi": False, "nomi": tovar_nomi}
