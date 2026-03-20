@@ -23,7 +23,9 @@
 # ├── shared/          → Barcha servislar uchun umumiy kutubxona
 # │   ├── database/    → asyncpg pool + RLS + schema.sql
 # │   ├── cache/       → Redis cache
-# │   ├── services/    → Business logic (ledger, pipeline, guards)
+# │   ├── services/    → Business logic (ledger, pipeline, guards,
+# │   │                   hisobot_engine, smart_bot_engine, advanced_features,
+# │   │                   mutaxassis, suhbatdosh, hujjat_oqish, vision)
 # │   ├── utils/       → hisob.py (Decimal), uzb_nlp.py, fmt.py
 # │   └── rag/         → Qdrant vector DB (ixtiyoriy)
 # └── tests/           → pytest (287+ test)
@@ -258,4 +260,4 @@
 # Har bir qator kod — PULSIZ sotuvchining vaqtini tejashi kerak.
 # Tezlik, aniqlik, xavfsizlik — BU UCHTA NARSA HECH QACHON BUZILMASIN.
 #
-# 287 test. 57 fayl. 0 xato. SOATDAY ISHLAYDI. 🕐
+# 720+ test. 70+ fayl. 0 xato. SOATDAY ISHLAYDI. 🕐

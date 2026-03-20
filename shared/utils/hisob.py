@@ -66,13 +66,19 @@ def sotuv_hisob(tovarlar: list[dict]) -> dict:
         m  = D(t.get("miqdor",0)); bir = t.get("birlik","dona")
         n  = D(t.get("narx",0));   ch  = D(t.get("chegirma_foiz",0))
         bg = D(t.get("jami",0))
-        hisob = narx_hisob(m, n, bir, ch)
-        if bg > ZERO and hisob > ZERO:
-            farq = abs(bg - hisob)
-            if farq > max(hisob * Decimal("0.01"), Decimal("10")):
-                log.warning("sotuv_hisob FARQ %s: %s ≠ %s",
-                            t.get("nomi"), pul_r(bg), pul_r(hisob))
-        aniq = hisob if hisob > ZERO else Y(bg)
+
+        # ── Vozvrat: manfiy jami saqlanadi ──
+        if bg < ZERO:
+            aniq = bg  # Vozvrat — manfiy qiymat, tegma!
+        else:
+            hisob = narx_hisob(m, n, bir, ch)
+            if bg > ZERO and hisob > ZERO:
+                farq = abs(bg - hisob)
+                if farq > max(hisob * Decimal("0.01"), Decimal("10")):
+                    log.warning("sotuv_hisob FARQ %s: %s ≠ %s",
+                                t.get("nomi"), pul_r(bg), pul_r(hisob))
+            aniq = hisob if hisob > ZERO else Y(bg)
+
         jami_total += aniq
         nt = dict(t)
         nt["jami"] = aniq; nt["miqdor"] = Y(m, GRAMM_D); nt["narx"] = Y(n)
@@ -162,8 +168,13 @@ def ai_hisob_tekshir(ai_data: dict) -> dict:
     tovarlar = ai_data.get("tovarlar", [])
     ai_jami  = D(ai_data.get("jami_summa", 0))
     ai_qarz  = D(ai_data.get("qarz",       0))
+    chegirma = D(ai_data.get("chegirma_summa", 0))
     hisob    = sotuv_hisob(tovarlar)
     hisobl   = hisob["jami_summa"]
+
+    # Chegirma bo'lsa — hisoblangan jamidan ayiramiz
+    if chegirma > ZERO:
+        hisobl = hisobl - chegirma
 
     if ai_jami <= ZERO and hisobl > ZERO:
         aniq = hisobl

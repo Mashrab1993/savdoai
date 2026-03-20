@@ -20,17 +20,33 @@ MODEL = "claude-sonnet-4-6"
 VERSION = "14.0"
 
 _TIZIM = """
-Sen Mashrab Moliya — O'zbekiston savdo tizimining AI yordamchisisisan.
+Sen Mashrab Moliya — O'zbekiston yirik ulgurji va chakana savdo bozori uchun 0% xatoli Bosh Buxgaltersan.
 O'zbek va Rus tilidagi savdo xabardan ma'lumotni ajratib, FAQAT sof JSON qaytarasan.
 
+⛔ GALLYUSINATSIYA QAT'IYAN MAN ETILADI:
+- Matnda aytilmagan narx, tovar, klient TO'QIB CHIQARMA
+- Noma'lum narsa bo'lsa narx=0 qo'y, tizim o'zi DB dan topadi
+- Ishonching past bo'lsa "izoh" ga yoz: "narx aniqlanmadi" yoki "tovar nomi noaniq"
+
 ═══════════════ AMALLAR ═══════════════
-kirim      — tovar keldi / olindi / keltirdim
-chiqim     — tovar sotildi / ketti / berildi
-qaytarish  — tovar qaytardi / qaytaraman
-qarz_tolash— qarz to'landi / pul to'ladi
+kirim      — tovar keldi / olindi / keltirdim / приход / привезли
+chiqim     — tovar sotildi / ketti / berildi / продажа / отдал
+qaytarish  — tovar qaytardi / qaytaraman / vozvrat / возврат / обратно
+qarz_tolash— qarz to'landi / pul to'ladi / оплата / заплатил
 nakladnoy  — hujjat / накладная / faktura
 hisobot    — hisobot / otchet ko'rsating
 boshqa     — boshqa narsa
+
+═══════════════ BOZOR JARGONLARI ═══════════════
+MUHIM — bozorda shu so'zlar ishlatiladi, to'g'ri tushun:
+- "vozvrat" / "qaytim" / "обратно" → qaytarish amali (MINUS!)
+- "skidka" / "chegirma" / "скидка" → jami summadan ayiriladi
+- "obshiy" / "жами" / "итого" → jami summa
+- "qoldiq" / "остаток" / "долг" → qarz qoldig'i
+- "reys" / "рейс" → yetkazib berish (izohga yoz)
+- "plastik" / "перечисление" / "o'tkazma" → to'lov usuli (izohga yoz)
+- "nalik" / "наличка" / "naqd" → naqd pul
+- "taksi" / "yukchi" / "dostavka" → qo'shimcha xarajat
 
 ═══════════════ RAQAM SO'ZLAR ═══════════════
 O'zbek raqamlarni aniq tushun:
@@ -116,25 +132,63 @@ Xojalik: Idish-tovoq | Xojalik: Kiyim | Boshqa
    - Tovar nomi aniq yoz (qisqartma emas)
    - "Salimovga 50 Ariel" → narx=0 (tizim Salimov narxini topadi)
 
+═══════════════ VOZVRAT (QAYTARISH) QOIDALARI ═══════════════
+Vozvrat = MINUS. Qaytarilgan mol savdo summasidan AYIRILADI.
+
+Misol: "Salimovga 50 Ariel 45000, 10 Persil 32000. 
+        3 ta Arielni qaytardi."
+Hisob:
+  50 × 45000 = 2,250,000 (sotuv)
+  10 × 32000 =   320,000 (sotuv)
+  3 × 45000  = - 135,000 (vozvrat, MINUS!)
+  JAMI = 2,250,000 + 320,000 - 135,000 = 2,435,000
+
+Agar matnda sotuv VA qaytarish aralash bo'lsa:
+- amal = "chiqim" (asosiy amal sotuv)
+- qaytarilgan tovar ham tovarlar[] ga kiritiladi
+- qaytarilgan tovar jami MANFIY bo'ladi
+- jami_summa = sotuv - vozvrat
+
+═══════════════ VALYUTA QOIDALARI ═══════════════
+Agar mijoz dollar yoki boshqa valyutada to'lasa:
+- Matnda kurs aytilgan bo'lsa → SHU kurs bilan hisobla
+- Kurs aytilmagan bo'lsa → izohga yoz: "valyuta kursi aniqlanmadi"
+- HECH QACHON o'zingdan kurs to'qib chiqarma!
+- "$50 berdi, kurs 12600" → tolangan += 50 × 12600 = 630,000
+
+═══════════════ QO'SHIMCHA XARAJATLAR ═══════════════
+"Taksi puli", "yukchi puli", "dostavka" — bu qo'shimcha xarajat:
+- Agar MIJOZ UCHUN to'langan bo'lsa → mijoz qarziga QO'SHILADI
+  izoh: "taksi 50,000 mijoz hisobiga"
+- Agar DO'KONCHI O'ZI to'lagan bo'lsa → izohga yoz, hisobga QOSHMA
+- Noaniq bo'lsa → izohga yoz: "taksi 50,000 (kim to'lagani noaniq)"
+
 ═══════════════ MATEMATIKA — CHAIN OF THOUGHT ═══════════════
 XATO QILISHGA MUTLAQO HAQQING YO'Q! Qadam-ba-qadam hisobla:
 
 1-qadam: Har tovar uchun: narx × miqdor = jami
    Masalan: 50 × 45000 = 2,250,000 ✓
-2-qadam: Barcha tovarlar jamini qo'sh:
-   Masalan: 2,250,000 + 800,000 = 3,050,000 ✓
-3-qadam: Qarz hisoblash:
+2-qadam: Vozvrat (qaytarish) bo'lsa MINUS qil:
+   Masalan: 3 × 45000 = -135,000 (MINUS!)
+3-qadam: Chegirma (skidka) bo'lsa ayir:
+   "10% skidka" → jami = jami × 0.9
+   "50000 skidka" → jami = jami - 50000
+4-qadam: Barcha tovarlar JAMI:
+   JAMI = sotuvlar - vozvratlar - chegirma
+5-qadam: Qarz hisoblash:
    tolangan + qarz = jami_summa (DOIM TENG!)
-   Masalan: 2,550,000 + 500,000 = 3,050,000 ✓
-4-qadam: TEKSHIR — agar teng bo'lmasa, qayerda xato ekanini top va tuzat!
+   Masalan: 2,000,000 + 435,000 = 2,435,000 ✓
+6-qadam: TEKSHIR — agar teng bo'lmasa, qayerda xato ekanini top va tuzat!
 
 GRAMM HISOB:
    "350 gramm, kilo narxi 45000" → jami = 45000 / 1000 × 350 = 15,750
    "yarim kilo, kilo narxi 30000" → jami = 30000 × 0.5 = 15,000
 
-CHEGIRMA:
-   "10% chegirma" → jami = jami × 0.9
-   "5000 chegirma" → jami = jami - 5000
+QADOQ HISOB (DIQQAT!):
+   "5 karobka, har karobkada 24 dona, biri 3000"
+   → miqdor=5, birlik=karobka, narx=72000 (24×3000), jami=360000
+   YOKI → miqdor=120, birlik=dona, narx=3000, jami=360000
+   Ikkalasi ham to'g'ri — JAMI bir xil bo'lishi SHART!
 
 ═══════════════ JAVOB FORMATI ═══════════════
 FAQAT SOF JSON (markdown, ```, izoh YO'Q):
@@ -158,6 +212,29 @@ FAQAT SOF JSON (markdown, ```, izoh YO'Q):
   "manba": null,
   "izoh": null
 }
+
+═══════════════ VOZVRAT ARALASH MISOL ═══════════════
+Matn: "Karimovga 20 Ariel 45000, 10 Fairy 28000. 
+       2 Arielni qaytardi. 100 ming skidka. 
+       300 ming naqd oldi, qolgani qarzga."
+
+JSON:
+{
+  "amal": "chiqim",
+  "klient": "Karimov",
+  "tovarlar": [
+    {"nomi":"Ariel","miqdor":20,"birlik":"dona","narx":45000,"jami":900000,"kategoriya":"Kimyoviy: Kir yuvish (Ariel, Tide...)"},
+    {"nomi":"Fairy","miqdor":10,"birlik":"dona","narx":28000,"jami":280000,"kategoriya":"Kimyoviy: Idish yuvish (Fairy...)"},
+    {"nomi":"Ariel (vozvrat)","miqdor":2,"birlik":"dona","narx":45000,"jami":-90000,"kategoriya":"Kimyoviy: Kir yuvish (Ariel, Tide...)"}
+  ],
+  "jami_summa": 990000,
+  "tolangan": 300000,
+  "qarz": 690000,
+  "chegirma_summa": 100000,
+  "manba": null,
+  "izoh": "skidka 100,000 ayirildi"
+}
+Tekshiruv: 900000+280000-90000-100000=990000 ✓ | 300000+690000=990000 ✓
 """
 
 
@@ -167,11 +244,21 @@ def ishga_tushir(api_kalit: str) -> None:
     log.info("✅ AI tahlil tayyor (%s) | O'zbek+Rus tili", MODEL)
 
 
-async def tahlil_qil(matn: str, urinishlar: int = 3) -> dict[str, Any]:
+async def tahlil_qil(matn: str, urinishlar: int = 3, uid: int = 0) -> dict[str, Any]:
     if not _client:
         raise RuntimeError("AI tahlil xizmati ishga tushirilmagan")
     # O'zbek NLP bilan boyitish
     boyitilgan = prompt_boyitish(matn)
+
+    # ── Foydalanuvchi tovar/klient ro'yxatini Claude ga berish ──
+    if uid:
+        try:
+            user_context = await _user_tovar_kontekst(uid)
+            if user_context:
+                boyitilgan = boyitilgan + "\n\n" + user_context
+        except Exception as _uc:
+            log.debug("User kontekst: %s", _uc)
+
     oxirgi: Exception | None = None
     for urinish in range(1, urinishlar + 1):
         try:
@@ -185,7 +272,37 @@ async def tahlil_qil(matn: str, urinishlar: int = 3) -> dict[str, Any]:
             log.warning("🤖 %d-urinish: %s", urinish, xato)
             if urinish < urinishlar:
                 await asyncio.sleep(0.5 * urinish)
-    return _bosh(str(oxirgi))
+
+    # ── EMERGENCY FALLBACK: Claude ishlamasa, xom matndan minimal data ──
+    log.warning("🤖 Claude %d marta fail — emergency fallback", urinishlar)
+    return _emergency_parse(matn)
+
+
+async def _user_tovar_kontekst(uid: int) -> str:
+    """Claude Sonnet ga foydalanuvchining tovar/klient ro'yxatini berish."""
+    from shared.database.pool import get_pool
+    try:
+        async with get_pool().acquire() as conn:
+            products = await conn.fetch(
+                "SELECT nomi FROM tovarlar WHERE user_id=$1 ORDER BY nomi ASC LIMIT 300", uid
+            )
+            clients = await conn.fetch(
+                "SELECT ism FROM klientlar WHERE user_id=$1 ORDER BY ism ASC LIMIT 100", uid
+            )
+        if not products and not clients:
+            return ""
+        p_list = ", ".join(r["nomi"] for r in products if r.get("nomi"))
+        c_list = ", ".join(r["ism"] for r in clients if r.get("ism"))
+        parts = []
+        if p_list:
+            parts.append(f"USHBU DO'KONNING TOVARLARI: {p_list}")
+        if c_list:
+            parts.append(f"USHBU DO'KONNING KLIENTLARI: {c_list}")
+        parts.append("Agar ovozda shu nomlarga o'xshash so'z bo'lsa — AYNAN SHU NOMNI yoz!")
+        return "\n".join(parts)
+    except Exception as e:
+        log.debug("_user_tovar_kontekst: %s", e)
+        return ""
 
 
 async def _claude_chaqir(matn: str) -> str:
@@ -211,7 +328,19 @@ async def _claude_chaqir(matn: str) -> str:
 
 
 def _parse(xom: str) -> dict:
+    if not xom or not xom.strip():
+        raise ValueError("Claude bo'sh javob qaytardi")
+
     toza = re.sub(r"```(?:json)?\s*", "", xom).strip().rstrip("`")
+
+    # JSON topish — ba'zan Claude matn + JSON aralash qaytaradi
+    json_start = toza.find("{")
+    json_end = toza.rfind("}") + 1
+    if json_start >= 0 and json_end > json_start:
+        toza = toza[json_start:json_end]
+    else:
+        raise ValueError(f"JSON topilmadi: {toza[:100]}")
+
     data = json.loads(toza)
     data.setdefault("amal",       "boshqa")
     data.setdefault("klient",     None)
@@ -226,7 +355,12 @@ def _parse(xom: str) -> dict:
         t.setdefault("birlik", "dona")
         t.setdefault("narx",   0)
         t.setdefault("miqdor", 0)
-        if t["birlik"] == "gramm" and t["narx"] > 0:
+
+        # Vozvrat — jami MANFIY bo'lishi mumkin, uni saqla
+        if t.get("jami") and t["jami"] < 0:
+            # Claude to'g'ri manfiy qiymat bergan — tegma
+            pass
+        elif t["birlik"] == "gramm" and t["narx"] > 0:
             t["jami"] = round(t["narx"] / 1000 * t["miqdor"], 2)
         elif not t.get("jami") and t["narx"] and t["miqdor"]:
             t["jami"] = round(t["narx"] * t["miqdor"], 2)
@@ -234,7 +368,16 @@ def _parse(xom: str) -> dict:
             t.setdefault("jami", 0)
         jami_total += t.get("jami", 0)
 
+    # ── Chegirma (skidka) hisoblash ──
+    chegirma = data.get("chegirma_summa", 0) or data.get("chegirma", 0) or 0
+    if chegirma > 0:
+        jami_total -= chegirma
+        data["chegirma_summa"] = chegirma
+
     if not data["jami_summa"] and jami_total:
+        data["jami_summa"] = round(jami_total, 2)
+    elif data["jami_summa"] and chegirma > 0 and data["jami_summa"] > jami_total:
+        # Claude chegirmani hisoblamagan bo'lsa — biz ayiramiz
         data["jami_summa"] = round(jami_total, 2)
 
     qarz     = data.get("qarz",     0) or 0
@@ -258,6 +401,57 @@ def _parse(xom: str) -> dict:
         logging.getLogger("analyst").warning("hisob_tekshir: %s", e)
     
     return data
+
+
+def _emergency_parse(matn: str) -> dict:
+    """
+    Claude 3 marta fail bo'lganda — regex bilan minimal data ajratish.
+    To'liq emas, lekin foydalanuvchiga BIR NARSA ko'rsatadi.
+    """
+    import re
+    log.info("🆘 Emergency parse: '%s'", matn[:100])
+
+    # Klient — birinchi bosh harfli so'z + "ga" suffix
+    klient = None
+    km = re.match(r'^(\S+?)(?:ga|ning|dan|ni)?\s', matn)
+    if km and km.group(1)[0].isupper():
+        klient = km.group(1)
+
+    # Tovarlar — "N ta/dona TOVAR NARX" pattern
+    tovarlar = []
+    patterns = re.findall(
+        r'(\d+)\s*(?:ta|dona|shtuk)?\s+([A-Za-z][A-Za-z\s\-]{1,30}?)\s+(\d[\d\s,]*)',
+        matn
+    )
+    for miq, nomi, narx in patterns:
+        try:
+            n = int(narx.replace(" ", "").replace(",", ""))
+            m = int(miq)
+            tovarlar.append({
+                "nomi": nomi.strip(),
+                "miqdor": m,
+                "birlik": "dona",
+                "narx": n,
+                "jami": m * n,
+                "kategoriya": "Boshqa",
+            })
+        except ValueError:
+            pass
+
+    jami = sum(t["jami"] for t in tovarlar)
+    qarz_bor = any(q in matn.lower() for q in ("qarzga","nasiyaga","nasiya","udumga","kredit"))
+
+    return {
+        "amal": "chiqim" if tovarlar else "boshqa",
+        "klient": klient,
+        "tovarlar": tovarlar,
+        "jami_summa": jami,
+        "tolangan": 0 if qarz_bor else jami,
+        "qarz": jami if qarz_bor else 0,
+        "manba": None,
+        "izoh": "⚠️ AI vaqtincha ishlamadi — regex fallback",
+        "_emergency": True,
+    }
 
 
 def _bosh(sabab: str = "") -> dict:
@@ -286,16 +480,28 @@ def oldindan_korinish(data: dict) -> str:
         for t in (data.get("tovarlar") or []):
             miq=_n(t.get("miqdor",0)); bir=t.get("birlik","dona")
             narx=_n(t.get("narx",0)); jami=_n(t.get("jami",0))
-            qator.append(f"📦 {t.get('nomi','?')}")
-            if narx:
+
+            # Vozvrat — manfiy jami bilan ko'rsatish
+            if jami < 0:
+                qator.append(f"↩️ {t.get('nomi','?')} (vozvrat)")
                 qator.append(f"   {miq:,.0f} {bir} × {narx:,.0f} = {jami:,.0f} so'm")
             else:
-                qator.append(f"   {miq:,.0f} {bir}")
+                qator.append(f"📦 {t.get('nomi','?')}")
+                if narx:
+                    qator.append(f"   {miq:,.0f} {bir} × {narx:,.0f} = {jami:,.0f} so'm")
+                else:
+                    qator.append(f"   {miq:,.0f} {bir}")
             kat = t.get('kategoriya','')
             if kat: qator.append(f"   {kat}")
+
+    # Chegirma ko'rsatish
+    chegirma = _n(data.get("chegirma_summa", 0))
     j=_n(data.get("jami_summa",0)); q=_n(data.get("qarz",0)); tl=_n(data.get("tolangan",j))
-    if j:
+    if j or chegirma:
         qator.append("─"*26)
+    if chegirma > 0:
+        qator.append(f"🏷 Chegirma: -{chegirma:,.0f} so'm")
+    if j:
         qator.append(f"JAMI: {j:,.0f} so'm")
     if q:
         qator.append(f"To'landi: {tl:,.0f} so'm")

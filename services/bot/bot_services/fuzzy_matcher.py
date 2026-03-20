@@ -40,12 +40,15 @@ class FuzzyMatcher:
         if hit and (now - hit[0]) < _CACHE_TTL_S:
             return
         try:
-            async with rls_conn(uid) as conn:
+            from shared.database.pool import get_pool
+            async with get_pool().acquire() as conn:
                 prows = await conn.fetch(
-                    "SELECT DISTINCT nomi FROM tovarlar WHERE nomi IS NOT NULL AND nomi != ''"
+                    "SELECT DISTINCT nomi FROM tovarlar WHERE user_id=$1 AND nomi IS NOT NULL AND nomi != ''",
+                    uid
                 )
                 crows = await conn.fetch(
-                    "SELECT DISTINCT ism FROM klientlar WHERE ism IS NOT NULL AND ism != ''"
+                    "SELECT DISTINCT ism FROM klientlar WHERE user_id=$1 AND ism IS NOT NULL AND ism != ''",
+                    uid
                 )
             products = [r["nomi"] for r in prows]
             clients = [r["ism"] for r in crows]

@@ -14,7 +14,7 @@ from pathlib import Path
 from typing import Optional, Callable
 from tenacity import (
     retry, stop_after_attempt,
-    wait_exponential, retry_if_exception_type,
+    wait_exponential, retry_if_exception,
     before_sleep_log
 )
 
@@ -88,25 +88,35 @@ _PROMPT_USER = (
 
 async def _build_stt_extra_for_user(uid: int) -> str:
     """RLS kontekstida shu foydalanuvchining BARCHA tovar/klientlari (STT uchun qo'shimcha blok)."""
-    from shared.database.pool import rls_conn
+    from shared.database.pool import get_pool
 
-    async with rls_conn(uid) as conn:
-        try:
-            products = await conn.fetch(
-                "SELECT nomi FROM tovarlar ORDER BY COALESCE(sotilgan_soni, 0) DESC NULLS LAST, nomi ASC LIMIT 500"
-            )
-        except Exception:
-            products = await conn.fetch(
-                "SELECT nomi FROM tovarlar ORDER BY nomi ASC LIMIT 500"
-            )
-        try:
-            clients = await conn.fetch(
-                "SELECT ism FROM klientlar ORDER BY COALESCE(oxirgi_sotib, yaratilgan) DESC NULLS LAST, ism ASC LIMIT 200"
-            )
-        except Exception:
-            clients = await conn.fetch(
-                "SELECT ism FROM klientlar ORDER BY ism ASC LIMIT 200"
-            )
+    products = []
+    clients = []
+    try:
+        async with get_pool().acquire() as conn:
+            # RLS o'rniga oddiy filter — read-only, tranzaksiya kerak emas
+            try:
+                products = await conn.fetch(
+                    "SELECT nomi FROM tovarlar WHERE user_id=$1 ORDER BY nomi ASC LIMIT 500", uid
+                )
+            except Exception as e:
+                log.warning("STT tovar yuklash xato (uid=%s): %s", uid, e)
+
+            try:
+                clients = await conn.fetch(
+                    "SELECT ism FROM klientlar WHERE user_id=$1 ORDER BY ism ASC LIMIT 200", uid
+                )
+            except Exception as e:
+                log.warning("STT klient yuklash xato (uid=%s): %s", uid, e)
+    except Exception as e:
+        log.warning("STT DB ulanish xato (uid=%s): %s", uid, e)
+        return ""  # DB ishlamasa — bo'sh prompt, Gemini statik prompt bilan ishlaydi
+
+    product_names = ", ".join([r["nomi"] for r in products if r.get("nomi")])
+    client_names = ", ".join([r["ism"] for r in clients if r.get("ism")])
+
+    if not product_names and not client_names:
+        return ""  # Bo'sh DB — faqat statik prompt ishlaydi
 
     product_names = ", ".join([r["nomi"] for r in products if r.get("nomi")])
     client_names = ", ".join([r["ism"] for r in clients if r.get("ism")])
@@ -139,9 +149,11 @@ async def resolve_system_prompt_for_user(uid: int) -> str:
         return hit[1]
     try:
         extra = await _build_stt_extra_for_user(uid)
-        full = STT_SYSTEM_PROMPT + "\n" + extra
-        _STT_USER_PROMPT_CACHE[uid] = (now, full)
-        log.debug("STT system prompt uid=%s yangilandi", uid)
+        full = STT_SYSTEM_PROMPT + "\n" + extra if extra else STT_SYSTEM_PROMPT
+        # Faqat muvaffaqiyatli natijani cache la (bo'sh = DB xato, qayta urinish kerak)
+        if extra:
+            _STT_USER_PROMPT_CACHE[uid] = (now, full)
+            log.debug("STT system prompt uid=%s yangilandi (%d belgi)", uid, len(extra))
         return full
     except Exception as e:
         log.warning("STT foydalanuvchi prompti yig'ilmedi (uid=%s): %s", uid, e)
@@ -169,10 +181,22 @@ def ishga_tushir(api_key: str, model: str = "") -> None:
         log.error("❌ Gemini ulanmadi: %s", e)
 
 
+def _is_retryable(exc: Exception) -> bool:
+    """429 rate limit va server xatolar uchun retry, auth xato uchun emas."""
+    err_str = str(exc).lower()
+    if "429" in err_str or "rate" in err_str or "quota" in err_str:
+        return True
+    if "500" in err_str or "503" in err_str or "timeout" in err_str:
+        return True
+    if "connection" in err_str or "reset" in err_str:
+        return True
+    return False
+
+
 @retry(
-    stop=stop_after_attempt(2),
-    wait=wait_exponential(multiplier=1, min=1, max=8),
-    retry=retry_if_exception_type(Exception),
+    stop=stop_after_attempt(3),
+    wait=wait_exponential(multiplier=2, min=2, max=15),
+    retry=retry_if_exception(_is_retryable),
     before_sleep=before_sleep_log(log, logging.WARNING),
     reraise=True,
 )

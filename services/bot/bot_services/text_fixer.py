@@ -30,10 +30,15 @@ async def fix_stt_text(
     clits = clients if clients is not None else KNOWN_CLIENTS
     if not client:
         return fuzzy_fixed
+
+    # Bo'sh ro'yxat — Haiku xato javob beradi, o'tkazib yuborish
+    if not prods and not clits:
+        return fuzzy_fixed
+
     try:
         response = await client.messages.create(
             model="claude-haiku-4-5-20251001",
-            max_tokens=200,
+            max_tokens=500,
             messages=[
                 {
                     "role": "user",
@@ -46,8 +51,9 @@ QOIDALAR:
 1. FAQAT tuzatilgan matnni qaytar, boshqa hech narsa yozma
 2. Tovar/klient nomini yuqoridagi ro'yxatdagiga mosla
 3. Raqamlarni o'zgartirma
-4. Format: [Klient] + [miqdor] + [tovar] + [narx]
+4. BARCHA tovarlarni saqlа — hech birini o'chirma!
 5. Agar matn allaqachon to'g'ri bo'lsa, AYNAN SHUNI qaytar
+6. IZOH, TUSHUNTIRISH, UZR YOZMA — FAQAT TUZATILGAN MATN!
 
 Xom STT: {raw_text}
 Fuzzy natija: {fuzzy_fixed}
@@ -57,6 +63,14 @@ Tuzatilgan matn:""",
             ],
         )
         result = response.content[0].text.strip().split("\n")[0].strip()
+
+        # Haiku xato javob berganini aniqlash — uzr, izoh, tushuntirish
+        xato_belgilari = ("uzur", "uzr", "ma'lum", "kechirasiz", "ro'yxat",
+                          "berilmagan", "tuzatish uchun", "sorry", "cannot")
+        if any(b in result.lower() for b in xato_belgilari):
+            logger.warning("Haiku xato javob berdi, fuzzy ishlatiladi: '%s'", result[:80])
+            return fuzzy_fixed
+
         if result and len(result) > 3:
             if result != fuzzy_fixed:
                 logger.info("Haiku fix: '%s' -> '%s'", fuzzy_fixed, result)

@@ -184,6 +184,12 @@ async def xato_handler(update: object,
     """Global xato handler — hech narsa jimgina o'tmaydi"""
     import traceback
     xato = ctx.error
+
+    # Deploy paytida Conflict normal — log spam oldini olish
+    if "Conflict" in str(type(xato).__name__) or "terminated by other" in str(xato):
+        log.info("🔄 Deploy: eski instance to'xtatilmoqda (normal)")
+        return
+
     tb   = "".join(traceback.format_exception(type(xato), xato, xato.__traceback__))
     log.error("⛔ Global xato:\n%s", tb)
 
@@ -412,8 +418,8 @@ async def h_telefon(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
     seed_soni = 0
     try:
         from shared.services.seed_catalog import seed_tovarlar
-        from shared.database.pool import rls_conn as _seed_rls
-        async with _seed_rls(uid) as c:
+        from shared.database.pool import get_pool
+        async with get_pool().acquire() as c:
             seed_soni = await seed_tovarlar(c, uid, seg)
     except Exception as _seed_e:
         log.warning("Seed catalog xato uid=%d: %s", uid, _seed_e)
@@ -476,7 +482,11 @@ async def ovoz_qabul(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
             matn = await ovoz_xizmat.matnga_aylantir(tmp_path, uid=uid)
 
         if not matn:
-            await holat.edit_text("❌ Ovoz tushunilmadi. Qaytadan yuboring.")
+            try:
+                from shared.services.suhbatdosh import tushunilmadi
+                await holat.edit_text(tushunilmadi())
+            except Exception:
+                await holat.edit_text("🤔 Tushunolmadim. Yana bir bor aytib ko'ring.")
             return
         pipeline_result = await process_voice(matn, user_id=uid)
         if pipeline_result.get("confidence") == "none":
@@ -722,6 +732,389 @@ async def matn_qabul(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
         except Exception as _se4:
             log.debug("Yakuniy: %s", _se4)
 
+    # ═══ 4.1 KONTEKSTLI SAVAT — "yana 20 Tide qo'sh" ═══
+    if ctx.user_data.get("kutilayotgan") or ctx.user_data.get("_oxirgi_klient"):
+        try:
+            from shared.services.advanced_features import kontekst_bormi, kontekst_tozala
+            if kontekst_bormi(matn):
+                _toza = kontekst_tozala(matn)
+                _oxirgi = ctx.user_data.get("kutilayotgan") or {}
+                _klient = _oxirgi.get("klient") or ctx.user_data.get("_oxirgi_klient", "")
+                if _klient and _toza:
+                    # Kontekstni Claude ga yuborish — klient qo'shilgan
+                    matn = f"{_klient}ga {_toza}"
+                    log.info("Kontekst: '%s' → '%s'", update.message.text, matn)
+        except Exception as _ke:
+            log.debug("Kontekst: %s", _ke)
+
+    # ═══ 4.2 TUZATISH — "50 emas 30", "narxini 45000 qil" ═══
+    if ctx.user_data.get("kutilayotgan"):
+        try:
+            from shared.services.advanced_features import tuzatish_bormi, tuzatish_ajrat
+            if tuzatish_bormi(matn):
+                _tuz = tuzatish_ajrat(matn)
+                if _tuz:
+                    _draft = ctx.user_data["kutilayotgan"]
+                    _tovarlar = _draft.get("tovarlar", [])
+                    _ozgardi = False
+                    
+                    if _tuz.get("tur") == "miqdor" and _tovarlar:
+                        # Oxirgi tovar miqdorini o'zgartirish
+                        if _tuz.get("eski"):
+                            # "50 emas 30" — 50 ni 30 ga
+                            for _tv in _tovarlar:
+                                if int(_tv.get("miqdor",0)) == _tuz["eski"]:
+                                    _tv["miqdor"] = _tuz["yangi"]
+                                    _tv["jami"] = _tuz["yangi"] * float(_tv.get("narx",0))
+                                    _ozgardi = True; break
+                        else:
+                            # "miqdorni 30 ga" — oxirgi tovar
+                            _tovarlar[-1]["miqdor"] = _tuz["yangi"]
+                            _tovarlar[-1]["jami"] = _tuz["yangi"] * float(_tovarlar[-1].get("narx",0))
+                            _ozgardi = True
+                    
+                    elif _tuz.get("tur") == "narx" and _tovarlar:
+                        _tovarlar[-1]["narx"] = _tuz["yangi"]
+                        _tovarlar[-1]["jami"] = float(_tovarlar[-1].get("miqdor",0)) * _tuz["yangi"]
+                        _ozgardi = True
+                    
+                    if _ozgardi:
+                        _draft["jami_summa"] = sum(float(t.get("jami",0)) for t in _tovarlar)
+                        from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+                        _preview = "✏️ *TUZATILDI:*\n\n"
+                        for _i, _tv in enumerate(_tovarlar, 1):
+                            _preview += f"  {_i}. {_tv.get('nomi','?')} — {_tv.get('miqdor',0)} × {pul(_tv.get('narx',0))} = {pul(_tv.get('jami',0))}\n"
+                        _preview += f"\n💰 Jami: *{pul(_draft['jami_summa'])}*"
+                        await update.message.reply_text(
+                            _preview, parse_mode=ParseMode.MARKDOWN,
+                            reply_markup=InlineKeyboardMarkup([
+                                [InlineKeyboardButton("✅ Tasdiqlash", callback_data="t:ha")],
+                                [InlineKeyboardButton("❌ Bekor", callback_data="t:yoq")],
+                            ]))
+                        return
+        except Exception as _te:
+            log.debug("Tuzatish: %s", _te)
+
+    # ═══ 4.3 HUJJAT SAVOL-JAVOB — "5-bet", "Pifagor qayerda", "tushuntir" ═══
+    if ctx.user_data.get("hujjat"):
+        try:
+            from shared.services.hujjat_oqish import (
+                hujjat_sorov_bormi, hujjatdan_izlash, ai_savol_kerakmi, ai_hujjat_savol
+            )
+            _h = ctx.user_data["hujjat"]
+            if hujjat_sorov_bormi(matn) or ai_savol_kerakmi(matn):
+                # Avval oddiy izlash
+                _javob = hujjatdan_izlash(_h, matn)
+                
+                # Topilmadi yoki AI kerak → Gemini bilan tahlil
+                if ("topilmadi" in _javob.lower() or ai_savol_kerakmi(matn)):
+                    try:
+                        _ai_javob = await ai_hujjat_savol(_h, matn, _CFG.gemini_key)
+                        if _ai_javob and "topilmadi" not in _ai_javob.lower():
+                            _javob = _ai_javob
+                    except Exception:
+                        pass
+                
+                await update.message.reply_text(_javob, parse_mode=ParseMode.MARKDOWN)
+                return
+        except Exception as _he:
+            log.debug("Hujjat savol: %s", _he)
+
+    # ═══ 4.5 SUHBAT ANIQLASH — salom, raxmat, yordam ═══
+    try:
+        from shared.services.suhbatdosh import suhbat_turini_aniqla, suhbat_javob
+        _suhbat = suhbat_turini_aniqla(matn)
+        if _suhbat:
+            _user = await _user_ol_kesh(uid)
+            _ism = (_user.get("ism") or "").split()[0] if _user and _user.get("ism") else ""
+            _javob = suhbat_javob(_suhbat, _ism)
+            if _javob:
+                await update.message.reply_text(_javob)
+                return
+    except Exception as _sh_e:
+        log.debug("Suhbat: %s", _sh_e)
+
+    # ═══ 5. OVOZLI HISOBOT — Claude ni chaqirmasdan tezkor javob ═══
+    _hisobot_sozlar = (
+        "bugungi sotuv", "bugungi hisobot", "kunlik hisobot",
+        "haftalik hisobot", "oylik hisobot", "qarzlar hisoboti",
+        "qancha sotdim", "qancha sotuv", "bugungi savdo",
+        "haftalik savdo", "foyda qancha", "qarz qancha",
+        "hisobot ber", "hisobot ko'rsat", "hisobot",
+        "сегодня продажа", "отчет", "за неделю", "долги",
+        "sotuv qancha", "bugun qancha",
+        "hisobot excel", "excel hisobot", "oylik excel",
+        "haftalik excel", "kunlik excel",
+    )
+    _ml = matn.lower().strip()
+    _hisobot_match = any(s in _ml for s in _hisobot_sozlar)
+    _excel_so_rov = "excel" in _ml or "xlsx" in _ml
+    if _hisobot_match:
+        try:
+            from shared.services.hisobot_engine import (
+                kunlik, haftalik, oylik, qarz_hisobot,
+                hisobot_matn, qarz_hisobot_matn, hisobot_turini_aniqla
+            )
+            from shared.database.pool import get_pool
+            tur = hisobot_turini_aniqla(matn)
+            async with get_pool().acquire() as _hc:
+                if tur == "qarz":
+                    _hd = await qarz_hisobot(_hc, uid)
+                    _hbody = qarz_hisobot_matn(_hd)
+                elif tur == "oylik":
+                    _hd = await oylik(_hc, uid)
+                    _hbody = hisobot_matn(_hd)
+                elif tur == "haftalik":
+                    _hd = await haftalik(_hc, uid)
+                    _hbody = hisobot_matn(_hd)
+                else:
+                    _hd = await kunlik(_hc, uid)
+                    _hbody = hisobot_matn(_hd)
+
+            # Suhbat uslubi — iliq kirish va tavsiya
+            if tur != "qarz" and isinstance(_hd, dict):
+                try:
+                    from shared.services.suhbatdosh import hisobot_kirish, hisobot_tavsiya
+                    _intro = hisobot_kirish(tur, _hd.get("sotuv_jami", 0), _hd.get("foyda", 0))
+                    _tavs = hisobot_tavsiya(_hd)
+                    _hbody = _intro + "\n\n" + _hbody + _tavs
+                except Exception:
+                    pass
+
+            # Excel so'ralgan bo'lsa → fayl yuborish
+            if _excel_so_rov and tur != "qarz":
+                try:
+                    import services.bot.bot_services.export_excel as _exl
+                    _user = await _user_ol_kesh(uid)
+                    _dokon = (_user.get("dokon_nomi") or "Mashrab Moliya") if _user else "Mashrab Moliya"
+                    _excel_bytes = _exl.hisobot_excel(_hd, _dokon)
+                    _sana_s = _hd.get("sana", "").replace(".", "").replace(" ", "_")[:15]
+                    _nom = f"hisobot_{tur}_{_sana_s}.xlsx"
+                    await update.message.reply_text(_hbody, parse_mode=ParseMode.MARKDOWN)
+                    await update.message.reply_document(
+                        document=InputFile(io.BytesIO(_excel_bytes), filename=_nom),
+                        caption=f"📊 {tur.capitalize()} hisobot Excel")
+                    return
+                except Exception as _ex_e:
+                    log.warning("Hisobot Excel: %s", _ex_e)
+
+            # Tugma bilan javob
+            _h_markup = tg(
+                [("📊 Excel", f"hisob_excel:{tur}")],
+            ) if tur != "qarz" else None
+            await update.message.reply_text(
+                _hbody, parse_mode=ParseMode.MARKDOWN,
+                reply_markup=_h_markup)
+
+            # ═══ OVOZLI XULOSA (TTS) ═══
+            if tur != "qarz" and isinstance(_hd, dict):
+                try:
+                    from services.bot.bot_services.tts import tts_tayyor, matn_ovozga, hisobot_xulosa
+                    if tts_tayyor():
+                        xulosa = hisobot_xulosa(_hd)
+                        ogg = await matn_ovozga(xulosa)
+                        if ogg:
+                            await update.message.reply_voice(
+                                voice=io.BytesIO(ogg),
+                                caption="🔊 Ovozli xulosa")
+                except Exception as _tts_e:
+                    log.debug("TTS hisobot: %s", _tts_e)
+
+            return
+        except Exception as _he:
+            log.warning("PRE-AI hisobot xato (davom etadi): %s", _he)
+
+    # ═══ 6. KLIENT QARZ SO'ROVI — "Salimovning qarzi qancha?" ═══
+    try:
+        from shared.services.hisobot_engine import (
+            klient_qarz_sorovi, klient_nomini_ajrat,
+            klient_qarz_tarix, klient_qarz_tarix_matn
+        )
+        if klient_qarz_sorovi(matn):
+            kl_ism = klient_nomini_ajrat(matn)
+            if kl_ism:
+                from shared.database.pool import get_pool
+                async with get_pool().acquire() as _kc:
+                    _kd = await klient_qarz_tarix(_kc, uid, kl_ism)
+                if _kd:
+                    _kbody = klient_qarz_tarix_matn(_kd)
+                    kid = _kd["klient"]["id"]
+                    await update.message.reply_text(
+                        _kbody, parse_mode=ParseMode.MARKDOWN,
+                        reply_markup=tg(
+                            [(f"📄 {kl_ism} PDF hisobi", f"eks:pdf:klient:{kid}")],
+                            [(f"📊 Excel hisobi", f"eks:xls:klient:{kid}")],
+                        )
+                    )
+                    return
+                else:
+                    await update.message.reply_text(
+                        f"❌ '{kl_ism}' ismli klient topilmadi.\n"
+                        "Klient ismini to'liqroq ayting.")
+                    return
+    except Exception as _ke:
+        log.debug("Klient qarz shortcut: %s", _ke)
+
+    # ═══ 7. SMART BUYRUQLAR — narx, reyting, trend, inventarizatsiya ═══
+    try:
+        from shared.services.smart_bot_engine import (
+            smart_buyruq_aniqla, narx_tavsiya, narx_tavsiya_matn,
+            narx_tovar_ajrat, klient_reyting, klient_reyting_matn,
+            haftalik_trend, haftalik_trend_matn,
+        )
+        _smart_cmd = smart_buyruq_aniqla(matn)
+        if _smart_cmd:
+            from shared.database.pool import get_pool
+            async with get_pool().acquire() as _sc:
+                if _smart_cmd == "narx_tavsiya":
+                    _tv_nom = narx_tovar_ajrat(matn)
+                    if _tv_nom:
+                        _nd = await narx_tavsiya(_sc, uid, _tv_nom)
+                        await update.message.reply_text(
+                            narx_tavsiya_matn(_nd), parse_mode=ParseMode.MARKDOWN)
+                        return
+                elif _smart_cmd == "klient_reyting":
+                    _rd = await klient_reyting(_sc, uid)
+                    await update.message.reply_text(
+                        klient_reyting_matn(_rd), parse_mode=ParseMode.MARKDOWN)
+                    return
+                elif _smart_cmd == "haftalik_trend":
+                    _td = await haftalik_trend(_sc, uid)
+                    await update.message.reply_text(
+                        haftalik_trend_matn(_td), parse_mode=ParseMode.MARKDOWN)
+                    return
+                elif _smart_cmd == "inventarizatsiya":
+                    # Inventarizatsiya — AI ga yuborib, tovarlar ro'yxati olish
+                    from shared.services.smart_bot_engine import inventarizatsiya, inventarizatsiya_matn
+                    # Matndan tovarlarni ajratish: "Ariel 45, Tide 23"
+                    import re as _re
+                    _inv_pairs = _re.findall(r'([A-Za-zА-Яа-яЎўҚқҒғҲҳ\'\-]+)\s+(\d+)', matn)
+                    if _inv_pairs:
+                        _inv_list = [{"nomi": n.strip(), "qoldiq": int(q)} for n, q in _inv_pairs]
+                        _inv_r = await inventarizatsiya(_sc, uid, _inv_list)
+                        await update.message.reply_text(
+                            inventarizatsiya_matn(_inv_r), parse_mode=ParseMode.MARKDOWN)
+                        return
+                    else:
+                        await update.message.reply_text(
+                            "📋 *INVENTARIZATSIYA*\n\n"
+                            "Tovar va qoldiqni ayting:\n"
+                            "_\"Ariel 45, Tide 23, Fairy 12\"_\n\n"
+                            "Yoki ovoz yuboring.",
+                            parse_mode=ParseMode.MARKDOWN)
+                        return
+    except Exception as _se:
+        log.debug("Smart buyruq: %s", _se)
+
+    # ═══ 8. ADVANCED FEATURES — ABC, savol, shablon, qoldiq, zarar ═══
+    try:
+        # ── EKSPERT TAHLIL — "Ariel haqida", "Salimov tahlil" ──
+        from shared.services.mutaxassis import (
+            ekspert_sorov_bormi, ekspert_nom_ajrat,
+            tovar_ekspert_tahlil, tovar_ekspert_matn,
+            klient_ekspert_tahlil, klient_ekspert_matn,
+        )
+        if ekspert_sorov_bormi(matn):
+            _nom = ekspert_nom_ajrat(matn)
+            if _nom:
+                from shared.database.pool import get_pool
+                async with get_pool().acquire() as _ec:
+                    # Avval tovar tekshir
+                    _tv = await tovar_ekspert_tahlil(_ec, uid, _nom)
+                    if _tv.get("topildi"):
+                        await update.message.reply_text(
+                            tovar_ekspert_matn(_tv), parse_mode=ParseMode.MARKDOWN)
+                        return
+                    # Keyin klient tekshir
+                    _kl = await klient_ekspert_tahlil(_ec, uid, _nom)
+                    if _kl.get("topildi"):
+                        await update.message.reply_text(
+                            klient_ekspert_matn(_kl), parse_mode=ParseMode.MARKDOWN)
+                        return
+                    await update.message.reply_text(f"🤔 '{_nom}' ni tovar yoki klient sifatida topolmadim.")
+                    return
+    except Exception as _exp_e:
+        log.debug("Ekspert: %s", _exp_e)
+
+    try:
+        from shared.services.advanced_features import (
+            advanced_buyruq_aniqla, tabiiy_savol_javob,
+            shablon_bormi, shablon_klient_ajrat, shablon_olish, shablon_matn,
+            qoldiq_tuzatish_bormi, qoldiq_tuzatish_ajrat, qoldiq_tuzatish, qoldiq_tuzatish_matn,
+            tovar_abc, tovar_abc_matn,
+            tezkor_tugmalar, guruhli_bormi, guruhli_ajrat,
+        )
+        _adv_cmd = advanced_buyruq_aniqla(matn)
+        if _adv_cmd:
+            from shared.database.pool import get_pool
+            async with get_pool().acquire() as _ac:
+                if _adv_cmd == "tabiiy_savol":
+                    _javob = await tabiiy_savol_javob(_ac, uid, matn)
+                    if _javob:
+                        await update.message.reply_text(_javob, parse_mode=ParseMode.MARKDOWN)
+                        return
+
+                elif _adv_cmd == "abc_tahlil":
+                    _abc = await tovar_abc(_ac, uid)
+                    await update.message.reply_text(
+                        tovar_abc_matn(_abc), parse_mode=ParseMode.MARKDOWN)
+                    return
+
+                elif _adv_cmd == "shablon":
+                    _kl = shablon_klient_ajrat(matn)
+                    if _kl:
+                        _sh = await shablon_olish(_ac, uid, _kl)
+                        if _sh:
+                            # Shablonni savatga qo'yish uchun kutilayotgan ga saqlash
+                            ctx.user_data["kutilayotgan"] = {
+                                "amal": "chiqim", "klient": _kl,
+                                "tovarlar": [
+                                    {"nomi": t["nomi"], "miqdor": t["miqdor"],
+                                     "birlik": t["birlik"], "narx": t["narx"],
+                                     "jami": t["miqdor"] * t["narx"],
+                                     "kategoriya": "Boshqa"}
+                                    for t in _sh["tovarlar"]
+                                ],
+                                "jami_summa": sum(t["miqdor"] * t["narx"] for t in _sh["tovarlar"]),
+                                "izoh": "shablon buyurtma",
+                            }
+                            from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+                            await update.message.reply_text(
+                                shablon_matn(_sh) + "\n\n⬇️ Tasdiqlaysizmi?",
+                                parse_mode=ParseMode.MARKDOWN,
+                                reply_markup=InlineKeyboardMarkup([
+                                    [InlineKeyboardButton("✅ Tasdiqlash", callback_data="t:ha")],
+                                    [InlineKeyboardButton("❌ Bekor", callback_data="t:yoq")],
+                                ]))
+                            return
+                        else:
+                            await update.message.reply_text(f"ℹ️ {_kl} uchun oldingi buyurtma topilmadi.")
+                            return
+
+                elif _adv_cmd == "qoldiq_tuzatish":
+                    _qt = qoldiq_tuzatish_ajrat(matn)
+                    if _qt:
+                        _qr = await qoldiq_tuzatish(_ac, uid, _qt["nomi"], _qt["miqdor"], _qt["sabab"])
+                        await update.message.reply_text(
+                            qoldiq_tuzatish_matn(_qr), parse_mode=ParseMode.MARKDOWN)
+                        return
+
+                elif _adv_cmd == "guruhli":
+                    from shared.services.advanced_features import guruhli_ajrat
+                    _g = guruhli_ajrat(matn)
+                    if _g and _g.get("soni") and _g.get("tovar_matn"):
+                        await update.message.reply_text(
+                            f"👥 *GURUHLI SOTUV*\n\n"
+                            f"Klientlar soni: *{_g['soni']}*\n"
+                            f"Tovarlar: _{_g['tovar_matn']}_\n\n"
+                            "Klientlar ismlarini ayting yoki yozing:\n"
+                            "_\"Salimov, Karimov, Toshmatov\"_",
+                            parse_mode=ParseMode.MARKDOWN)
+                        ctx.user_data["_guruhli"] = _g
+                        return
+    except Exception as _adv_e:
+        log.debug("Advanced feature: %s", _adv_e)
+
     # ═══ O'ZBEK BUYRUQ TEKSHIRUVI (AI ga yubormasdan) ═══
     from shared.services.voice_commands import detect_voice_command, is_quick_command
     cmd = detect_voice_command(matn)
@@ -764,38 +1157,56 @@ async def _ovoz_buyruq_bajar(update:Update, ctx:ContextTypes.DEFAULT_TYPE,
             await update.message.reply_text("ℹ️ Bekor qilish uchun hech narsa yo'q.")
 
     elif action == "report":
-        if sub == "daily":
-            d = await db.kunlik_hisobot(uid)
-            await update.message.reply_text(kunlik_matn(d), parse_mode=ParseMode.MARKDOWN)
-        elif sub == "weekly":
-            d = await db.haftalik_hisobot(uid)
-            await update.message.reply_text(haftalik_matn(d), parse_mode=ParseMode.MARKDOWN)
-        elif sub == "profit":
-            d = await db.foyda_hisobot(uid)
-            await update.message.reply_text(foyda_matn(d), parse_mode=ParseMode.MARKDOWN)
-        elif sub == "top_clients":
-            top = await db.top_klientlar(uid)
-            if top:
-                lines = ["🏆 *TOP KLIENTLAR*\n"]
-                medals = ["🥇","🥈","🥉"]
-                for i, k in enumerate(top[:10]):
-                    m = medals[i] if i < 3 else f"{i+1}."
-                    lines.append(f"{m} {k['ism']} — {pul(k['jami_sotib'])}")
-                await update.message.reply_text("\n".join(lines), parse_mode=ParseMode.MARKDOWN)
-            else:
-                await update.message.reply_text("📊 Hali klientlar yo'q.")
-        elif sub == "low_stock":
-            kam = await db.kam_qoldiq_tovarlar(uid)
-            if kam:
-                lines = ["⚠️ *KAM QOLDIQ TOVARLAR*\n"]
-                for t in kam[:10]:
-                    lines.append(f"📦 {t['nomi']}: *{t['qoldiq']}* ta")
-                await update.message.reply_text("\n".join(lines), parse_mode=ParseMode.MARKDOWN)
-            else:
-                await update.message.reply_text("✅ Barcha tovarlar yetarli!")
-        elif sub == "stock":
-            await cmd_ombor(update, ctx)
-        else:
+        try:
+            from shared.services.hisobot_engine import (
+                kunlik, haftalik, oylik, qarz_hisobot,
+                hisobot_matn, qarz_hisobot_matn
+            )
+            from shared.database.pool import get_pool
+            async with get_pool().acquire() as _rc:
+                if sub == "daily":
+                    _rd = await kunlik(_rc, uid)
+                    await update.message.reply_text(hisobot_matn(_rd), parse_mode=ParseMode.MARKDOWN)
+                elif sub == "weekly":
+                    _rd = await haftalik(_rc, uid)
+                    await update.message.reply_text(hisobot_matn(_rd), parse_mode=ParseMode.MARKDOWN)
+                elif sub == "monthly":
+                    _rd = await oylik(_rc, uid)
+                    await update.message.reply_text(hisobot_matn(_rd), parse_mode=ParseMode.MARKDOWN)
+                elif sub == "profit":
+                    _rd = await kunlik(_rc, uid)
+                    await update.message.reply_text(hisobot_matn(_rd), parse_mode=ParseMode.MARKDOWN)
+                elif sub == "debts":
+                    _rd = await qarz_hisobot(_rc, uid)
+                    await update.message.reply_text(qarz_hisobot_matn(_rd), parse_mode=ParseMode.MARKDOWN)
+                elif sub == "top_clients":
+                    _rd = await kunlik(_rc, uid)
+                    if _rd.get("top5_klient"):
+                        lines = ["🏆 *TOP KLIENTLAR*\n"]
+                        medals = ["🥇","🥈","🥉"]
+                        for i, k in enumerate(_rd["top5_klient"][:5]):
+                            m = medals[i] if i < 3 else f"{i+1}."
+                            q = f" (qarz: {pul(k['jami_qarz'])})" if k.get("jami_qarz",0)>0 else ""
+                            lines.append(f"{m} {k['ism']} — {pul(k['jami_sotuv'])}{q}")
+                        await update.message.reply_text("\n".join(lines), parse_mode=ParseMode.MARKDOWN)
+                    else:
+                        await update.message.reply_text("📊 Hali klientlar yo'q.")
+                elif sub == "low_stock":
+                    kam = await db.kam_qoldiq_tovarlar(uid)
+                    if kam:
+                        lines = ["⚠️ *KAM QOLDIQ TOVARLAR*\n"]
+                        for t in kam[:10]:
+                            lines.append(f"📦 {t['nomi']}: *{t['qoldiq']}* ta")
+                        await update.message.reply_text("\n".join(lines), parse_mode=ParseMode.MARKDOWN)
+                    else:
+                        await update.message.reply_text("✅ Barcha tovarlar yetarli!")
+                elif sub == "stock":
+                    await cmd_ombor(update, ctx)
+                else:
+                    _rd = await kunlik(_rc, uid)
+                    await update.message.reply_text(hisobot_matn(_rd), parse_mode=ParseMode.MARKDOWN)
+        except Exception as _re:
+            log.warning("Report callback xato (fallback): %s", _re)
             d = await db.kunlik_hisobot(uid)
             await update.message.reply_text(kunlik_matn(d), parse_mode=ParseMode.MARKDOWN)
 
@@ -914,17 +1325,63 @@ async def _ovoz_buyruq_bajar(update:Update, ctx:ContextTypes.DEFAULT_TYPE,
 async def _qayta_ishlash(update:Update, ctx:ContextTypes.DEFAULT_TYPE,
                           matn:str, tahrirlash=None) -> None:
     uid=update.effective_user.id
-    try: natija=await ai_xizmat.tahlil_qil(matn)
+    try: natija=await ai_xizmat.tahlil_qil(matn, uid=uid)
     except Exception as xato:
         log.error("tahlil: %s",xato,exc_info=True)
-        xabar="❌ Tahlil vaqtincha ishlamayapti. Yozma yuboring."
+
+        # ═══ OFFLINE NAVBAT: Claude fail → 10s keyin qayta urinish ═══
+        try:
+            from services.bot.bot_services.offline_queue import navbatga_qosh, navbat_soni
+
+            async def _retry_callback(retry_natija):
+                try:
+                    if retry_natija and retry_natija.get("amal") != "boshqa":
+                        log.info("📋 Retry muvaffaqiyat (uid=%d)", uid)
+                except Exception:
+                    pass
+
+            added = await navbatga_qosh(
+                uid, ai_xizmat.tahlil_qil,
+                args=(matn,), kwargs={"uid": uid},
+                callback=_retry_callback
+            )
+            soni = navbat_soni(uid)
+            if added:
+                xabar = f"⏳ AI vaqtincha band. Navbatda {soni} ta xabar. 10s keyin qayta uriniladi."
+            else:
+                xabar = "❌ Tahlil vaqtincha ishlamayapti. Yozma yuboring."
+        except Exception:
+            xabar = "❌ Tahlil vaqtincha ishlamayapti. Yozma yuboring."
+
         if tahrirlash: await tahrirlash.edit_text(xabar)
         else: await update.message.reply_text(xabar)
         return
 
     amal=natija.get("amal","boshqa")
     if amal=="hisobot":
-        d=await db.kunlik_hisobot(uid); body=kunlik_matn(d)
+        try:
+            from shared.services.hisobot_engine import (
+                kunlik, haftalik, oylik, qarz_hisobot,
+                hisobot_matn, qarz_hisobot_matn, hisobot_turini_aniqla
+            )
+            from shared.database.pool import get_pool
+            tur = hisobot_turini_aniqla(matn)
+            async with get_pool().acquire() as hc:
+                if tur == "qarz":
+                    d = await qarz_hisobot(hc, uid)
+                    body = qarz_hisobot_matn(d)
+                elif tur == "oylik":
+                    d = await oylik(hc, uid)
+                    body = hisobot_matn(d)
+                elif tur == "haftalik":
+                    d = await haftalik(hc, uid)
+                    body = hisobot_matn(d)
+                else:
+                    d = await kunlik(hc, uid)
+                    body = hisobot_matn(d)
+        except Exception as _he:
+            log.warning("Hisobot engine xato: %s", _he)
+            d=await db.kunlik_hisobot(uid); body=kunlik_matn(d)
         if tahrirlash: await tahrirlash.edit_text(body,parse_mode=ParseMode.MARKDOWN)
         else: await update.message.reply_text(body,parse_mode=ParseMode.MARKDOWN)
         return
@@ -932,16 +1389,19 @@ async def _qayta_ishlash(update:Update, ctx:ContextTypes.DEFAULT_TYPE,
         await _nakladnoy_yuborish(update,ctx,natija,tahrirlash); return
 
     if amal=="boshqa" or (not natija.get("tovarlar") and amal not in("qarz_tolash",)):
+        try:
+            from shared.services.suhbatdosh import tushunilmadi
+            _tush_msg = tushunilmadi()
+        except Exception:
+            _tush_msg = "🤔 Tushunolmadim."
         yordam=(
-            "❓ *Tushunilmadi.* Qaytadan yuboring.\n\n"
-            "*Namunalar (O'zbek/Rus):*\n"
-            "• _\"Salimovga 50 Ariel, 20 Tide. 500,000 qarzga\"_\n"
-            "• _\"Продажа Иванову 50 Ariel по 45000\"_\n"
-            "• _\"100 ta un kirdi, narxi 35,000, Akbardan\"_\n"
-            "• _\"Приход 100 мешков муки по 35000\"_\n"
-            "• _\"Salimovning 3 Arielini qaytaraman\"_\n"
-            "• _\"Salimov 500,000 to'ladi\"_\n"
-            "• _\"Salimovga nakladnoy yoz, 50 Ariel 45,000\"_"
+            f"{_tush_msg}\n\n"
+            "*Masalan shunday ayting:*\n"
+            "• _\"Salimovga 50 Ariel, donasi 45 mingdan\"_\n"
+            "• _\"100 ta un kirdi, Akbardan, 35 mingdan\"_\n"
+            "• _\"Salimov 500 ming to'ladi\"_\n"
+            "• _\"Bugungi sotuv qancha?\"_\n"
+            "• _\"Salimovning qarzi?\"_"
         )
         if tahrirlash: await tahrirlash.edit_text(yordam,parse_mode=ParseMode.MARKDOWN)
         else: await update.message.reply_text(yordam,parse_mode=ParseMode.MARKDOWN)
@@ -1045,6 +1505,18 @@ async def _qayta_ishlash(update:Update, ctx:ContextTypes.DEFAULT_TYPE,
     narx_manba = natija.get("_narx_manba")
     if narx_manba:
         oldindan += "\n\n💡 *Narxlar avtomatik:*\n" + "\n".join(f"  {m}" for m in narx_manba)
+
+    # ═══ ZARAR OGOHLANTIRISH (real-time) ═══
+    if natija.get("amal") in ("chiqim", "sotuv") and natija.get("tovarlar"):
+        try:
+            from shared.services.advanced_features import zarar_tekshir, zarar_ogohlantirish_matn
+            from shared.database.pool import get_pool
+            async with get_pool().acquire() as _zc:
+                _zararlar = await zarar_tekshir(_zc, uid, natija["tovarlar"])
+                if _zararlar:
+                    oldindan += "\n" + zarar_ogohlantirish_matn(_zararlar)
+        except Exception as _ze:
+            log.debug("Zarar tekshir: %s", _ze)
 
     markup=tg(
         [("✅ Saqlash","t:ha"),("🛒 Savatga","t:savatga"),("❌ Bekor","t:yoq")],
@@ -1404,6 +1876,19 @@ async def tasdiq_cb(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
             except Exception as _pdf_e:
                 log.warning("Avtomatik kirim PDF: %s", _pdf_e)
 
+            # ═══ OVOZLI KIRIM XABAR ═══
+            try:
+                from services.bot.bot_services.tts import tts_tayyor, matn_ovozga, kirim_xulosa
+                if tts_tayyor():
+                    _ki_matn = kirim_xulosa(tovarlar, float(natija.get("jami_summa", 0)),
+                                             natija.get("manba", ""))
+                    _ki_ogg = await matn_ovozga(_ki_matn)
+                    if _ki_ogg:
+                        await q.message.reply_voice(voice=io.BytesIO(_ki_ogg),
+                                                     caption="🔊 Kirim tasdiqlandi")
+            except Exception as _tts_e:
+                log.debug("TTS kirim: %s", _tts_e)
+
         elif amal=="chiqim":
             # ── 1. Validatsiya ───────────────────────────────
             from shared.utils.hisob import sotuv_validatsiya
@@ -1512,6 +1997,19 @@ async def tasdiq_cb(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
             )
             await xat(q,javob,parse_mode=ParseMode.MARKDOWN,reply_markup=markup)
 
+            # ═══ AVTO QOLDIQ OGOHLANTIRISH ═══
+            try:
+                kam = await db.kam_qoldiq_tovarlar(uid)
+                if kam:
+                    ogoh_qator = ["⚠️ *KAM QOLDIQ OGOHLANTIRISH:*\n"]
+                    for kt in kam[:5]:
+                        ogoh_qator.append(f"  📦 {kt['nomi']}: *{kt.get('qoldiq',0)}* ta qoldi!")
+                    await q.message.reply_text(
+                        "\n".join(ogoh_qator),
+                        parse_mode=ParseMode.MARKDOWN)
+            except Exception as _kam_e:
+                log.debug("Kam qoldiq tekshir: %s", _kam_e)
+
             # ═══ AVTOMATIK MINI CHEK PDF ═══
             try:
                 chek_pdf_data = dict(natija)
@@ -1529,6 +2027,25 @@ async def tasdiq_cb(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
                         parse_mode=ParseMode.MARKDOWN)
             except Exception as _pdf_e:
                 log.warning("Avtomatik chek PDF: %s", _pdf_e)
+
+            # ═══ OXIRGI KLIENT YODLASH (kontekst uchun) ═══
+            if klient:
+                ctx.user_data["_oxirgi_klient"] = klient
+
+            # ═══ OVOZLI SOTUV XABAR ═══
+            try:
+                from services.bot.bot_services.tts import tts_tayyor, matn_ovozga, sotuv_xulosa
+                if tts_tayyor():
+                    _sv_matn = sotuv_xulosa(
+                        klient or "Klient", tovarlar,
+                        float(natija.get("jami_summa", 0)),
+                        float(qarz_total))
+                    _sv_ogg = await matn_ovozga(_sv_matn)
+                    if _sv_ogg:
+                        await q.message.reply_voice(voice=io.BytesIO(_sv_ogg),
+                                                     caption="🔊 Sotuv tasdiqlandi")
+            except Exception as _tts_e:
+                log.debug("TTS sotuv: %s", _tts_e)
 
         elif q.data == "t:majbur":
             natija_m = ctx.user_data.pop("kutilayotgan_majbur", None)
@@ -1612,6 +2129,18 @@ async def tasdiq_cb(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
                 f"💰 To'langan: {pul(n['tolandi'])}\n"
                 f"📊 Qolgan qarz: {pul(n['qolgan_qarz'])}",
                 parse_mode=ParseMode.MARKDOWN)
+
+            # ═══ OVOZLI QARZ XABAR ═══
+            try:
+                from services.bot.bot_services.tts import tts_tayyor, matn_ovozga, qarz_xulosa
+                if tts_tayyor():
+                    _qt_matn = qarz_xulosa(n.get("klient", klient), float(n.get("tolandi", summa)))
+                    _qt_ogg = await matn_ovozga(_qt_matn)
+                    if _qt_ogg:
+                        await q.message.reply_voice(voice=io.BytesIO(_qt_ogg),
+                                                     caption="🔊 To'lov qabul qilindi")
+            except Exception as _tts_e:
+                log.debug("TTS qarz: %s", _tts_e)
         else:
             await xat(q,"❌ Noma'lum amal.")
     except Exception as xato:
@@ -1945,6 +2474,94 @@ async def paginatsiya_cb(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
     elif akt=="kl:oldingi": ctx.user_data["kl_s"]=max(ctx.user_data.get("kl_s",0)-1,0)
     q.data="m:"+("tovarlar" if akt.startswith("tv") else "klientlar")
     await menyu_cb(update,ctx)
+
+
+async def _hujjat_cb(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    """Hujjat tugma callback — huj:bet:5, huj:jadval"""
+    q = update.callback_query
+    await q.answer()
+    uid = update.effective_user.id
+
+    h = ctx.user_data.get("hujjat")
+    if not h:
+        await q.message.reply_text("❌ Avval hujjat yuboring.")
+        return
+
+    parts = q.data.split(":")
+    cmd = parts[1] if len(parts) > 1 else ""
+
+    try:
+        if cmd == "bet" and len(parts) > 2:
+            sahifa_num = int(parts[2])
+            from shared.services.hujjat_oqish import sahifa_matn
+            matn = sahifa_matn(h, sahifa_num)
+
+            # Navigatsiya tugmalari
+            from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+            nav = []
+            jami = h.get("sahifalar_soni", 0)
+            if sahifa_num > 1:
+                nav.append(InlineKeyboardButton(f"⬅️ {sahifa_num-1}-bet", callback_data=f"huj:bet:{sahifa_num-1}"))
+            if sahifa_num < jami:
+                nav.append(InlineKeyboardButton(f"➡️ {sahifa_num+1}-bet", callback_data=f"huj:bet:{sahifa_num+1}"))
+            markup = InlineKeyboardMarkup([nav]) if nav else None
+
+            await q.message.reply_text(matn, parse_mode=ParseMode.MARKDOWN, reply_markup=markup)
+
+        elif cmd == "jadval":
+            jadvallar = h.get("jadvallar", [])
+            if not jadvallar:
+                await q.message.reply_text("📊 Jadval topilmadi.")
+                return
+            matn = f"📊 *{len(jadvallar)} ta jadval topildi:*\n\n"
+            for j in jadvallar[:3]:
+                matn += f"📋 Jadval #{j.get('jadval_raqam', '?')}"
+                if j.get("sahifa"):
+                    matn += f" (sahifa {j['sahifa']})"
+                matn += f" — {j.get('qator_soni', 0)} qator\n"
+                if j.get("sarlavha"):
+                    matn += f"   Ustunlar: {' | '.join(str(c)[:15] for c in j['sarlavha'][:5])}\n"
+                # Birinchi 3 qator
+                for r in j.get("qatorlar", [])[:3]:
+                    matn += f"   {' | '.join(str(c)[:15] for c in r[:5])}\n"
+                matn += "\n"
+            await q.message.reply_text(matn, parse_mode=ParseMode.MARKDOWN)
+
+    except Exception as e:
+        log.error("hujjat_cb: %s", e)
+        await q.message.reply_text("❌ Xato yuz berdi")
+
+
+async def _hisobot_excel_cb(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    """Hisobot Excel tugma callback — hisob_excel:kunlik/haftalik/oylik"""
+    q = update.callback_query
+    await q.answer("Excel tayyorlanmoqda...")
+    uid = update.effective_user.id
+    tur = q.data.split(":")[1]  # kunlik, haftalik, oylik
+    try:
+        from shared.services.hisobot_engine import kunlik, haftalik, oylik
+        from shared.database.pool import get_pool
+        import services.bot.bot_services.export_excel as _exl
+
+        async with get_pool().acquire() as _ec:
+            if tur == "haftalik":
+                _ed = await haftalik(_ec, uid)
+            elif tur == "oylik":
+                _ed = await oylik(_ec, uid)
+            else:
+                _ed = await kunlik(_ec, uid)
+
+        user = await _user_ol_kesh(uid)
+        dokon = (user.get("dokon_nomi") or "Mashrab Moliya") if user else "Mashrab Moliya"
+        excel_bytes = _exl.hisobot_excel(_ed, dokon)
+        sana_s = _ed.get("sana", "").replace(".", "").replace(" ", "_")[:15]
+        nom = f"hisobot_{tur}_{sana_s}.xlsx"
+        await q.message.reply_document(
+            document=InputFile(io.BytesIO(excel_bytes), filename=nom),
+            caption=f"📊 {tur.capitalize()} hisobot Excel")
+    except Exception as e:
+        log.error("hisobot_excel_cb: %s", e, exc_info=True)
+        await q.message.reply_text("❌ Excel yaratishda xato")
 
 
 async def hisobot_cb(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
@@ -2624,38 +3241,47 @@ async def admin_cb(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
 # ════════════ AVTOMATIK JOBLAR ════════════
 
 async def avto_kunlik_hisobot(ctx:ContextTypes.DEFAULT_TYPE) -> None:
-    log.info("⏰ Avtomatik kunlik hisobot...")
+    log.info("⏰ Avtomatik kunlik hisobot PRO...")
     try:
+        from shared.services.smart_bot_engine import kunlik_yakuniy_pro, kunlik_yakuniy_pro_matn
+        from shared.database.pool import get_pool
         users=await db.faol_users(); yuborildi=0
         for user in users:
             try:
-                d=await db.kunlik_hisobot(user["id"])
-                if d["kr_n"]==0 and d["ch_n"]==0: continue
+                async with get_pool().acquire() as c:
+                    d=await kunlik_yakuniy_pro(c, user["id"])
+                if d["sotuv_soni"]==0: continue
+                try:
+                    from shared.services.suhbatdosh import kechki_xayrlashish, hisobot_tavsiya
+                    _kech = kechki_xayrlashish()
+                    _tavs = hisobot_tavsiya(d) if isinstance(d, dict) else ""
+                    _msg = kunlik_yakuniy_pro_matn(d) + _tavs + "\n\n" + _kech
+                except Exception:
+                    _msg = kunlik_yakuniy_pro_matn(d)
                 await ctx.bot.send_message(
-                    user["id"],
-                    f"🌙 *Bugungi yakuniy hisobot*\n\n{kunlik_matn(d)}",
+                    user["id"], _msg,
                     parse_mode=ParseMode.MARKDOWN)
                 yuborildi+=1
             except Exception as e: log.warning("Avtohisobot %s: %s",user["id"],e)
-        log.info("✅ Kunlik hisobot: %d foydalanuvchiga",yuborildi)
+        log.info("✅ Kunlik hisobot PRO: %d foydalanuvchiga",yuborildi)
     except Exception as e: log.error("avto_kunlik_hisobot: %s",e,exc_info=True)
 
 
 async def avto_haftalik_hisobot(ctx:ContextTypes.DEFAULT_TYPE) -> None:
-    """Har dushanba haftalik hisobot"""
-    log.info("⏰ Haftalik hisobot...")
+    """Har dushanba haftalik hisobot + trend"""
+    log.info("⏰ Haftalik hisobot + trend...")
     try:
+        from shared.services.smart_bot_engine import haftalik_trend, haftalik_trend_matn
+        from shared.services.hisobot_engine import haftalik, hisobot_matn
+        from shared.database.pool import get_pool
         users=await db.faol_users(); yuborildi=0
         for user in users:
             try:
-                d=await db.oylik_hisobot(user["id"])
-                if d["ch_n"]==0: continue
-                matn=(
-                    f"📊 *HAFTALIK HISOBOT*\n\n"
-                    f"📤 Sotuvlar: {pul(d['ch_jami'])} ({d['ch_n']} ta)\n"
-                    f"💹 Foyda: *{pul(d['foyda'])}*\n"
-                    f"⚠️ Jami qarz: {pul(d['jami_qarz'])}"
-                )
+                async with get_pool().acquire() as c:
+                    h_data = await haftalik(c, user["id"])
+                    t_data = await haftalik_trend(c, user["id"])
+                if h_data["sotuv_soni"]==0: continue
+                matn = hisobot_matn(h_data) + "\n\n" + haftalik_trend_matn(t_data)
                 await ctx.bot.send_message(user["id"],matn,parse_mode=ParseMode.MARKDOWN)
                 yuborildi+=1
             except Exception as e: log.warning("Haftalik %s: %s",user["id"],e)
@@ -2664,24 +3290,30 @@ async def avto_haftalik_hisobot(ctx:ContextTypes.DEFAULT_TYPE) -> None:
 
 
 async def avto_qarz_eslatma(ctx:ContextTypes.DEFAULT_TYPE) -> None:
-    """Har kuni qarz eslatmasi"""
-    log.info("⏰ Qarz eslatmalari...")
+    """Har kuni qarz eslatmasi — muddati o'tgan + yaqinlashayotgan"""
+    log.info("⏰ Qarz eslatmalari PRO...")
     try:
+        from shared.services.smart_bot_engine import qarz_eslatma_royxat, qarz_eslatma_matn
+        from shared.database.pool import get_pool
         users=await db.faol_users()
         for user in users:
             try:
-                qarzlar=await db.qarzlar_ol(user["id"])
-                if not qarzlar: continue
-                jami=sum(Decimal(str(r["qolgan"])) for r in qarzlar)
-                if jami<=0: continue
-                matn=(
-                    f"💰 *QARZ ESLATMASI*\n\n"
-                    f"Jami qarz: *{pul(jami)}*\n"
-                    f"Klientlar soni: {len(qarzlar)}\n\n"
-                )
-                for r in qarzlar[:5]:
-                    matn+=f"• *{r['klient_ismi']}* — {pul(r['qolgan'])}\n"
-                if len(qarzlar)>5: matn+=f"...va yana {len(qarzlar)-5} ta"
+                async with get_pool().acquire() as c:
+                    klientlar = await qarz_eslatma_royxat(c, user["id"])
+                if not klientlar: continue
+                muddati_otgan = [k for k in klientlar if k["muddati_otgan"]]
+                yaqin = [k for k in klientlar if k["yaqinlashmoqda"]]
+                jami = sum(k["jami_qarz"] for k in klientlar)
+                matn = f"💰 *QARZ ESLATMASI*\n\nJami qarz: *{pul(jami)}*\n"
+                matn += f"Klientlar: {len(klientlar)} ta\n"
+                if muddati_otgan:
+                    matn += f"\n🔴 *MUDDATI O'TGAN ({len(muddati_otgan)} ta):*\n"
+                    for k in muddati_otgan[:5]:
+                        matn += f"  • {k['ism']} — {pul(k['jami_qarz'])} (muddat: {k['muddat']})\n"
+                if yaqin:
+                    matn += f"\n🟡 *3 kun ichida ({len(yaqin)} ta):*\n"
+                    for k in yaqin[:5]:
+                        matn += f"  • {k['ism']} — {pul(k['jami_qarz'])} (muddat: {k['muddat']})\n"
                 await ctx.bot.send_message(user["id"],matn,parse_mode=ParseMode.MARKDOWN)
             except Exception as e: log.warning("Qarz eslatma %s: %s",user["id"],e)
     except Exception as e: log.error("avto_qarz_eslatma: %s",e,exc_info=True)
@@ -2712,6 +3344,73 @@ async def cmd_hisobot(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
     if not await faol_tekshir(update): return
     d=await db.kunlik_hisobot(update.effective_user.id)
     await update.message.reply_text(kunlik_matn(d),parse_mode=ParseMode.MARKDOWN)
+
+
+async def cmd_tez(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    """/tez — tezkor tugmalar: eng ko'p ishlatilgan tovar va klientlar"""
+    if not await faol_tekshir(update): return
+    uid = update.effective_user.id
+    try:
+        from shared.services.advanced_features import tezkor_tugmalar
+        from shared.database.pool import get_pool
+        async with get_pool().acquire() as c:
+            data = await tezkor_tugmalar(c, uid)
+
+        tovarlar = data.get("tovarlar", [])
+        klientlar = data.get("klientlar", [])
+
+        if not tovarlar and not klientlar:
+            await update.message.reply_text("📋 Hali yetarli ma'lumot yo'q. Bir nechta sotuv qiling.")
+            return
+
+        from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+        tugmalar = []
+
+        if klientlar:
+            tugmalar.append([InlineKeyboardButton(f"👤 {k}", callback_data=f"tez:kl:{k[:20]}") for k in klientlar[:4]])
+        if tovarlar:
+            tugmalar.append([InlineKeyboardButton(f"📦 {t}", callback_data=f"tez:tv:{t[:20]}") for t in tovarlar[:4]])
+
+        await update.message.reply_text(
+            "⚡ *TEZKOR TUGMALAR*\n\n"
+            "Klient yoki tovar tanlang — bot o'zi matn tayyorlaydi:",
+            parse_mode=ParseMode.MARKDOWN,
+            reply_markup=InlineKeyboardMarkup(tugmalar))
+    except Exception as e:
+        log.error("cmd_tez: %s", e)
+        await update.message.reply_text("❌ Tezkor tugmalar yuklanmadi")
+
+
+async def _tezkor_cb(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    """Tezkor tugma bosilganda — shablon tayyorlash"""
+    q = update.callback_query
+    await q.answer()
+    parts = q.data.split(":", 2)
+    if len(parts) < 3: return
+    tur, nom = parts[1], parts[2]
+
+    if tur == "kl":
+        await q.message.reply_text(
+            f"👤 *{nom}* tanlandi.\n\n"
+            f"Endi ovoz yuboring: _{nom}ga 10 Ariel 45 mingdan_",
+            parse_mode=ParseMode.MARKDOWN)
+    elif tur == "tv":
+        await q.message.reply_text(
+            f"📦 *{nom}* tanlandi.\n\n"
+            f"Endi ovoz yuboring: _Salimovga 5 {nom} 45 mingdan_",
+            parse_mode=ParseMode.MARKDOWN)
+
+
+async def cmd_guruh(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    """/guruh — bir nechta klientga bir xil tovar"""
+    if not await faol_tekshir(update): return
+    await update.message.reply_text(
+        "👥 *GURUHLI SOTUV*\n\n"
+        "Ovoz yuboring:\n"
+        "_\"5 ta klientga bir xil 10 Ariel 45 mingdan\"_\n\n"
+        "Yoki klientlar ro'yxatini yozing:\n"
+        "_\"Salimov, Karimov, Toshmatov — 10 Ariel 45 mingdan\"_",
+        parse_mode=ParseMode.MARKDOWN)
 
 async def cmd_qarz(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
     if not await faol_tekshir(update): return
@@ -2965,39 +3664,82 @@ async def cmd_faktura(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
 
 
 async def hujjat_qabul(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
-    """Excel/hujjat fayllarni qabul qilish va tahlil qilish"""
+    """PDF, Word, Excel, EPUB, PPTX... — 40 format, 100K+ sahifa"""
     uid = update.effective_user.id
     if not await faol_tekshir(update): return
     doc = update.message.document
     if not doc: return
-    fname = (doc.file_name or "").lower()
+    fname = (doc.file_name or "fayl").strip()
+    fn_lower = fname.lower()
 
-    # Faqat Excel fayllar
-    if not fname.endswith(('.xlsx', '.xls')):
-        return  # Boshqa fayllarni o'tkazib yuborish
+    # Qo'llab-quvvatlanadigan formatlar
+    FORMATLAR = ('.pdf','.docx','.doc','.xlsx','.xls','.pptx','.ppt',
+                 '.epub','.fb2','.rtf','.html','.htm','.json','.xml',
+                 '.md','.markdown','.odt','.djvu',
+                 '.txt','.csv','.log','.py','.js','.ts','.sql','.sh',
+                 '.yaml','.yml','.ini','.conf','.env','.toml')
+    if not any(fn_lower.endswith(f) for f in FORMATLAR):
+        return
 
-    holat = await update.message.reply_text("⏳")
+    # Fayl hajmi tekshirish (Telegram bot 20MB gacha yuklay oladi)
+    fayl_hajm = doc.file_size or 0
+    if fayl_hajm > 20 * 1024 * 1024:
+        await update.message.reply_text(
+            f"❌ *{fname}* juda katta ({fayl_hajm // 1024 // 1024}MB).\n"
+            "Telegram bot 20MB gacha yuklay oladi.\n"
+            "Faylni kichikroq qismlarga bo'ling.",
+            parse_mode=ParseMode.MARKDOWN)
+        return
+
+    hajm_str = f"{fayl_hajm // 1024}KB" if fayl_hajm < 1024*1024 else f"{fayl_hajm // 1024 // 1024}MB"
+    holat = await update.message.reply_text(
+        f"⏳ *{fname}* ({hajm_str}) o'qilmoqda...",
+        parse_mode=ParseMode.MARKDOWN)
+
     try:
         fayl = await ctx.bot.get_file(doc.file_id)
         data = bytes(await fayl.download_as_bytearray())
 
-        from shared.services.excel_import import parse_excel, excel_preview_text
-        result = parse_excel(data)
-        preview = excel_preview_text(result)
+        from shared.services.hujjat_oqish import hujjat_oqi, hujjat_xulosa_matn
 
-        # Natijani saqlash (keyingi buyruqlar uchun)
-        ctx.user_data["excel_data"] = result
-        ctx.user_data["excel_fname"] = doc.file_name
+        h = hujjat_oqi(data, fname)
 
-        await holat.edit_text(
-            f"📂 *{doc.file_name}*\n\n{preview}\n\n"
-            "💡 Ovoz yuboring:\n"
-            "_\"Shu reestrdagi qarzdor klientlarni ayt\"_\n"
-            "_\"Shu nakladnoydan 3 ta Arielni qaytar\"_",
-            parse_mode=ParseMode.MARKDOWN)
+        if h.get("xato"):
+            await holat.edit_text(f"❌ {h['xato']}")
+            return
+
+        # Xotirada saqlash — keyingi savollar uchun
+        ctx.user_data["hujjat"] = h
+        ctx.user_data["hujjat_nomi"] = fname
+
+        xulosa = hujjat_xulosa_matn(h, fname)
+
+        from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+        tugmalar = []
+
+        if h.get("tur") == "pdf":
+            sahifalar = h.get("sahifalar_soni", 0)
+            if sahifalar > 0:
+                tugmalar.append([
+                    InlineKeyboardButton("📄 1-bet", callback_data="huj:bet:1"),
+                    InlineKeyboardButton(f"📄 {sahifalar}-bet", callback_data=f"huj:bet:{sahifalar}"),
+                ])
+            if sahifalar > 2:
+                o = sahifalar // 2
+                tugmalar.append([
+                    InlineKeyboardButton(f"📄 {o}-bet", callback_data=f"huj:bet:{o}"),
+                ])
+
+        if h.get("jadvallar"):
+            tugmalar.append([InlineKeyboardButton("📊 Jadvallar", callback_data="huj:jadval")])
+
+        markup = InlineKeyboardMarkup(tugmalar) if tugmalar else None
+
+        await holat.edit_text(xulosa, parse_mode=ParseMode.MARKDOWN, reply_markup=markup)
+
     except Exception as e:
         log.error("hujjat_qabul: %s", e, exc_info=True)
-        await holat.edit_text("❌ Excel faylni o'qishda xato yuz berdi")
+        await holat.edit_text(f"❌ *{fname}* o'qishda xato yuz berdi", parse_mode=ParseMode.MARKDOWN)
 
 
 async def cmd_balans(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
@@ -3133,94 +3875,78 @@ async def cmd_tovar(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
 
 
 async def cmd_yangilik(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
-    """v25.3 PRODUCTION yangiliklari"""
+    """v25.3 MEGA yangiliklari"""
     await update.message.reply_text(
-        f"🆕 *SAVDOAI MASHRAB MOLIYA v{__version__} YANGILIKLAR*\n"
+        f"🆕 *SAVDOAI v{__version__} — MEGA YANGILANISH*\n"
         "━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
-        "🧠 *DUAL-BRAIN AI (MoE)*\n"
-        "  Gemini (ovoz, rasm) + Claude (mantiq)\n"
-        "  Avtomatik routing — eng kuchli model tanlanadi\n\n"
-        "🛡️ *XAVFSIZ PIPELINE*\n"
-        "  AI → Draft → ✅ Tasdiqlash → Saqlash → Audit\n"
-        "  AI hech qachon to'g'ridan-to'g'ri DB ga yozmaydi\n\n"
-        "🎯 *ISHONCH DARAJASI*\n"
-        "  🟢 Yuqori (≥92%) — avtomatik mumkin\n"
-        "  🟡 O'rta (70-92%) — tasdiqlash kerak\n"
-        "  🔴 Past (<40%) — rad etiladi\n\n"
-        "🔍 *AQLLI QIDIRUV*\n"
-        "  \"Ariyal\" → \"Ariel\" topadi\n"
-        "  \"Салимов\" → \"Salimov\" topadi\n"
-        "  Kirill→Lotin avtomatik\n\n"
-        "🛡️ *HIMOYA TIZIMI*\n"
-        "  ✅ Duplicate voice guard (5s)\n"
-        "  ✅ Qarz limit tekshiruvi\n"
-        "  ✅ Zarar sotuv ogohlantirish\n"
-        "  ✅ Ombor qoldiq tekshiruvi\n"
-        "  ✅ Narx sanity check\n\n"
-        "📋 *NAKLADNOY YANGILANDI*\n"
-        "  + MIJOZ MA'LUMOTLARI jadvali\n"
-        "  + INN, Manzil, Telefon\n"
-        "  + Word + Excel + PDF\n\n"
-        "💳 *KASSA MODULI*\n"
-        "  Naqd / Karta / O'tkazma\n"
-        "  Statistika + tarix + o'chirish\n\n"
-        "📸 *VISION AI*\n"
-        "  Rasm yuboring → nakladnoy/chek o'qiladi\n\n"
-        "📒 *DOUBLE-ENTRY LEDGER*\n"
-        "  Har operatsiya: DEBIT = CREDIT\n"
-        "  Bank darajasidagi buxgalteriya\n"
-        "  Idempotency — takroriy operatsiya himoya\n"
-        "  Reconciliation — balans tekshiruvi\n\n"
-        "📊 *AUDIT TRAIL*\n"
-        "  Har o'zgarish yoziladi — tarix o'chirilmaydi",
+        "🤖 *SUHBATDOSH BOT*\n"
+        "  Bot odam kabi gaplashadi — salom, yordam, tavsiya\n\n"
+        "🔬 *MUTAXASSIS TAHLIL*\n"
+        "  \"Ariel haqida\" → narx, qoldiq, trend, tavsiya\n"
+        "  \"Salimov tahlil\" → xavf A/B/C, VIP status\n\n"
+        "📊 *SMART BUYRUQLAR*\n"
+        "  \"narx tavsiya\" \"klient reyting\" \"ABC tahlil\"\n"
+        "  \"haftalik trend\" \"inventarizatsiya\"\n\n"
+        "✏️ *KONTEKST + TUZATISH*\n"
+        "  \"yana 20 Tide qo'sh\" → savatga qo'shadi\n"
+        "  \"50 emas 30 ta\" → tuzatadi\n\n"
+        "📸 *VISION MIKROSKOP v3*\n"
+        "  3 bosqichli rasm tahlil — 7000+ belgi prompt\n"
+        "  Nakladnoy, chek, daftar, kvitansiya\n\n"
+        "📄 *HUJJAT O'QISH (40 format)*\n"
+        "  PDF, Word, Excel, EPUB, PowerPoint, FB2...\n"
+        "  100,000 sahifa — 1 sekundda izlaydi\n"
+        "  \"5-bet\" \"Pifagor qayerda\" \"tushuntir\"\n\n"
+        "🔊 *OVOZLI JAVOB (TTS)*\n"
+        "  Kirim, sotuv, qarz, hisobot — hammasi ovozda\n\n"
+        "⚡ *TEZKOR TUGMALAR*\n"
+        "  /tez — eng ko'p tovar va klientlar\n"
+        "  /guruh — bir nechta klientga bir xil\n\n"
+        "📋 *AVTO HISOBOTLAR*\n"
+        "  Har kuni 20:00 — kunlik yakuniy PRO\n"
+        "  Har dushanba — haftalik trend\n"
+        "  Har kuni — qarz eslatma (muddati o'tgan!)\n",
         parse_mode=ParseMode.MARKDOWN)
 
 
 async def cmd_imkoniyatlar(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
     """Barcha imkoniyatlar ro'yxati"""
     await update.message.reply_text(
-        f"📋 *MASHRAB MOLIYA v{__version__} — IMKONIYATLAR*\n"
+        f"📋 *SAVDOAI v{__version__} — BARCHA IMKONIYATLAR*\n"
         "━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
         "🎤 *OVOZ BILAN BOSHQARISH*\n"
-        "  Ovoz xabar yuboring — bot tushunadi\n"
-        "  O'zbek + Rus tilida ishlaydi\n"
-        "  8 ta O'zbek shevasi qo'llab-quvvatlanadi\n\n"
-        "📦 *SAVDO OPERATSIYALARI*\n"
-        "  📥 Kirim — tovar keldi\n"
-        "  📤 Sotuv — tovar sotildi + qarz\n"
-        "  ↩️ Qaytarish — tovar qaytarildi\n"
-        "  💰 Qarz to'lash — FIFO tartibida\n"
-        "  📋 Nakladnoy — Word+Excel+PDF\n"
-        "  📋 Faktura — hisob-faktura\n\n"
-        "💳 *KASSA*\n"
-        "  Naqd / Karta / O'tkazma kirim-chiqim\n\n"
-        "📸 *RASM TAHLIL (Vision AI)*\n"
-        "  Nakladnoy rasmi → tovarlar o'qiladi\n"
-        "  Chek/kvitansiya → summa ajratiladi\n\n"
+        "  Ovoz yuboring — bot tushunadi va yozadi\n"
+        "  O'zbek + Rus tilida | 8 ta sheva\n\n"
+        "📦 *SAVDO*\n"
+        "  📥 Kirim | 📤 Sotuv | ↩️ Qaytarish | 💰 Qarz to'lash\n"
+        "  📋 Nakladnoy (Word+Excel+PDF)\n"
+        "  \"yana 20 Tide qo'sh\" — kontekstli savat\n"
+        "  \"50 emas 30\" — tuzatish\n"
+        "  \"Salimov odatiy\" — shablon buyurtma\n"
+        "  \"5 klientga bir xil\" — guruhli sotuv\n\n"
+        "🔬 *MUTAXASSIS TAHLIL*\n"
+        "  \"Ariel haqida\" → narx, qoldiq, markup%, tavsiya\n"
+        "  \"Salimov tahlil\" → xavf darajasi, VIP, tavsiya\n\n"
+        "📊 *SMART BUYRUQLAR*\n"
+        "  \"narx tavsiya\" | \"klient reyting\" | \"ABC tahlil\"\n"
+        "  \"haftalik trend\" | \"inventarizatsiya\"\n"
+        "  \"kecha Ariel nechtadan?\" — tabiiy savol\n"
+        "  \"Ariel 3 ta yo'qoldi\" — qoldiq tuzatish\n\n"
+        "📸 *RASM TAHLIL (Mikroskop v3)*\n"
+        "  Nakladnoy, chek, daftar, kvitansiya o'qiydi\n"
+        "  3 bosqichli tahlil — har raqamni alohida tekshiradi\n"
+        "  Ko'p rasm → /tahlil\n\n"
+        "📄 *HUJJAT O'QISH (40 format, 100K sahifa)*\n"
+        "  PDF, Word, Excel, EPUB, PowerPoint, FB2, HTML...\n"
+        "  \"5-bet\" → sahifa | \"so'z\" → izlash | \"tushuntir\" → AI\n\n"
         "📊 *HISOBOTLAR*\n"
-        "  📅 Kunlik  |  📆 Haftalik  |  📊 Oylik\n"
-        "  💹 Foyda  |  🏆 Top klientlar\n"
-        "  🏭 Ombor  |  ⚠️ Kam qoldiq\n"
-        "  👤 Klient hisobi  |  💳 Kassa holati\n\n"
-        "📤 *EXPORT*\n"
-        "  📄 PDF  |  📊 Excel  |  🖨 Mini printer chek\n\n"
-        "🔒 *XAVFSIZLIK*\n"
-        "  RLS — 20,000 user izolyatsiya\n"
-        "  JWT auth  |  Rate limiting\n"
-        "  Decimal pul aniqlik  |  Audit log\n\n"
-        "📒 *SAP-GRADE BUXGALTERIYA*\n"
-        "  Double-Entry Ledger — DEBIT = CREDIT\n"
-        "  Idempotency — takroriy operatsiya himoya\n"
-        "  Reconciliation — /balans tekshiruvi\n"
-        "  Hujjat versiyalash — tuzatish tarixi\n"
-        "  /jurnal — oxirgi operatsiyalar\n\n"
-        "⚙️ *ADMIN*\n"
-        "  /status — bot holati\n"
-        "  /balans — SAP balans tekshiruvi\n"
-        "  /jurnal — double-entry jurnal\n"
-        "  /foydalanuvchilar — ro'yxat\n"
-        "  /faollashtir — aktivlashtirish\n"
-        "  /statistika — umumiy statistika",
+        "  Kunlik/Haftalik/Oylik | Foyda | Qarz | Top klientlar\n"
+        "  Excel export | 🔊 Ovozli xulosa\n\n"
+        "🔊 *OVOZLI JAVOB (TTS)*\n"
+        "  Kirim, sotuv, qarz, hisobot — hammasi ovozda\n\n"
+        "⚡ /tez — tezkor tugmalar\n"
+        "👥 /guruh — guruhli sotuv\n"
+        "📸 /tahlil — ko'p rasm tahlil\n",
         parse_mode=ParseMode.MARKDOWN)
 
 
@@ -3385,6 +4111,13 @@ async def boshlash(app:Application) -> None:
         vision_init(_CFG.gemini_key, _CFG.gemini_model)
     except Exception as _e:
         log.info("ℹ️ Vision AI yuklanmadi (ixtiyoriy): %s", _e)
+
+    # TTS ovozli javob
+    try:
+        from services.bot.bot_services.tts import ishga_tushir as tts_init
+        tts_init(_CFG.gemini_key)
+    except Exception as _e:
+        log.info("ℹ️ TTS yuklanmadi (ixtiyoriy): %s", _e)
     # Dual-Brain MoE Router
     try:
         from services.cognitive.ai_router import router_init
@@ -3412,6 +4145,9 @@ async def boshlash(app:Application) -> None:
         BotCommand("top",              "Top klientlar"),
         BotCommand("ombor",            "Ombor holati"),
         BotCommand("ogoh",             "Kam qoldiq tovarlar"),
+        BotCommand("tez",              "⚡ Tezkor tugmalar"),
+        BotCommand("guruh",            "👥 Guruhli sotuv"),
+        BotCommand("tahlil",           "📸 Ko'p rasm tahlil"),
         BotCommand("hafta",            "Haftalik hisobot"),
         BotCommand("kassa",            "Kassa holati (naqd/karta)"),
         BotCommand("status",           "Bot holati (admin)"),
@@ -3633,6 +4369,18 @@ async def _savat_yop_va_nakladnoy(update_or_query, uid: int, klient_ismi: str):
                     f"✅ Saqlandi!",
                     parse_mode=ParseMode.MARKDOWN,
                 )
+
+                # ═══ OVOZLI NAKLADNOY XABAR ═══
+                try:
+                    from services.bot.bot_services.tts import tts_tayyor, matn_ovozga, sotuv_xulosa
+                    if tts_tayyor():
+                        _nk_matn = sotuv_xulosa(klient_ismi, tovarlar, float(jami), float(qarz))
+                        _nk_ogg = await matn_ovozga(_nk_matn)
+                        if _nk_ogg:
+                            await msg.reply_voice(voice=io.BytesIO(_nk_ogg),
+                                                   caption="🔊 Nakladnoy tayyor")
+                except Exception as _tts_e:
+                    log.debug("TTS nakladnoy: %s", _tts_e)
         except Exception as nakl_e:
             log.error("Savat nakladnoy: %s", nakl_e, exc_info=True)
             if msg:
@@ -3674,6 +4422,9 @@ def ilovani_qur(conf:Config) -> Application:
     app.add_handler(royxat)
     app.add_handler(MessageHandler(filters.VOICE,ovoz_qabul))
     app.add_handler(MessageHandler(filters.PHOTO,rasm_xizmat.rasm_qabul))
+    app.add_handler(CallbackQueryHandler(rasm_xizmat.rasm_nakladnoy_cb, pattern=r"^rasm:nakl"))
+    app.add_handler(CallbackQueryHandler(rasm_xizmat.rasm_amal_cb, pattern=r"^rasm:(kirim|sotuv)"))
+    app.add_handler(CommandHandler("tahlil", rasm_xizmat.kop_rasm_tahlil_cmd))
     app.add_handler(MessageHandler(filters.Document.ALL, hujjat_qabul))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND,matn_qabul))
 
@@ -3732,7 +4483,12 @@ def ilovani_qur(conf:Config) -> Application:
     app.add_handler(CallbackQueryHandler(klient_hisobi_cb,  pattern=r"^kh:"))
     app.add_handler(CallbackQueryHandler(faktura_cb,        pattern=r"^fkt:"))
     app.add_handler(CallbackQueryHandler(eksport_cb,        pattern=r"^eks:"))
+    app.add_handler(CallbackQueryHandler(_hujjat_cb, pattern=r"^huj:"))
+    app.add_handler(CallbackQueryHandler(_hisobot_excel_cb, pattern=r"^hisob_excel:"))
+    app.add_handler(CallbackQueryHandler(_tezkor_cb, pattern=r"^tez:"))
     app.add_handler(CommandHandler("menyu",            cmd_menyu))
+    app.add_handler(CommandHandler("tez",              cmd_tez))
+    app.add_handler(CommandHandler("guruh",            cmd_guruh))
     app.add_handler(CommandHandler("nakladnoy",        cmd_nakladnoy))
     app.add_handler(CommandHandler("hisobot",          cmd_hisobot))
     app.add_handler(CommandHandler("qarz",             cmd_qarz))

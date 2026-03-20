@@ -271,3 +271,67 @@ def kunlik_excel(d: dict, dokon_nomi: str) -> bytes:
     buf = io.BytesIO()
     wb.save(buf)
     return buf.getvalue()
+
+
+def hisobot_excel(d: dict, dokon_nomi: str) -> bytes:
+    """Universal hisobot Excel — kunlik, haftalik, oylik."""
+    davr = d.get("davr", "kunlik")
+    sarlavha_nom = {"kunlik": "Kunlik", "haftalik": "Haftalik", "oylik": "Oylik"}
+
+    wb = Workbook()
+    ws = wb.active
+    ws.title = f"{sarlavha_nom.get(davr, '')} hisobot"
+
+    ws["A1"].value = dokon_nomi or "MASHRAB MOLIYA"
+    ws["A1"].font = _shrift(qalin=True, o_lcham=14, rang=KOK)
+    ws["A2"].value = f"{sarlavha_nom.get(davr, '')} hisobot: {d.get('sana', '')}"
+    ws["A2"].font = _shrift(qalin=True, o_lcham=12)
+    ws["A3"].value = f"Yaratildi: {_hozir()}"
+
+    _sarlavha(ws, 5, ["Ko'rsatkich", "Qiymat"], KOK)
+    qatorlar = [
+        ("Sotuv soni", d.get("sotuv_soni", 0)),
+        ("Sotuv summasi", float(d.get("sotuv_jami", 0))),
+        ("To'landi", float(d.get("tolangan", 0))),
+        ("Yangi qarz", float(d.get("yangi_qarz", 0))),
+        ("Kirim soni", d.get("kirim_soni", 0)),
+        ("Kirim summasi", float(d.get("kirim_jami", 0))),
+        ("Qaytarish", float(d.get("qaytarish_jami", 0))),
+        ("SOF FOYDA", float(d.get("foyda", 0))),
+        ("O'rtacha chek", float(d.get("ortacha_chek", 0))),
+        ("Jami qarz", float(d.get("jami_qarz", 0))),
+        ("Qarz nisbati %", d.get("qarz_nisbati", 0)),
+    ]
+    for i, (nomi, qiymat) in enumerate(qatorlar, 6):
+        _ma_lumot(ws, i, [nomi, qiymat], soya=(i % 2 == 0))
+        if nomi == "SOF FOYDA":
+            ws.cell(i, 1).font = _shrift(qalin=True)
+            rang = YASHIL if qiymat >= 0 else QIZIL
+            ws.cell(i, 2).font = _shrift(qalin=True, rang=rang)
+
+    if d.get("top5_tovar"):
+        bosh = len(qatorlar) + 8
+        ws.cell(bosh, 1).value = "ENG KO'P SOTILGAN:"
+        ws.cell(bosh, 1).font = _shrift(qalin=True)
+        _sarlavha(ws, bosh + 1, ["Tovar", "Miqdor", "Jami", "Foyda"], BINAF)
+        for i, tv in enumerate(d["top5_tovar"], bosh + 2):
+            _ma_lumot(ws, i, [
+                tv["nomi"], tv["miqdor"],
+                float(tv["jami"]), float(tv.get("foyda", 0))
+            ], soya=(i % 2 == 0))
+
+    if d.get("top5_klient"):
+        bosh2 = len(qatorlar) + 8 + len(d.get("top5_tovar", [])) + 4
+        ws.cell(bosh2, 1).value = "YIRIK KLIENTLAR:"
+        ws.cell(bosh2, 1).font = _shrift(qalin=True)
+        _sarlavha(ws, bosh2 + 1, ["Klient", "Jami sotuv", "Qarz"], BINAF)
+        for i, kl in enumerate(d["top5_klient"], bosh2 + 2):
+            _ma_lumot(ws, i, [
+                kl["ism"], float(kl["jami_sotuv"]),
+                float(kl.get("jami_qarz", 0))
+            ], soya=(i % 2 == 0))
+
+    _kenglikni_moslashtir(ws)
+    buf = io.BytesIO()
+    wb.save(buf)
+    return buf.getvalue()
