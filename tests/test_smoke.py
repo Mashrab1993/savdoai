@@ -412,9 +412,9 @@ class TestStartupSafety:
                 assert False, f"{path}: __version__={v.group(1)} (expected 21.3-21.5)"
 
     def test_cognitive_api_version(self):
-        """cognitive/api.py FastAPI version is 21.3"""
+        """cognitive/api.py FastAPI version is 25.3"""
         src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'cognitive', 'api.py')).read()
-        assert '21.3' in src, "cognitive/api.py has wrong version"
+        assert '25.3' in src, "cognitive/api.py has wrong version"
 
 
 class TestExportSecurity:
@@ -1261,18 +1261,18 @@ class TestDebtLimitWiring:
 
 
 class TestGemini31:
-    """Gemini model upgraded to 3.1."""
-    def test_gemini_31_in_voice(self):
+    """Gemini model upgraded to 2.5-pro."""
+    def test_gemini_25_pro_in_voice(self):
         src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'bot_services', 'voice.py')).read()
-        assert 'gemini-2.5-flash-lite' in src, "Voice not using Gemini 3.1"
+        assert 'gemini-2.5-pro' in src, "Voice not using Gemini 2.5 Pro"
 
-    def test_gemini_31_in_router(self):
+    def test_gemini_25_pro_in_router(self):
         src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'cognitive', 'ai_router.py')).read()
-        assert 'gemini-2.5-flash-lite' in src, "Router not using Gemini 3.1"
+        assert 'gemini-2.5-pro' in src, "Router not using Gemini 2.5 Pro"
 
-    def test_gemini_31_in_config(self):
+    def test_gemini_25_pro_in_config(self):
         src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'config.py')).read()
-        assert 'gemini-2.5-flash-lite' in src, "Config not using Gemini 3.1"
+        assert 'gemini-2.5-pro' in src, "Config not using Gemini 2.5 Pro"
 
 
 class TestVoiceCommands:
@@ -1503,3 +1503,149 @@ class TestV215Upgrades:
         src = open(path).read()
         assert 'jurnal_yozuvlar' in src
         assert 'jurnal_qatorlar' in src
+
+
+class TestV253SecurityFixes:
+    """v25.3 security and regression fixes."""
+
+    def test_user_yangilab_has_whitelist(self):
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'db.py')).read()
+        assert '_USER_YOZISH_MUMKIN' in src, "user_yangilab missing field whitelist"
+
+    def test_pul_norm_no_octal_bug(self):
+        """PUL_NORM uses \\g<1> not \\1 to avoid octal backreference corruption."""
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'shared', 'utils', 'uzb_nlp.py')).read()
+        import re
+        # Find PUL_NORM section — ensure no raw \1000 patterns
+        pul_section = src[src.index('PUL_NORM'):src.index('QARZ_SOZLARI')]
+        bad = re.findall(r'r"\\1\d{3,}', pul_section)
+        assert not bad, f"PUL_NORM still has octal-unsafe patterns: {bad}"
+
+    def test_voice_model_matches_config(self):
+        voice_src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'bot_services', 'voice.py')).read()
+        config_src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'config.py')).read()
+        import re
+        # voice.py: os.getenv("GEMINI_MODEL", "gemini-2.5-pro")
+        voice_m = re.search(r'getenv\("GEMINI_MODEL",\s*"([^"]+)"\)', voice_src)
+        # config.py: gemini_model: str = "gemini-2.5-pro"
+        config_m = re.search(r'gemini_model.*?=\s*"([^"]+)"', config_src)
+        assert voice_m and config_m, "Could not find model strings"
+        assert voice_m.group(1) == config_m.group(1), \
+            f"Model mismatch: voice={voice_m.group(1)} config={config_m.group(1)}"
+
+    def test_cors_no_wildcard(self):
+        """CORS allow_origins should not contain '*' (CSRF risk)."""
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'api', 'main.py')).read()
+        # Find the CORS middleware section
+        cors_idx = src.index('CORSMiddleware')
+        cors_end = src.index(')', cors_idx + 100)
+        cors_block = src[cors_idx:cors_end]
+        assert '"*"' not in cors_block, "CORS still has wildcard '*' origin"
+
+    def test_rate_limiter_gc(self):
+        """Rate limiter has GC mechanism to prevent memory leak."""
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'api', 'main.py')).read()
+        assert '_rate_last_gc' in src, "Rate limiter missing GC timestamp"
+        assert '_RATE_GC_INTERVAL' in src, "Rate limiter missing GC interval"
+        assert '_RATE_MAX_IPS' in src, "Rate limiter missing max IP cap"
+
+    def test_export_uid_verification(self):
+        """Export file download verifies user_id ownership."""
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'api', 'main.py')).read()
+        idx = src.find('async def export_file_yuklab')
+        fn = src[idx:src.find('\n@app.', idx + 1)]
+        assert 'task_uid' in fn or 'user_id' in fn, "Export download missing UID check"
+        assert '403' in fn, "Export download missing 403 response"
+
+    def test_worker_export_includes_uid(self):
+        """Worker katta_export return dict includes user_id."""
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'worker', 'tasks.py')).read()
+        idx = src.find('def katta_export')
+        fn = src[idx:src.find('\nasync def', idx)]
+        assert '"user_id"' in fn, "katta_export return missing user_id field"
+
+    def test_no_pydantic_dict_deprecated(self):
+        """API does not use deprecated .dict() on Pydantic models."""
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'api', 'main.py')).read()
+        assert '.dict()' not in src, "API still uses deprecated .dict() — use .model_dump()"
+
+    def test_web_dockerfile_uses_pnpm(self):
+        """Web Dockerfile uses pnpm (matches pnpm-lock.yaml)."""
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'web', 'Dockerfile')).read()
+        assert 'pnpm' in src, "Web Dockerfile should use pnpm (pnpm-lock.yaml exists)"
+        assert 'npm ci' not in src, "Web Dockerfile still uses npm ci"
+
+    def test_all_versions_25_3(self):
+        """All service versions are 25.3."""
+        import re
+        services = [
+            ('services/api/main.py', '25.3'),
+            ('services/cognitive/api.py', '25.3'),
+            ('services/bot/main.py', '25.3'),
+        ]
+        for rel_path, expected in services:
+            path = os.path.join(os.path.dirname(__file__), '..', rel_path)
+            src = open(path).read()
+            assert expected in src, f"{rel_path} missing version {expected}"
+
+    def test_ovoz_qabul_routes_long_audio(self):
+        """ovoz_qabul routes 30s+ audio to VAD+chunking pipeline."""
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py')).read()
+        idx = src.find('async def ovoz_qabul')
+        fn = src[idx:src.find('\nasync def ', idx + 10)]
+        assert 'voice.duration' in fn or 'voice_dur' in fn, \
+            "ovoz_qabul does not check audio duration"
+        assert 'ovoz_matn_uzun' in fn, \
+            "ovoz_qabul does not route to uzun audio pipeline"
+        assert 'uzun_audio' in fn or 'voice_dur > 30' in fn, \
+            "ovoz_qabul missing 30s threshold check"
+
+    def test_auto_learning_in_sotuv(self):
+        """sotuv_saqlash auto-creates unknown products in tovarlar."""
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'db.py')).read()
+        idx = src.find('async def sotuv_saqlash')
+        fn = src[idx:src.find('\nasync def ', idx + 10)]
+        assert 'AUTO-LEARN' in fn, "sotuv_saqlash missing auto-learning for new products"
+
+    def test_cache_invalidation_after_save(self):
+        """sotuv/kirim_saqlash clears STT+fuzzy cache for immediate learning."""
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'db.py')).read()
+        # sotuv_saqlash
+        idx_s = src.find('async def sotuv_saqlash')
+        fn_s = src[idx_s:src.find('\nasync def ', idx_s + 10)]
+        assert 'stt_cache_tozala' in fn_s, "sotuv_saqlash missing STT cache clear"
+        assert 'fuzzy_matcher.cache_tozala' in fn_s, "sotuv_saqlash missing fuzzy cache clear"
+        # kirim_saqlash
+        idx_k = src.find('async def kirim_saqlash')
+        fn_k = src[idx_k:src.find('\nasync def ', idx_k + 10)]
+        assert 'stt_cache_tozala' in fn_k, "kirim_saqlash missing STT cache clear"
+
+    def test_seed_catalog_exists(self):
+        """Seed catalog module exists with segment mappings."""
+        path = os.path.join(os.path.dirname(__file__), '..', 'shared', 'services', 'seed_catalog.py')
+        assert os.path.exists(path), "seed_catalog.py missing"
+        src = open(path).read()
+        for seg in ('optom', 'chakana', 'oshxona', 'xozmak', 'kiyim', 'universal'):
+            assert f'"{seg}"' in src, f"Seed catalog missing segment: {seg}"
+        assert 'async def seed_tovarlar' in src, "seed_tovarlar function missing"
+
+    def test_seed_called_on_registration(self):
+        """Bot registration (h_telefon) calls seed_tovarlar."""
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py')).read()
+        idx = src.find('async def h_telefon')
+        fn = src[idx:src.find('\nasync def ', idx + 10)]
+        assert 'seed_tovarlar' in fn, "h_telefon does not call seed_tovarlar"
+
+    def test_stt_prompt_loads_500_products(self):
+        """STT prompt loads up to 500 products (not just 50)."""
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'bot_services', 'voice.py')).read()
+        assert 'LIMIT 500' in src, "STT prompt still limited to <500 products"
+
+    def test_low_confidence_not_rejected(self):
+        """Low confidence STT results are passed to Claude, not rejected."""
+        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py')).read()
+        idx = src.find('async def ovoz_qabul')
+        fn = src[idx:src.find('\nasync def ', idx + 10)]
+        assert '"low"' not in fn or 'return' not in fn[fn.find('"low"'):fn.find('"low"')+100], \
+            "ovoz_qabul still rejects low confidence - should pass to Claude"
+

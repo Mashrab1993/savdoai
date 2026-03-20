@@ -342,13 +342,18 @@ async def savat_yop(conn, uid: int, klient_ismi: str,
         sessiya_id = sessiya["id"]
 
         # 2. Chiqimlar + qoldiq kamaytirish
+        # ── BATCH LOAD olish_narxi (N+1 → 1 query) ──
+        tovar_ids = [t["tovar_id"] for t in tovarlar if t.get("tovar_id")]
+        olish_map = {}
+        if tovar_ids:
+            tv_rows = await conn.fetch(
+                "SELECT id, olish_narxi FROM tovarlar WHERE id = ANY($1)",
+                tovar_ids
+            )
+            olish_map = {r["id"]: D(r["olish_narxi"] or 0) for r in tv_rows}
+
         for t in tovarlar:
-            olish_narxi = Decimal("0")
-            if t.get("tovar_id"):
-                tv = await conn.fetchrow(
-                    "SELECT olish_narxi FROM tovarlar WHERE id=$1", t["tovar_id"])
-                if tv:
-                    olish_narxi = D(tv["olish_narxi"] or 0)
+            olish_narxi = olish_map.get(t.get("tovar_id"), Decimal("0"))
 
             await conn.execute("""
                 INSERT INTO chiqimlar

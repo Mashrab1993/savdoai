@@ -336,6 +336,7 @@ def katta_export(user_id: int, export_turi: str,
         return {
             "status":      "tayyor",
             "format":      format_,
+            "user_id":     user_id,
             "content_b64": content_b64,
             "hajm_kb":     file_size // 1024,
         }

@@ -6,9 +6,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg \
 
 WORKDIR /app
 
-# Install dependencies
+# Install dependencies (torch CPU-only — CUDA kerak emas, 1.5GB tejaydi)
 COPY services/bot/requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu \
+    && pip install --no-cache-dir -r requirements.txt
 
 # Copy shared library
 COPY shared /app/shared

@@ -407,8 +407,17 @@ async def user_yoz(uid: int, to_liq_ism: str,
             """, uid, to_liq_ism, username)
 
 
+_USER_YOZISH_MUMKIN = frozenset({
+    "ism", "username", "telefon", "inn", "manzil",
+    "dokon_nomi", "segment", "faol", "obuna_tugash",
+    "til", "plan",
+})
+
 async def user_yangilab(uid: int, **maydonlar) -> None:
     if not maydonlar: return
+    noma = set(maydonlar) - _USER_YOZISH_MUMKIN
+    if noma:
+        raise ValueError(f"Ruxsat etilmagan maydon(lar): {noma}")
     set_q = ", ".join(f"{k} = ${i+2}" for i, k in enumerate(maydonlar))
     async with _P().acquire() as c:
         await c.execute(
@@ -755,6 +764,16 @@ async def kirim_saqlash(uid: int, t: dict) -> dict:
             t.get("manba"), t.get("izoh"))
 
     log.info("📥 Kirim: %s %s %s = %s so'm", miqdor, birlik, nomi, jami)
+
+    # ── Cache tozalash — yangi tovar darhol Gemini ga ko'rinadi ──
+    try:
+        from services.bot.bot_services.voice import stt_cache_tozala
+        from services.bot.bot_services.fuzzy_matcher import fuzzy_matcher
+        stt_cache_tozala(uid)
+        fuzzy_matcher.cache_tozala(uid)
+    except Exception:
+        pass
+
     return dict(kirim)
 
 
@@ -802,6 +821,17 @@ async def sotuv_saqlash(uid: int, data: dict) -> dict:
             sess_id = sess["id"]
 
             # Har bir tovar
+            # ── BATCH LOAD: barcha tovarlarni 1 ta query bilan olish (N+1 → 1) ──
+            tovar_nomlari = [t.get("nomi", "").strip().lower() for t in tovarlar if t.get("nomi")]
+            if tovar_nomlari:
+                tv_rows = await c.fetch("""
+                    SELECT id, nomi, olish_narxi, sotish_narxi FROM tovarlar
+                    WHERE user_id=$1 AND lower(nomi) = ANY($2)
+                """, uid, tovar_nomlari)
+                tv_map = {r["nomi"].lower(): r for r in tv_rows}
+            else:
+                tv_map = {}
+
             for t in tovarlar:
                 nomi       = t.get("nomi", "")
                 kategoriya = t.get("kategoriya", "Boshqa")
@@ -810,16 +840,35 @@ async def sotuv_saqlash(uid: int, data: dict) -> dict:
                 chegirma   = D(t.get("chegirma_foiz", 0))
                 sotish_n   = D(t.get("narx", 0))
 
-                # Tovar ma'lumotlari
-                tv = await c.fetchrow("""
-                    SELECT id, olish_narxi, sotish_narxi FROM tovarlar
-                    WHERE user_id=$1 AND lower(nomi)=lower($2)
-                """, uid, nomi)
+                # Tovar ma'lumotlari (batch cache dan)
+                tv = tv_map.get(nomi.strip().lower())
 
                 tovar_id = tv["id"] if tv else None
                 olish_n  = D(tv["olish_narxi"]) if tv else D(0)
                 if not sotish_n and tv:
                     sotish_n = D(tv["sotish_narxi"])
+
+                # ── AUTO-LEARNING: yangi tovar bo'lsa DB ga qo'shish ──
+                # Keyingi safar Gemini STT bu tovar nomini biladi
+                if not tovar_id and nomi.strip():
+                    try:
+                        new_tv = await c.fetchrow("""
+                            INSERT INTO tovarlar
+                                (user_id, nomi, kategoriya, birlik,
+                                 sotish_narxi, qoldiq, min_qoldiq)
+                            VALUES ($1, $2, $3, $4, $5, 0, 0)
+                            ON CONFLICT (user_id, lower(nomi)) DO UPDATE
+                                SET sotish_narxi = CASE
+                                    WHEN tovarlar.sotish_narxi = 0 THEN $5
+                                    ELSE tovarlar.sotish_narxi
+                                END
+                            RETURNING id, olish_narxi
+                        """, uid, nomi.strip(), kategoriya, birlik, sotish_n)
+                        tovar_id = new_tv["id"]
+                        olish_n = D(new_tv["olish_narxi"] or 0)
+                        log.info("📚 AUTO-LEARN: '%s' → tovarlar (uid=%d)", nomi, uid)
+                    except Exception as _learn_e:
+                        log.debug("auto-learn '%s': %s", nomi, _learn_e)
 
                 # Jami hisoblash
                 t_jami = narx_hisob(miqdor, sotish_n, birlik, chegirma)
@@ -863,6 +912,16 @@ async def sotuv_saqlash(uid: int, data: dict) -> dict:
 
         log.info("📤 Sotuv: sess=%d %s jami=%s qarz=%s",
                  sess_id, klient_ismi, jami, qarz)
+
+        # ── Cache tozalash — yangi tovarlar darhol Gemini ga ko'rinadi ──
+        try:
+            from services.bot.bot_services.voice import stt_cache_tozala
+            from services.bot.bot_services.fuzzy_matcher import fuzzy_matcher
+            stt_cache_tozala(uid)
+            fuzzy_matcher.cache_tozala(uid)
+        except Exception:
+            pass
+
         return {
             "sessiya_id": sess_id,
             "klient_id":  klient_id,

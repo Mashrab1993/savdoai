@@ -291,12 +291,12 @@ PUL_NORM: list[tuple[str, str]] = [
     (r"\bsoʻm\b",         "soʻm"),
     (r"\bso'm\b",         "soʻm"),
 
-    # Qisqartmalar
-    (r"(\d+)\s*k\b",     r"\1000"),   # 45k → 45000
-    (r"(\d+)\s*K\b",     r"\1000"),
-    (r"(\d+)\s*M\b",     r"\1000000"),
-    (r"(\d+)\s*mln\b",   r"\1000000"),
-    (r"(\d+)\s*mlrd\b",  r"\1000000000"),
+    # Qisqartmalar (\g<1> — named backreference, \1000 octal bug oldini oladi)
+    (r"(\d+)\s*k\b",     r"\g<1>000"),   # 45k → 45000
+    (r"(\d+)\s*K\b",     r"\g<1>000"),
+    (r"(\d+)\s*M\b",     r"\g<1>000000"),
+    (r"(\d+)\s*mln\b",   r"\g<1>000000"),
+    (r"(\d+)\s*mlrd\b",  r"\g<1>000000000"),
 
     # Son+birlik birga yozilgan
     (r"(\d+)\s*ta\b",    r"\1 dona"),

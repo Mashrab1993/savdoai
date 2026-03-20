@@ -39,8 +39,8 @@ async def fix_stt_text(
                     "role": "user",
                     "content": f"""O'zbek savdo matnini tuzat.
 
-MA'LUM TOVARLAR: {', '.join(prods[:100])}
-MA'LUM KLIENTLAR: {', '.join(clits[:50])}
+MA'LUM TOVARLAR: {', '.join(prods[:300])}
+MA'LUM KLIENTLAR: {', '.join(clits[:100])}
 
 QOIDALAR:
 1. FAQAT tuzatilgan matnni qaytar, boshqa hech narsa yozma

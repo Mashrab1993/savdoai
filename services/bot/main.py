@@ -98,9 +98,20 @@ __author__  = "Mashrab Moliya"
 SEGMENT_NOMI = {
     "optom":      "Optom savdo",
     "chakana":    "Chakana savdo",
-    "oshxona":    "Oshxona",
-    "xozmak":     "Xo'jalik",
-    "universal":  "Universal",
+    "oshxona":    "Oshxona / Kafe",
+    "xozmak":     "Xo'zmag",
+    "kiyim":      "Kiyim-kechak",
+    "gosht":      "Go'sht do'koni",
+    "meva":       "Meva-sabzavot",
+    "qurilish":   "Qurilish mollari",
+    "avto":       "Avto ehtiyot qismlar",
+    "dorixona":   "Dorixona",
+    "texnika":    "Texnika / Elektronika",
+    "mebel":      "Mebel",
+    "mato":       "Mato / Gazlama",
+    "gul":        "Gul do'koni",
+    "kosmetika":  "Kosmetika / Parfyumeriya",
+    "universal":  "Boshqa (universal)",
 }
 
 log = logging.getLogger("mm")
@@ -358,8 +369,19 @@ async def cmd_start(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
             [("🏭 Optom (ulgurji)",     "seg:optom")],
             [("🏪 Chakana (mayda)",     "seg:chakana")],
             [("🍽️ Oshxona / Kafe",     "seg:oshxona")],
-            [("🍦 Xo'zmak / Fast-food","seg:xozmak")],
-            [("🛒 Universal savdo",    "seg:universal")],
+            [("🍦 Xo'zmag",            "seg:xozmak")],
+            [("👔 Kiyim-kechak",       "seg:kiyim")],
+            [("🥩 Go'sht do'koni",     "seg:gosht")],
+            [("🍎 Meva-sabzavot",      "seg:meva")],
+            [("🧱 Qurilish mollari",   "seg:qurilish")],
+            [("🚗 Avto ehtiyot qismlar","seg:avto")],
+            [("💊 Dorixona",           "seg:dorixona")],
+            [("📱 Texnika / Elektronika","seg:texnika")],
+            [("🛋️ Mebel",              "seg:mebel")],
+            [("🧵 Mato / Gazlama",     "seg:mato")],
+            [("🌹 Gul do'koni",        "seg:gul")],
+            [("💄 Kosmetika",          "seg:kosmetika")],
+            [("🛒 Boshqa (universal)", "seg:universal")],
         ),
     )
     return H_SEGMENT
@@ -385,7 +407,21 @@ async def h_telefon(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
     tel=update.message.text.strip()
     await db.user_yangilab(uid,segment=seg,dokon_nomi=dokon,telefon=tel)
     _kesh_tozala(f"user:{uid}")
-    await update.message.reply_text("✅ Ro'yxatdan o'tdingiz!\n⏳ Admin tasdiqlaguncha kuting.")
+
+    # ── Tayyor tovar bazasini yuklash (segment bo'yicha) ──
+    seed_soni = 0
+    try:
+        from shared.services.seed_catalog import seed_tovarlar
+        from shared.database.pool import rls_conn as _seed_rls
+        async with _seed_rls(uid) as c:
+            seed_soni = await seed_tovarlar(c, uid, seg)
+    except Exception as _seed_e:
+        log.warning("Seed catalog xato uid=%d: %s", uid, _seed_e)
+
+    seed_msg = f"\n📦 {seed_soni} ta tayyor tovar yuklandi!" if seed_soni else ""
+    await update.message.reply_text(
+        f"✅ Ro'yxatdan o'tdingiz!{seed_msg}\n⏳ Admin tasdiqlaguncha kuting."
+    )
     for aid in cfg().admin_ids:
         try:
             await ctx.bot.send_message(aid,
@@ -410,8 +446,13 @@ async def ovoz_qabul(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
     from shared.services.guards import is_duplicate_message
     if is_duplicate_message(uid, f"voice:{update.message.voice.file_id}"): return
 
+    voice_dur = update.message.voice.duration or 0  # Telegram bergan davomiylik (sekund)
+    uzun_audio = voice_dur > 30  # 30s+ → VAD + chunking pipeline
+
     # Faqat ⏳ — matn yo'q
-    holat = await update.message.reply_text("⏳")
+    holat = await update.message.reply_text(
+        f"⏳ {voice_dur}s audio qayta ishlanmoqda..." if uzun_audio else "⏳"
+    )
 
     tmp_path = None
     try:
@@ -422,7 +463,17 @@ async def ovoz_qabul(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
             tmp.write(audio)
             tmp_path = tmp.name
 
-        matn=await ovoz_xizmat.matnga_aylantir(tmp_path, uid=uid)
+        if uzun_audio:
+            # ── UZUN AUDIO: VAD (shovqin tozalash) + Chunking + Parallel Gemini ──
+            async def _progress(pct, text):
+                try: await holat.edit_text(f"⏳ {pct}% — {text}")
+                except Exception: pass
+            matn = await ovoz_xizmat.ovoz_matn_uzun(
+                tmp_path, progress_callback=_progress, uid=uid
+            )
+        else:
+            # ── QISQA AUDIO: to'g'ridan-to'g'ri Gemini ──
+            matn = await ovoz_xizmat.matnga_aylantir(tmp_path, uid=uid)
 
         if not matn:
             await holat.edit_text("❌ Ovoz tushunilmadi. Qaytadan yuboring.")
@@ -430,17 +481,12 @@ async def ovoz_qabul(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
         pipeline_result = await process_voice(matn, user_id=uid)
         if pipeline_result.get("confidence") == "none":
             await holat.edit_text(
-                "🔇 Tushunmadim. Iltimos qayta ayting.\n"
+                "🔇 Ovoz eshitilmadi. Iltimos qayta yuboring.\n"
                 "💡 Masalan: \"Nasriddin akaga 2 Ariel 56000\""
             )
             return
-        if pipeline_result.get("confidence") == "low":
-            await holat.edit_text(
-                "🤔 Ovozni aniq tushunmadim.\n"
-                f"📝 Taxmin: {pipeline_result.get('text', '')}\n"
-                "Iltimos bir marta yana ravonroq ayting."
-            )
-            return
+        # LOW va MEDIUM confidence ham Claude ga yuboriladi —
+        # Claude Sonnet kontekstdan tushunadi, foydalanuvchiga draft ko'rsatadi
         matn = pipeline_result.get("text") or matn
 
         # Shogird xarajat tekshiruvi (ovoz uchun)
@@ -3500,11 +3546,10 @@ async def _savat_qosh_va_javob(update: Update, uid: int, natija: dict, tahrirlas
 
 
 async def _savat_yop_va_nakladnoy(update_or_query, uid: int, klient_ismi: str):
-    """Savatni yopish va nakladnoy generatsiya"""
+    """Savatni yopish va nakladnoy generatsiya (Word + Excel + PDF)"""
     try:
         from shared.services.ochiq_savat import savat_yop
         from services.bot.bot_services import nakladnoy as nak_xizmat
-        from services.bot.bot_services import export_pdf as pdf_xizmat
         import io
         from telegram import InputFile
 
@@ -3517,31 +3562,84 @@ async def _savat_yop_va_nakladnoy(update_or_query, uid: int, klient_ismi: str):
                 await msg.reply_text(f"🛒 {klient_ismi} uchun ochiq savat yo'q")
             return
 
-        # Nakladnoy PDF
         user = await db.user_ol(uid)
-        dokon = user.get("dokon_nomi", "") if user else ""
+        dokon = user.get("dokon_nomi", "Mashrab Moliya") if user else "Mashrab Moliya"
+        inv_no = nak_xizmat.nakladnoy_nomeri()
+
+        tovarlar = natija.get("tovarlar", [])
+        jami = natija.get("jami_summa", 0)
+        qarz = natija.get("qarz", 0)
+        tolangan = natija.get("tolangan", jami)
+
+        # Klient ma'lumotlari
+        klient_tel = ""; klient_manzil = ""; klient_inn = ""
+        try:
+            kl = await db.klient_topish(uid, klient_ismi)
+            if kl:
+                klient_tel = kl.get("telefon", "") or ""
+                klient_manzil = kl.get("manzil", "") or ""
+                klient_inn = kl.get("inn", "") or ""
+        except Exception: pass
+
+        # 🛡️ AUDIT + 📒 LEDGER
+        try:
+            from shared.services.pipeline import audit_yoz
+            from shared.services.ledger import sotuv_jurnali, jurnal_saqlash
+            async with _rls_conn(uid) as ac:
+                await audit_yoz(ac, uid, "savat_nakladnoy", "sotuv_sessiyalar", 0,
+                    None, {"klient": klient_ismi, "jami": str(jami), "tovarlar_soni": len(tovarlar)})
+                naqd_d = max(Decimal(str(jami)) - Decimal(str(qarz)), Decimal("0"))
+                je = sotuv_jurnali(uid, klient_ismi, Decimal(str(jami)),
+                                    naqd=naqd_d, qarz=Decimal(str(qarz)))
+                await jurnal_saqlash(ac, je)
+        except Exception as _exc:
+            log.debug("savat audit: %s", _exc)
+
+        # Word + Excel + PDF
+        data = {
+            "invoice_number": inv_no, "dokon_nomi": dokon,
+            "dokon_telefon": (user.get("telefon", "") or "") if user else "",
+            "dokon_inn": (user.get("inn", "") or "") if user else "",
+            "dokon_manzil": (user.get("manzil", "") or "") if user else "",
+            "klient_ismi": klient_ismi, "klient_telefon": klient_tel,
+            "klient_manzil": klient_manzil, "klient_inn": klient_inn,
+            "tovarlar": tovarlar,
+            "jami_summa": jami, "qarz": qarz, "tolangan": tolangan,
+        }
+
+        msg = hasattr(update_or_query, 'message') and update_or_query.message
+        if not msg:
+            # CallbackQuery dan kelsa
+            if hasattr(update_or_query, 'effective_message'):
+                msg = update_or_query.effective_message
 
         try:
-            pdf_b = pdf_xizmat.chek_pdf(natija, dokon)
-            msg = hasattr(update_or_query, 'message') and update_or_query.message
+            fayllar = nak_xizmat.uchala_format(data)
             if msg:
-                await msg.reply_document(
-                    document=InputFile(io.BytesIO(pdf_b), filename=f"nakladnoy_{klient_ismi}.pdf"),
-                    caption=(
-                        f"📋 NAKLADNOY — {klient_ismi}\n"
-                        f"📦 {len(natija['tovarlar'])} xil tovar\n"
-                        f"💰 Jami: {natija['jami_summa']:,.0f} so'm\n"
-                        f"✅ Saqlandi va nakladnoy tayyor!"
-                    )
+                for nom, kalit, caption in [
+                    (f"Nakladnoy_{inv_no}_{klient_ismi[:15]}.docx", "word", "📝 Word"),
+                    (f"Nakladnoy_{inv_no}_{klient_ismi[:15]}.xlsx", "excel", "📊 Excel"),
+                    (f"Nakladnoy_{inv_no}_{klient_ismi[:15]}.pdf", "pdf", "📑 PDF"),
+                ]:
+                    if fayllar.get(kalit):
+                        await msg.reply_document(
+                            document=InputFile(io.BytesIO(fayllar[kalit]), filename=nom),
+                            caption=caption,
+                        )
+                await msg.reply_text(
+                    f"📋 *NAKLADNOY №{inv_no}*\n"
+                    f"👤 {klient_ismi} | 📦 {len(tovarlar)} tovar\n"
+                    f"💰 Jami: {pul(jami)}\n"
+                    f"✅ Saqlandi!",
+                    parse_mode=ParseMode.MARKDOWN,
                 )
-        except Exception as pdf_e:
-            log.warning("Savat nakladnoy PDF: %s", pdf_e)
-            msg = hasattr(update_or_query, 'message') and update_or_query.message
+        except Exception as nakl_e:
+            log.error("Savat nakladnoy: %s", nakl_e, exc_info=True)
             if msg:
                 await msg.reply_text(
                     f"📋 {klient_ismi} — SAQLANDI!\n"
-                    f"📦 {len(natija['tovarlar'])} xil tovar\n"
-                    f"💰 Jami: {natija['jami_summa']:,.0f} so'm"
+                    f"📦 {len(tovarlar)} xil tovar\n"
+                    f"💰 Jami: {float(jami):,.0f} so'm"
                 )
     except Exception as e:
         log.error("savat_yop: %s", e, exc_info=True)

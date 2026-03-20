@@ -69,5 +69,35 @@ class TestSavdoTuri(unittest.TestCase):
     def test_noma(self):    self.assertEqual(savdo_turi_olish("sotdim"), "noma\'lum")
 
 
+class TestPulNorm(unittest.TestCase):
+    """PUL_NORM regex regression — \\g<1> backreference."""
+
+    def test_45k(self):
+        norm = matn_normallashtir("45k")
+        self.assertIn("45000", norm)
+
+    def test_2M(self):
+        norm = matn_normallashtir("2M")
+        self.assertIn("2000000", norm)
+
+    def test_5mln(self):
+        norm = matn_normallashtir("5mln")
+        self.assertIn("5000000", norm)
+
+    def test_3mlrd(self):
+        norm = matn_normallashtir("3mlrd")
+        self.assertIn("3000000000", norm)
+
+    def test_50ta(self):
+        norm = matn_normallashtir("50ta")
+        self.assertIn("50 dona", norm)
+
+    def test_no_octal_corruption(self):
+        """Ensure \\1000 octal bug (@) never appears."""
+        for inp in ("45k", "2M", "5mln", "3mlrd"):
+            norm = matn_normallashtir(inp)
+            self.assertNotIn("@", norm, f"{inp} → {norm} contains '@' (octal bug)")
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

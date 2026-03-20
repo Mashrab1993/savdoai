@@ -28,7 +28,7 @@ from typing import Optional
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 log = logging.getLogger(__name__)
-__version__ = "21.3"
+__version__ = "25.3"
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -36,7 +36,7 @@ async def lifespan(app: FastAPI):
     gemini_key = os.environ.get("GEMINI_API_KEY", "")
     claude_key = os.environ.get("ANTHROPIC_API_KEY", "")
     router_init(gemini_key, claude_key,
-                os.getenv("GEMINI_MODEL", "gemini-2.5-flash-lite"),
+                os.getenv("GEMINI_MODEL", "gemini-2.5-pro"),
                 os.getenv("CLAUDE_MODEL", "claude-sonnet-4-6"))
     try:
         from engine import dvigatel_init

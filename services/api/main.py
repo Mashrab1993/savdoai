@@ -170,13 +170,12 @@ app.add_middleware(
     allow_origins=[
         os.getenv("WEB_URL", "https://savdoai-production.up.railway.app"),
         "https://savdoai-production.up.railway.app",
-        "https://*.up.railway.app",
         "https://mashrab-moliya.vercel.app",
         "http://localhost:3000",
         "http://localhost:5173",
         "http://localhost:8000",
-        "*",  # Telegram Mini App uchun
     ],
+    allow_origin_regex=r"https://.*\.up\.railway\.app",  # Railway subdomenlar
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -555,11 +554,11 @@ async def sotuv_saqlash(data: SotuvSo_rov, uid: int = Depends(get_uid)):
     from shared.utils.hisob import sotuv_validatsiya, ai_hisob_tekshir
     from shared.cache.redis_cache import user_cache_tozala
 
-    ok, xato = sotuv_validatsiya(data.dict())
+    ok, xato = sotuv_validatsiya(data.model_dump())
     if not ok:
         raise HTTPException(400, "So'rov ma'lumotlari noto'g'ri")
 
-    data_d = ai_hisob_tekshir(data.dict())
+    data_d = ai_hisob_tekshir(data.model_dump())
     data_d["user_id"] = uid
 
     async with rls_conn(uid) as c:
@@ -1043,10 +1042,12 @@ async def export_file_yuklab(task_id: str, uid: int = Depends(get_uid)):
         if not content_b64:
             raise HTTPException(404, "Fayl mazmuni topilmadi (muddati o'tgan bo'lishi mumkin)")
 
-        # Security: task result user_id ni o'z ichiga olishini tekshirish
-        # task_id UUID formatda; biz res dict'ini tekshiramiz
-        # task faqat shu uid uchun yaratilgan bo'lishi kerak
-        # (katta_export args[0] == user_id)
+        # Security: task result user_id tekshirish — boshqa user faylini yuklab olishni oldini olish
+        task_uid = res.get("user_id")
+        if task_uid is not None and int(task_uid) != uid:
+            log.warning("EXPORT SECURITY: uid=%d tried to download task for uid=%s", uid, task_uid)
+            raise HTTPException(403, "Bu fayl sizga tegishli emas")
+
         format_ = res.get("format", "excel")
         ext     = "xlsx" if format_ == "excel" else "pdf"
         media   = (
@@ -1096,19 +1097,35 @@ async def timing_middleware(request: Request, call_next):
 
 # ═══ RATE LIMITER — SAP-GRADE API HIMOYA ═══
 _rate_buckets: dict = {}  # {ip: [timestamps]}
+_rate_last_gc: float = 0.0  # oxirgi tozalash vaqti
 RATE_LIMIT = int(os.environ.get("API_RATE_LIMIT", "60"))  # per minute
 RATE_WINDOW = 60  # seconds
+_RATE_GC_INTERVAL = 300  # har 5 daqiqada eski IPlarni tozalash
+_RATE_MAX_IPS = 10_000  # max IP soni (DDoS himoya)
 
 @app.middleware("http")
 async def rate_limit_middleware(request: Request, call_next):
     """IP-based rate limiting — SAP-GRADE API himoya"""
     import time as _t
+    global _rate_last_gc
     # Health/readyz endpoints skip
     if request.url.path in ("/health", "/healthz", "/readyz"):
         return await call_next(request)
 
     ip = request.client.host if request.client else "unknown"
     now = _t.time()
+
+    # Periodic GC — eski IPlarni tozalash (memory leak oldini oladi)
+    if now - _rate_last_gc > _RATE_GC_INTERVAL:
+        dead_ips = [k for k, v in _rate_buckets.items()
+                    if not v or (now - max(v)) > RATE_WINDOW * 2]
+        for k in dead_ips:
+            del _rate_buckets[k]
+        _rate_last_gc = now
+
+    # Max IP cap — DDoS himoya
+    if len(_rate_buckets) > _RATE_MAX_IPS and ip not in _rate_buckets:
+        return await call_next(request)  # yangi IP qo'shmaymiz
 
     # Clean old entries
     if ip in _rate_buckets:

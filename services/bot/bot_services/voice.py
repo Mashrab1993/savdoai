@@ -21,16 +21,21 @@ from tenacity import (
 log = logging.getLogger(__name__)
 
 _client    = None
-MODEL      = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
+MODEL      = os.getenv("GEMINI_MODEL", "gemini-2.5-pro")
 MAX_MB     = 100
-TIMEOUT_S  = 60
-MAX_PARALLEL = 3
+TIMEOUT_S  = 90   # gemini-2.5-pro sekinroq lekin aniqroq
+MAX_PARALLEL = 2   # pro model rate limit past
 _semaphore = None
 # STT uchun foydalanuvchi bo'yicha prompt keshi (RLS bilan); global pool ishlatilmaydi.
 _STT_USER_PROMPT_CACHE: dict[int, tuple[float, str]] = {}
-_PROMPT_CACHE_TTL_S = 300
+_PROMPT_CACHE_TTL_S = 60  # 1 daqiqa — yangi tovar tez ko'rinadi
 
-STT_SYSTEM_PROMPT = """Sen o'zbek tilida savdo ovozini matnga o'girayapsan.
+
+def stt_cache_tozala(uid: int) -> None:
+    """Yangi tovar qo'shilganda STT cache ni tozalash — Gemini darhol biladi."""
+    _STT_USER_PROMPT_CACHE.pop(uid, None)
+
+STT_SYSTEM_PROMPT = """Sen o'zbek tilida savdo ovozini matnga o'girayapsan. ANIQLIK — eng muhim narsa.
 
 KONTEKST: Sotuvchi bozorda klientga tovar yozyapti. Har bir gap odatda:
 "[Klient ismi] + [miqdor] + [tovar nomi] + [narx]" formatida bo'ladi.
@@ -39,8 +44,16 @@ MUHIM QO'IDALAR:
 1. Timestamp QOSHMA (00:00, 00:01 kabi)
 2. Faqat toza matn qaytar
 3. Raqamlarni son shaklida yoz (1, 2, 56000)
-4. "karobka", "dona", "shtuk", "paket" — o'lchov birliklari
+4. "karobka", "dona", "shtuk", "paket", "kilo", "gramm" — o'lchov birliklari
 5. "aka", "opa", "brat" — hurmat qo'shimchalari, ismga yopishtir
+6. Pul so'zlari: "ming" = 000, "limon" = 100000. Masalan: "qirq besh ming" = 45000
+7. Qarz so'zlari: "nasiyaga", "qarzga", "udumga", "keyinroq beradi" — aynan shu so'zlarni yoz
+
+O'ZBEK SHEVA XUSUSIYATLARI (tushunib yoz):
+- "tort" = to'rt, "ottiz" = o'ttiz, "toqqiz" = to'qqiz, "on" = o'n
+- "sakiz" = sakkiz, "yeti" = yetti, "toqson" = to'qson
+- "nema/neme" = nima, "kansha" = qancha, "kilu" = kilo
+- Samarqand/Buxoro shevasi, Toshkent shevasi, Farg'ona shevasi — barchasini tushun
 
 TEZ-TEZ UCHRAYDIGAN TOVAR NOMLARI (agar ovozda shunga o'xshash eshitsang, SHU NOMLARNI YOZ):
 - Ariel, Persil, Tide, Omo, Sarma, Bimax, Losk
@@ -61,7 +74,10 @@ Ovoz: "nasridin akaga bitta ariyel ellik olti ming"
 Natija: Nasriddin akaga 1 Ariel 56000
 
 Ovoz: "lobar opaga ikkita kler ottiz ikki ming"
-Natija: Lobar opaga 2 Cler 32000"""
+Natija: Lobar opaga 2 Cler 32000
+
+Ovoz: "sardor akaga beshta persel qirq besh mingdan nasiyaga"
+Natija: Sardor akaga 5 Persil 45000 nasiyaga"""
 
 _PROMPT_USER = (
     "Bu O'zbek tilida savdo haqida gapirilgan ovoz xabari. "
@@ -71,40 +87,45 @@ _PROMPT_USER = (
 
 
 async def _build_stt_extra_for_user(uid: int) -> str:
-    """RLS kontekstida shu foydalanuvchining top tovar/klientlari (STT uchun qo'shimcha blok)."""
+    """RLS kontekstida shu foydalanuvchining BARCHA tovar/klientlari (STT uchun qo'shimcha blok)."""
     from shared.database.pool import rls_conn
 
     async with rls_conn(uid) as conn:
         try:
             products = await conn.fetch(
-                "SELECT nomi FROM tovarlar ORDER BY COALESCE(sotilgan_soni, 0) DESC NULLS LAST, nomi ASC LIMIT 50"
+                "SELECT nomi FROM tovarlar ORDER BY COALESCE(sotilgan_soni, 0) DESC NULLS LAST, nomi ASC LIMIT 500"
             )
         except Exception:
             products = await conn.fetch(
-                "SELECT nomi FROM tovarlar ORDER BY nomi ASC LIMIT 50"
+                "SELECT nomi FROM tovarlar ORDER BY nomi ASC LIMIT 500"
             )
         try:
             clients = await conn.fetch(
-                "SELECT ism FROM klientlar ORDER BY COALESCE(oxirgi_sotib, yaratilgan) DESC NULLS LAST, ism ASC LIMIT 30"
+                "SELECT ism FROM klientlar ORDER BY COALESCE(oxirgi_sotib, yaratilgan) DESC NULLS LAST, ism ASC LIMIT 200"
             )
         except Exception:
             clients = await conn.fetch(
-                "SELECT ism FROM klientlar ORDER BY ism ASC LIMIT 30"
+                "SELECT ism FROM klientlar ORDER BY ism ASC LIMIT 200"
             )
 
     product_names = ", ".join([r["nomi"] for r in products if r.get("nomi")])
     client_names = ", ".join([r["ism"] for r in clients if r.get("ism")])
 
     return f"""
---- USHBU FOYDALANUVCHINING OMBORidan (agar ovoz shu nomlarga o'xshasa, SHU yozilishi) ---
+═══ USHBU DO'KONNING BARCHA TOVARLARI ═══
+Ovozda quyidagi nomlardan biriga O'XSHASH so'z eshitsang, AYNAN SHU YOZILISHINI ishlatib yoz.
+Bu ro'yxat do'kon bazasidan — eng ishonchli manba.
 
-TOVAR NOMLARI:
+TOVARLAR ({len(products)} ta):
 {product_names}
 
-KLIENT ISMLARI:
+KLIENTLAR ({len(clients)} ta):
 {client_names}
 
-QOIDALAR (qo'shimcha): Timestamp QOSHMA. Faqat toza matn. O'lchov: karobka, dona, shtuk, paket.
+QOIDA: Agar ovozda "ariyel" desa → ro'yxatda "Ariel" bor → "Ariel" yoz.
+Agar ovozda "persel" desa → ro'yxatda "Persil" bor → "Persil" yoz.
+Agar ovozda yo'q tovar aytilsa → eshitganingcha yoz.
+Timestamp QOSHMA. Faqat toza matn. O'lchov: karobka, dona, shtuk, paket, kilo, gramm.
 """
 
 
@@ -149,8 +170,8 @@ def ishga_tushir(api_key: str, model: str = "") -> None:
 
 
 @retry(
-    stop=stop_after_attempt(3),
-    wait=wait_exponential(multiplier=2, min=3, max=30),
+    stop=stop_after_attempt(2),
+    wait=wait_exponential(multiplier=1, min=1, max=8),
     retry=retry_if_exception_type(Exception),
     before_sleep=before_sleep_log(log, logging.WARNING),
     reraise=True,
@@ -239,24 +260,33 @@ async def ovoz_matn_uzun(
         if progress_callback:
             await progress_callback(65, f"Gemini tahlil ({len(chunks)} chunk)...")
         sys_prompt = await resolve_system_prompt_for_user(uid)
-        natijalar = []
-        for i, chunk_path in enumerate(chunks):
+
+        # ── PARALLEL GEMINI — barcha chunklar bir vaqtda ──
+        async def _process_one(i: int, chunk_path: str) -> tuple[int, str | None]:
             try:
                 chunk_bytes = Path(chunk_path).read_bytes()
                 matn = await _gemini_async(chunk_bytes, "audio/wav", sys_prompt)
-                if matn:
-                    natijalar.append(matn)
-                if progress_callback:
-                    pct = 65 + int((i + 1) / len(chunks) * 25)
-                    await progress_callback(pct, f"Chunk {i+1}/{len(chunks)}")
+                return (i, matn)
             except Exception as e:
                 log.warning("Chunk %d xato: %s", i, e)
+                return (i, None)
+
+        tasks = [_process_one(i, p) for i, p in enumerate(chunks)]
+        results = await asyncio.gather(*tasks)
+
+        if progress_callback:
+            await progress_callback(90, f"{len(chunks)} chunk tayyor!")
+
+        # Tartibni saqlash (chunk 0, 1, 2, ...)
+        results_sorted = sorted(results, key=lambda x: x[0])
+        natijalar = [matn for _, matn in results_sorted if matn]
+
         if not natijalar:
             return None
         result = " ".join(natijalar)
         if progress_callback:
             await progress_callback(95, "Transkripsiya tayyor!")
-        log.info("Uzun audio: %d chunk -> %d belgi", len(chunks), len(result))
+        log.info("Uzun audio: %d chunk -> %d belgi (PARALLEL)", len(chunks), len(result))
         return result
     except Exception as e:
         log.error("Uzun audio xato: %s", e)

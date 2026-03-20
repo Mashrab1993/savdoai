@@ -184,20 +184,20 @@ async def tahlil_qil(matn: str, urinishlar: int = 3) -> dict[str, Any]:
             oxirgi = xato
             log.warning("🤖 %d-urinish: %s", urinish, xato)
             if urinish < urinishlar:
-                await asyncio.sleep(2.0 * urinish)
+                await asyncio.sleep(0.5 * urinish)
     return _bosh(str(oxirgi))
 
 
 async def _claude_chaqir(matn: str) -> str:
     loop = asyncio.get_event_loop()
     try:
-        _timeout  = int(__import__("os").getenv("AI_TIMEOUT", "30"))
+        _timeout  = int(__import__("os").getenv("AI_TIMEOUT", "90"))
         xabar = await asyncio.wait_for(
             loop.run_in_executor(
                 None,
                 lambda: _client.messages.create(
                     model=MODEL,
-                    max_tokens=2048,
+                    max_tokens=8192,
                     temperature=0.1,
                     system=_TIZIM,
                     messages=[{"role": "user", "content": matn}],
@@ -207,7 +207,7 @@ async def _claude_chaqir(matn: str) -> str:
         )
         return xabar.content[0].text.strip()
     except asyncio.TimeoutError:
-        raise RuntimeError("Claude AI timeout (30s)")
+        raise RuntimeError(f"Claude AI timeout ({_timeout}s)")
 
 
 def _parse(xom: str) -> dict:

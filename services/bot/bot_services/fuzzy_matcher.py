@@ -27,6 +27,10 @@ class FuzzyMatcher:
         # uid -> (timestamp, products, clients, product_aliases)
         self._cache: dict[int, tuple[float, list[str], list[str], dict[str, str]]] = {}
 
+    def cache_tozala(self, uid: int) -> None:
+        """Yangi tovar/klient qo'shilganda cache ni tozalash."""
+        self._cache.pop(uid, None)
+
     async def ensure_loaded(self, uid: int) -> None:
         """RLS kontekstida shu foydalanuvchining tovar/klientlarini yuklash."""
         if not uid:
@@ -49,8 +53,20 @@ class FuzzyMatcher:
             for p in products:
                 pl = p.lower()
                 aliases[pl] = p
+                # Fonetik variatsiyalar — STT ko'p adashadi
                 aliases[pl.replace("e", "a")] = p
                 aliases[pl.replace("i", "e")] = p
+                aliases[pl.replace("sh", "s")] = p    # "Persil" ← "Pershl"
+                aliases[pl.replace("ch", "c")] = p    # "Clean" ← "Chlean"
+                aliases[pl.replace("'", "")] = p       # apostrof olib tashlash
+                aliases[pl.replace("ʻ", "")] = p
+                aliases[pl.replace("-", "")] = p       # "Head-Shoulders" ← "HeadShoulders"
+                aliases[pl.replace("-", " ")] = p
+                aliases[pl.replace(" ", "")] = p       # "Ariel 3kg" ← "Ariel3kg"
+                # Kirill → Lotin adashish
+                for k, v in (("к","k"),("с","s"),("а","a"),("о","o"),("р","r"),("е","e")):
+                    if k in pl:
+                        aliases[pl.replace(k, v)] = p
             self._cache[uid] = (now, products, clients, aliases)
             logger.info(
                 "FuzzyMatcher uid=%s: %d tovar, %d klient",

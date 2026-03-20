@@ -35,7 +35,7 @@ CREATE TABLE IF NOT EXISTS users (
     manzil          TEXT,
     dokon_nomi      TEXT            NOT NULL DEFAULT 'Mening Do''konim',
     segment         TEXT            NOT NULL DEFAULT 'universal'
-                    CHECK(segment IN('optom','chakana','oshxona','xozmak','universal')),
+                    CHECK(segment IN('optom','chakana','oshxona','xozmak','kiyim','gosht','meva','qurilish','avto','dorixona','texnika','mebel','mato','gul','kosmetika','universal')),
     faol            BOOLEAN         NOT NULL DEFAULT FALSE,
     obuna_tugash    DATE,
     til             TEXT            NOT NULL DEFAULT 'uz',

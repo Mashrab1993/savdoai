@@ -23,7 +23,7 @@ class Config:
 
     # ── AI modellari ──────────────────────────────────────
     claude_model:  str = "claude-sonnet-4-6"
-    gemini_model:  str = "gemini-2.5-flash-lite"
+    gemini_model:  str = "gemini-2.5-pro"
 
     # ── Railway / Webhook ─────────────────────────────────────────────
     # Bot long-polling rejimida ishlaydi (DROP_PENDING env bilan boshqarish).
