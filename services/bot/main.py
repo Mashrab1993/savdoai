@@ -419,7 +419,7 @@ async def h_telefon(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
     try:
         from shared.services.seed_catalog import seed_tovarlar
         from shared.database.pool import get_pool
-        async with get_pool().acquire() as c:
+        async with _rls_conn(uid) as c:
             seed_soni = await seed_tovarlar(c, uid, seg)
     except Exception as _seed_e:
         log.warning("Seed catalog xato uid=%d: %s", uid, _seed_e)
@@ -857,7 +857,7 @@ async def matn_qabul(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
             )
             from shared.database.pool import get_pool
             tur = hisobot_turini_aniqla(matn)
-            async with get_pool().acquire() as _hc:
+            async with _rls_conn(uid) as _hc:
                 if tur == "qarz":
                     _hd = await qarz_hisobot(_hc, uid)
                     _hbody = qarz_hisobot_matn(_hd)
@@ -934,7 +934,7 @@ async def matn_qabul(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
             kl_ism = klient_nomini_ajrat(matn)
             if kl_ism:
                 from shared.database.pool import get_pool
-                async with get_pool().acquire() as _kc:
+                async with _rls_conn(uid) as _kc:
                     _kd = await klient_qarz_tarix(_kc, uid, kl_ism)
                 if _kd:
                     _kbody = klient_qarz_tarix_matn(_kd)
@@ -965,7 +965,7 @@ async def matn_qabul(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
         _smart_cmd = smart_buyruq_aniqla(matn)
         if _smart_cmd:
             from shared.database.pool import get_pool
-            async with get_pool().acquire() as _sc:
+            async with _rls_conn(uid) as _sc:
                 if _smart_cmd == "narx_tavsiya":
                     _tv_nom = narx_tovar_ajrat(matn)
                     if _tv_nom:
@@ -1018,7 +1018,7 @@ async def matn_qabul(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
             _nom = ekspert_nom_ajrat(matn)
             if _nom:
                 from shared.database.pool import get_pool
-                async with get_pool().acquire() as _ec:
+                async with _rls_conn(uid) as _ec:
                     # Avval tovar tekshir
                     _tv = await tovar_ekspert_tahlil(_ec, uid, _nom)
                     if _tv.get("topildi"):
@@ -1047,7 +1047,7 @@ async def matn_qabul(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
         _adv_cmd = advanced_buyruq_aniqla(matn)
         if _adv_cmd:
             from shared.database.pool import get_pool
-            async with get_pool().acquire() as _ac:
+            async with _rls_conn(uid) as _ac:
                 if _adv_cmd == "tabiiy_savol":
                     _javob = await tabiiy_savol_javob(_ac, uid, matn)
                     if _javob:
@@ -1163,7 +1163,7 @@ async def _ovoz_buyruq_bajar(update:Update, ctx:ContextTypes.DEFAULT_TYPE,
                 hisobot_matn, qarz_hisobot_matn
             )
             from shared.database.pool import get_pool
-            async with get_pool().acquire() as _rc:
+            async with _rls_conn(uid) as _rc:
                 if sub == "daily":
                     _rd = await kunlik(_rc, uid)
                     await update.message.reply_text(hisobot_matn(_rd), parse_mode=ParseMode.MARKDOWN)
@@ -1366,7 +1366,7 @@ async def _qayta_ishlash(update:Update, ctx:ContextTypes.DEFAULT_TYPE,
             )
             from shared.database.pool import get_pool
             tur = hisobot_turini_aniqla(matn)
-            async with get_pool().acquire() as hc:
+            async with _rls_conn(uid) as hc:
                 if tur == "qarz":
                     d = await qarz_hisobot(hc, uid)
                     body = qarz_hisobot_matn(d)
@@ -1511,7 +1511,7 @@ async def _qayta_ishlash(update:Update, ctx:ContextTypes.DEFAULT_TYPE,
         try:
             from shared.services.advanced_features import zarar_tekshir, zarar_ogohlantirish_matn
             from shared.database.pool import get_pool
-            async with get_pool().acquire() as _zc:
+            async with _rls_conn(uid) as _zc:
                 _zararlar = await zarar_tekshir(_zc, uid, natija["tovarlar"])
                 if _zararlar:
                     oldindan += "\n" + zarar_ogohlantirish_matn(_zararlar)
@@ -2543,7 +2543,7 @@ async def _hisobot_excel_cb(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         from shared.database.pool import get_pool
         import services.bot.bot_services.export_excel as _exl
 
-        async with get_pool().acquire() as _ec:
+        async with _rls_conn(uid) as _ec:
             if tur == "haftalik":
                 _ed = await haftalik(_ec, uid)
             elif tur == "oylik":
@@ -3248,7 +3248,7 @@ async def avto_kunlik_hisobot(ctx:ContextTypes.DEFAULT_TYPE) -> None:
         users=await db.faol_users(); yuborildi=0
         for user in users:
             try:
-                async with get_pool().acquire() as c:
+                async with _rls_conn(user["id"]) as c:
                     d=await kunlik_yakuniy_pro(c, user["id"])
                 if d["sotuv_soni"]==0: continue
                 try:
@@ -3277,7 +3277,7 @@ async def avto_haftalik_hisobot(ctx:ContextTypes.DEFAULT_TYPE) -> None:
         users=await db.faol_users(); yuborildi=0
         for user in users:
             try:
-                async with get_pool().acquire() as c:
+                async with _rls_conn(user["id"]) as c:
                     h_data = await haftalik(c, user["id"])
                     t_data = await haftalik_trend(c, user["id"])
                 if h_data["sotuv_soni"]==0: continue
@@ -3298,7 +3298,7 @@ async def avto_qarz_eslatma(ctx:ContextTypes.DEFAULT_TYPE) -> None:
         users=await db.faol_users()
         for user in users:
             try:
-                async with get_pool().acquire() as c:
+                async with _rls_conn(user["id"]) as c:
                     klientlar = await qarz_eslatma_royxat(c, user["id"])
                 if not klientlar: continue
                 muddati_otgan = [k for k in klientlar if k["muddati_otgan"]]
@@ -3353,7 +3353,7 @@ async def cmd_tez(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     try:
         from shared.services.advanced_features import tezkor_tugmalar
         from shared.database.pool import get_pool
-        async with get_pool().acquire() as c:
+        async with _rls_conn(uid) as c:
             data = await tezkor_tugmalar(c, uid)
 
         tovarlar = data.get("tovarlar", [])
