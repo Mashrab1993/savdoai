@@ -1017,18 +1017,33 @@ async def matn_qabul(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
         if ekspert_sorov_bormi(matn):
             _nom = ekspert_nom_ajrat(matn)
             if _nom:
-                # db.py pool ishlatish — RLS bypass (user_id WHERE da)
+                log.info("🔬 Ekspert: '%s' izlash (uid=%d)", _nom, uid)
                 async with db._P().acquire() as _ec:
-                    log.info("🔬 Ekspert: '%s' izlash (uid=%d)", _nom, uid)
+                    # RLS kontekst qo'yish
+                    await _ec.execute("SELECT set_config('app.uid', $1, false)", str(uid))
+                    
+                    # DEBUG
+                    cnt = await _ec.fetchval("SELECT count(*) FROM tovarlar WHERE user_id=$1", uid)
+                    cnt2 = await _ec.fetchval("SELECT count(*) FROM tovarlar")
+                    log.info("🔬 DB: user_id filter=%s, no filter=%s", cnt, cnt2)
+                    
                     _tv = await tovar_ekspert_tahlil(_ec, uid, _nom)
                     if _tv.get("topildi"):
-                        await update.message.reply_text(
-                            tovar_ekspert_matn(_tv), parse_mode=ParseMode.MARKDOWN)
+                        try:
+                            await update.message.reply_text(
+                                tovar_ekspert_matn(_tv), parse_mode=ParseMode.MARKDOWN)
+                        except Exception:
+                            await update.message.reply_text(
+                                tovar_ekspert_matn(_tv).replace("*","").replace("_",""))
                         return
                     _kl = await klient_ekspert_tahlil(_ec, uid, _nom)
                     if _kl.get("topildi"):
-                        await update.message.reply_text(
-                            klient_ekspert_matn(_kl), parse_mode=ParseMode.MARKDOWN)
+                        try:
+                            await update.message.reply_text(
+                                klient_ekspert_matn(_kl), parse_mode=ParseMode.MARKDOWN)
+                        except Exception:
+                            await update.message.reply_text(
+                                klient_ekspert_matn(_kl).replace("*","").replace("_",""))
                         return
                     log.warning("🔬 Ekspert: '%s' topilmadi (uid=%d)", _nom, uid)
                     await update.message.reply_text(f"🤔 '{_nom}' ni tovar yoki klient sifatida topolmadim.")
