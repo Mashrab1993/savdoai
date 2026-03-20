@@ -1018,29 +1018,38 @@ async def matn_qabul(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
             _nom = ekspert_nom_ajrat(matn)
             if _nom:
                 log.info("🔬 Ekspert: '%s' izlash (uid=%d)", _nom, uid)
-                # db._P() — set_config CHAQIRMAYMIZ (hisobot shunday ishlaydi)
-                async with db._P().acquire() as _ec:
-                    _tv = await tovar_ekspert_tahlil(_ec, uid, _nom)
-                    if _tv.get("topildi"):
+                
+                # db.tovar_topish ISHLAYDI (sotuv saqlashda ishlatiladi)
+                _tovar_row = await db.tovar_topish(uid, _nom)
+                if _tovar_row:
+                    log.info("🔬 Tovar topildi: %s (id=%s)", _tovar_row.get("nomi"), _tovar_row.get("id"))
+                    async with db._P().acquire() as _ec:
+                        _tv = await tovar_ekspert_tahlil(_ec, uid, _nom, tovar_row=_tovar_row)
                         try:
                             await update.message.reply_text(
                                 tovar_ekspert_matn(_tv), parse_mode=ParseMode.MARKDOWN)
                         except Exception:
                             await update.message.reply_text(
                                 tovar_ekspert_matn(_tv).replace("*","").replace("_",""))
-                        return
-                    _kl = await klient_ekspert_tahlil(_ec, uid, _nom)
-                    if _kl.get("topildi"):
+                    return
+                
+                # db.klient_topish ISHLAYDI
+                _klient_row = await db.klient_topish(uid, _nom)
+                if _klient_row:
+                    log.info("🔬 Klient topildi: %s (id=%s)", _klient_row.get("ism"), _klient_row.get("id"))
+                    async with db._P().acquire() as _ec:
+                        _kl = await klient_ekspert_tahlil(_ec, uid, _nom, klient_row=_klient_row)
                         try:
                             await update.message.reply_text(
                                 klient_ekspert_matn(_kl), parse_mode=ParseMode.MARKDOWN)
                         except Exception:
                             await update.message.reply_text(
                                 klient_ekspert_matn(_kl).replace("*","").replace("_",""))
-                        return
-                    log.warning("🔬 Ekspert: '%s' topilmadi (uid=%d)", _nom, uid)
-                    await update.message.reply_text(f"🤔 '{_nom}' ni tovar yoki klient sifatida topolmadim.")
                     return
+                
+                log.warning("🔬 Ekspert: '%s' topilmadi (uid=%d)", _nom, uid)
+                await update.message.reply_text(f"🤔 '{_nom}' ni tovar yoki klient sifatida topolmadim.")
+                return
     except Exception as _exp_e:
         log.debug("Ekspert: %s", _exp_e)
 
