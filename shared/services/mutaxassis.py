@@ -121,10 +121,11 @@ async def tovar_ekspert_tahlil(conn, uid: int, tovar_nomi: str) -> dict:
           AND ss.sana >= $3 - INTERVAL '30 days' AND ss.sana < $3
     """, uid, tid, oy_boshi)
 
-    sotuv_stat, kunlik_sotuv, top_klientlar, oxirgi_kirim, otgan_oy = await asyncio.gather(
-        sotuv_stat_task, kunlik_sotuv_task, top_klientlar_task,
-        oxirgi_kirim_task, otgan_oy_task
-    )
+    sotuv_stat = await sotuv_stat_task
+    kunlik_sotuv = await kunlik_sotuv_task
+    top_klientlar = await top_klientlar_task
+    oxirgi_kirim = await oxirgi_kirim_task
+    otgan_oy = await otgan_oy_task
 
     olish = float(tovar.get("olish_narxi") or 0)
     qoldiq = int(tovar.get("qoldiq") or 0)
@@ -326,9 +327,11 @@ async def klient_ekspert_tahlil(conn, uid: int, klient_ismi: str) -> dict:
         GROUP BY oy ORDER BY oy
     """, uid, kid)
 
-    sotuv, qarz, muddati_otgan, top_tovar, oylik = await asyncio.gather(
-        sotuv_task, qarz_task, muddati_otgan_task, top_tovar_task, oylik_trend_task
-    )
+    sotuv = await sotuv_task
+    qarz = await qarz_task
+    muddati_otgan = await muddati_otgan_task
+    top_tovar = await top_tovar_task
+    oylik = await oylik_trend_task
 
     jami_sotuv = float(sotuv["jami"] or 0)
     aktiv_qarz = float(qarz or 0)

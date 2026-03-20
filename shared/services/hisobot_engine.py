@@ -133,13 +133,15 @@ async def hisobot_yig(conn, uid: int, boshlanish: datetime,
         WHERE user_id=$1 AND sana >= $2 AND sana < $3 AND jami > 0
     """, uid, boshlanish, tugash)
 
-    # ── GATHER: hamma parallel ishlaydi ──
-    (sotuv, kirim, qaytarish, foyda, jami_qarz,
-     top5_tovar, top5_klient, ortacha_chek) = await asyncio.gather(
-        sotuv_task, kirim_task, qaytarish_task, foyda_task,
-        jami_qarz_task, top5_tovar_task, top5_klient_task,
-        ortacha_chek_task
-    )
+    # ── KETMA-KET: asyncpg bitta conn da parallel qo'llab-quvvatlamaydi ──
+    sotuv = await sotuv_task
+    kirim = await kirim_task
+    qaytarish = await qaytarish_task
+    foyda = await foyda_task
+    jami_qarz = await jami_qarz_task
+    top5_tovar = await top5_tovar_task
+    top5_klient = await top5_klient_task
+    ortacha_chek = await ortacha_chek_task
 
     ch_jami = float(sotuv["jami"] or 0)
     ch_qarz = float(sotuv["yangi_qarz"] or 0)
@@ -515,11 +517,11 @@ async def klient_qarz_tarix(conn, uid: int, klient_ism: str) -> dict | None:
         WHERE user_id=$1 AND klient_id=$2
     """, uid, kid)
 
-    (faol_qarzlar, jami_qarz, oxirgi_sotuvlar,
-     oxirgi_tolovlar, statistika) = await asyncio.gather(
-        faol_qarzlar_task, jami_qarz_task, oxirgi_sotuvlar_task,
-        oxirgi_tolovlar_task, statistika_task
-    )
+    faol_qarzlar = await faol_qarzlar_task
+    jami_qarz = await jami_qarz_task
+    oxirgi_sotuvlar = await oxirgi_sotuvlar_task
+    oxirgi_tolovlar = await oxirgi_tolovlar_task
+    statistika = await statistika_task
 
     muddati_otgan = sum(1 for q in faol_qarzlar if q.get("muddati_otgan"))
 

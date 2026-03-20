@@ -134,7 +134,8 @@ async def narx_tavsiya(conn, uid: int, tovar_nomi: str) -> dict:
         ORDER BY ss.sana DESC LIMIT 5
     """, uid, tovar["id"])
 
-    stats, oxirgi = await asyncio.gather(stats_task, oxirgi_task)
+    stats = await stats_task
+    oxirgi = await oxirgi_task
 
     olish = float(tovar.get("olish_narxi") or 0)
     ortacha = float(stats["ortacha"] or 0) if stats else 0
@@ -409,10 +410,12 @@ async def kunlik_yakuniy_pro(conn, uid: int) -> dict:
         WHERE user_id=$1 AND yopildi = FALSE
     """, uid)
 
-    sotuv, kecha_jami, foyda, top_tv, top_kl, jami_qarz = await asyncio.gather(
-        sotuv_task, kecha_task, foyda_task,
-        top_tovar_task, top_klient_task, jami_qarz_task
-    )
+    sotuv = await sotuv_task
+    kecha_jami = await kecha_task
+    foyda = await foyda_task
+    top_tv = await top_tovar_task
+    top_kl = await top_klient_task
+    jami_qarz = await jami_qarz_task
 
     bugun_jami = float(sotuv["jami"] or 0)
     kecha_j = float(kecha_jami or 0)

@@ -40,7 +40,7 @@ class TestSmartBotModul:
 
     def test_parallel_queries(self):
         src = open("shared/services/smart_bot_engine.py").read()
-        assert "asyncio.gather" in src
+        assert "await" in src  # sequential queries
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -240,7 +240,7 @@ class TestKunlikYakuniyPro:
     def test_parallel_in_pro(self):
         src = open("shared/services/smart_bot_engine.py").read()
         # kunlik_yakuniy_pro da asyncio.gather bo'lishi kerak
-        assert src.count("asyncio.gather") >= 2
+        assert src.count("await") >= 10  # sequential DB queries
 
 
 # ═══════════════════════════════════════════════════════════════

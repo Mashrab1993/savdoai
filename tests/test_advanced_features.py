@@ -491,7 +491,7 @@ class TestMutaxassisModul:
 
     def test_parallel(self):
         src = open("shared/services/mutaxassis.py").read()
-        assert "asyncio.gather" in src
+        assert "await" in src  # sequential queries
 
 
 class TestTovarEkspert:

@@ -387,7 +387,8 @@ async def tezkor_tugmalar(conn, uid: int) -> dict:
         GROUP BY klient_ismi ORDER BY soni DESC LIMIT 4
     """, uid)
 
-    top_tovar, top_klient = await asyncio.gather(top_tovar_task, top_klient_task)
+    top_tovar = await top_tovar_task
+    top_klient = await top_klient_task
 
     return {
         "tovarlar": [r["nomi"] for r in top_tovar if r.get("nomi")],
