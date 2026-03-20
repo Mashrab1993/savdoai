@@ -51,32 +51,26 @@ def _kun_boshi(d=None):
 #  TOVAR PROFESSIONAL TAHLILI
 # ═══════════════════════════════════════════════════════════════
 
-async def tovar_ekspert_tahlil(conn, uid: int, tovar_nomi: str) -> dict:
+async def tovar_ekspert_tahlil(conn, uid: int, tovar_nomi: str, tovar_row: dict = None) -> dict:
     """Tovar bo'yicha professional tahlil."""
     nom = tovar_nomi.strip().strip('"').strip("'").strip()
     
-    # DEBUG
-    try:
-        cnt = await conn.fetchval("SELECT count(*) FROM tovarlar WHERE user_id=$1", uid)
-        log.info("🔬 Ekspert DB: tovarlar=%s (db pool), izlash='%s'", cnt, nom)
-    except Exception as _de:
-        log.warning("🔬 DB debug: %s", _de)
-    
-    # db.py pool — RLS yo'q, user_id kerak
-    tovar = await conn.fetchrow("""
-        SELECT id, nomi, olish_narxi, qoldiq, birlik, min_qoldiq
-        FROM tovarlar WHERE user_id=$1 AND lower(nomi) LIKE lower($2)
-        ORDER BY qoldiq DESC NULLS LAST LIMIT 1
-    """, uid, f"%{nom}%")
-
-    if not tovar:
+    if tovar_row:
+        tovar = dict(tovar_row)
+    else:
         tovar = await conn.fetchrow("""
             SELECT id, nomi, olish_narxi, qoldiq, birlik, min_qoldiq
-            FROM tovarlar WHERE user_id=$1 AND nomi ILIKE $2 LIMIT 1
+            FROM tovarlar WHERE user_id=$1 AND lower(nomi) LIKE lower($2)
+            ORDER BY qoldiq DESC NULLS LAST LIMIT 1
         """, uid, f"%{nom}%")
-
-    if not tovar:
-        return {"topildi": False, "nomi": tovar_nomi}
+        if not tovar:
+            tovar = await conn.fetchrow("""
+                SELECT id, nomi, olish_narxi, qoldiq, birlik, min_qoldiq
+                FROM tovarlar WHERE user_id=$1 AND nomi ILIKE $2 LIMIT 1
+            """, uid, f"%{nom}%")
+        if not tovar:
+            return {"topildi": False, "nomi": tovar_nomi}
+        tovar = dict(tovar)
 
     tovar = dict(tovar)
     tid = tovar["id"]
@@ -290,27 +284,27 @@ def _tovar_tavsiya(d: dict) -> str:
 #  KLIENT PROFESSIONAL TAHLILI
 # ═══════════════════════════════════════════════════════════════
 
-async def klient_ekspert_tahlil(conn, uid: int, klient_ismi: str) -> dict:
+async def klient_ekspert_tahlil(conn, uid: int, klient_ismi: str, klient_row: dict = None) -> dict:
     """Klient bo'yicha professional tahlil."""
     nom = klient_ismi.strip().strip('"').strip("'").strip()
     
-    klient = await conn.fetchrow("""
-        SELECT * FROM klientlar
-        WHERE user_id=$1 AND lower(ism) LIKE lower($2)
-        ORDER BY jami_sotib DESC NULLS LAST LIMIT 1
-    """, uid, f"%{nom}%")
-
-    if not klient:
+    if klient_row:
+        klient = dict(klient_row)
+    else:
         klient = await conn.fetchrow("""
             SELECT * FROM klientlar
-            WHERE user_id=$1 AND ism ILIKE $2
+            WHERE user_id=$1 AND lower(ism) LIKE lower($2)
             ORDER BY jami_sotib DESC NULLS LAST LIMIT 1
         """, uid, f"%{nom}%")
-
-    if not klient:
-        return {"topildi": False, "ism": klient_ismi}
-
-    klient = dict(klient)
+        if not klient:
+            klient = await conn.fetchrow("""
+                SELECT * FROM klientlar
+                WHERE user_id=$1 AND ism ILIKE $2
+                ORDER BY jami_sotib DESC NULLS LAST LIMIT 1
+            """, uid, f"%{nom}%")
+        if not klient:
+            return {"topildi": False, "ism": klient_ismi}
+        klient = dict(klient)
     kid = klient["id"]
 
     sotuv_task = conn.fetchrow("""

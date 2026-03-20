@@ -1018,15 +1018,8 @@ async def matn_qabul(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
             _nom = ekspert_nom_ajrat(matn)
             if _nom:
                 log.info("🔬 Ekspert: '%s' izlash (uid=%d)", _nom, uid)
+                # db._P() — set_config CHAQIRMAYMIZ (hisobot shunday ishlaydi)
                 async with db._P().acquire() as _ec:
-                    # RLS kontekst qo'yish
-                    await _ec.execute("SELECT set_config('app.uid', $1, false)", str(uid))
-                    
-                    # DEBUG
-                    cnt = await _ec.fetchval("SELECT count(*) FROM tovarlar WHERE user_id=$1", uid)
-                    cnt2 = await _ec.fetchval("SELECT count(*) FROM tovarlar")
-                    log.info("🔬 DB: user_id filter=%s, no filter=%s", cnt, cnt2)
-                    
                     _tv = await tovar_ekspert_tahlil(_ec, uid, _nom)
                     if _tv.get("topildi"):
                         try:
