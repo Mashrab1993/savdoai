@@ -795,22 +795,28 @@ async def matn_qabul(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
         except Exception as _te:
             log.debug("Tuzatish: %s", _te)
 
-    # ═══ 4.3 HUJJAT SAVOL-JAVOB — "5-bet", "Pifagor qayerda", "tushuntir" ═══
+    # ═══ 4.3 HUJJAT SAVOL-JAVOB ═══
     if ctx.user_data.get("hujjat"):
         _h = ctx.user_data["hujjat"]
         
-        # EXCEL PRO — har qanday savol AI ga yuboriladi
+        # EXCEL PRO — HAR QANDAY savol AI ga yuboriladi, HECH QACHON o'tkazib yuborilmaydi
         if _h.get("tur") == "xlsx_pro":
+            log.info("📊 Excel savol: '%s'", matn[:50])
             try:
-                from shared.services.excel_reader import excel_ai_savol
+                from shared.services.excel_reader import excel_ai_savol, _oddiy_izlash
                 _javob = await excel_ai_savol(_h, matn, _CFG.gemini_key)
-                try:
-                    await update.message.reply_text(_javob, parse_mode=ParseMode.MARKDOWN)
-                except Exception:
-                    await update.message.reply_text(_javob.replace("*","").replace("_",""))
-                return
             except Exception as _ee:
-                log.debug("Excel AI: %s", _ee)
+                log.error("📊 Excel AI xato: %s", _ee)
+                try:
+                    from shared.services.excel_reader import _oddiy_izlash
+                    _javob = _oddiy_izlash(_h, matn)
+                except Exception:
+                    _javob = f"❌ Excel tahlilida xato. Qayta urinib ko'ring."
+            try:
+                await update.message.reply_text(_javob, parse_mode=ParseMode.MARKDOWN)
+            except Exception:
+                await update.message.reply_text(_javob.replace("*","").replace("_",""))
+            return  # DOIM return — hech qachon o'tkazib yuborma
         
         # Boshqa hujjatlar (PDF, Word, EPUB...)
         try:

@@ -247,18 +247,26 @@ JAVOB:"""
 
 
 def _oddiy_izlash(r: dict, savol: str) -> str:
-    """AI siz oddiy izlash."""
-    s = savol.lower()
+    """AI siz oddiy izlash — kategoriya, sheet, kalit so'z."""
+    s = savol.lower().strip().strip('"').strip("'").strip("?").strip()
     
-    # Kategoriyalar bo'yicha
     xulosa = r.get("xulosa", {})
     kat = xulosa.get("kategoriyalar", {})
     
+    # 1. Kategoriya bo'yicha — "abet", "gaz", "benzin", "oylik"
     for k, v in kat.items():
-        if k.lower() in s:
+        if k.lower() in s or s in k.lower():
             return f"💰 *{k}*: {v:,.0f} so'm"
     
-    if "rasxod" in s or "xarajat" in s or "расход" in s:
+    # Typo fix: abed→abet
+    TYPO = {"abed": "ABET", "abid": "ABET", "abyet": "ABET", "gaz benzin": "GAZ",
+            "benzn": "BENZIN", "oylig": "OYLIK", "maosh": "OYLIK", "yoqilgi": "GAZ"}
+    for typo, correct in TYPO.items():
+        if typo in s and correct in kat:
+            return f"💰 *{correct}*: {kat[correct]:,.0f} so'm"
+    
+    # 2. Rasxodlar umumiy
+    if any(k in s for k in ["rasxod", "xarajat", "расход", "chiqim", "sarf"]):
         if kat:
             t = "💰 *RASXODLAR:*\n\n"
             jami = 0
@@ -268,4 +276,23 @@ def _oddiy_izlash(r: dict, savol: str) -> str:
             t += f"\n  *JAMI: {jami:,.0f}*"
             return t
     
-    return f"🔍 '{savol}' bo'yicha aniq javob topilmadi. AI tahlil uchun qayta urinib ko'ring."
+    # 3. Sheet nomida izlash
+    for sh in r.get("sheetlar", []):
+        if s in sh["nom"].lower():
+            t = f"📋 *{sh['nom']}*: {sh['qator_soni']} qator\n"
+            if sh.get("sarlavha"):
+                t += f"Ustunlar: {', '.join(c[:20] for c in sh['sarlavha'] if c)}\n"
+            return t
+    
+    # 4. Umumiy matnda izlash
+    umumiy = r.get("umumiy_matn", "")
+    if umumiy and s:
+        lines = umumiy.split("\n")
+        topilgan = [l for l in lines if s in l.lower()][:5]
+        if topilgan:
+            t = f"🔍 *\"{savol}\"* topildi:\n\n"
+            for l in topilgan:
+                t += f"  {l[:100]}\n"
+            return t.rstrip()
+    
+    return f"🔍 '{savol}' bo'yicha aniq javob topilmadi. Boshqacha so'rab ko'ring."
