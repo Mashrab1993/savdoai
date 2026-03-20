@@ -52,58 +52,28 @@ def _kun_boshi(d=None):
 # ═══════════════════════════════════════════════════════════════
 
 async def tovar_ekspert_tahlil(conn, uid: int, tovar_nomi: str) -> dict:
-    """
-    Tovar bo'yicha professional tahlil.
-    """
+    """Tovar bo'yicha professional tahlil."""
     nom = tovar_nomi.strip().strip('"').strip("'").strip()
     
-    # DEBUG: tovarlar soni tekshirish
+    # DEBUG
     try:
-        cnt = await conn.fetchval("SELECT count(*) FROM tovarlar WHERE user_id=$1", uid)
-        log.info("🔬 Ekspert DB: uid=%d, tovarlar=%s, izlash='%s'", uid, cnt, nom)
+        cnt = await conn.fetchval("SELECT count(*) FROM tovarlar")
+        log.info("🔬 Ekspert DB: tovarlar=%s (RLS), izlash='%s'", cnt, nom)
     except Exception as _de:
-        log.warning("🔬 Ekspert DB debug xato: %s", _de)
+        log.warning("🔬 DB debug: %s", _de)
     
-    # 1. Tovarlar jadvalidan — RLS + explicit user_id
+    # RLS allaqachon user_id filtrlamoqda — WHERE user_id shart emas
     tovar = await conn.fetchrow("""
         SELECT id, nomi, olish_narxi, qoldiq, birlik, min_qoldiq
-        FROM tovarlar WHERE user_id=$1 AND lower(nomi) LIKE lower($2)
+        FROM tovarlar WHERE lower(nomi) LIKE lower($1)
         ORDER BY qoldiq DESC NULLS LAST LIMIT 1
-    """, uid, f"%{nom}%")
+    """, f"%{nom}%")
 
-    # 2. user_id siz — faqat RLS ga tayangan holda
     if not tovar:
-        try:
-            tovar = await conn.fetchrow("""
-                SELECT id, nomi, olish_narxi, qoldiq, birlik, min_qoldiq
-                FROM tovarlar WHERE lower(nomi) LIKE lower($1)
-                ORDER BY qoldiq DESC NULLS LAST LIMIT 1
-            """, f"%{nom}%")
-        except Exception:
-            pass
-
-    # 3. chiqimlar orqali
-    if not tovar:
-        try:
-            tovar = await conn.fetchrow("""
-                SELECT t.id, t.nomi, t.olish_narxi, t.qoldiq, t.birlik, t.min_qoldiq
-                FROM chiqimlar ch
-                JOIN tovarlar t ON t.id = ch.tovar_id
-                WHERE ch.user_id=$1 AND lower(t.nomi) LIKE lower($2)
-                ORDER BY ch.id DESC LIMIT 1
-            """, uid, f"%{nom}%")
-        except Exception:
-            pass
-
-    # 4. ILIKE fallback
-    if not tovar:
-        try:
-            tovar = await conn.fetchrow("""
-                SELECT id, nomi, olish_narxi, qoldiq, birlik, min_qoldiq
-                FROM tovarlar WHERE nomi ILIKE $1 LIMIT 1
-            """, f"%{nom}%")
-        except Exception:
-            pass
+        tovar = await conn.fetchrow("""
+            SELECT id, nomi, olish_narxi, qoldiq, birlik, min_qoldiq
+            FROM tovarlar WHERE nomi ILIKE $1 LIMIT 1
+        """, f"%{nom}%")
 
     if not tovar:
         return {"topildi": False, "nomi": tovar_nomi}
@@ -124,41 +94,41 @@ async def tovar_ekspert_tahlil(conn, uid: int, tovar_nomi: str) -> dict:
                SUM((ch.sotish_narxi - ch.olish_narxi) * ch.miqdor) AS jami_foyda
         FROM chiqimlar ch
         JOIN sotuv_sessiyalar ss ON ss.id = ch.sessiya_id
-        WHERE ch.user_id=$1 AND ch.tovar_id=$2 AND ss.sana >= $3
-    """, uid, tid, oy_boshi)
+        WHERE ch.tovar_id=$1 AND ss.sana >= $2
+    """, tid, oy_boshi)
 
     kunlik_sotuv_task = conn.fetchval("""
         SELECT COALESCE(AVG(kunlik), 0) FROM (
             SELECT DATE(ss.sana) AS kun, SUM(ch.miqdor) AS kunlik
             FROM chiqimlar ch
             JOIN sotuv_sessiyalar ss ON ss.id = ch.sessiya_id
-            WHERE ch.user_id=$1 AND ch.tovar_id=$2
+            WHERE ch.tovar_id=$1
               AND ss.sana >= NOW() - INTERVAL '30 days'
             GROUP BY DATE(ss.sana)
         ) sub
-    """, uid, tid)
+    """, tid)
 
     top_klientlar_task = conn.fetch("""
         SELECT ch.klient_ismi AS ism, SUM(ch.miqdor) AS miqdor, SUM(ch.jami) AS jami
         FROM chiqimlar ch
         JOIN sotuv_sessiyalar ss ON ss.id = ch.sessiya_id
-        WHERE ch.user_id=$1 AND ch.tovar_id=$2 AND ss.sana >= $3
+        WHERE ch.tovar_id=$1 AND ss.sana >= $2
         GROUP BY ch.klient_ismi ORDER BY jami DESC LIMIT 3
-    """, uid, tid, oy_boshi)
+    """, tid, oy_boshi)
 
     oxirgi_kirim_task = conn.fetchrow("""
         SELECT miqdor, olish_narxi, sana
-        FROM kirimlar WHERE user_id=$1 AND tovar_id=$2
+        FROM kirimlar WHERE tovar_id=$1
         ORDER BY sana DESC LIMIT 1
-    """, uid, tid)
+    """, tid)
 
     otgan_oy_task = conn.fetchval("""
         SELECT COALESCE(SUM(ch.miqdor), 0)
         FROM chiqimlar ch
         JOIN sotuv_sessiyalar ss ON ss.id = ch.sessiya_id
-        WHERE ch.user_id=$1 AND ch.tovar_id=$2
-          AND ss.sana >= $3 - INTERVAL '30 days' AND ss.sana < $3
-    """, uid, tid, oy_boshi)
+        WHERE ch.tovar_id=$1
+          AND ss.sana >= $2 - INTERVAL '30 days' AND ss.sana < $2
+    """, tid, oy_boshi)
 
     sotuv_stat = await sotuv_stat_task
     kunlik_sotuv = await kunlik_sotuv_task
@@ -326,17 +296,16 @@ async def klient_ekspert_tahlil(conn, uid: int, klient_ismi: str) -> dict:
     
     klient = await conn.fetchrow("""
         SELECT * FROM klientlar
-        WHERE user_id=$1 AND lower(ism) LIKE lower($2)
+        WHERE lower(ism) LIKE lower($1)
         ORDER BY jami_sotib DESC NULLS LAST LIMIT 1
-    """, uid, f"%{nom}%")
+    """, f"%{nom}%")
 
-    # Fallback — ILIKE
     if not klient:
         klient = await conn.fetchrow("""
             SELECT * FROM klientlar
-            WHERE user_id=$1 AND ism ILIKE $2
+            WHERE ism ILIKE $1
             ORDER BY jami_sotib DESC NULLS LAST LIMIT 1
-        """, uid, f"%{nom}%")
+        """, f"%{nom}%")
 
     if not klient:
         return {"topildi": False, "ism": klient_ismi}
@@ -344,37 +313,36 @@ async def klient_ekspert_tahlil(conn, uid: int, klient_ismi: str) -> dict:
     klient = dict(klient)
     kid = klient["id"]
 
-    # PARALLEL
     sotuv_task = conn.fetchrow("""
         SELECT COUNT(*) AS soni, COALESCE(SUM(jami), 0) AS jami,
                COALESCE(AVG(jami), 0) AS ort_chek,
                MIN(sana) AS birinchi, MAX(sana) AS oxirgi
-        FROM sotuv_sessiyalar WHERE user_id=$1 AND klient_id=$2
-    """, uid, kid)
+        FROM sotuv_sessiyalar WHERE klient_id=$1
+    """, kid)
 
     qarz_task = conn.fetchval("""
         SELECT COALESCE(SUM(qolgan), 0) FROM qarzlar
-        WHERE user_id=$1 AND klient_id=$2 AND yopildi=FALSE
-    """, uid, kid)
+        WHERE klient_id=$1 AND yopildi=FALSE
+    """, kid)
 
     muddati_otgan_task = conn.fetchval("""
         SELECT COUNT(*) FROM qarzlar
-        WHERE user_id=$1 AND klient_id=$2 AND yopildi=FALSE
+        WHERE klient_id=$1 AND yopildi=FALSE
           AND muddat < NOW() AND qolgan > 0
-    """, uid, kid)
+    """, kid)
 
     top_tovar_task = conn.fetch("""
         SELECT tovar_nomi AS nomi, SUM(miqdor) AS miqdor, SUM(jami) AS jami
-        FROM chiqimlar WHERE user_id=$1 AND klient_id=$2
+        FROM chiqimlar WHERE klient_id=$1
         GROUP BY tovar_nomi ORDER BY jami DESC LIMIT 5
-    """, uid, kid)
+    """, kid)
 
     oylik_trend_task = conn.fetch("""
         SELECT DATE_TRUNC('month', sana) AS oy, SUM(jami) AS jami
-        FROM sotuv_sessiyalar WHERE user_id=$1 AND klient_id=$2
+        FROM sotuv_sessiyalar WHERE klient_id=$1
           AND sana >= NOW() - INTERVAL '3 months'
         GROUP BY oy ORDER BY oy
-    """, uid, kid)
+    """, kid)
 
     sotuv = await sotuv_task
     qarz = await qarz_task
