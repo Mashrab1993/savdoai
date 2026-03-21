@@ -3781,6 +3781,44 @@ async def hujjat_qabul(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
                         caption="📊 Mashrab Moliya — Auditor Hisoboti")
             except Exception as _pe:
                 log.warning("Excel PDF: %s", _pe)
+            
+            # ═══ AVTOMATIK AI TAHLIL — har safar to'liq hisobot ═══
+            try:
+                from shared.services.excel_reader import excel_ai_savol
+                _ai_tahlil = await excel_ai_savol(
+                    h,
+                    "To'liq moliyaviy tahlil qil: umumiy ko'rsatkichlar, xarajatlar tarkibi, "
+                    "kunlik tushum tahlili, click vs naqd nisbati, haftalik trend, "
+                    "xulosalar va tavsiyalar. Jadvallar bilan chiroyli formatlangan hisobot ber.",
+                    _CFG.gemini_key
+                )
+                if _ai_tahlil and len(_ai_tahlil) > 50:
+                    # Telegram 4096 limit — bo'laklarga bo'lish
+                    if len(_ai_tahlil) > 4000:
+                        qismlar = []
+                        joriy = ""
+                        for qator in _ai_tahlil.split("\n"):
+                            if len(joriy) + len(qator) > 3900:
+                                qismlar.append(joriy)
+                                joriy = qator + "\n"
+                            else:
+                                joriy += qator + "\n"
+                        if joriy.strip():
+                            qismlar.append(joriy)
+                        for q in qismlar:
+                            try:
+                                await update.message.reply_text(q.strip(), parse_mode=ParseMode.MARKDOWN)
+                            except Exception:
+                                await update.message.reply_text(q.strip().replace("*","").replace("_",""))
+                    else:
+                        try:
+                            await update.message.reply_text(_ai_tahlil, parse_mode=ParseMode.MARKDOWN)
+                        except Exception:
+                            await update.message.reply_text(_ai_tahlil.replace("*","").replace("_",""))
+                    log.info("Excel AI tahlil: %d belgi yuborildi", len(_ai_tahlil))
+            except Exception as _ai_e:
+                log.warning("Excel AI tahlil: %s", _ai_e)
+            
             return
 
         from shared.services.hujjat_oqish import hujjat_oqi, hujjat_xulosa_matn
