@@ -1428,21 +1428,26 @@ async def _qayta_ishlash(update:Update, ctx:ContextTypes.DEFAULT_TYPE,
 
     if amal=="boshqa" or (not natija.get("tovarlar") and amal not in("qarz_tolash",)):
         try:
-            from shared.services.suhbatdosh import tushunilmadi
-            _tush_msg = tushunilmadi()
-        except Exception:
-            _tush_msg = "🤔 Tushunolmadim."
-        yordam=(
-            f"{_tush_msg}\n\n"
-            "*Masalan shunday ayting:*\n"
-            "• _\"Salimovga 50 Ariel, donasi 45 mingdan\"_\n"
-            "• _\"100 ta un kirdi, Akbardan, 35 mingdan\"_\n"
-            "• _\"Salimov 500 ming to'ladi\"_\n"
-            "• _\"Bugungi sotuv qancha?\"_\n"
-            "• _\"Salimovning qarzi?\"_"
-        )
-        if tahrirlash: await tahrirlash.edit_text(yordam,parse_mode=ParseMode.MARKDOWN)
-        else: await update.message.reply_text(yordam,parse_mode=ParseMode.MARKDOWN)
+            from services.bot.message_handler import universal_chat_reply
+            await universal_chat_reply(update, ctx)
+        except Exception as _uchat_e:
+            log.warning("universal_chat_reply: %s", _uchat_e, exc_info=True)
+            try:
+                from shared.services.suhbatdosh import tushunilmadi
+                _tush_msg = tushunilmadi()
+            except Exception:
+                _tush_msg = "🤔 Tushunolmadim."
+            yordam=(
+                f"{_tush_msg}\n\n"
+                "*Masalan shunday ayting:*\n"
+                "• _\"Salimovga 50 Ariel, donasi 45 mingdan\"_\n"
+                "• _\"100 ta un kirdi, Akbardan, 35 mingdan\"_\n"
+                "• _\"Salimov 500 ming to'ladi\"_\n"
+                "• _\"Bugungi sotuv qancha?\"_\n"
+                "• _\"Salimovning qarzi?\"_"
+            )
+            if tahrirlash: await tahrirlash.edit_text(yordam,parse_mode=ParseMode.MARKDOWN)
+            else: await update.message.reply_text(yordam,parse_mode=ParseMode.MARKDOWN)
         return
 
     # ═══ PIPELINE: AI → SMART NARX → DRAFT → CONFIDENCE → CONFIRM ═══
@@ -3715,7 +3720,8 @@ async def hujjat_qabul(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
                  '.epub','.fb2','.rtf','.html','.htm','.json','.xml',
                  '.md','.markdown','.odt','.djvu',
                  '.txt','.csv','.log','.py','.js','.ts','.sql','.sh',
-                 '.yaml','.yml','.ini','.conf','.env','.toml')
+                 '.yaml','.yml','.ini','.conf','.env','.toml',
+                 '.jpg','.jpeg','.png','.webp','.gif')
     if not any(fn_lower.endswith(f) for f in FORMATLAR):
         return
 
@@ -3737,6 +3743,26 @@ async def hujjat_qabul(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
     try:
         fayl = await ctx.bot.get_file(doc.file_id)
         data = bytes(await fayl.download_as_bytearray())
+
+        # Claude — PDF / Excel / rasm (document) to'liq tahlil
+        _mime_cl = (doc.mime_type or "").lower()
+        _claude_hujjat = (
+            _mime_cl.startswith("image/")
+            or fn_lower.endswith(('.pdf', '.xlsx', '.xls')) 
+            or fn_lower.endswith(('.jpg', '.jpeg', '.png', '.webp', '.gif'))
+        )
+        if _claude_hujjat:
+            try:
+                from services.bot.message_handler import fayl_tahlili_claude
+                await fayl_tahlili_claude(update, ctx, data, fname, holat)
+            except Exception as _cl_e:
+                log.error("Claude fayl tahlili: %s", _cl_e, exc_info=True)
+                try:
+                    await holat.edit_text(
+                        "❌ Fayl tahlilida xato yuz berdi. Keyinroq urinib ko'ring.")
+                except Exception:
+                    pass
+            return
 
         # EXCEL — maxsus super reader
         if fn_lower.endswith(('.xlsx', '.xls')):

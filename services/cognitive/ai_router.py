@@ -200,6 +200,42 @@ class _ClaudeClient:
             timeout=timeout,
         )
 
+    def _call_sync_blocks(
+        self,
+        system: str,
+        content: list[dict[str, Any]],
+        max_tokens: int = 8192,
+        temperature: float = 0.2,
+    ) -> str:
+        """Claude — multimodal (document / image + matn)"""
+        response = self._client.messages.create(
+            model=self._model,
+            max_tokens=max_tokens,
+            temperature=temperature,
+            system=system,
+            messages=[{"role": "user", "content": content}],
+        )
+        return response.content[0].text.strip()
+
+    async def call_blocks(
+        self,
+        system: str,
+        content: list[dict[str, Any]],
+        max_tokens: int = 8192,
+        temperature: float = 0.2,
+        timeout: float = 120.0,
+    ) -> str:
+        loop = asyncio.get_event_loop()
+        return await asyncio.wait_for(
+            loop.run_in_executor(
+                None,
+                lambda: self._call_sync_blocks(
+                    system, content, max_tokens, temperature
+                ),
+            ),
+            timeout=timeout,
+        )
+
 
 # Global client instances
 _gemini = _GeminiClient()
@@ -565,3 +601,150 @@ def router_init(gemini_key: str = "", claude_key: str = "",
     r = get_router()
     r.init(gemini_key, claude_key, gemini_model, claude_model)
     return r
+
+
+# ════════════════════════════════════════════════════════════════════
+#  UNIVERSAL CHAT & FAYL TAHLILI (Telegram message_handler)
+# ════════════════════════════════════════════════════════════════════
+
+UNIVERSAL_CHAT_SYSTEM = (
+    "Siz Mashrab Moliya botisiz. O'zbek tilida javob bering. "
+    "Biznes, savdo, moliya va har qanday mavzuda yordam bering."
+)
+
+_FILE_ANALYSIS_PROMPT = (
+    "Bu faylni to'liq tahlil qiling, asosiy raqamlar, trendlar va "
+    "muhim ma'lumotlarni o'zbek tilida ayting"
+)
+
+
+def _excel_fallback_text(data: bytes) -> str:
+    try:
+        from shared.services.excel_reader import excel_toliq_oqi
+
+        h = excel_toliq_oqi(data)
+        if h.get("xato"):
+            return ""
+        return (h.get("umumiy_matn") or "")[:120000]
+    except Exception:
+        return ""
+
+
+async def claude_universal_chat(user_text: str) -> str:
+    """Claude Sonnet — bepul matn suhbat (system prompt: UNIVERSAL_CHAT_SYSTEM)."""
+    if not _claude.ready:
+        raise RuntimeError("Claude ishga tushirilmagan")
+    t = (user_text or "").strip()
+    if not t:
+        raise ValueError("Matn bo'sh")
+    return await _claude.call_blocks(
+        UNIVERSAL_CHAT_SYSTEM,
+        [{"type": "text", "text": t}],
+        max_tokens=4096,
+        temperature=0.3,
+        timeout=90.0,
+    )
+
+
+async def claude_analyze_file_bytes(
+    data: bytes,
+    mime_type: str,
+    filename: str = "fayl",
+) -> str:
+    """
+    PDF / rasm — base64 document yoki image bloklari.
+    Excel — avval document (base64); xato bo'lsa Excel dan matn fallback.
+    """
+    if not _claude.ready:
+        raise RuntimeError("Claude ishga tushirilmagan")
+    if not data:
+        raise ValueError("Fayl bo'sh")
+
+    mime = (mime_type or "application/octet-stream").lower().split(";")[0].strip()
+    b64 = base64.standard_b64encode(data).decode("ascii")
+    prompt = _FILE_ANALYSIS_PROMPT
+    system = UNIVERSAL_CHAT_SYSTEM
+
+    if mime == "application/pdf":
+        content: list[dict[str, Any]] = [
+            {
+                "type": "document",
+                "source": {
+                    "type": "base64",
+                    "media_type": "application/pdf",
+                    "data": b64,
+                },
+            },
+            {"type": "text", "text": prompt},
+        ]
+        return await _claude.call_blocks(
+            system, content, max_tokens=8192, temperature=0.2, timeout=120.0
+        )
+
+    if mime.startswith("image/"):
+        content = [
+            {
+                "type": "image",
+                "source": {
+                    "type": "base64",
+                    "media_type": mime,
+                    "data": b64,
+                },
+            },
+            {"type": "text", "text": prompt},
+        ]
+        return await _claude.call_blocks(
+            system, content, max_tokens=8192, temperature=0.2, timeout=120.0
+        )
+
+    fn_low = (filename or "").lower()
+    is_xlsx = fn_low.endswith(".xlsx") or mime == (
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+    is_xls = fn_low.endswith(".xls") and not fn_low.endswith(".xlsx")
+    is_sheet = is_xlsx or is_xls or mime in (
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "application/vnd.ms-excel",
+    )
+
+    if is_sheet:
+        doc_mime = (
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            if is_xlsx
+            else "application/vnd.ms-excel"
+        )
+        try:
+            content = [
+                {
+                    "type": "document",
+                    "source": {
+                        "type": "base64",
+                        "media_type": doc_mime,
+                        "data": b64,
+                    },
+                },
+                {"type": "text", "text": prompt},
+            ]
+            return await _claude.call_blocks(
+                system, content, max_tokens=8192, temperature=0.2, timeout=120.0
+            )
+        except Exception as e:
+            log.warning("Claude Excel document xato, matn fallback: %s", e)
+            txt = _excel_fallback_text(data)
+            if not txt.strip():
+                raise RuntimeError(
+                    "Excel faylni Claude yoki lokal o'quvchi bilan ishlatib bo'lmadi"
+                ) from e
+            user_msg = (
+                f"Fayl nomi: {filename}\n\n"
+                f"Quyidagi jadval mazmuni:\n\n{txt}\n\n{prompt}"
+            )
+            return await _claude.call_blocks(
+                system,
+                [{"type": "text", "text": user_msg}],
+                max_tokens=8192,
+                temperature=0.2,
+                timeout=120.0,
+            )
+
+    raise ValueError(f"Qo'llab-quvvatlanmaydigan MIME: {mime}")
