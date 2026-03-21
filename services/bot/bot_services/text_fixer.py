@@ -66,14 +66,36 @@ Tuzatilgan matn:""",
 
         # Haiku xato javob berganini aniqlash — uzr, izoh, tushuntirish
         xato_belgilari = ("uzur", "uzr", "ma'lum", "kechirasiz", "ro'yxat",
-                          "berilmagan", "tuzatish uchun", "sorry", "cannot")
+                          "berilmagan", "tuzatish uchun", "sorry", "cannot",
+                          "topilmadi", "mavjud emas", "aniqlay")
         if any(b in result.lower() for b in xato_belgilari):
             logger.warning("Haiku xato javob berdi, fuzzy ishlatiladi: '%s'", result[:80])
             return fuzzy_fixed
 
+        # MUHIM: Haiku matnni QISQARTIRGAN bo'lsa — original qaytariladi!
+        # "Ulug'bek akaga 10 Doleks 68000..." → "Ulug'bek akaga" bo'lmasligi kerak
         if result and len(result) > 3:
+            # Raqamlar soni solishtirish — tovar/narx yo'qolmasligi kerak
+            import re
+            orig_nums = len(re.findall(r'\d+', fuzzy_fixed))
+            fix_nums = len(re.findall(r'\d+', result))
+            
+            # Agar raqamlar 50% dan ko'p yo'qolsa — Haiku buzgan
+            if orig_nums > 2 and fix_nums < orig_nums * 0.5:
+                logger.warning(
+                    "Haiku matnni qisqartirdi! orig=%d raqam, fix=%d raqam. Original saqlanadi.",
+                    orig_nums, fix_nums)
+                return fuzzy_fixed
+            
+            # Agar matn 40% dan ko'p qisqarsa — Haiku buzgan
+            if len(result) < len(fuzzy_fixed) * 0.6 and len(fuzzy_fixed) > 30:
+                logger.warning(
+                    "Haiku matnni kesdi! orig=%d belgi, fix=%d belgi. Original saqlanadi.",
+                    len(fuzzy_fixed), len(result))
+                return fuzzy_fixed
+
             if result != fuzzy_fixed:
-                logger.info("Haiku fix: '%s' -> '%s'", fuzzy_fixed, result)
+                logger.info("Haiku fix: '%s' -> '%s'", fuzzy_fixed[:80], result[:80])
             return result
         return fuzzy_fixed
     except Exception as e:

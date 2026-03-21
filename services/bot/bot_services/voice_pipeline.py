@@ -60,20 +60,12 @@ async def process_voice(raw_stt_text: str, user_id: int | None = None) -> dict:
         result["processing_ms"] = int((time.time() - start) * 1000)
         return result
 
-    try:
-        haiku_fixed = await fix_stt_text(
-            raw_stt_text,
-            fuzzy_fixed,
-            products=prods,
-            clients=clits,
-        )
-        result["haiku_fixed"] = haiku_fixed
-        result["text"] = haiku_fixed
-        result["confidence"] = "medium" if haiku_fixed != fuzzy_fixed else "low"
-    except Exception as e:
-        logger.warning("Haiku fail: %s", e)
-        result["text"] = fuzzy_fixed
-        result["confidence"] = "low"
+    # Haiku O'CHIRILDI — faqat zarar qilardi (tovarlarni o'chirib tashlardi)
+    # Gemini STT + Fuzzy yetarli — Claude Sonnet analyst o'zi tushunadi
+    result["text"] = fuzzy_fixed
+    result["haiku_fixed"] = fuzzy_fixed
+    result["confidence"] = "medium"
+    logger.info("Pipeline: Haiku skip, fuzzy natija → analyst (%d belgi)", len(fuzzy_fixed))
 
     result["processing_ms"] = int((time.time() - start) * 1000)
     return result
