@@ -114,6 +114,8 @@ Xojalik: Idish-tovoq | Xojalik: Kiyim | Boshqa
 
 4. KO'P TOVAR: hammasini tovarlar[] ga yoz
    - "50 Ariel, 20 Tide" → 2 ta tovar
+   - "5 Ariel, 10 Tide, 3 Fairy, 20 Persil, 8 Cler" → 5 ta tovar
+   - ⚠️ HECH QACHON tovarni tashlab ketma — 1 ta bo'lsa ham, 50 ta bo'lsa ham!
 
 5. KIRIM: "dan", "akadan", "firma", "ombor" → manba
    - "Akbardan kirdi" → manba: "Akbar"
@@ -193,6 +195,10 @@ QADOQ HISOB (DIQQAT!):
 ═══════════════ JAVOB FORMATI ═══════════════
 FAQAT SOF JSON (markdown, ```, izoh YO'Q):
 
+⚠️ DIQQAT: Matnda 1 ta yoki 50 ta tovar bo'lishi mumkin.
+BARCHA tovarlarni tovarlar[] ga yoz — HECH BIRINI TASHLAB KETMA!
+Agar 20 ta tovar aytilsa, tovarlar[] da 20 ta element bo'lishi SHART!
+
 {
   "amal": "chiqim",
   "klient": "Salimov",
@@ -209,6 +215,29 @@ FAQAT SOF JSON (markdown, ```, izoh YO'Q):
   "jami_summa": 2250000,
   "tolangan": 1750000,
   "qarz": 500000,
+  "manba": null,
+  "izoh": null
+}
+
+═══════════════ KO'P TOVAR MISOL (MUHIM!) ═══════════════
+Matn: "Jasurbekka 5 Ariel 45000, 10 Tide 32000, 3 Fairy 28000, 
+       20 Persil 38000, 2 karobka Panda 95000, 15 Domestos 22000"
+
+JSON:
+{
+  "amal": "chiqim",
+  "klient": "Jasurbek",
+  "tovarlar": [
+    {"nomi":"Ariel","miqdor":5,"birlik":"dona","narx":45000,"jami":225000,"kategoriya":"Kimyoviy: Kir yuvish (Ariel, Tide...)"},
+    {"nomi":"Tide","miqdor":10,"birlik":"dona","narx":32000,"jami":320000,"kategoriya":"Kimyoviy: Kir yuvish (Ariel, Tide...)"},
+    {"nomi":"Fairy","miqdor":3,"birlik":"dona","narx":28000,"jami":84000,"kategoriya":"Kimyoviy: Idish yuvish (Fairy...)"},
+    {"nomi":"Persil","miqdor":20,"birlik":"dona","narx":38000,"jami":760000,"kategoriya":"Kimyoviy: Kir yuvish (Ariel, Tide...)"},
+    {"nomi":"Panda","miqdor":2,"birlik":"karobka","narx":95000,"jami":190000,"kategoriya":"Boshqa"},
+    {"nomi":"Domestos","miqdor":15,"birlik":"dona","narx":22000,"jami":330000,"kategoriya":"Kimyoviy: Tozalash"}
+  ],
+  "jami_summa": 1909000,
+  "tolangan": 1909000,
+  "qarz": 0,
   "manba": null,
   "izoh": null
 }
@@ -280,14 +309,14 @@ async def tahlil_qil(matn: str, urinishlar: int = 3, uid: int = 0) -> dict[str, 
 
 async def _user_tovar_kontekst(uid: int) -> str:
     """Claude Sonnet ga foydalanuvchining tovar/klient ro'yxatini berish."""
-    from shared.database.pool import get_pool
     try:
-        async with get_pool().acquire() as conn:
+        import services.bot.db as _db
+        async with _db._P().acquire() as conn:
             products = await conn.fetch(
-                "SELECT nomi FROM tovarlar WHERE user_id=$1 ORDER BY nomi ASC LIMIT 300", uid
+                "SELECT nomi FROM tovarlar WHERE user_id=$1 ORDER BY nomi ASC LIMIT 1000", uid
             )
             clients = await conn.fetch(
-                "SELECT ism FROM klientlar WHERE user_id=$1 ORDER BY ism ASC LIMIT 100", uid
+                "SELECT ism FROM klientlar WHERE user_id=$1 ORDER BY ism ASC LIMIT 500", uid
             )
         if not products and not clients:
             return ""
@@ -314,7 +343,7 @@ async def _claude_chaqir(matn: str) -> str:
                 None,
                 lambda: _client.messages.create(
                     model=MODEL,
-                    max_tokens=8192,
+                    max_tokens=16384,
                     temperature=0.1,
                     system=_TIZIM,
                     messages=[{"role": "user", "content": matn}],

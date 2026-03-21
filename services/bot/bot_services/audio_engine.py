@@ -36,7 +36,7 @@ log = logging.getLogger(__name__)
 
 # Sozlamalar
 CHUNK_DURATION_S = 180       # 3 daqiqa = 180 sekund
-MAX_AUDIO_DURATION_S = 3600  # 1 soat max
+MAX_AUDIO_DURATION_S = 7200  # 2 SOAT max
 SAMPLE_RATE = 16000          # 16kHz — STT uchun optimal
 MAX_FILE_MB = 100            # Local Bot API bilan 100MB gacha
 VAD_THRESHOLD = 0.3          # Ovoz aniqlash sezgirligi (0-1)

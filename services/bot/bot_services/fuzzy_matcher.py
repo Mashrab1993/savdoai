@@ -40,8 +40,9 @@ class FuzzyMatcher:
         if hit and (now - hit[0]) < _CACHE_TTL_S:
             return
         try:
-            from shared.database.pool import get_pool
-            async with get_pool().acquire() as conn:
+            # db._P() — asosiy pool (data shu yerda)
+            import services.bot.db as _db
+            async with _db._P().acquire() as conn:
                 prows = await conn.fetch(
                     "SELECT DISTINCT nomi FROM tovarlar WHERE user_id=$1 AND nomi IS NOT NULL AND nomi != ''",
                     uid

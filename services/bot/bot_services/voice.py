@@ -24,7 +24,7 @@ _client    = None
 MODEL      = os.getenv("GEMINI_MODEL", "gemini-2.5-pro")
 MAX_MB     = 100
 TIMEOUT_S  = 90   # gemini-2.5-pro sekinroq lekin aniqroq
-MAX_PARALLEL = 2   # pro model rate limit past
+MAX_PARALLEL = 4   # 2 soat audio = 40 chunk, 4 parallel = 10 batch = tez
 _semaphore = None
 # STT uchun foydalanuvchi bo'yicha prompt keshi (RLS bilan); global pool ishlatilmaydi.
 _STT_USER_PROMPT_CACHE: dict[int, tuple[float, str]] = {}
@@ -82,7 +82,10 @@ Natija: Sardor akaga 5 Persil 45000 nasiyaga"""
 _PROMPT_USER = (
     "Bu O'zbek tilida savdo haqida gapirilgan ovoz xabari. "
     "Faqat aytilganlarni so'zma-so'z ANIQ yoz. "
-    "Raqamlar, mahsulotlar, ismlar, pullarni XATOSIZ yoz."
+    "Raqamlar, mahsulotlar, ismlar, pullarni XATOSIZ yoz. "
+    "MUHIM: Ovozda 1 ta yoki 50 ta tovar aytilgan bo'lishi mumkin — "
+    "HAMMASINI yoz, hech birini tashlab ketma! "
+    "Agar 20 ta tovar aytilsa, 20 tasini HAM yoz."
 )
 
 
@@ -93,18 +96,18 @@ async def _build_stt_extra_for_user(uid: int) -> str:
     products = []
     clients = []
     try:
-        async with get_pool().acquire() as conn:
-            # RLS o'rniga oddiy filter — read-only, tranzaksiya kerak emas
+        import services.bot.db as _db
+        async with _db._P().acquire() as conn:
             try:
                 products = await conn.fetch(
-                    "SELECT nomi FROM tovarlar WHERE user_id=$1 ORDER BY nomi ASC LIMIT 500", uid
+                    "SELECT nomi FROM tovarlar WHERE user_id=$1 ORDER BY nomi ASC LIMIT 1000", uid
                 )
             except Exception as e:
                 log.warning("STT tovar yuklash xato (uid=%s): %s", uid, e)
 
             try:
                 clients = await conn.fetch(
-                    "SELECT ism FROM klientlar WHERE user_id=$1 ORDER BY ism ASC LIMIT 200", uid
+                    "SELECT ism FROM klientlar WHERE user_id=$1 ORDER BY ism ASC LIMIT 500", uid
                 )
             except Exception as e:
                 log.warning("STT klient yuklash xato (uid=%s): %s", uid, e)
