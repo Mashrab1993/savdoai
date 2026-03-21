@@ -1,23 +1,32 @@
-__pycache__/
-*.pyc
-*.pyo
-.pytest_cache/
-*.egg-info/
-dist/
-build/
-.env
-.env.local
-.env.production
+# Dependencies
 node_modules/
+
+# Next.js
 .next/
-.vercel/
-*.log
+out/
+
+# Environment
+.env
+.env*.local
+
+# OS
 .DS_Store
 Thumbs.db
-*.zip
-*.swp
-*.swo
+
+# IDE
 .vscode/
 .idea/
-torch_cache/
-.cache/
+
+# v0 sandbox internal files
+__v0_runtime_loader.js
+__v0_devtools.tsx
+__v0_jsx-dev-runtime.ts
+.npmrc
+.snowflake/
+.v0-trash/
+.vercel/
+next.user-config.*
+
+# Lock files (regenerated on install)
+pnpm-lock.yaml
+package-lock.json
