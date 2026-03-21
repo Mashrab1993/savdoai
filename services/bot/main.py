@@ -841,17 +841,26 @@ async def matn_qabul(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
         except Exception as _he:
             log.debug("Hujjat savol: %s", _he)
 
-    # ═══ 4.5 SUHBAT ANIQLASH — salom, raxmat, yordam ═══
+    # ═══ 4.5 SUHBAT ANIQLASH — FAQAT salom, raxmat, yordam ═══
+    # Savdo/biznes savollarni USHLAB QOLMASIN!
     try:
-        from shared.services.suhbatdosh import suhbat_turini_aniqla, suhbat_javob
-        _suhbat = suhbat_turini_aniqla(matn)
-        if _suhbat:
-            _user = await _user_ol_kesh(uid)
-            _ism = (_user.get("ism") or "").split()[0] if _user and _user.get("ism") else ""
-            _javob = suhbat_javob(_suhbat, _ism)
-            if _javob:
-                await update.message.reply_text(_javob)
-                return
+        _m_lower = matn.lower().strip()
+        _biznes_sozlar = ("savdo", "sotuv", "sotdim", "qarz", "narx", "foyda", 
+                          "tovar", "klient", "hisobot", "excel", "ariel", "tide",
+                          "qancha", "nechta", "yaxshi", "yomon", "maslahat",
+                          "tahlil", "ombor", "kirim", "chiqim")
+        _biznes_msg = any(s in _m_lower for s in _biznes_sozlar)
+        
+        if not _biznes_msg:
+            from shared.services.suhbatdosh import suhbat_turini_aniqla, suhbat_javob
+            _suhbat = suhbat_turini_aniqla(matn)
+            if _suhbat:
+                _user = await _user_ol_kesh(uid)
+                _ism = (_user.get("ism") or "").split()[0] if _user and _user.get("ism") else ""
+                _javob = suhbat_javob(_suhbat, _ism)
+                if _javob:
+                    await update.message.reply_text(_javob)
+                    return
     except Exception as _sh_e:
         log.debug("Suhbat: %s", _sh_e)
 
@@ -866,6 +875,11 @@ async def matn_qabul(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
         "sotuv qancha", "bugun qancha",
         "hisobot excel", "excel hisobot", "oylik excel",
         "haftalik excel", "kunlik excel",
+        # YANGI — ko'proq trigger
+        "bugun savdo", "savdo qanday", "savdo yaxshi",
+        "bugun nechta", "bugun qancha", "bugun foyda",
+        "kechagi savdo", "kechagi sotuv",
+        "sotuv yaxshi", "sotuv qanday",
     )
     _ml = matn.lower().strip()
     _hisobot_match = any(s in _ml for s in _hisobot_sozlar)
@@ -1427,28 +1441,27 @@ async def _qayta_ishlash(update:Update, ctx:ContextTypes.DEFAULT_TYPE,
         await _nakladnoy_yuborish(update,ctx,natija,tahrirlash); return
 
     if amal=="boshqa" or (not natija.get("tovarlar") and amal not in("qarz_tolash",)):
+        # ═══ AI SUHBATDOSH — inson kabi gaplashadi ═══
         try:
-            from services.bot.message_handler import universal_chat_reply
-            await universal_chat_reply(update, ctx)
-        except Exception as _uchat_e:
-            log.warning("universal_chat_reply: %s", _uchat_e, exc_info=True)
+            from shared.services.ai_suhbat import ai_suhbat, db_kontekst_olish
+            _user = await _user_ol_kesh(uid)
+            _ism = (_user.get("ism") or "").split()[0] if _user and _user.get("ism") else ""
+            _db_ctx = await db_kontekst_olish(uid)
+            _javob = await ai_suhbat(matn, uid, ism=_ism, db_kontekst=_db_ctx)
+            if tahrirlash: await tahrirlash.edit_text(_javob)
+            else: await update.message.reply_text(_javob)
+            return
+        except Exception as _ai_e:
+            log.warning("AI suhbat xato: %s", _ai_e)
+            # Fallback
             try:
                 from shared.services.suhbatdosh import tushunilmadi
                 _tush_msg = tushunilmadi()
             except Exception:
                 _tush_msg = "🤔 Tushunolmadim."
-            yordam=(
-                f"{_tush_msg}\n\n"
-                "*Masalan shunday ayting:*\n"
-                "• _\"Salimovga 50 Ariel, donasi 45 mingdan\"_\n"
-                "• _\"100 ta un kirdi, Akbardan, 35 mingdan\"_\n"
-                "• _\"Salimov 500 ming to'ladi\"_\n"
-                "• _\"Bugungi sotuv qancha?\"_\n"
-                "• _\"Salimovning qarzi?\"_"
-            )
-            if tahrirlash: await tahrirlash.edit_text(yordam,parse_mode=ParseMode.MARKDOWN)
-            else: await update.message.reply_text(yordam,parse_mode=ParseMode.MARKDOWN)
-        return
+            if tahrirlash: await tahrirlash.edit_text(_tush_msg)
+            else: await update.message.reply_text(_tush_msg)
+            return
 
     # ═══ PIPELINE: AI → SMART NARX → DRAFT → CONFIDENCE → CONFIRM ═══
     from shared.services.pipeline import create_draft, TxType, TxStatus
@@ -3720,8 +3733,7 @@ async def hujjat_qabul(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
                  '.epub','.fb2','.rtf','.html','.htm','.json','.xml',
                  '.md','.markdown','.odt','.djvu',
                  '.txt','.csv','.log','.py','.js','.ts','.sql','.sh',
-                 '.yaml','.yml','.ini','.conf','.env','.toml',
-                 '.jpg','.jpeg','.png','.webp','.gif')
+                 '.yaml','.yml','.ini','.conf','.env','.toml')
     if not any(fn_lower.endswith(f) for f in FORMATLAR):
         return
 
@@ -3743,26 +3755,6 @@ async def hujjat_qabul(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
     try:
         fayl = await ctx.bot.get_file(doc.file_id)
         data = bytes(await fayl.download_as_bytearray())
-
-        # Claude — PDF / Excel / rasm (document) to'liq tahlil
-        _mime_cl = (doc.mime_type or "").lower()
-        _claude_hujjat = (
-            _mime_cl.startswith("image/")
-            or fn_lower.endswith(('.pdf', '.xlsx', '.xls')) 
-            or fn_lower.endswith(('.jpg', '.jpeg', '.png', '.webp', '.gif'))
-        )
-        if _claude_hujjat:
-            try:
-                from services.bot.message_handler import fayl_tahlili_claude
-                await fayl_tahlili_claude(update, ctx, data, fname, holat)
-            except Exception as _cl_e:
-                log.error("Claude fayl tahlili: %s", _cl_e, exc_info=True)
-                try:
-                    await holat.edit_text(
-                        "❌ Fayl tahlilida xato yuz berdi. Keyinroq urinib ko'ring.")
-                except Exception:
-                    pass
-            return
 
         # EXCEL — maxsus super reader
         if fn_lower.endswith(('.xlsx', '.xls')):
