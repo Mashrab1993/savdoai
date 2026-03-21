@@ -3784,40 +3784,71 @@ async def hujjat_qabul(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
             
             # ═══ AVTOMATIK AI TAHLIL — har safar to'liq hisobot ═══
             try:
-                from shared.services.excel_reader import excel_ai_savol
-                _ai_tahlil = await excel_ai_savol(
-                    h,
-                    "To'liq moliyaviy tahlil qil: umumiy ko'rsatkichlar, xarajatlar tarkibi, "
-                    "kunlik tushum tahlili, click vs naqd nisbati, haftalik trend, "
-                    "xulosalar va tavsiyalar. Jadvallar bilan chiroyli formatlangan hisobot ber.",
-                    _CFG.gemini_key
-                )
-                if _ai_tahlil and len(_ai_tahlil) > 50:
-                    # Telegram 4096 limit — bo'laklarga bo'lish
-                    if len(_ai_tahlil) > 4000:
-                        qismlar = []
-                        joriy = ""
-                        for qator in _ai_tahlil.split("\n"):
-                            if len(joriy) + len(qator) > 3900:
+                import os
+                from google import genai
+                from google.genai import types
+                import asyncio
+                
+                _gem_key = _CFG.gemini_key if _CFG else os.environ.get("GEMINI_API_KEY", "")
+                _matn_raw = h.get("umumiy_matn", "")[:25000]
+                _x = h.get("xulosa", {})
+                
+                if _gem_key and _matn_raw and len(_matn_raw) > 100:
+                    _prompt = f"""Sen MASHRAB MOLIYA auditor tizimisan. 
+KASSA Excel ma'lumotlari berilgan. TO'LIQ MOLIYAVIY TAHLIL yoz.
+
+EXCEL MA'LUMOTLARI:
+{_matn_raw}
+
+QOIDALAR:
+1. "📊 HISOBOT" bilan boshla
+2. 8 ta bo'lim: Umumiy, Xarajatlar tarkibi, Kunlik tushum TOP, 
+   Click vs Naqd, Click hisobi, Batafsil xarajat, Haftalik trend, Xulosa+Tavsiya
+3. Jadvallar bilan yoz (| ustun | qiymat |)
+4. Raqamlar: 1,234,567 formatda
+5. Emoji ishlat
+6. O'zbek tilida
+7. Eng oxirida 3-5 ta AMALIY TAVSIYA ber"""
+
+                    _gclient = genai.Client(api_key=_gem_key)
+                    loop = asyncio.get_event_loop()
+                    _resp = await asyncio.wait_for(
+                        loop.run_in_executor(None, lambda: _gclient.models.generate_content(
+                            model="gemini-2.5-flash", contents=_prompt,
+                            config=types.GenerateContentConfig(temperature=0.2, max_output_tokens=4000))),
+                        timeout=45)
+                    _ai_tahlil = (_resp.text or "").strip()
+                    
+                    if _ai_tahlil and len(_ai_tahlil) > 100:
+                        # Telegram 4096 limit — bo'laklarga bo'lish
+                        if len(_ai_tahlil) > 4000:
+                            qismlar = []
+                            joriy = ""
+                            for qator in _ai_tahlil.split("\n"):
+                                if len(joriy) + len(qator) > 3900:
+                                    qismlar.append(joriy)
+                                    joriy = qator + "\n"
+                                else:
+                                    joriy += qator + "\n"
+                            if joriy.strip():
                                 qismlar.append(joriy)
-                                joriy = qator + "\n"
-                            else:
-                                joriy += qator + "\n"
-                        if joriy.strip():
-                            qismlar.append(joriy)
-                        for q in qismlar:
+                            for q in qismlar:
+                                try:
+                                    await update.message.reply_text(q.strip(), parse_mode=ParseMode.MARKDOWN)
+                                except Exception:
+                                    await update.message.reply_text(q.strip().replace("*","").replace("_",""))
+                        else:
                             try:
-                                await update.message.reply_text(q.strip(), parse_mode=ParseMode.MARKDOWN)
+                                await update.message.reply_text(_ai_tahlil, parse_mode=ParseMode.MARKDOWN)
                             except Exception:
-                                await update.message.reply_text(q.strip().replace("*","").replace("_",""))
+                                await update.message.reply_text(_ai_tahlil.replace("*","").replace("_",""))
+                        log.info("Excel AI tahlil: %d belgi yuborildi", len(_ai_tahlil))
                     else:
-                        try:
-                            await update.message.reply_text(_ai_tahlil, parse_mode=ParseMode.MARKDOWN)
-                        except Exception:
-                            await update.message.reply_text(_ai_tahlil.replace("*","").replace("_",""))
-                    log.info("Excel AI tahlil: %d belgi yuborildi", len(_ai_tahlil))
+                        log.warning("Excel AI tahlil: javob qisqa (%d belgi)", len(_ai_tahlil) if _ai_tahlil else 0)
+                else:
+                    log.warning("Excel AI tahlil: gem_key=%s matn=%d belgi", bool(_gem_key), len(_matn_raw))
             except Exception as _ai_e:
-                log.warning("Excel AI tahlil: %s", _ai_e)
+                log.warning("Excel AI tahlil xato: %s", _ai_e)
             
             return
 
