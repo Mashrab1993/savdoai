@@ -44,9 +44,8 @@ PYTHONPATH        = "/app"
 
 [[services]]
 name = "savdoai-web"
-rootDirectory = "services/web"
 [services.build]
-dockerfilePath = "Dockerfile"
+dockerfilePath = "Dockerfile.web"
 [services.deploy]
 healthCheckPath = "/"
 restartPolicyType = "ON_FAILURE"

@@ -27,6 +27,5 @@ __v0_jsx-dev-runtime.ts
 .vercel/
 next.user-config.*
 
-# Lock files (regenerated on install)
+# Lock files
 pnpm-lock.yaml
-package-lock.json
