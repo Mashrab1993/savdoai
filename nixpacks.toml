@@ -2,4 +2,5 @@
 PYTHONPATH = "/app"
 
 [phases.setup]
+nixPkgs = ["python312", "ffmpeg"]
 aptPkgs = ["ffmpeg"]
