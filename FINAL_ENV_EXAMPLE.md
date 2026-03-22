@@ -32,5 +32,5 @@
 
 | Name | Required | Example | Security |
 |------|----------|---------|----------|
-| NEXT_PUBLIC_API_URL | YES | https://savdoai-api.railway.app | PUBLIC |
+| NEXT_PUBLIC_API_URL | YES | `https://<savdoai-public-host>.up.railway.app` (API service **`savdoai`**, not the web URL) | PUBLIC |
 | PORT | NO | 3000 | — |

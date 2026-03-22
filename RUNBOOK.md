@@ -52,12 +52,22 @@ Requires: DATABASE_URL, REDIS_URL
 
 ## Railway Deployment
 
+### Service naming (matches `railway.toml`)
+
+| Role | Railway service name in this repo |
+|------|-----------------------------------|
+| API (FastAPI) | **`savdoai`** |
+| Web (Next.js) | **`savdoai-web`** |
+| Bot | **`savdoai-bot`** |
+
+If your dashboard shows an extra service named **`web`**, it is **not** defined in `railway.toml` — often a legacy or duplicate Next deploy. Prefer **`savdoai-web`** for this repository’s frontend so `NEXT_PUBLIC_API_URL` and the GitHub repo attach to the correct service. Remove or stop using the duplicate to avoid opening the wrong URL or stale builds.
+
 ### Deploy Order
 1. PostgreSQL (managed)
 2. Redis (managed)
-3. API service (services/api/Dockerfile)
-4. Bot service (services/bot/Dockerfile)
-5. Web service (services/web/Dockerfile)
+3. API service **`savdoai`** (services/api/Dockerfile)
+4. Bot service **`savdoai-bot`** (services/bot/Dockerfile)
+5. Web service **`savdoai-web`** (services/web/Dockerfile)
 
 ### Required Environment Variables
 
@@ -79,8 +89,8 @@ Requires: DATABASE_URL, REDIS_URL
 - **`NEXT_PUBLIC_API_URL`** — **build-time** (must be present when `next build` / Docker **builder** runs). Must be the **API** service public HTTPS URL (no trailing slash), **not** the web app URL.
 
 Example values:
-- Railway template in `railway.toml`: `NEXT_PUBLIC_API_URL = "${{savdoai-api.URL}}"` (requires the API service to be named **`savdoai-api`** in the same Railway project).
-- Manual: open Railway → **savdoai-api** (or your API service) → **Settings** → **Networking / Public networking** → copy the **HTTPS** URL → set on **savdoai-web** as `NEXT_PUBLIC_API_URL`.
+- Railway template in `railway.toml`: `NEXT_PUBLIC_API_URL = "${{savdoai.URL}}"` — requires the API service to be named **`savdoai`** in the same project (interpolation uses the **exact** service name).
+- Manual: Railway → **`savdoai`** (API) → **Settings** → **Networking** → copy the **HTTPS** URL (origin only, e.g. `https://savdoai-production.up.railway.app`) → set on **`savdoai-web`** as `NEXT_PUBLIC_API_URL`. Do **not** append `/PORT`, paths, or the web hostname.
 
 After changing this variable, **redeploy the web service with a full rebuild** (the Next.js client bundle embeds `NEXT_PUBLIC_*` at compile time).
 

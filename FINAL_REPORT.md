@@ -91,13 +91,14 @@ savdoai-main-fixed/services/web was a simplified rewrite with hidden type errors
 
 ### RAILWAY
 
-- **`railway.toml`** already sets `NEXT_PUBLIC_API_URL = "${{savdoai-api.URL}}"` for `savdoai-web` — this only works if the API service is named **`savdoai-api`** in the same project. Otherwise set `NEXT_PUBLIC_API_URL` manually to the API’s **HTTPS** public URL (Settings → Networking).
+- **`railway.toml`** sets `NEXT_PUBLIC_API_URL = "${{savdoai.URL}}"` on **`savdoai-web`** — the API service in the live project is **`savdoai`** (not `savdoai-api`). Using the wrong service name in `${{...URL}}` leaves interpolation **broken**, so the client never gets the real API origin at build time.
+- If your API service is named differently, set `NEXT_PUBLIC_API_URL` manually to that service’s **HTTPS** public URL (no path, no `/PORT`, not the web hostname).
 - **CORS (VERIFIED in code):** `services/api/main.py` allows `allow_origin_regex=r"https://.*\.up\.railway\.app"` and common localhost origins — web → API cross-origin requests are allowed when the browser targets the API host.
 
 ### NOT PROVEN (requires your Railway project)
 
 - Live browser network tab after redeploy.
-- That `${{savdoai-api.URL}}` resolves on your project (service name / Railway version).
+- That `${{savdoai.URL}}` resolves (Railway version / config-as-code sync).
 
 ## Critical Risks
 

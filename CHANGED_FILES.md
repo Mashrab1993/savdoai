@@ -12,3 +12,5 @@ Date: 2025-03-22
 | `services/web/.env.example` | **Changed** — documents build-time requirement and placeholder. |
 | `FINAL_REPORT.md` | **Changed** — root cause, fix, Railway/CORS notes. |
 | `RUNBOOK.md` | **Changed** — web env vars, rebuild requirement, Dockerfile note. |
+| `railway.toml`, `deploy/railway.toml` | **Changed** — API service name **`savdoai`** (was **`savdoai-api`**); `NEXT_PUBLIC_API_URL = "${{savdoai.URL}}"` on **`savdoai-web`**. |
+| `FINAL_ENV_EXAMPLE.md` | **Changed** — example API URL documents **`savdoai`** hostname. |

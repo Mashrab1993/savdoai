@@ -1,11 +1,14 @@
 # SAVDOAI v25.3 — Railway Config
 # 5 servis: API + Bot + Web + Postgres + Redis
+#
+# Service names below must match Railway project service names.
+# Live topology uses API=savdoai, frontend=savdoai-web (not savdoai-api).
 
 [build]
 builder = "NIXPACKS"
 
 [[services]]
-name = "savdoai-api"
+name = "savdoai"
 [services.build]
 dockerfilePath = "services/api/Dockerfile"
 [services.deploy]
@@ -53,5 +56,5 @@ healthCheckPath = "/"
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 3
 [services.variables]
-NEXT_PUBLIC_API_URL = "${{savdoai-api.URL}}"
+NEXT_PUBLIC_API_URL = "${{savdoai.URL}}"
 PORT                = "3000"
