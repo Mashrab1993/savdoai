@@ -168,19 +168,26 @@ app = FastAPI(
     redoc_url   = "/redoc",
 )
 
-# CORS
+# CORS — must include the real browser Origin (web app HTTPS), not the API URL.
+# WEB_URL default was wrong (API host); web Origin is savdoai-web-production.* .
+_web_cors_origins = [
+    "https://savdoai-web-production.up.railway.app",
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "https://mashrab-moliya.vercel.app",
+    "http://localhost:5173",
+    "http://localhost:8000",
+]
+_web_url = os.getenv("WEB_URL", "https://savdoai-web-production.up.railway.app").strip()
+if _web_url and _web_url not in _web_cors_origins:
+    _web_cors_origins.insert(0, _web_url)
+
+# GZip first, CORS second → CORS is outermost (runs first on request; handles OPTIONS preflight).
 app.add_middleware(GZipMiddleware, minimum_size=500)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        os.getenv("WEB_URL", "https://savdoai-production.up.railway.app"),
-        "https://savdoai-production.up.railway.app",
-        "https://mashrab-moliya.vercel.app",
-        "http://localhost:3000",
-        "http://localhost:5173",
-        "http://localhost:8000",
-    ],
-    allow_origin_regex=r"https://.*\.up\.railway\.app",  # Railway subdomenlar
+    allow_origins=_web_cors_origins,
+    allow_origin_regex=r"https://.*\.up\.railway\.app",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
