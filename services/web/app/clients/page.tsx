@@ -31,7 +31,7 @@ function fmt(n: number) {
   return `${n} so'm`
 }
 
-type ClientFormShape = { name: string; email: string; phone: string; company: string; status: string }
+type ClientFormShape = { name: string; phone: string; address: string; creditLimit: string }
 
 export default function ClientsPage() {
   const { locale } = useLocale()
@@ -57,14 +57,14 @@ export default function ClientsPage() {
   const filtered = clients.filter(c => {
     const matchesSearch =
       c.name.toLowerCase().includes(search.toLowerCase()) ||
-      c.email.toLowerCase().includes(search.toLowerCase()) ||
-      c.company.toLowerCase().includes(search.toLowerCase())
+      c.phone.toLowerCase().includes(search.toLowerCase()) ||
+      c.address.toLowerCase().includes(search.toLowerCase())
     const matchesStatus = statusFilter === "all" || c.status === statusFilter
     return matchesSearch && matchesStatus
   })
 
   function openAdd() {
-    setForm({ status: "active" })
+    setForm({})
     setFormErrors({})
     setSaveError(null)
     setModalOpen(true)
@@ -73,9 +73,6 @@ export default function ClientsPage() {
   function validateForm() {
     const e: Record<string, string> = {}
     if (!form.name?.trim()) e.name = locale === "uz" ? "Ism kiritish shart" : "Имя обязательно"
-    if (!form.email?.trim()) e.email = locale === "uz" ? "Email kiritish shart" : "Email обязателен"
-    else if (!/\S+@\S+\.\S+/.test(form.email)) e.email = locale === "uz" ? "Noto'g'ri email" : "Некорректный email"
-    if (!form.company?.trim()) e.company = locale === "uz" ? "Kompaniya kiritish shart" : "Компания обязательна"
     return e
   }
 
@@ -88,10 +85,9 @@ export default function ClientsPage() {
     try {
       const created = await clientService.create({
         ism: form.name,
-        email: form.email,
-        telefon: form.phone,
-        kompaniya: form.company,
-        aktiv: form.status === "active",
+        telefon: form.phone || undefined,
+        manzil: form.address || undefined,
+        kredit_limit: form.creditLimit ? Number(form.creditLimit) : 0,
       })
       // Add to optimistic list immediately while server data refreshes
       setOptimisticClients(prev => [normalizeClient(created), ...prev])
@@ -169,7 +165,7 @@ export default function ClientsPage() {
             <TableHeader>
               <TableRow className="border-b border-border">
                 <TableHead>{L.client[locale]}</TableHead>
-                <TableHead>{translations.fields.company[locale]}</TableHead>
+                <TableHead>{locale === "uz" ? "Manzil" : "Адрес"}</TableHead>
                 <TableHead>{translations.fields.phone[locale]}</TableHead>
                 <TableHead>{translations.fields.status[locale]}</TableHead>
                 <TableHead className="text-right">{L.purchases[locale]}</TableHead>
@@ -196,11 +192,10 @@ export default function ClientsPage() {
                         </Avatar>
                         <div>
                           <p className="font-medium text-foreground text-sm">{client.name}</p>
-                          <p className="text-xs text-muted-foreground">{client.email}</p>
                         </div>
                       </div>
                     </TableCell>
-                    <TableCell className="text-sm text-muted-foreground">{client.company}</TableCell>
+                    <TableCell className="text-sm text-muted-foreground">{client.address || "—"}</TableCell>
                     <TableCell className="text-sm text-muted-foreground">{client.phone || "—"}</TableCell>
                     <TableCell><StatusBadge status={client.status} /></TableCell>
                     <TableCell className="text-right text-sm font-medium text-foreground">{fmt(client.totalPurchases)}</TableCell>
@@ -237,10 +232,10 @@ export default function ClientsPage() {
           </DialogHeader>
           <div className="grid gap-4 py-2">
             {[
-              { id: "name",    label: translations.fields.name[locale],    type: "text",  placeholder: locale === "uz" ? "Jasur Toshmatov" : "Иван Иванов" },
-              { id: "email",   label: translations.fields.email[locale],   type: "email", placeholder: "jasur@kompaniya.com" },
-              { id: "phone",   label: translations.fields.phone[locale],   type: "tel",   placeholder: "+998 90 123-4567" },
-              { id: "company", label: translations.fields.company[locale], type: "text",  placeholder: locale === "uz" ? "Akme MChJ" : "Акме ООО" },
+              { id: "name",        label: locale === "uz" ? "Ism" : "Имя",              type: "text",  placeholder: locale === "uz" ? "Jasur Toshmatov" : "Иван Иванов" },
+              { id: "phone",       label: translations.fields.phone[locale],             type: "tel",   placeholder: "+998 90 123-4567" },
+              { id: "address",     label: locale === "uz" ? "Manzil" : "Адрес",          type: "text",  placeholder: locale === "uz" ? "Toshkent sh." : "г. Ташкент" },
+              { id: "creditLimit", label: locale === "uz" ? "Kredit limiti" : "Кредитный лимит", type: "number", placeholder: "0" },
             ].map(field => (
               <div key={field.id} className="space-y-1.5">
                 <Label htmlFor={field.id}>{field.label}</Label>
@@ -255,17 +250,6 @@ export default function ClientsPage() {
                 {formErrors[field.id] && <p className="text-xs text-destructive">{formErrors[field.id]}</p>}
               </div>
             ))}
-            <div className="space-y-1.5">
-              <Label>{translations.fields.status[locale]}</Label>
-              <Select value={form.status || "active"} onValueChange={v => setForm(p => ({ ...p, status: v }))}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="active">{translations.status.active[locale]}</SelectItem>
-                  <SelectItem value="inactive">{translations.status.inactive[locale]}</SelectItem>
-                  <SelectItem value="prospect">{translations.status.prospect[locale]}</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
             {saveError && (
               <p className="text-xs text-destructive bg-destructive/10 rounded-md px-3 py-2">{saveError}</p>
             )}

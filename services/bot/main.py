@@ -4572,6 +4572,42 @@ def ilovani_qur(conf:Config) -> Application:
             f"⏰ {_pt.strftime('%H:%M:%S')}")
     app.add_handler(CommandHandler("ping", cmd_ping))
 
+    # /token — Web panel uchun JWT token olish
+    async def cmd_token(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+        uid = update.effective_user.id
+        _jwt_secret = conf.jwt_secret
+        if not _jwt_secret:
+            await update.message.reply_text(
+                "⚠️ Token xizmati hozircha mavjud emas\\.\n"
+                "Admin JWT\\_SECRET ni sozlashi kerak\\.",
+                parse_mode=ParseMode.MARKDOWN_V2)
+            return
+        # Foydalanuvchi ro'yxatdan o'tganini tekshirish
+        import services.bot.db as _tdb
+        u = await _tdb.user_ol(uid)
+        if not u or not u.get("faol", False):
+            await update.message.reply_text(
+                "❌ Avval /start buyrug'i bilan ro'yxatdan o'ting\\.",
+                parse_mode=ParseMode.MARKDOWN_V2)
+            return
+        # JWT yaratish (API bilan bir xil format)
+        import json as _tj, time as _tt, hmac as _th, base64 as _tb, hashlib as _thl
+        h64 = _tb.urlsafe_b64encode(b'{"alg":"HS256","typ":"JWT"}').rstrip(b"=").decode()
+        payload = _tj.dumps({"sub": str(uid), "exp": int(_tt.time()) + 86400})
+        p64 = _tb.urlsafe_b64encode(payload.encode()).rstrip(b"=").decode()
+        sig = _tb.urlsafe_b64encode(
+            _th.new(_jwt_secret.encode(), f"{h64}.{p64}".encode(), _thl.sha256).digest()
+        ).rstrip(b"=").decode()
+        token = f"{h64}.{p64}.{sig}"
+        # Tokenni foydalanuvchiga yuborish
+        await update.message.reply_text(
+            f"🔑 *Web panel uchun token:*\n\n"
+            f"`{esc(token)}`\n\n"
+            f"📋 Nusxa oling va web panelga kirish uchun ishlating\\.\n"
+            f"⏰ Token 24 soat amal qiladi\\.",
+            parse_mode=ParseMode.MARKDOWN_V2)
+    app.add_handler(CommandHandler("token", cmd_token))
+
     royxat=ConversationHandler(
         entry_points=[CommandHandler("start",cmd_start)],
         states={

@@ -2,14 +2,13 @@
 
 import { useState } from "react"
 import {
-  Building2, Eye, EyeOff, Loader2, Send,
+  Building2, Eye, EyeOff, Loader2,
   ShieldCheck, TrendingUp, Users, Package,
   KeyRound,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Separator } from "@/components/ui/separator"
 import { useLocale } from "@/lib/locale-context"
 import { translations } from "@/lib/i18n"
 import { LanguageSwitcher } from "@/components/ui/language-switcher"
@@ -22,19 +21,8 @@ export default function LoginPage() {
 
   const [showTokenForm, setShowTokenForm] = useState(false)
   const [showToken, setShowToken] = useState(false)
-  const [telegramLoading, setTelegramLoading] = useState(false)
   const [token, setToken] = useState("")
   const [tokenError, setTokenError] = useState("")
-
-  // Telegram login — opens Telegram OAuth or shows adapter note if unavailable
-  async function handleTelegramLogin() {
-    setTelegramLoading(true)
-    // TODO: integrate Telegram Web Login widget when bot is configured
-    // For now show the token form as fallback
-    await new Promise(r => setTimeout(r, 600))
-    setTelegramLoading(false)
-    setShowTokenForm(true)
-  }
 
   async function handleTokenSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -156,47 +144,22 @@ export default function LoginPage() {
             </p>
           </div>
 
-          {/* Primary CTA — Telegram */}
-          <div className="space-y-3">
-            <Button
-              className="w-full h-11 gap-3 text-sm font-semibold shadow-sm"
-              onClick={handleTelegramLogin}
-              disabled={telegramLoading || authLoading}
-            >
-              {telegramLoading ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <Send className="w-4 h-4" />
-              )}
-              {telegramLoading
-                ? (locale === "uz" ? "Ulanyapti..." : "Подключение...")
-                : (locale === "uz" ? "Telegram orqali kirish" : "Войти через Telegram")
-              }
-            </Button>
-            <p className="text-center text-xs text-muted-foreground">
-              {locale === "uz" ? "Telegram orqali xavfsiz kirish" : "Безопасный вход через Telegram"}
-            </p>
-          </div>
-
-          {/* Divider */}
-          <div className="flex items-center gap-3">
-            <Separator className="flex-1" />
-            <span className="text-xs text-muted-foreground whitespace-nowrap">
-              {locale === "uz" ? "yoki" : "или"}
-            </span>
-            <Separator className="flex-1" />
-          </div>
-
-          {/* Secondary — Token form (collapsed by default) */}
+          {/* Token login — primary and only auth method */}
           {!showTokenForm ? (
-            <Button
-              variant="outline"
-              className="w-full h-10 text-sm text-muted-foreground"
-              onClick={() => setShowTokenForm(true)}
-            >
-              <KeyRound className="w-4 h-4 mr-2" />
-              {locale === "uz" ? "Token bilan kirish" : "Войти по токену"}
-            </Button>
+            <div className="space-y-3">
+              <Button
+                className="w-full h-11 gap-3 text-sm font-semibold shadow-sm"
+                onClick={() => setShowTokenForm(true)}
+              >
+                <KeyRound className="w-4 h-4" />
+                {locale === "uz" ? "Token bilan kirish" : "Войти по токену"}
+              </Button>
+              <p className="text-center text-xs text-muted-foreground">
+                {locale === "uz"
+                  ? "Telegram botda /token buyrug'ini yuboring"
+                  : "Отправьте /token в Telegram боте"}
+              </p>
+            </div>
           ) : (
             <form onSubmit={handleTokenSubmit} className="space-y-4">
               <div className="space-y-1.5">
@@ -236,7 +199,7 @@ export default function LoginPage() {
                 </p>
               )}
 
-              <Button type="submit" className="w-full h-10" disabled={authLoading || telegramLoading}>
+              <Button type="submit" className="w-full h-10" disabled={authLoading}>
                 {authLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                 {authLoading ? (locale === "uz" ? "Tekshirilmoqda..." : "Проверка...") : (locale === "uz" ? "Kirish" : "Войти")}
               </Button>

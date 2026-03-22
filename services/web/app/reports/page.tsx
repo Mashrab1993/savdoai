@@ -92,24 +92,35 @@ export default function ReportsPage() {
   ]
 
   // ── Export flow ─────────────────────────────────────────────────────────────
+  // Backend expects: { tur: "kunlik"|"haftalik"|"oylik", format: "excel"|"pdf" }
+  // Backend status uses "holat": "kutilmoqda"|"bajarilmoqda"|"tayyor"|"xato"
+  const dateRangeToTur: Record<string, string> = {
+    daily: "kunlik", weekly: "haftalik", monthly: "oylik",
+  }
+
   async function handleExport() {
     setExporting(true)
     setExportDone(false)
     try {
-      const task = await reportService.requestExport({ type: dateRange })
+      const task = await reportService.requestExport({
+        tur: dateRangeToTur[dateRange] ?? "kunlik",
+        format: "excel",
+      })
       // Poll for completion (max 10s)
       let attempts = 0
-      let status = task.status
+      let holat = task.holat ?? task.status ?? "kutilmoqda"
       let taskId = task.task_id
-      while (status !== "done" && status !== "failed" && attempts < 10) {
+      let downloadUrl = task.download
+      while (holat !== "tayyor" && holat !== "xato" && holat !== "katta_fayl" && attempts < 10) {
         await new Promise(r => setTimeout(r, 1000))
         const updated = await reportService.exportStatus(taskId)
-        status = updated.status
+        holat = updated.holat ?? updated.status ?? "kutilmoqda"
+        downloadUrl = updated.download
         attempts++
       }
-      if (status === "done") {
-        const url = reportService.exportFile(taskId)
-        window.open(url, "_blank")
+      if (holat === "tayyor" && downloadUrl) {
+        const fullUrl = `${process.env.NEXT_PUBLIC_API_URL ?? ""}${downloadUrl}`
+        window.open(fullUrl, "_blank")
         setExportDone(true)
       }
     } catch {

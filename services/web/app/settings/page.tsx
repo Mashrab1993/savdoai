@@ -180,7 +180,7 @@ export default function SettingsPage() {
                   </Avatar>
                   <div>
                     <p className="text-sm font-semibold text-foreground">{user?.ism ?? user?.full_name ?? user?.username ?? "—"}</p>
-                    <p className="text-xs text-muted-foreground">{user?.email ?? "—"}</p>
+                    <p className="text-xs text-muted-foreground">{user?.telefon ?? "—"}</p>
                     <div className="flex items-center gap-2 mt-2">
                       <Button
                         variant="outline"
@@ -201,7 +201,7 @@ export default function SettingsPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <ReadOnlyField label={S.username[locale]} value={user?.username ?? ""} />
                   <ReadOnlyField label={S.fullName[locale]} value={user?.ism ?? user?.full_name ?? ""} />
-                  <ReadOnlyField label={S.email[locale]} value={user?.email ?? ""} />
+                  <ReadOnlyField label={S.email[locale]} value={user?.telefon ?? ""} />
                   <ReadOnlyField label={S.role[locale]} value={user?.role ?? ""} />
                 </div>
 

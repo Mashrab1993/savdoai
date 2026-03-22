@@ -26,16 +26,11 @@ function extractItems<T>(data: PaginatedResponse<T> | T[] | unknown): T[] {
 
 // ── Auth ──────────────────────────────────────────────────────────────────────
 export const authService = {
-  // Token-based login — user provides a JWT obtained from Telegram bot
-  // Backend has NO /auth/login endpoint; only /auth/telegram (bot→API)
+  // Token-based login — user provides a JWT obtained from Telegram bot /token command
+  // Token is stored by auth-context, then verified by calling /api/v1/me
   tokenLogin: (token: string) => {
-    // Validate token by calling /api/v1/me with it
-    // Token is stored before this call by auth-context
     return Promise.resolve({ access_token: token } as LoginResponse)
   },
-
-  telegramAuth: (initData: string) =>
-    api.post<LoginResponse>("/auth/telegram", { init_data: initData }),
 
   me: () => api.get<MeResponse>("/api/v1/me"),
 }

@@ -53,9 +53,14 @@ logging.basicConfig(
 
 __version__ = "25.3"
 _JWT_SECRET_RAW = os.getenv("JWT_SECRET", "")
+_IS_PRODUCTION = bool(os.getenv("RAILWAY_ENVIRONMENT") or os.getenv("RAILWAY_SERVICE_ID"))
 if not _JWT_SECRET_RAW:
-    _JWT_SECRET_RAW = "savdoai-default-dev-secret-change-me-in-production"
-    log.warning("⚠️ JWT_SECRET o'rnatilmagan — default ishlatilmoqda. Production uchun o'rnating!")
+    if _IS_PRODUCTION:
+        log.critical("🚨 JWT_SECRET o'rnatilmagan! Production'da default secret ishlatilmaydi. Startup bekor.")
+        sys.exit(1)
+    else:
+        _JWT_SECRET_RAW = "savdoai-dev-only-secret-NOT-FOR-PRODUCTION"
+        log.warning("⚠️ JWT_SECRET o'rnatilmagan — faqat dev uchun default ishlatilmoqda.")
 JWT_SECRET = _JWT_SECRET_RAW
 
 

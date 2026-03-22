@@ -142,7 +142,7 @@ export default function PricesPage() {
       // Call assignClientGroup for each newly added client
       const toAdd = assignedIds.filter(id => !assignGroup.clientIds.includes(id))
       await Promise.all(toAdd.map(clientId =>
-        priceService.assignClientGroup({ group_id: Number(assignGroup.id), client_id: Number(clientId) })
+        priceService.assignClientGroup({ guruh_id: Number(assignGroup.id), klient_id: Number(clientId) })
       ))
       refetchGroups()
       setAssignOpen(false)
@@ -155,7 +155,7 @@ export default function PricesPage() {
 
   const filteredAssignClients = clients.filter(c =>
     c.name.toLowerCase().includes(clientSearch.toLowerCase()) ||
-    c.company.toLowerCase().includes(clientSearch.toLowerCase())
+    c.phone.toLowerCase().includes(clientSearch.toLowerCase())
   )
 
   const filteredProducts = products.filter(p =>
@@ -410,7 +410,7 @@ export default function PricesPage() {
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium text-foreground truncate">{c.name}</p>
-                          <p className="text-xs text-muted-foreground truncate">{c.company}</p>
+                          <p className="text-xs text-muted-foreground truncate">{c.phone}</p>
                         </div>
                         {isChecked && (
                           <Badge className="text-[10px] shrink-0 bg-primary/15 text-primary border-0">

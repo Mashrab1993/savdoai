@@ -19,6 +19,7 @@ class Config:
     database_url:  str
     anthropic_key: str
     gemini_key:    str
+    jwt_secret:    str = ""
     admin_ids:     frozenset[int] = field(default_factory=frozenset)
 
     # ── AI modellari ──────────────────────────────────────
@@ -94,6 +95,7 @@ def config_init() -> Config:
         database_url  = database_url,
         anthropic_key = anthropic_key,
         gemini_key    = gemini_key,
+        jwt_secret    = os.getenv("JWT_SECRET", ""),
         admin_ids     = admin_ids,
         webhook_url   = os.getenv("WEBHOOK_URL", ""),
         webhook_port  = int(os.getenv("WEBHOOK_PORT", "8443")),

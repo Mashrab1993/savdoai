@@ -11,10 +11,9 @@ import type {
 export interface ClientVM {
   id: string
   name: string
-  email: string
   phone: string
-  company: string
   address: string
+  creditLimit: number
   status: "active" | "inactive"
   totalPurchases: number
   totalDebt: number
@@ -25,11 +24,10 @@ export function normalizeClient(d: ClientDto): ClientVM {
   return {
     id: String(d.id),
     name: d.ism ?? "",
-    email: d.email ?? "",
     phone: d.telefon ?? "",
-    company: d.kompaniya ?? "",
     address: d.manzil ?? "",
-    status: d.aktiv !== false ? "active" : "inactive",
+    creditLimit: d.kredit_limit ?? 0,
+    status: "active",
     totalPurchases: d.jami_sotib ?? 0,
     totalDebt: d.aktiv_qarz ?? 0,
     joinedAt: d.qoshilgan_sana ?? d.yaratilgan ?? "",
