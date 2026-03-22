@@ -3,6 +3,7 @@
 // Pages should call normalizers on top of these.
 
 import { api } from "./client"
+import { getPublicApiBaseUrl } from "./base-url"
 import type {
   LoginResponse, MeResponse, DashboardResponse,
   DailyReportResponse, WeeklyReportResponse, MonthlyReportResponse,
@@ -154,7 +155,7 @@ export const reportService = {
   exportStatus: (taskId: string) =>
     api.get<ExportTaskDto>(`/api/v1/export/${taskId}`),
   exportFile: (taskId: string) =>
-    `${process.env.NEXT_PUBLIC_API_URL ?? ""}/api/v1/export/file/${taskId}`,
+    `${getPublicApiBaseUrl()}/api/v1/export/file/${taskId}`,
 }
 
 // ── Apprentices ───────────────────────────────────────────────────────────────

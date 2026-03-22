@@ -76,6 +76,29 @@ savdoai-main-fixed/services/web was a simplified rewrite with hidden type errors
 5. **Celery worker** — export depends on Redis + worker process
 6. **Shogird/xarajat endpoints** — API stubs exist, logic may be incomplete
 
+## Production web login / API origin (2025-03)
+
+### ROOT CAUSE (VERIFIED in code)
+
+`NEXT_PUBLIC_API_URL` was optional and defaulted to an empty string in `lib/api/client.ts`, so the browser called **same-origin** paths such as `/api/v1/me` on the **Next.js web host** (e.g. `savdoai-web-production.up.railway.app`), which has no such route → **404**. The FastAPI service lives on a **different** Railway URL; the client bundle must embed that API origin at **build time**.
+
+### FIX APPLIED
+
+- **`services/web/lib/api/base-url.ts`** — single helper for the public API base URL (trim trailing slashes).
+- **`services/web/lib/api/client.ts`** — uses that helper; in **production** in the browser, if the base URL is empty, throws `ApiResponseError` with a clear message (no silent same-origin `/api/*`).
+- **`services/web/lib/api/services.ts`**, **`services/web/app/reports/page.tsx`** — export/download URLs use the same helper (no `?? ""` fallbacks for the origin).
+- **`services/web/Dockerfile`** — `ARG NEXT_PUBLIC_API_URL` / `ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL` before `npm run build` so Docker builds bake the variable into the client bundle.
+
+### RAILWAY
+
+- **`railway.toml`** already sets `NEXT_PUBLIC_API_URL = "${{savdoai-api.URL}}"` for `savdoai-web` — this only works if the API service is named **`savdoai-api`** in the same project. Otherwise set `NEXT_PUBLIC_API_URL` manually to the API’s **HTTPS** public URL (Settings → Networking).
+- **CORS (VERIFIED in code):** `services/api/main.py` allows `allow_origin_regex=r"https://.*\.up\.railway\.app"` and common localhost origins — web → API cross-origin requests are allowed when the browser targets the API host.
+
+### NOT PROVEN (requires your Railway project)
+
+- Live browser network tab after redeploy.
+- That `${{savdoai-api.URL}}` resolves on your project (service name / Railway version).
+
 ## Critical Risks
 
 1. **Shogird/xarajat/ledger/narx API endpoints** are stubs returning {"ok": True} — web UI will show empty data

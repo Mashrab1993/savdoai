@@ -1,7 +1,7 @@
 // ── Central fetch wrapper ─────────────────────────────────────────────────────
 // All API calls go through this. Handles auth headers, error parsing, and 401.
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? ""
+import { getPublicApiBaseUrl } from "./base-url"
 
 export class ApiResponseError extends Error {
   status: number
@@ -30,6 +30,21 @@ export async function apiRequest<T>(
   path: string,
   options: RequestInit = {}
 ): Promise<T> {
+  const base = getPublicApiBaseUrl()
+  if (typeof window !== "undefined" && process.env.NODE_ENV === "production") {
+    if (!base) {
+      throw new ApiResponseError(
+        503,
+        "API manzili sozlanmagan: Railway → savdoai-web → Variables → NEXT_PUBLIC_API_URL (API domeni, build qayta ishga tushirilishi kerak).",
+      )
+    }
+  }
+  if (typeof window !== "undefined" && process.env.NODE_ENV !== "production" && !base) {
+    console.warn(
+      "[SavdoAI] NEXT_PUBLIC_API_URL is empty — API chaqiruqlar noto‘g‘ri manzilga ketishi mumkin. .env.local da API URL ni qo‘ying.",
+    )
+  }
+
   const token = getToken()
 
   const headers: Record<string, string> = {
@@ -41,7 +56,7 @@ export async function apiRequest<T>(
     headers["Authorization"] = `Bearer ${token}`
   }
 
-  const res = await fetch(`${BASE_URL}${path}`, {
+  const res = await fetch(`${base}${path}`, {
     ...options,
     headers,
   })

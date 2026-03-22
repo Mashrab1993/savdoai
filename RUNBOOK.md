@@ -75,8 +75,16 @@ Requires: DATABASE_URL, REDIS_URL
 - ADMIN_IDS (comma-separated Telegram UIDs)
 - JWT_SECRET (same as API)
 
-**Web service:**
-- NEXT_PUBLIC_API_URL (API public URL)
+**Web service (`savdoai-web`):**
+- **`NEXT_PUBLIC_API_URL`** — **build-time** (must be present when `next build` / Docker **builder** runs). Must be the **API** service public HTTPS URL (no trailing slash), **not** the web app URL.
+
+Example values:
+- Railway template in `railway.toml`: `NEXT_PUBLIC_API_URL = "${{savdoai-api.URL}}"` (requires the API service to be named **`savdoai-api`** in the same Railway project).
+- Manual: open Railway → **savdoai-api** (or your API service) → **Settings** → **Networking / Public networking** → copy the **HTTPS** URL → set on **savdoai-web** as `NEXT_PUBLIC_API_URL`.
+
+After changing this variable, **redeploy the web service with a full rebuild** (the Next.js client bundle embeds `NEXT_PUBLIC_*` at compile time).
+
+**Dockerfile note:** `services/web/Dockerfile` declares `ARG NEXT_PUBLIC_API_URL` and `ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL` before `npm run build` so the image build receives the value Railway injects.
 
 ### Post-Deploy Smoke Checks
 

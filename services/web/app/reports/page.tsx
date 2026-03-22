@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/select"
 import { Download, TrendingUp, Users, DollarSign, Package, Loader2 } from "lucide-react"
 import { useApi } from "@/hooks/use-api"
+import { getPublicApiBaseUrl } from "@/lib/api/base-url"
 import { reportService, dashboardService } from "@/lib/api/services"
 import { normalizeDashboard } from "@/lib/api/normalizers"
 import { PageLoading, PageError } from "@/components/shared/page-states"
@@ -119,7 +120,7 @@ export default function ReportsPage() {
         attempts++
       }
       if (holat === "tayyor" && downloadUrl) {
-        const fullUrl = `${process.env.NEXT_PUBLIC_API_URL ?? ""}${downloadUrl}`
+        const fullUrl = `${getPublicApiBaseUrl()}${downloadUrl}`
         window.open(fullUrl, "_blank")
         setExportDone(true)
       }
