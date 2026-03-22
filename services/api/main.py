@@ -17,7 +17,6 @@ from contextlib import asynccontextmanager
 from typing import Optional
 
 from fastapi import FastAPI, HTTPException, Depends, Request, status
-from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field, validator
 from typing import Optional, List
@@ -186,14 +185,14 @@ _web_url = _cors_origin(os.getenv("WEB_URL", "https://savdoai-web-production.up.
 if _web_url and _web_url not in _web_cors_origins:
     _web_cors_origins.insert(0, _web_url)
 
-# GZip first, CORS second → CORS outermost (OPTIONS preflight hits CORS before gzip/app).
-app.add_middleware(GZipMiddleware, minimum_size=500)
+# CORS only (no GZip here) — gzip has interfered with preflight/OPTIONS in some deployments.
+# Explicit methods/headers avoid Starlette edge cases with "*" + credentials.
 app.add_middleware(
     CORSMiddleware,
     allow_origins=_web_cors_origins,
     allow_origin_regex=r"https://.*\.up\.railway\.app",
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD"],
     allow_headers=["*"],
 )
 
@@ -1124,6 +1123,9 @@ async def rate_limit_middleware(request: Request, call_next):
     """IP-based rate limiting — SAP-GRADE API himoya"""
     import time as _t
     global _rate_last_gc
+    # CORS preflight must never be rate-limited (browser needs 200 + ACAO on OPTIONS).
+    if request.method == "OPTIONS":
+        return await call_next(request)
     # Health/readyz endpoints skip
     if request.url.path in ("/health", "/healthz", "/readyz"):
         return await call_next(request)
