@@ -168,21 +168,25 @@ app = FastAPI(
     redoc_url   = "/redoc",
 )
 
-# CORS — must include the real browser Origin (web app HTTPS), not the API URL.
-# WEB_URL default was wrong (API host); web Origin is savdoai-web-production.* .
+# CORS — browser Origin must match exactly (no trailing slash). WEB_URL is the web app origin, not API.
+def _cors_origin(url: str) -> str:
+    u = (url or "").strip()
+    return u.rstrip("/") if u else u
+
+
 _web_cors_origins = [
-    "https://savdoai-web-production.up.railway.app",
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
-    "https://mashrab-moliya.vercel.app",
-    "http://localhost:5173",
-    "http://localhost:8000",
+    _cors_origin("https://savdoai-web-production.up.railway.app"),
+    _cors_origin("http://localhost:3000"),
+    _cors_origin("http://127.0.0.1:3000"),
+    _cors_origin("https://mashrab-moliya.vercel.app"),
+    _cors_origin("http://localhost:5173"),
+    _cors_origin("http://localhost:8000"),
 ]
-_web_url = os.getenv("WEB_URL", "https://savdoai-web-production.up.railway.app").strip()
+_web_url = _cors_origin(os.getenv("WEB_URL", "https://savdoai-web-production.up.railway.app"))
 if _web_url and _web_url not in _web_cors_origins:
     _web_cors_origins.insert(0, _web_url)
 
-# GZip first, CORS second → CORS is outermost (runs first on request; handles OPTIONS preflight).
+# GZip first, CORS second → CORS outermost (OPTIONS preflight hits CORS before gzip/app).
 app.add_middleware(GZipMiddleware, minimum_size=500)
 app.add_middleware(
     CORSMiddleware,
