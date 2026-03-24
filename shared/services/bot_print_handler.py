@@ -32,8 +32,9 @@ async def send_print_session(
     width: int | None = None,
 ) -> dict[str, Any] | None:
     """
-    Birinchi navbatda HTTPS App Link tugmasi.
-    PRINT_ATTACH_BIN=1 bo'lsa — zaxira .bin (debug / fallback).
+    PRINT_USE_HTTPS=1: inline tugma (https://.../p/...).
+    PRINT_USE_HTTPS=0: savdoai:// havolasi oddiy matn (Telegram URL tugmasi qabul qilmaydi).
+    PRINT_ATTACH_BIN=1 bo'lsa — zaxira .bin.
     """
     try:
         from telegram import InlineKeyboardButton, InlineKeyboardMarkup, InputFile
@@ -59,7 +60,6 @@ async def send_print_session(
             escpos_80=e80,
             escpos_58=e58,
         )
-        link = sess.deep_link(use_https=USE_HTTPS)
         stem = f"chek_{sess_id}_{(klient or 'mijoz').replace(' ', '_')[:12]}"
 
         if PRINT_ATTACH_BIN:
@@ -72,14 +72,22 @@ async def send_print_session(
                 parse_mode=ParseMode.MARKDOWN,
             )
 
-        await message.reply_text(
-            "👇 *Bitta tugma — chek printerdan chiqadi:*\n"
-            "Agar ilova ochilmasa, yuqoridagi `.bin` faylni oching (zaxira).",
-            parse_mode=ParseMode.MARKDOWN,
-            reply_markup=InlineKeyboardMarkup(
-                [[InlineKeyboardButton("🖨 CHEK CHIQARISH", url=link)]]
-            ),
-        )
+        # Telegram rejects InlineKeyboardButton url=savdoai://... ("unsupported url protocol").
+        if USE_HTTPS:
+            link = sess.deep_link(use_https=True)
+            await message.reply_text(
+                "👇 *Bitta tugma — chek printerdan chiqadi:*\n"
+                "Agar ilova ochilmasa, yuqoridagi `.bin` faylni oching (zaxira).",
+                parse_mode=ParseMode.MARKDOWN,
+                reply_markup=InlineKeyboardMarkup(
+                    [[InlineKeyboardButton("🖨 CHEK CHIQARISH", url=link)]]
+                ),
+            )
+        else:
+            link = sess.deep_link(use_https=False)
+            await message.reply_text(
+                "🖨 Chek chiqarish uchun quyidagi havolani bosing:\n\n" + link,
+            )
         return sess.to_json()
     except Exception as e:
         log.error("send_print_session: %s", e, exc_info=True)
