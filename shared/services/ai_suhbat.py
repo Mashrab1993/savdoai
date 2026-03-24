@@ -59,10 +59,15 @@ async def ai_suhbat(matn: str, uid: int, ism: str = "", db_kontekst: str = "") -
         soat = datetime.now(TZ).hour
         vaqt = "ertalab" if 5 <= soat < 11 else "kunduzi" if 11 <= soat < 17 else "kechqurun" if 17 <= soat < 22 else "kechasi"
         
+        if db_kontekst:
+            biznes_blok = f"BIZNES MALUMOTLAR:{chr(10)}{db_kontekst}"
+        else:
+            biznes_blok = "DB malumoti hozir yo'q."
+        ism_yoki = ism or "noma'lum"
         user_msg = f"""Hozir {vaqt} ({soat}:00).
-Do'konchi ismi: {ism or 'noma\'lum'}
+Do'konchi ismi: {ism_yoki}
 
-{f'BIZNES MALUMOTLAR:{chr(10)}{db_kontekst}' if db_kontekst else 'DB malumoti hozir yo\'q.'}
+{biznes_blok}
 
 DO'KONCHI XABARI: {matn}
 

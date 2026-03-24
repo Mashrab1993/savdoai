@@ -211,6 +211,13 @@ try:
 except Exception as e:
     log.warning("⚠️ WebSocket yuklanmadi: %s", e)
 
+try:
+    from services.api.routes.printer import router as printer_router
+    app.include_router(printer_router)
+    log.info("✅ Printer API ulandi")
+except Exception as e:
+    log.warning("⚠️ Printer API yuklanmadi: %s", e)
+
 # ════════════════════════════════════════════════════════════
 #  JWT + AUTH — deps.py dan import (shared bilan kassa/ws)
 # ════════════════════════════════════════════════════════════
@@ -1128,6 +1135,9 @@ async def rate_limit_middleware(request: Request, call_next):
         return await call_next(request)
     # Health/readyz endpoints skip
     if request.url.path in ("/health", "/healthz", "/readyz"):
+        return await call_next(request)
+    # Android printer helper — bir nechta tezkor so'rov (yuklash + ack)
+    if request.url.path.startswith("/api/print"):
         return await call_next(request)
 
     ip = request.client.host if request.client else "unknown"

@@ -37,7 +37,8 @@ NOT MINI-THERMAL RECEIPT (different documents)
 THERMAL CORE (single source of truth for layout)
 ------------------------------------------------
 shared/services/thermal_receipt.py
+  _format_thermal_receipt_lines()  [compact rows + bold flags]
   format_thermal_receipt()
   thermal_receipt_utf8_bytes()
-  thermal_receipt_escpos_utf8()  [optional ESC/POS bold]
+  thermal_receipt_escpos_utf8()  [ESC/POS bold from flags]
   thermal_safe_text()

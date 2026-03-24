@@ -700,6 +700,18 @@ async def matn_qabul(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
         except Exception as _se:
             log.debug("Shogird tekshiruv: %s", _se)
 
+    # ═══ PRINTER / CHEK (matn: "printer chek", "qayta chek", ...) ═══
+    try:
+        from shared.services.print_intent import detect_print_intent
+        from shared.services.bot_print_handler import handle_print_intent_message
+
+        _pk = detect_print_intent(matn)
+        if _pk:
+            if await handle_print_intent_message(update, ctx, _pk, db):
+                return
+    except Exception as _pi:
+        log.debug("Print intent: %s", _pi)
+
     # ═══ OCHIQ SAVAT BUYRUQLARI ═══
 
     # 1. "Klient bo'ldi / tugadi" → savat yopish
@@ -2106,6 +2118,23 @@ async def tasdiq_cb(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
             except Exception as _pdf_e:
                 log.warning("Avtomatik chek fayllar: %s", _pdf_e)
 
+            try:
+                from shared.services.bot_print_handler import send_print_session
+
+                _tel_u = (user.get("telefon") or "") if user else ""
+                _pj = await send_print_session(
+                    q.message,
+                    chek_pdf_data,
+                    dokon,
+                    _tel_u,
+                    uid,
+                    int(sess_id),
+                )
+                if _pj:
+                    ctx.user_data["last_print_job"] = _pj.get("job_id")
+            except Exception as _prt_e:
+                log.warning("Print tugma (sotuv): %s", _prt_e)
+
             # ═══ OXIRGI KLIENT YODLASH (kontekst uchun) ═══
             if klient:
                 ctx.user_data["_oxirgi_klient"] = klient
@@ -2145,6 +2174,19 @@ async def tasdiq_cb(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
                     q.message, natija_m, dokon, f"chek_{sotuv_m['sessiya_id']}")
             except Exception as _pe:
                 log.warning("Majbur chek fayllar: %s", _pe)
+            try:
+                from shared.services.bot_print_handler import send_print_session
+
+                _m = dict(natija_m)
+                _m["amal"] = "chiqim"
+                _tel_u = (user.get("telefon") or "") if user else ""
+                _pj = await send_print_session(
+                    q.message, _m, dokon, _tel_u, uid, int(sotuv_m["sessiya_id"])
+                )
+                if _pj:
+                    ctx.user_data["last_print_job"] = _pj.get("job_id")
+            except Exception as _prt2:
+                log.warning("Print tugma (majbur): %s", _prt2)
 
         elif q.data == "t:zarar_tasdiq":
             natija_z = ctx.user_data.pop("kutilayotgan", None)
@@ -2166,6 +2208,19 @@ async def tasdiq_cb(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
                     q.message, natija_z, dokon, f"chek_{sotuv_z['sessiya_id']}")
             except Exception as _pe:
                 log.warning("Zarar chek fayllar: %s", _pe)
+            try:
+                from shared.services.bot_print_handler import send_print_session
+
+                _z = dict(natija_z)
+                _z["amal"] = "chiqim"
+                _tel_u = (user.get("telefon") or "") if user else ""
+                _pj = await send_print_session(
+                    q.message, _z, dokon, _tel_u, uid, int(sotuv_z["sessiya_id"])
+                )
+                if _pj:
+                    ctx.user_data["last_print_job"] = _pj.get("job_id")
+            except Exception as _prt3:
+                log.warning("Print tugma (zarar): %s", _prt3)
 
         elif amal=="qaytarish":
             if not tovarlar or not klient:
