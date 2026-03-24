@@ -1,0 +1,43 @@
+RECEIPT GENERATION — CALL GRAPH (production)
+============================================
+
+MINI-PRINTER / TELEGRAM CHEK (thermal first, PDF archive second)
+----------------------------------------------------------------
+services/bot/main.py
+  _chek_thermal_va_pdf_yuborish()
+    -> shared/receipt/output.py :: thermal_txt_and_payload()
+         -> shared/receipt/normalize.py :: normalize_sale_receipt_data()
+         -> shared/services/thermal_receipt.py :: thermal_receipt_utf8_bytes()
+              -> format_thermal_receipt()  [UTF-8 encode]
+    -> services/bot/bot_services/export_pdf.py :: chek_pdf()  [secondary PDF bytes]
+
+TELEGRAM INLINE TEXT (same layout as thermal .txt, 80mm columns)
+-----------------------------------------------------------------
+services/bot/main.py (sotuv tasdiq, va boshqalar)
+  shared/utils/fmt.py :: sotuv_cheki()
+    -> shared/receipt/__init__.py :: receipt_text_80mm()
+         -> format_thermal_receipt(..., width_mm=80)
+
+PRINT PREVIEW / PRINT JOB (in-memory)
+--------------------------------------
+services/bot/main.py (action print preview | receipt)
+  shared/services/print_status.py :: format_receipt_80mm()
+    -> shared/services/thermal_receipt.py :: format_thermal_receipt(..., 80)
+
+EXPORT “chek” CALLBACK
+----------------------
+services/bot/main.py :: eksport_cb  (format_=="chek")
+  -> _chek_thermal_va_pdf_yuborish()  [same as first graph]
+
+NOT MINI-THERMAL RECEIPT (different documents)
+----------------------------------------------
+- eksport sotuv_pdf / Excel / klient PDF — full-page reports
+- nakladnoy_sessiya_cb — Word/Excel/PDF bundles (logistics), then sotuv_cheki() text
+
+THERMAL CORE (single source of truth for layout)
+------------------------------------------------
+shared/services/thermal_receipt.py
+  format_thermal_receipt()
+  thermal_receipt_utf8_bytes()
+  thermal_receipt_escpos_utf8()  [optional ESC/POS bold]
+  thermal_safe_text()

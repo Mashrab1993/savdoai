@@ -305,6 +305,33 @@ async def xat(q, matn:str, **kw) -> None:
             log.warning("xat: %s", e)
 
 
+async def _chek_thermal_va_pdf_yuborish(
+    message,
+    data: dict,
+    dokon: str,
+    stem: str,
+    amal: str | None = None,
+) -> None:
+    """Mini-printer: UTF-8 thermal .txt (asosiy) + PDF (arxiv)."""
+    from shared.receipt.output import thermal_txt_and_payload
+
+    txt_b, d = thermal_txt_and_payload(data, dokon, 80, amal)
+    pdf_b = pdf_xizmat.chek_pdf(d, dokon)
+    await message.reply_document(
+        document=InputFile(io.BytesIO(txt_b), filename=f"{stem}_thermal.txt"),
+        caption=(
+            "🖨 *Thermal chek* — 80mm matn fayl (printer uchun)\n"
+            "_Keyingi xabar: PDF (arxiv)._"
+        ),
+        parse_mode=ParseMode.MARKDOWN,
+    )
+    await message.reply_document(
+        document=InputFile(io.BytesIO(pdf_b), filename=f"{stem}.pdf"),
+        caption="📎 PDF (arxiv)",
+        parse_mode=ParseMode.MARKDOWN,
+    )
+
+
 async def faol_tekshir(update:Update) -> bool:
     import datetime
     uid=update.effective_user.id
@@ -1277,12 +1304,14 @@ async def _ovoz_buyruq_bajar(update:Update, ctx:ContextTypes.DEFAULT_TYPE,
             # Kutilayotgan draft ni chek formatda ko'rsatish
             natija = ctx.user_data.get("kutilayotgan")
             if natija:
-                from shared.services.print_status import format_receipt_58mm
+                from shared.services.print_status import format_receipt_80mm
                 user = await _user_ol_kesh(uid)
                 dokon = (user.get("dokon_nomi","") or "") if user else ""
-                receipt = format_receipt_58mm(natija, dokon)
+                d = dict(natija)
+                d.setdefault("amal", "chiqim")
+                receipt = format_receipt_80mm(d, dokon)
                 await update.message.reply_text(
-                    f"🖨️ *CHEK PREVIEW (58mm)*\n```\n{receipt}\n```",
+                    f"🖨️ *CHEK PREVIEW (80mm thermal)*\n```\n{receipt}\n```",
                     parse_mode=ParseMode.MARKDOWN)
             else:
                 await update.message.reply_text("❌ Chek uchun ma'lumot yo'q. Avval sotuv qiling.")
@@ -1290,11 +1319,13 @@ async def _ovoz_buyruq_bajar(update:Update, ctx:ContextTypes.DEFAULT_TYPE,
             # Chek chiqarish
             natija = ctx.user_data.get("kutilayotgan")
             if natija:
-                from shared.services.print_status import format_receipt_58mm, create_print_job, confirm_print, mark_printed
+                from shared.services.print_status import format_receipt_80mm, create_print_job, confirm_print, mark_printed
                 user = await _user_ol_kesh(uid)
                 dokon = (user.get("dokon_nomi","") or "") if user else ""
-                receipt = format_receipt_58mm(natija, dokon)
-                job = create_print_job(uid, "sotuv_chek", receipt, 58, {"klient": natija.get("klient","")})
+                d = dict(natija)
+                d.setdefault("amal", "chiqim")
+                receipt = format_receipt_80mm(d, dokon)
+                job = create_print_job(uid, "sotuv_chek", receipt, 80, {"klient": natija.get("klient","")})
                 confirm_print(job.job_id)
                 mark_printed(job.job_id)
                 ctx.user_data["last_print_job"] = job.job_id
@@ -1918,19 +1949,15 @@ async def tasdiq_cb(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
             if kam: ogoh=f"\n\n⚠️ *Kam qoldiq:* {', '.join(t['nomi'] for t in kam[:3])}"
             await xat(q,f"✅ *{len(tovarlar)} ta tovar kirim!*\n\n"+chek_md(chek)+ogoh,
                       parse_mode=ParseMode.MARKDOWN)
-            # ═══ AVTOMATIK KIRIM CHEK PDF ═══
+            # ═══ AVTOMATIK KIRIM CHEK: thermal matn + PDF ═══
             try:
-                kirim_data = dict(natija); kirim_data["amal"] = "kirim"
-                pdf_bytes = pdf_xizmat.chek_pdf(kirim_data, dokon)
-                if pdf_bytes:
-                    sana_s = datetime.datetime.now().strftime("%d%m%Y_%H%M")
-                    nom = f"kirim_{sana_s}.pdf"
-                    await q.message.reply_document(
-                        document=InputFile(io.BytesIO(pdf_bytes), filename=nom),
-                        caption=f"🖨 *{nom}*\nPrinterga yuboring!",
-                        parse_mode=ParseMode.MARKDOWN)
+                kirim_data = dict(natija)
+                kirim_data["amal"] = "kirim"
+                sana_s = datetime.datetime.now().strftime("%d%m%Y_%H%M")
+                await _chek_thermal_va_pdf_yuborish(
+                    q.message, kirim_data, dokon, f"kirim_{sana_s}", amal="kirim")
             except Exception as _pdf_e:
-                log.warning("Avtomatik kirim PDF: %s", _pdf_e)
+                log.warning("Avtomatik kirim chek: %s", _pdf_e)
 
             # ═══ OVOZLI KIRIM XABAR ═══
             try:
@@ -2066,23 +2093,18 @@ async def tasdiq_cb(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
             except Exception as _kam_e:
                 log.debug("Kam qoldiq tekshir: %s", _kam_e)
 
-            # ═══ AVTOMATIK MINI CHEK PDF ═══
+            # ═══ AVTOMATIK CHEK: thermal matn (asosiy) + PDF (arxiv) ═══
             try:
                 chek_pdf_data = dict(natija)
                 chek_pdf_data["amal"] = "chiqim"
                 if eski_qarz_total > 0:
                     chek_pdf_data["eski_qarz"] = float(eski_qarz_total)
-                pdf_bytes = pdf_xizmat.chek_pdf(chek_pdf_data, dokon)
-                if pdf_bytes:
-                    sana_s = datetime.datetime.now().strftime("%d%m%Y_%H%M")
-                    kl_s = (klient or "sotuv").replace(" ", "_")[:15]
-                    nom = f"chek_{kl_s}_{sana_s}.pdf"
-                    await q.message.reply_document(
-                        document=InputFile(io.BytesIO(pdf_bytes), filename=nom),
-                        caption=f"🖨 *{nom}*\nPrinterga yuboring!",
-                        parse_mode=ParseMode.MARKDOWN)
+                sana_s = datetime.datetime.now().strftime("%d%m%Y_%H%M")
+                kl_s = (klient or "sotuv").replace(" ", "_")[:15]
+                await _chek_thermal_va_pdf_yuborish(
+                    q.message, chek_pdf_data, dokon, f"chek_{kl_s}_{sana_s}")
             except Exception as _pdf_e:
-                log.warning("Avtomatik chek PDF: %s", _pdf_e)
+                log.warning("Avtomatik chek fayllar: %s", _pdf_e)
 
             # ═══ OXIRGI KLIENT YODLASH (kontekst uchun) ═══
             if klient:
@@ -2116,15 +2138,13 @@ async def tasdiq_cb(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
                     [("📋 Nakladnoy", f"n:sess:{sotuv_m['sessiya_id']}")],
                     [("✅ OK", "m:orqaga")],
                 ))
-            # Avtomatik chek PDF
+            # Avtomatik chek: thermal + PDF
             try:
                 natija_m["amal"] = "chiqim"
-                pdf_b = pdf_xizmat.chek_pdf(natija_m, dokon)
-                if pdf_b:
-                    await q.message.reply_document(
-                        document=InputFile(io.BytesIO(pdf_b), filename=f"chek_{sotuv_m['sessiya_id']}.pdf"),
-                        caption="🖨 Printerga yuboring!", parse_mode=ParseMode.MARKDOWN)
-            except Exception as _pe: log.warning("Majbur chek PDF: %s", _pe)
+                await _chek_thermal_va_pdf_yuborish(
+                    q.message, natija_m, dokon, f"chek_{sotuv_m['sessiya_id']}")
+            except Exception as _pe:
+                log.warning("Majbur chek fayllar: %s", _pe)
 
         elif q.data == "t:zarar_tasdiq":
             natija_z = ctx.user_data.pop("kutilayotgan", None)
@@ -2139,15 +2159,13 @@ async def tasdiq_cb(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
                     [("📋 Nakladnoy", f"n:sess:{sotuv_z['sessiya_id']}")],
                     [("✅ OK", "m:orqaga")],
                 ))
-            # Avtomatik chek PDF
+            # Avtomatik chek: thermal + PDF
             try:
                 natija_z["amal"] = "chiqim"
-                pdf_b = pdf_xizmat.chek_pdf(natija_z, dokon)
-                if pdf_b:
-                    await q.message.reply_document(
-                        document=InputFile(io.BytesIO(pdf_b), filename=f"chek_{sotuv_z['sessiya_id']}.pdf"),
-                        caption="🖨 Printerga yuboring!", parse_mode=ParseMode.MARKDOWN)
-            except Exception as _pe: log.warning("Zarar chek PDF: %s", _pe)
+                await _chek_thermal_va_pdf_yuborish(
+                    q.message, natija_z, dokon, f"chek_{sotuv_z['sessiya_id']}")
+            except Exception as _pe:
+                log.warning("Zarar chek fayllar: %s", _pe)
 
         elif amal=="qaytarish":
             if not tovarlar or not klient:
@@ -2216,8 +2234,12 @@ async def eksport_cb(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
             sess_id=int(qismlar[3]); data=await db.sessiya_ol(uid,sess_id)
             if not data: await q.message.reply_text("❌ Sessiya topilmadi."); return
             if format_=="chek":
-                kontent=pdf_xizmat.chek_pdf(data,dokon); nom=f"chek_{sess_id}.pdf"
-            elif format_=="pdf": kontent=pdf_xizmat.sotuv_pdf(data,dokon); nom=f"sotuv_{sess_id}.pdf"
+                d = dict(data)
+                d.setdefault("amal", "chiqim")
+                await _chek_thermal_va_pdf_yuborish(q.message, d, dokon, f"chek_{sess_id}")
+                return
+            elif format_=="pdf":
+                kontent=pdf_xizmat.sotuv_pdf(data,dokon); nom=f"sotuv_{sess_id}.pdf"
             else: kontent=excel_xizmat.sotuv_excel(data,dokon); nom=f"sotuv_{sess_id}.xlsx"
         elif tur=="klient":
             klient_id=int(qismlar[3]); data=await db.klient_to_liq_hisobi(uid,klient_id)

@@ -18,6 +18,8 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Optional
 
+from shared.services.thermal_receipt import format_thermal_receipt
+
 log = logging.getLogger(__name__)
 
 
@@ -38,7 +40,7 @@ class PrintJob:
     doc_type: str = ""          # sotuv_chek, kirim_chek, nakladnoy, faktura
     status: PrintStatus = PrintStatus.PREVIEW
     content: str = ""           # Chop etiladigan matn
-    width_mm: int = 58          # 58mm yoki 80mm
+    width_mm: int = 80          # 80mm thermal (standart mini-printer)
     attempts: int = 0           # Necha marta urinildi
     max_attempts: int = 3       # Maksimal urinish
     created_at: float = 0
@@ -63,7 +65,7 @@ def _next_id(uid: int) -> str:
 
 
 def create_print_job(user_id: int, doc_type: str, content: str,
-                      width_mm: int = 58, meta: dict = None) -> PrintJob:
+                      width_mm: int = 80, meta: dict = None) -> PrintJob:
     """Yangi print job yaratish — PREVIEW holatda"""
     job = PrintJob(
         job_id=_next_id(user_id),
@@ -192,57 +194,14 @@ def job_status_text(job: PrintJob) -> str:
     return "\n".join(lines)
 
 
-# ═══ RECEIPT FORMATTING — 58mm thermal ═══
+# ═══ RECEIPT FORMATTING — thermal (text-first, shared layout) ═══
+
 
 def format_receipt_58mm(data: dict, dokon: str = "") -> str:
-    """58mm mini printer uchun chek formatlash"""
-    W = 32  # 58mm = ~32 belgili
-    SEP = "─" * W
+    """58mm mini printer — monospaced layout (32 ustun)."""
+    return format_thermal_receipt(data, dokon, width_mm=58)
 
-    lines = []
-    lines.append(dokon.center(W) if dokon else "MASHRAB MOLIYA".center(W))
-    lines.append(SEP)
 
-    # Sana
-    import datetime, pytz
-    tz = pytz.timezone("Asia/Tashkent")
-    sana = datetime.datetime.now(tz).strftime("%d.%m.%Y %H:%M")
-    lines.append(sana.center(W))
-    lines.append(SEP)
-
-    # Klient
-    klient = data.get("klient", data.get("klient_ismi", ""))
-    if klient:
-        lines.append(f"Klient: {klient}")
-        lines.append(SEP)
-
-    # Tovarlar
-    tovarlar = data.get("tovarlar", [])
-    for i, t in enumerate(tovarlar, 1):
-        nomi = t.get("nomi", "?")[:18]
-        miq = t.get("miqdor", 0)
-        narx = t.get("narx", 0)
-        jami = t.get("jami", 0) or (float(miq) * float(narx))
-
-        lines.append(f"{i}. {nomi}")
-        right = f"{miq}x{narx:,.0f}={jami:,.0f}"
-        lines.append(f"   {right}")
-
-    lines.append(SEP)
-
-    # Jami
-    jami_s = data.get("jami_summa", 0)
-    lines.append(f"{'JAMI:':>20} {float(jami_s):>10,.0f}")
-
-    # To'langan / Qarz
-    tolangan = float(data.get("tolangan", 0))
-    qarz = float(data.get("qarz", 0))
-    if tolangan > 0:
-        lines.append(f"{'Tolangan:':>20} {tolangan:>10,.0f}")
-    if qarz > 0:
-        lines.append(f"{'QARZ:':>20} {qarz:>10,.0f}")
-
-    lines.append(SEP)
-    lines.append("@savdoai_mashrab_bot".center(W))
-
-    return "\n".join(lines)
+def format_receipt_80mm(data: dict, dokon: str = "") -> str:
+    """80mm thermal (XP-P810 class) — 48 ustun."""
+    return format_thermal_receipt(data, dokon, width_mm=80)

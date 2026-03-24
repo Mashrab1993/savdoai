@@ -4,8 +4,11 @@ from datetime import datetime
 from typing import Any
 import pytz
 
+from shared.receipt import format_qaytarish_receipt, receipt_text_80mm
+from shared.services.thermal_receipt import format_thermal_receipt
+
 TZ       = pytz.timezone("Asia/Tashkent")
-KENGLIK  = 32   # printer kengligi (belgi)
+KENGLIK  = 48   # 80mm thermal bilan Telegram chek_u bir xil (ustunlar)
 OY_NOMI  = [
     "", "Yanvar", "Fevral", "Mart", "Aprel", "May", "Iyun",
     "Iyul", "Avgust", "Sentabr", "Oktabr", "Noyabr", "Dekabr",
@@ -43,110 +46,21 @@ def chek_md(matn: str) -> str:
 # ─── CHEKlar ─────────────────────────────────────────────
 
 def sotuv_cheki(data: dict, dokon: str) -> str:
-    Q = ["=" * KENGLIK, _m("MASHRAB MOLIYA"), _m(dokon[:KENGLIK]), "=" * KENGLIK]
-    if data.get("klient"):
-        Q.append(f"Klient : {data['klient']}")
-    Q += [f"Sana   : {_hozir()}", "-" * KENGLIK]
-
-    hisob = 0.0
-    for t in data.get("tovarlar", []):
-        nom  = t.get("nomi", "")[:22]
-        miq  = float(t.get("miqdor", 0))
-        bir  = t.get("birlik", "dona")
-        narx = float(t.get("narx",   0))
-        jami = float(t.get("jami",   0) or miq * narx)
-        # hisob += jami  # display
-        miq_s = f"{miq:.1f}".rstrip("0").rstrip(".")
-        Q.append(nom)
-        if narx:
-            if bir == "gramm":
-                Q.append(_cs(f"  {miq_s}g (kg={narx:,.0f})", f"{jami:,.0f}"))
-            else:
-                Q.append(_cs(f"  {miq_s} {bir} x {narx:,.0f}", f"{jami:,.0f}"))
-        else:
-            Q.append(f"  {miq_s} {bir}")
-
-    j = float(data.get("jami_summa", hisob))
-    Q += ["-" * KENGLIK, _cs("JAMI:", f"{j:,.0f} so'm")]
-
-    qarz = float(data.get("qarz", 0))
-    if qarz > 0:
-        tl = float(data.get("tolandan") or data.get("tolangan") or j - qarz)
-        Q += [
-            _cs("TO'LANDI:", f"{tl:,.0f} so'm"),
-            _cs("YANGI QARZ:", f"{qarz:,.0f} so'm"),
-        ]
-    # Eski qarz va jami qarz
-    eski_qarz = float(data.get("eski_qarz", 0))
-    if eski_qarz > 0:
-        Q.append("-" * KENGLIK)
-        Q.append(_cs("ESKI QARZ:", f"{eski_qarz:,.0f} so'm"))
-        jami_qarz = qarz + eski_qarz
-        Q.append(_cs("JAMI QARZ:", f"{jami_qarz:,.0f} so'm"))
-    if data.get("manba"):
-        Q.append(f"Manba  : {data['manba']}")
-
-    Q += ["=" * KENGLIK, _m("@savdoai_mashrab_bot"), "=" * KENGLIK, ""]
-    return "\n".join(Q)
+    """Telegram monospace — 80mm thermal .txt va preview bilan bir xil layout."""
+    return receipt_text_80mm(data, dokon)
 
 
 def kirim_cheki(data: dict, dokon: str) -> str:
-    Q = ["=" * KENGLIK, _m("KIRIM CHEKI"), _m(dokon[:KENGLIK]), "=" * KENGLIK]
-    if data.get("manba"):
-        Q.append(f"Manba  : {data['manba']}")
-    Q += [f"Sana   : {_hozir()}", "-" * KENGLIK]
-
-    hisob = 0.0
-    for t in data.get("tovarlar", []):
-        nom  = t.get("nomi", "")[:22]
-        miq  = float(t.get("miqdor", 0))
-        bir  = t.get("birlik", "dona")
-        narx = float(t.get("narx",   0))
-        jami = float(t.get("jami",   0) or miq * narx)
-        # hisob += jami  # display
-        miq_s = f"{miq:.1f}".rstrip("0").rstrip(".")
-        Q.append(nom)
-        if narx:
-            Q.append(_cs(f"  {miq_s} {bir} x {narx:,.0f}", f"{jami:,.0f}"))
-        else:
-            Q.append(f"  {miq_s} {bir}")
-
-    j = float(data.get("jami_summa", hisob))
-    Q += ["-" * KENGLIK, _cs("JAMI:", f"{j:,.0f} so'm"),
-          "=" * KENGLIK, _m("@savdoai_mashrab_bot"), "=" * KENGLIK, ""]
-    return "\n".join(Q)
+    d = dict(data)
+    d["amal"] = "kirim"
+    return format_thermal_receipt(d, dokon, width_mm=80)
 
 
 def qaytarish_cheki(natijalar: list[dict], dokon: str) -> str:
     """
     natijalar: [{tovar, klient, qaytarildi, birlik, narx, summa}, ...]
     """
-    Q = ["=" * KENGLIK, _m("QAYTARISH CHEKI"), _m(dokon[:KENGLIK]), "=" * KENGLIK]
-
-    klient = next(
-        (n.get("klient") for n in natijalar if n.get("klient")), ""
-    )
-    if klient:
-        Q.append(f"Klient : {klient}")
-    Q += [f"Sana   : {_hozir()}", "-" * KENGLIK]
-
-    jami = 0.0
-    for n in natijalar:
-        nom  = n.get("tovar", "")[:22]
-        miq  = float(n.get("qaytarildi", 0))
-        bir  = n.get("birlik", "dona")
-        summa = float(n.get("summa", 0))
-        jami += summa
-        miq_s = f"{miq:.1f}".rstrip("0").rstrip(".")
-        Q.append(nom)
-        Q.append(_cs(f"  {miq_s} {bir}", f"{summa:,.0f}"))
-
-    Q += [
-        "-" * KENGLIK,
-        _cs("QAYTARILDI:", f"{jami:,.0f} so'm"),
-        "=" * KENGLIK, _m("@savdoai_mashrab_bot"), "=" * KENGLIK, "",
-    ]
-    return "\n".join(Q)
+    return format_qaytarish_receipt(natijalar, dokon, width_mm=80)
 
 
 # ─── Hisobot matnlari ─────────────────────────────────────

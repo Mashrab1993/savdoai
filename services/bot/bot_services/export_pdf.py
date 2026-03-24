@@ -42,7 +42,7 @@ def _uslublar():
     s.add(ParagraphStyle("Oddiy",       parent=s["Normal"],  fontSize=10, spaceAfter=4))
     s.add(ParagraphStyle("Qalin",       parent=s["Normal"],  fontSize=10, fontName="Helvetica-Bold"))
     s.add(ParagraphStyle("Markaz",      parent=s["Normal"],  fontSize=9,  alignment=TA_CENTER))
-    s.add(ParagraphStyle("Ostki",       parent=s["Normal"],  fontSize=8,  textColor=KULRANG))
+    s.add(ParagraphStyle("Ostki",       parent=s["Normal"],  fontSize=8,  textColor=colors.black))
     return s
 
 
@@ -53,12 +53,13 @@ def _jadval_uslubi(sarlavha_rang=KOK) -> TableStyle:
         ("FONTNAME",      (0, 0), (-1,  0), "Helvetica-Bold"),
         ("FONTSIZE",      (0, 0), (-1,  0), 9),
         ("FONTNAME",      (0, 1), (-1, -1), "Helvetica"),
-        ("FONTSIZE",      (0, 1), (-1, -1), 8),
-        ("ROWBACKGROUNDS",(0, 1), (-1, -1), [colors.white, OCHKUK]),
-        ("GRID",          (0, 0), (-1, -1), 0.4, colors.HexColor("#d1d5db")),
+        ("FONTSIZE",      (0, 1), (-1, -1), 9),
+        ("TEXTCOLOR",     (0, 1), (-1, -1), colors.black),
+        ("ROWBACKGROUNDS",(0, 1), (-1, -1), [colors.white]),
+        ("GRID",          (0, 0), (-1, -1), 0.75, colors.HexColor("#9ca3af")),
         ("VALIGN",        (0, 0), (-1, -1), "MIDDLE"),
-        ("TOPPADDING",    (0, 0), (-1, -1), 4),
-        ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
+        ("TOPPADDING",    (0, 0), (-1, -1), 5),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
         ("LEFTPADDING",   (0, 0), (-1, -1), 5),
         ("RIGHTPADDING",  (0, 0), (-1, -1), 5),
     ])
@@ -158,6 +159,10 @@ def _nakladnoy_raqam() -> str:
 
 
 def chek_pdf(data: dict, dokon_nomi: str, width_mm: int = 80) -> bytes:
+    """
+    Kichik thermal kenglikdagi PDF — arxiv / umumiy printerlar uchun.
+    Asosiy mini-printer yo'li: shared.services.thermal_receipt (matn, yuqori kontrast).
+    """
     from reportlab.lib.units import mm as MM
     from reportlab.pdfgen import canvas as cv
 
@@ -177,72 +182,62 @@ def chek_pdf(data: dict, dokon_nomi: str, width_mm: int = 80) -> bytes:
     sana = _hozir()
     nak = _nakladnoy_raqam()
 
-    # Balandlik
-    ph = 14*MM + 11*MM + (7*MM if klient else 0) + 5*MM + nt*8*MM + 16*MM + (13*MM if qarz > 0 else 0) + 4*MM
+    # Qator balandligi: nom + detay + oraliq (restaurant PDF — o‘qilish uchun zaxira)
+    ph = (
+        18 * MM + 14 * MM + (10 * MM if klient else 0) + 8 * MM
+        + nt * 14 * MM + 24 * MM + (18 * MM if qarz > 0 else 0) + 10 * MM
+    )
 
     buf = io.BytesIO()
     c = cv.Canvas(buf, pagesize=(pw, ph))
     y = ph - mg - 1
 
     BLACK = colors.black
-    GRAY = colors.HexColor("#888888")
-    LGRAY = colors.HexColor("#cccccc")
-    RED = colors.HexColor("#cc0000")
+    RED = colors.HexColor("#b91c1c")
 
-    # --- HEADER ---
-    # Qora banner
     c.setFillColor(BLACK)
-    c.rect(0, y - 4, pw, 18, fill=1, stroke=0)
+    c.rect(0, y - 4, pw, 20, fill=1, stroke=0)
     c.setFillColor(colors.white)
     c.setFont("Helvetica-Bold", 12 if len(dokon_nomi or "") <= 22 else 10)
     c.drawCentredString(cx, y, (dokon_nomi or "SAVDOAI").upper())
     c.setFillColor(BLACK)
-    y -= 20
+    y -= 22
 
-    # Firma nomi
-    c.setFont("Helvetica", 7)
-    c.setFillColor(GRAY)
+    c.setFont("Helvetica-Bold", 9)
     c.drawCentredString(cx, y, "MASHRAB MOLIYA")
-    c.setFillColor(BLACK)
-    y -= 10
+    y -= 12
 
-    # Chek info — ikkita ustun
-    c.setFont("Helvetica", 6.5)
-    c.setFillColor(GRAY)
+    c.setFont("Helvetica-Bold", 8)
     c.drawString(mg, y, f"Chek: {nak}")
     c.drawRightString(rx, y, sana)
-    c.setFillColor(BLACK)
-    y -= 8
-
-    # Amal turi
-    amal_map = {"kirim":"KIRIM","chiqim":"SOTUV","qaytarish":"QAYTARISH",
-                "qarz_tolash":"QARZ TOLASH","nakladnoy":"NAKLADNOY"}
-    amal_nom = amal_map.get(amal, "SOTUV")
-    c.setFont("Helvetica-Bold", 8)
-    c.drawCentredString(cx, y, amal_nom)
     y -= 10
 
-    # Ingichka chiziq
+    amal_map = {"kirim": "KIRIM", "chiqim": "SOTUV", "qaytarish": "QAYTARISH",
+                "qarz_tolash": "QARZ TOLASH", "nakladnoy": "NAKLADNOY"}
+    amal_nom = amal_map.get(amal, "SOTUV")
+    c.setFont("Helvetica-Bold", 9)
+    c.drawCentredString(cx, y, amal_nom)
+    y -= 11
+
     c.setStrokeColor(BLACK)
-    c.setLineWidth(0.8)
+    c.setLineWidth(1.25)
     c.line(mg, y, rx, y)
-    y -= 5
+    y -= 8
 
-    # Klient
     if klient:
-        c.setFont("Helvetica-Bold", 9)
-        c.drawString(mg, y, klient[:24])
-        y -= 11
+        c.setFont("Helvetica-Bold", 11)
+        c.drawString(mg, y, str(klient)[:30])
+        y -= 14
 
-    # --- TOVARLAR ---
-    # Sarlavha fon
-    c.setFillColor(colors.HexColor("#f0f0f0"))
-    c.rect(mg, y - 2, iw, 10, fill=1, stroke=0)
-    c.setFillColor(BLACK)
-    c.setFont("Helvetica-Bold", 6)
-    c.drawString(mg + 2, y, "TOVAR")
-    c.drawRightString(rx - 2, y, "SUMMA")
-    y -= 12
+    c.setStrokeColor(BLACK)
+    c.setLineWidth(1.1)
+    c.line(mg, y, rx, y)
+    y -= 6
+
+    c.setFont("Helvetica-Bold", 10)
+    c.drawString(mg + 1, y, "TOVAR NOMI")
+    c.drawRightString(rx - 1, y, "JAMI")
+    y -= 13
 
     for i, t in enumerate(tovarlar, 1):
         nomi = t.get("nomi", "?")
@@ -252,115 +247,97 @@ def chek_pdf(data: dict, dokon_nomi: str, width_mm: int = 80) -> bytes:
         birlik = t.get("birlik", "dona")
         miq_s = f"{miq:.1f}".rstrip("0").rstrip(".")
 
-        # Tovar nomi + summa (1 qator)
-        disp = f"{i}  {nomi}"
-        mx = 28 if width_mm >= 80 else 18
+        disp = f"{i}. {nomi}"
+        mx = 32 if width_mm >= 80 else 22
         if len(disp) > mx:
-            disp = disp[:mx-1] + ".."
+            disp = disp[: mx - 2] + ".."
 
-        # Nomi va summa — bitta qatorda
         s_str = f"{jami:,.0f}"
-        
-        # Summa kengligi
-        c.setFont("Helvetica-Bold", 9)
-        sw = c.stringWidth(s_str, "Helvetica-Bold", 9)
-        
-        # Nomi — sig'adigan shrift
+        c.setFont("Helvetica-Bold", 11)
+        sw = c.stringWidth(s_str, "Helvetica-Bold", 11)
         max_name_w = iw - sw - 4
-        c.setFont("Helvetica-Bold", 8)
-        nw = c.stringWidth(disp, "Helvetica-Bold", 8)
+        c.setFont("Helvetica-Bold", 10)
+        nw = c.stringWidth(disp, "Helvetica-Bold", 10)
         if nw > max_name_w:
-            c.setFont("Helvetica-Bold", 7)
+            c.setFont("Helvetica-Bold", 9)
+        c.setFillColor(BLACK)
         c.drawString(mg, y, disp)
 
-        # Summa (o'ng) — KATTA, QALIN
-        c.setFont("Helvetica-Bold", 9)
+        c.setFont("Helvetica-Bold", 11)
         c.drawRightString(rx, y, s_str)
-        y -= 9
+        y -= 13
 
-        # Detay — kulrang, kichik
-        det = f"  {miq_s} {birlik} x {narx:,.0f}"
-        c.setFont("Helvetica", 6)
-        c.setFillColor(GRAY)
-        c.drawString(mg + 3, y, det)
+        if birlik == "gramm":
+            det = f"    {miq_s} g x {narx:,.0f}/kg"
+        else:
+            det = f"    {miq_s} {birlik} x {narx:,.0f}"
+        c.setFont("Helvetica-Bold", 9)
         c.setFillColor(BLACK)
-        y -= 7
+        c.drawString(mg, y, det)
+        y -= 12
 
-        # Ajratgich (oxirgi emas)
         if i < len(tovarlar):
-            c.setStrokeColor(LGRAY)
-            c.setLineWidth(0.15)
-            c.line(mg + 5, y + 1, rx - 5, y + 1)
             c.setStrokeColor(BLACK)
-            c.setLineWidth(0.5)
-            y -= 1
+            c.setLineWidth(1.0)
+            c.line(mg, y + 2, rx, y + 2)
+            y -= 6
 
-    # --- JAMI ---
+    y -= 5
+    c.setStrokeColor(BLACK)
+    c.setLineWidth(1.6)
+    c.line(mg, y, rx, y)
+    y -= 8
+
+    bh = 22
+    c.setFillColor(BLACK)
+    c.roundRect(mg, y - 5, iw, bh, 3, fill=1, stroke=0)
+    c.setFillColor(colors.white)
+    c.setFont("Helvetica-Bold", 13)
+    c.drawString(mg + 4, y, "JAMI")
+    c.setFont("Helvetica-Bold", 16)
+    c.drawRightString(rx - 4, y, f"{jami_s:,.0f}")
+    c.setFont("Helvetica-Bold", 9)
+    c.drawRightString(rx - 4, y - 13, "so'm")
+    c.setFillColor(BLACK)
+    y -= bh + 8
+
+    c.setFont("Helvetica-Bold", 9)
+    c.setFillColor(BLACK)
+    c.drawCentredString(cx, y, f"{len(tovarlar)} ta pozitsiya")
+    y -= 11
+
+    if qarz > 0:
+        c.setFont("Helvetica-Bold", 10)
+        c.drawString(mg, y, "To'langan:")
+        c.setFont("Helvetica-Bold", 11)
+        c.drawRightString(rx, y, f"{tol:,.0f}")
+        y -= 14
+
+        bq = 18
+        c.setFillColor(RED)
+        c.roundRect(mg, y - 4, iw, bq, 3, fill=1, stroke=0)
+        c.setFillColor(colors.white)
+        c.setFont("Helvetica-Bold", 12)
+        c.drawString(mg + 4, y, "QARZ")
+        c.setFont("Helvetica-Bold", 14)
+        c.drawRightString(rx - 4, y, f"{qarz:,.0f}")
+        c.setFont("Helvetica-Bold", 9)
+        c.drawRightString(rx - 4, y - 12, "so'm")
+        c.setFillColor(BLACK)
+        y -= bq + 8
+
     y -= 3
     c.setStrokeColor(BLACK)
     c.setLineWidth(1.2)
     c.line(mg, y, rx, y)
-    c.setLineWidth(0.5)
-    y -= 5
+    y -= 10
 
-    # JAMI qora banner
-    bh = 16
+    c.setFont("Helvetica-Bold", 9)
     c.setFillColor(BLACK)
-    c.roundRect(mg, y - 3, iw, bh, 3, fill=1, stroke=0)
-    c.setFillColor(colors.white)
-    c.setFont("Helvetica-Bold", 11)
-    c.drawString(mg + 4, y, "JAMI:")
-    c.setFont("Helvetica-Bold", 13)
-    c.drawRightString(rx - 4, y, f"{jami_s:,.0f}")
-    c.setFont("Helvetica", 6)
-    c.drawRightString(rx - 4, y - 10, "so'm")
-    c.setFillColor(BLACK)
-    y -= (bh + 5)
-
-    # Tovar soni
-    c.setFont("Helvetica", 6)
-    c.setFillColor(GRAY)
-    c.drawCentredString(cx, y, f"{len(tovarlar)} xil tovar")
-    c.setFillColor(BLACK)
-    y -= 7
-
-    # --- QARZ ---
-    if qarz > 0:
-        # Naqd
-        c.setFont("Helvetica", 7)
-        c.drawString(mg, y, "Naqd:")
-        c.setFont("Helvetica-Bold", 8)
-        c.drawRightString(rx, y, f"{tol:,.0f}")
-        y -= 11
-
-        # QARZ qizil banner
-        bq = 14
-        c.setFillColor(RED)
-        c.roundRect(mg, y - 2, iw, bq, 3, fill=1, stroke=0)
-        c.setFillColor(colors.white)
-        c.setFont("Helvetica-Bold", 10)
-        c.drawString(mg + 4, y, "QARZ:")
-        c.setFont("Helvetica-Bold", 12)
-        c.drawRightString(rx - 4, y, f"{qarz:,.0f}")
-        c.setFont("Helvetica", 5)
-        c.drawRightString(rx - 4, y - 9, "so'm")
-        c.setFillColor(BLACK)
-        y -= (bq + 5)
-
-    # --- FOOTER ---
-    y -= 2
-    c.setStrokeColor(BLACK)
-    c.setLineWidth(0.5)
-    c.line(mg, y, rx, y)
-    y -= 7
-
-    c.setFont("Helvetica-Bold", 7)
     c.drawCentredString(cx, y, "Xaridingiz uchun rahmat!")
-    y -= 8
-    c.setFont("Helvetica", 5.5)
-    c.setFillColor(GRAY)
+    y -= 11
+    c.setFont("Helvetica-Bold", 8)
     c.drawCentredString(cx, y, "@savdoai_mashrab_bot")
-    c.setFillColor(BLACK)
 
     c.save()
     return buf.getvalue()

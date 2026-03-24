@@ -202,6 +202,40 @@ class TestFuzzyRuntime:
         assert similarity("ARIEL", "ariel") == 1.0
 
 
+class TestThermalReceipt:
+    """Monospace thermal layout — demo and width invariants."""
+
+    def test_demo_preview_non_empty(self):
+        from shared.services.thermal_receipt import demo_thermal_receipt_preview_text
+        t = demo_thermal_receipt_preview_text(80)
+        assert "JAMI" in t and "816 000" in t
+        assert "TOVAR NOMI" in t
+        assert len(t.splitlines()) >= 8
+
+    def test_80mm_line_width(self):
+        from shared.services.thermal_receipt import format_thermal_receipt
+        data = {
+            "amal": "chiqim",
+            "tovarlar": [
+                {"nomi": "X", "miqdor": 10, "birlik": "dona", "narx": 1000, "jami": 10000},
+            ],
+            "jami_summa": 10000,
+        }
+        text = format_thermal_receipt(data, "T", 80)
+        for line in text.splitlines():
+            assert len(line) <= 48, line
+
+    def test_qaytarish_matches_columns(self):
+        from shared.services.thermal_receipt import format_qaytarish_receipt
+        nat = [
+            {"tovar": "A", "qaytarildi": 2, "birlik": "dona", "summa": 5000},
+        ]
+        t = format_qaytarish_receipt(nat, "Shop", 80)
+        assert "QAYTARISH" in t and "JAMI QAYTARISH" in t
+        for line in t.splitlines():
+            assert len(line) <= 48
+
+
 class TestPrintRuntime:
     """Print status lifecycle."""
 
