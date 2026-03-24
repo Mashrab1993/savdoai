@@ -11,7 +11,8 @@ export function RouteGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const pathname = usePathname()
 
-  const isPublic = PUBLIC_ROUTES.includes(pathname)
+  const isPublic =
+    PUBLIC_ROUTES.includes(pathname) || pathname.startsWith("/p/")
 
   useEffect(() => {
     if (loading) return

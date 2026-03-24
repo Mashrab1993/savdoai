@@ -1,17 +1,31 @@
-"""Telegram: ESC/POS sessiya + print tugma (custom scheme yoki HTTPS App Link)."""
+"""Telegram: ESC/POS sessiya + HTTPS landing → savdoai:// print."""
 from __future__ import annotations
 
 import io
 import logging
 import os
 from typing import Any
+from urllib.parse import quote
 
 log = logging.getLogger(__name__)
 
-# Primary URL: savdoai://... until print domain DNS is live. Set PRINT_USE_HTTPS=1 for https://print.../p/...
-USE_HTTPS = os.environ.get("PRINT_USE_HTTPS", "0") == "1"
 PRINT_ATTACH_BIN = os.environ.get("PRINT_ATTACH_BIN", "1") == "1"
 DEFAULT_WIDTH = int(os.environ.get("PRINT_DEFAULT_WIDTH", "80"))
+
+# Web app origin (Railway savdoai-web). Override if bot WEB_URL points elsewhere.
+_DEFAULT_LANDING = "https://savdoai-web-production.up.railway.app"
+
+
+def _telegram_print_landing_url(job_id: str, token: str, width: int) -> str:
+    base = (
+        os.environ.get("PRINT_LANDING_BASE_URL")
+        or os.environ.get("WEB_URL")
+        or _DEFAULT_LANDING
+    ).rstrip("/")
+    return (
+        f"{base}/p/{quote(job_id, safe='')}"
+        f"?t={quote(token, safe='')}&w={int(width)}"
+    )
 
 
 def _normalize_sale_dict(d: dict) -> dict:
@@ -32,8 +46,7 @@ async def send_print_session(
     width: int | None = None,
 ) -> dict[str, Any] | None:
     """
-    PRINT_USE_HTTPS=1: inline tugma (https://.../p/...).
-    PRINT_USE_HTTPS=0: savdoai:// havolasi oddiy matn (Telegram URL tugmasi qabul qilmaydi).
+    Inline tugma: HTTPS landing (WEB_URL yoki PRINT_LANDING_BASE_URL) → ilova savdoai://.
     PRINT_ATTACH_BIN=1 bo'lsa — zaxira .bin.
     """
     try:
@@ -72,22 +85,16 @@ async def send_print_session(
                 parse_mode=ParseMode.MARKDOWN,
             )
 
-        # Telegram rejects InlineKeyboardButton url=savdoai://... ("unsupported url protocol").
-        if USE_HTTPS:
-            link = sess.deep_link(use_https=True)
-            await message.reply_text(
-                "👇 *Bitta tugma — chek printerdan chiqadi:*\n"
-                "Agar ilova ochilmasa, yuqoridagi `.bin` faylni oching (zaxira).",
-                parse_mode=ParseMode.MARKDOWN,
-                reply_markup=InlineKeyboardMarkup(
-                    [[InlineKeyboardButton("🖨 CHEK CHIQARISH", url=link)]]
-                ),
-            )
-        else:
-            link = sess.deep_link(use_https=False)
-            await message.reply_text(
-                "🖨 Chek chiqarish uchun quyidagi havolani bosing:\n\n" + link,
-            )
+        # Telegram faqat https/http inline url qabul qiladi; landing sahifa savdoai:// ochadi.
+        link = _telegram_print_landing_url(sess.job_id, sess.token, sess.width)
+        await message.reply_text(
+            "👇 *Bitta tugma — brauzer ochiladi, keyin print ilovasi:*\n"
+            "Agar ilova ochilmasa, sahifadagi tugmani bosing yoki `.bin` fayldan foydalaning.",
+            parse_mode=ParseMode.MARKDOWN,
+            reply_markup=InlineKeyboardMarkup(
+                [[InlineKeyboardButton("🖨 CHEK CHIQARISH", url=link)]]
+            ),
+        )
         return sess.to_json()
     except Exception as e:
         log.error("send_print_session: %s", e, exc_info=True)
