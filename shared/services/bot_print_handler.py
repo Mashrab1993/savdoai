@@ -1,4 +1,4 @@
-"""Telegram: ESC/POS sessiya + HTTPS App Link tugma (bir marta bosish)."""
+"""Telegram: ESC/POS sessiya + print tugma (custom scheme yoki HTTPS App Link)."""
 from __future__ import annotations
 
 import io
@@ -8,7 +8,8 @@ from typing import Any
 
 log = logging.getLogger(__name__)
 
-USE_HTTPS = os.environ.get("PRINT_USE_HTTPS", "1") == "1"
+# Primary URL: savdoai://... until print domain DNS is live. Set PRINT_USE_HTTPS=1 for https://print.../p/...
+USE_HTTPS = os.environ.get("PRINT_USE_HTTPS", "0") == "1"
 PRINT_ATTACH_BIN = os.environ.get("PRINT_ATTACH_BIN", "1") == "1"
 DEFAULT_WIDTH = int(os.environ.get("PRINT_DEFAULT_WIDTH", "80"))
 

@@ -83,7 +83,8 @@ class PrintSession:
     def expired(self) -> bool:
         return time.time() > self.expires_at
 
-    def deep_link(self, use_https: bool = True) -> str:
+    def deep_link(self, use_https: bool = False) -> str:
+        """use_https=True -> https://PRINT_DOMAIN/p/... ; False -> savdoai://print/..."""
         if use_https:
             d = os.environ.get("PRINT_DOMAIN", "print.savdoai.uz").strip().rstrip("/")
             return f"https://{d}/p/{self.job_id}?t={self.token}&w={self.width}"
