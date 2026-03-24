@@ -208,7 +208,7 @@ def chek_pdf(data: dict, dokon_nomi: str, width_mm: int = 80) -> bytes:
     y -= 12
 
     c.setFont("Helvetica-Bold", 8)
-    c.drawString(mg, y, f"Chek: {nak}")
+    c.drawString(mg, y, f"Chek № {nak}")
     c.drawRightString(rx, y, sana)
     y -= 10
 

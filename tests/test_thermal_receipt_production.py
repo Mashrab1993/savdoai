@@ -109,7 +109,8 @@ class TestEscpos:
         assert _line_bold_escpos(" 1. Product", w) is True
         assert _line_bold_escpos("JAMI                                100 so'm", w) is True
         assert _line_bold_escpos("=" * 48, w) is True
-        assert _line_bold_escpos("     2 dona x 100                  200", w) is False
+        assert _line_bold_escpos("     2 dona x 100                  200", w) is True
+        assert _line_bold_escpos("Chek № 42           24.03.2025  12:00", w) is True
 
     def test_escpos_roundtrip_contains_init(self):
         from shared.services.thermal_receipt import thermal_receipt_escpos_utf8
@@ -146,5 +147,5 @@ class TestProductionSample:
         w = THERMAL_CHARS[80]
         for name, txt in samples.items():
             _assert_width(txt, w)
-            assert "Chek #" in txt
+            assert "Chek №" in txt
             assert "Кефир" in txt or "К" in txt

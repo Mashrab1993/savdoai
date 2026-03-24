@@ -1,11 +1,8 @@
 """
-80mm / 58mm thermal receipt — text-first, monospaced, premium POS layout.
+80mm / 58mm thermal receipt — text-first, monospaced, compact premium POS layout.
 
-Restaurant-style priorities: item name, then qty x unit price, line total, grand total.
-No gray, no bitmap dependency; optional ESC/POS bold on names and totals.
-
-Printer safety: `thermal_safe_text` normalizes dashes/quotes and strips control
-characters so UTF-8 output is reliable on common portable thermal printers.
+Priorities: tight vertical rhythm, strong hierarchy, ESC/POS bold on key lines.
+Thermal path is primary; PDF is archive-only elsewhere.
 """
 from __future__ import annotations
 
@@ -28,15 +25,15 @@ def thermal_safe_text(s: str) -> str:
         return ""
     t = unicodedata.normalize("NFC", str(s))
     repl = (
-        ("\u2014", "-"),  # em dash
-        ("\u2013", "-"),  # en dash
-        ("\u2212", "-"),  # minus sign
-        ("\u2018", "'"),  # ‘
-        ("\u2019", "'"),  # ’
-        ("\u02bc", "'"),  # modifier letter apostrophe
+        ("\u2014", "-"),
+        ("\u2013", "-"),
+        ("\u2212", "-"),
+        ("\u2018", "'"),
+        ("\u2019", "'"),
+        ("\u02bc", "'"),
         ("\u201c", '"'),
         ("\u201d", '"'),
-        ("\ufeff", ""),   # BOM
+        ("\ufeff", ""),
     )
     for a, b in repl:
         t = t.replace(a, b)
@@ -54,6 +51,7 @@ def thermal_safe_text(s: str) -> str:
 def _ts(s: str) -> str:
     return thermal_safe_text(s)
 
+
 THERMAL_CHARS: dict[int, int] = {58: 32, 80: 48}
 
 
@@ -62,7 +60,6 @@ def _w(width_mm: int) -> int:
 
 
 def _money_w(chars: int) -> int:
-    """Right column width for sums — stable alignment at a glance."""
     if chars >= 42:
         return 13
     return max(8, min(11, chars // 3 + 4))
@@ -90,7 +87,6 @@ def _sep_mid(w: int) -> str:
 
 
 def _lr_money(left: str, amount: str, w: int) -> str:
-    """Left detail + right-justified amount column (stable scan line for line totals)."""
     left = left.rstrip()
     amount = amount.strip()
     mw = _money_w(w)
@@ -126,33 +122,37 @@ def _wrap(name: str, width: int) -> list[str]:
     return out or ["?"]
 
 
-def format_thermal_receipt(
+def _clip_line(s: str, w: int) -> str:
+    return s[:w] if len(s) > w else s
+
+
+Row = tuple[str, bool]
+
+
+def _format_thermal_receipt_lines(
     data: dict,
     dokon: str = "",
     width_mm: int = 80,
-) -> str:
-    """
-    Premium POS-style receipt: heavy rules, fixed money column, clear item blocks.
-    """
+) -> list[Row]:
+    """Build (line, escpos_bold) rows — compact, strong hierarchy."""
     w = _w(width_mm)
-    lines: list[str] = []
+    rows: list[Row] = []
+
+    def add(line: str, bold: bool = False) -> None:
+        rows.append((_clip_line(line, w), bold))
 
     amal = (data.get("amal") or "chiqim").lower()
     dokon_l = _ts((dokon or "SAVDOAI").strip())[: w - 2]
     title = dokon_l.upper()
 
-    lines.append(_sep_heavy(w))
-    lines.append(title.center(w)[:w])
-    lines.append(_sep_heavy(w))
-    lines.append("MASHRAB MOLIYA".center(w)[:w])
-    lines.append(_sep_mid(w))
+    add(_sep_heavy(w), True)
+    add(title.center(w)[:w], True)
+    add("MASHRAB MOLIYA".center(w)[:w], False)
 
     now = datetime.datetime.now(TZ).strftime("%d.%m.%Y  %H:%M")
     rid = data.get("sessiya_id") or data.get("chek_raqami") or data.get("raqam")
-    if rid is not None:
-        lines.append(_lr_money(f"Chek #{rid}", now, w))
-    else:
-        lines.append(_lr_money("Chek", now, w))
+    chek_left = f"Chek № {rid}" if rid is not None else "Chek №"
+    add(_lr_money(chek_left, now, w), True)
 
     amal_map = {
         "kirim": "KIRIM",
@@ -161,25 +161,23 @@ def format_thermal_receipt(
         "qarz_tolash": "QARZ TO'LASH",
         "nakladnoy": "NAKLADNOY",
     }
-    lines.append(amal_map.get(amal, "SOTUV").center(w)[:w])
-    lines.append(_sep_mid(w))
+    add(amal_map.get(amal, "SOTUV").center(w)[:w], True)
+    add(_sep_mid(w), False)
 
     if amal == "kirim" and data.get("manba"):
         for ln in _wrap(f"Manba: {_ts(str(data['manba']))}", w):
-            lines.append(ln)
-        lines.append(_sep_mid(w))
+            add(ln, True)
+        add(_sep_mid(w), False)
 
     klient = _ts((data.get("klient") or data.get("klient_ismi") or "").strip())
     if klient:
         for ln in _wrap(f"Mijoz: {klient}", w):
-            lines.append(ln)
-        lines.append(_sep_mid(w))
+            add(ln, True)
+        add(_sep_mid(w), False)
+
+    add(_lr_money("TOVAR NOMI", "JAMI (so'm)", w), True)
 
     tovarlar = data.get("tovarlar") or []
-    # Column hint — matches restaurant "description | amount" scan
-    lines.append(_lr_money("TOVAR NOMI", "JAMI (so'm)", w))
-    lines.append(_sep_mid(w))
-
     for i, t in enumerate(tovarlar, 1):
         nomi = _ts((t.get("nomi") or "?").strip())
         miq = float(t.get("miqdor") or 0)
@@ -188,13 +186,12 @@ def format_thermal_receipt(
         jami = float(t.get("jami") or 0) or (miq * narx)
         ms = _miq_str(miq)
 
-        # Item name — full width, index prominent
         head = f"{i:>2}. "
         avail = w - len(head)
         wrapped = _wrap(nomi, max(avail, 6))
         for li, nl in enumerate(wrapped):
             prefix = head if li == 0 else "    "
-            lines.append((prefix + nl)[:w])
+            add((prefix + nl)[:w], True)
 
         if narx:
             if bir == "gramm":
@@ -204,16 +201,13 @@ def format_thermal_receipt(
         else:
             left = f"     {ms} {bir}"
 
-        lines.append(_lr_money(left, _money(jami), w))
+        add(_lr_money(left, _money(jami), w), True)
 
-        if i < len(tovarlar):
-            lines.append(_sep_mid(w))
-
-    lines.append(_sep_heavy(w))
+    add(_sep_heavy(w), True)
 
     jami_s = float(data.get("jami_summa") or 0)
-    lines.append(_lr_money("JAMI", f"{_money(jami_s)} so'm", w))
-    lines.append(_sep_heavy(w))
+    add(_lr_money("JAMI", f"{_money(jami_s)} so'm", w), True)
+    add(_sep_heavy(w), True)
 
     qarz = float(data.get("qarz") or 0)
     jami_s_calc = float(data.get("jami_summa") or 0)
@@ -224,27 +218,32 @@ def format_thermal_receipt(
         tol = jami_s_calc
 
     if qarz > 0:
-        lines.append(_lr_money("To'langan", _money(tol), w))
-        lines.append(_lr_money("QARZ", _money(qarz), w))
-        lines.append(_sep_mid(w))
+        add(_lr_money("To'langan", _money(tol), w), True)
+        add(_lr_money("QARZ", _money(qarz), w), True)
+        add(_sep_mid(w), False)
 
     eski_qarz = float(data.get("eski_qarz") or 0)
     if eski_qarz > 0:
-        lines.append(_lr_money("ESKI QARZ", _money(eski_qarz), w))
+        add(_lr_money("ESKI QARZ", _money(eski_qarz), w), True)
         jq = qarz + eski_qarz
-        lines.append(_lr_money("JAMI QARZ", _money(jq), w))
-        lines.append(_sep_mid(w))
+        add(_lr_money("JAMI QARZ", _money(jq), w), True)
+        add(_sep_mid(w), False)
 
     if data.get("manba") and amal != "kirim":
         for ln in _wrap(f"Manba: {_ts(str(data['manba']))}", w):
-            lines.append(ln)
+            add(ln, False)
 
-    lines.append(_sep_mid(w))
-    lines.append("Xaridingiz uchun rahmat!".center(w)[:w])
-    lines.append("@savdoai_mashrab_bot".center(w)[:w])
-    lines.append(_sep_heavy(w))
-    lines.append("")
-    lines = [ln[:w] if len(ln) > w else ln for ln in lines]
+    add("Xaridingiz uchun rahmat!".center(w)[:w], True)
+    add("@savdoai_mashrab_bot".center(w)[:w], True)
+    return rows
+
+
+def format_thermal_receipt(
+    data: dict,
+    dokon: str = "",
+    width_mm: int = 80,
+) -> str:
+    lines = [ln for ln, _ in _format_thermal_receipt_lines(data, dokon, width_mm)]
     return "\n".join(lines)
 
 
@@ -259,6 +258,7 @@ def _escpos_line(line: bytes, bold: bool) -> bytes:
 
 
 def _line_bold_escpos(raw_line: str, w: int) -> bool:
+    """Legacy heuristic for tests / callers without structured rows."""
     s = raw_line.strip()
     if not s:
         return False
@@ -268,55 +268,50 @@ def _line_bold_escpos(raw_line: str, w: int) -> bool:
         return True
     if s.startswith("JAMI"):
         return True
+    if s.startswith("Chek №"):
+        return True
+    if " x " in raw_line and re.search(r"\s+\d", raw_line):
+        return True
     return False
 
 
 def thermal_receipt_escpos_utf8(data: dict, dokon: str = "", width_mm: int = 80) -> bytes:
-    """
-    ESC/POS: init, UTF-8 payload with bold on item names, heavy rules, and JAMI line.
-    """
-    w = _w(width_mm)
-    text = format_thermal_receipt(data, dokon, width_mm)
+    """ESC/POS init + UTF-8; bold flags from layout (not heuristics)."""
+    rows = _format_thermal_receipt_lines(data, dokon, width_mm)
     out = bytearray(b"\x1B\x40")
-    for raw_line in text.split("\n"):
+    for raw_line, bold in rows:
         line = raw_line.encode("utf-8")
-        bold = _line_bold_escpos(raw_line, w)
         out.extend(_escpos_line(line, bold))
-    out.extend(b"\n\n")
     return bytes(out)
 
 
-def format_qaytarish_receipt(
+def _format_qaytarish_lines(
     natijalar: list[dict],
     dokon: str = "",
     width_mm: int = 80,
-) -> str:
-    """
-    Qaytarish cheki — sotuv cheki bilan bir xil vizual qoidalar (80mm default).
-    natijalar: [{tovar, klient?, qaytarildi, birlik, narx?, summa}, ...]
-    """
+) -> list[Row]:
     w = _w(width_mm)
-    lines: list[str] = []
+    rows: list[Row] = []
+
+    def add(line: str, bold: bool = False) -> None:
+        rows.append((_clip_line(line, w), bold))
 
     dokon_l = _ts((dokon or "SAVDOAI").strip())[: w - 2]
-    lines.append(_sep_heavy(w))
-    lines.append("QAYTARISH".center(w)[:w])
-    lines.append(dokon_l.upper().center(w)[:w])
-    lines.append(_sep_heavy(w))
-    lines.append("MASHRAB MOLIYA".center(w)[:w])
-    lines.append(_sep_mid(w))
-
+    add(_sep_heavy(w), True)
+    add("QAYTARISH".center(w)[:w], True)
+    add(dokon_l.upper().center(w)[:w], True)
+    add("MASHRAB MOLIYA".center(w)[:w], False)
     now = datetime.datetime.now(TZ).strftime("%d.%m.%Y  %H:%M")
-    lines.append(_lr_money("Chek", now, w))
+    add(_lr_money("Chek №", now, w), True)
+    add(_sep_mid(w), False)
 
     klient = _ts(next((n.get("klient") for n in natijalar if n.get("klient")), "") or "")
     if klient:
         for ln in _wrap(f"Mijoz: {klient}", w):
-            lines.append(ln)
-        lines.append(_sep_mid(w))
+            add(ln, True)
+        add(_sep_mid(w), False)
 
-    lines.append(_lr_money("TOVAR NOMI", "JAMI (so'm)", w))
-    lines.append(_sep_mid(w))
+    add(_lr_money("TOVAR NOMI", "JAMI (so'm)", w), True)
 
     jami = 0.0
     for i, n in enumerate(natijalar, 1):
@@ -331,31 +326,29 @@ def format_qaytarish_receipt(
         avail = w - len(head)
         for li, nl in enumerate(_wrap(nomi, max(avail, 6))):
             prefix = head if li == 0 else "    "
-            lines.append((prefix + nl)[:w])
+            add((prefix + nl)[:w], True)
 
         left = f"     {ms} {bir}"
-        lines.append(_lr_money(left, _money(summa), w))
+        add(_lr_money(left, _money(summa), w), True)
 
-        if i < len(natijalar):
-            lines.append(_sep_mid(w))
+    add(_sep_heavy(w), True)
+    add(_lr_money("JAMI QAYTARISH", f"{_money(jami)} so'm", w), True)
+    add(_sep_heavy(w), True)
+    add("Xaridingiz uchun rahmat!".center(w)[:w], True)
+    add("@savdoai_mashrab_bot".center(w)[:w], True)
+    return rows
 
-    lines.append(_sep_heavy(w))
-    lines.append(_lr_money("JAMI QAYTARISH", f"{_money(jami)} so'm", w))
-    lines.append(_sep_heavy(w))
-    lines.append(_sep_mid(w))
-    lines.append("Xaridingiz uchun rahmat!".center(w)[:w])
-    lines.append("@savdoai_mashrab_bot".center(w)[:w])
-    lines.append(_sep_heavy(w))
-    lines.append("")
-    lines = [ln[:w] if len(ln) > w else ln for ln in lines]
+
+def format_qaytarish_receipt(
+    natijalar: list[dict],
+    dokon: str = "",
+    width_mm: int = 80,
+) -> str:
+    lines = [ln for ln, _ in _format_qaytarish_lines(natijalar, dokon, width_mm)]
     return "\n".join(lines)
 
 
 def production_verification_samples(width_mm: int = 80) -> dict[str, str]:
-    """
-    Deterministik namunalar (test / dokumentatsiya): qisqa, uzun, aralash narx,
-    ko'p miqdor, o'zbek / kirill.
-    """
     base: dict = {
         "amal": "chiqim",
         "sessiya_id": 424242,
@@ -381,7 +374,6 @@ def production_verification_samples(width_mm: int = 80) -> dict[str, str]:
 
 
 def demo_thermal_receipt_preview_text(width_mm: int = 80) -> str:
-    """Demo: short/long lines, high/low prices, gramm."""
     demo: dict = {
         "amal": "chiqim",
         "klient": "Test mijoz",
