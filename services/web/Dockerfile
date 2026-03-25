@@ -8,7 +8,7 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
-# Inlined into the client bundle at build time — must be the live FastAPI public HTTPS origin (not the Next.js URL). Naming drift: docs/RAILWAY_TOPOLOGY.md
+# Inlined into the client bundle at build time — must be the FastAPI service HTTPS origin (not Next.js, not the Telegram bot). See services/web/.env.example and docs/RAILWAY_TOPOLOGY.md.
 ARG NEXT_PUBLIC_API_URL
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 RUN npm run build

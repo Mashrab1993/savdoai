@@ -58,5 +58,6 @@ healthCheckPath = "/"
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 3
 [services.variables]
+# Bakes into the Next.js client bundle at build time. Must be the FastAPI service — here `savdoai` is the API per this file. If your dashboard names the API `web` instead, set this manually to ${{web.URL}} or the API HTTPS origin (never the bot hostname).
 NEXT_PUBLIC_API_URL = "${{savdoai.URL}}"
 PORT                = "3000"

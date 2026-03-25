@@ -7,7 +7,8 @@ Uzbek/Russian bilingual. Connects to the SavdoAI FastAPI backend.
 
 ```bash
 npm install --legacy-peer-deps
-NEXT_PUBLIC_API_URL=https://savdoai-production.up.railway.app npm run build
+# Must be the FastAPI public origin — not the Telegram bot hostname (see .env.example).
+NEXT_PUBLIC_API_URL=http://localhost:8000 npm run build
 npm run start
 ```
 
@@ -15,7 +16,7 @@ npm run start
 
 | Variable | Required | Description |
 |----------|----------|-------------|
-| `NEXT_PUBLIC_API_URL` | Yes | Backend API base URL |
+| `NEXT_PUBLIC_API_URL` | Yes | FastAPI backend base URL (build-time). Production example: `https://web-production-30ebb.up.railway.app`. Never the bot worker URL (`savdoai-production.up.railway.app`). |
 
 ## Railway Deployment
 

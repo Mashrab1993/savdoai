@@ -30,7 +30,13 @@ export async function apiRequest<T>(
   path: string,
   options: RequestInit = {}
 ): Promise<T> {
-  const base = getPublicApiBaseUrl()
+  let base: string
+  try {
+    base = getPublicApiBaseUrl()
+  } catch (e) {
+    const detail = e instanceof Error ? e.message : String(e)
+    throw new ApiResponseError(503, detail)
+  }
   if (typeof window !== "undefined" && process.env.NODE_ENV === "production") {
     if (!base) {
       throw new ApiResponseError(
