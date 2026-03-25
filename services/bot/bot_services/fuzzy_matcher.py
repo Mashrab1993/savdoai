@@ -19,6 +19,101 @@ logger = logging.getLogger(__name__)
 
 _CACHE_TTL_S = 300.0
 
+# STT matnidagi operatsion so'zlar — hech qachon fuzzy orqali tovar nomiga almashtirilmasin.
+# (Aks holda masalan "cheki" → "Chelsi" kabi xato yozuvlar bo'ladi.)
+OPERATIONAL_WORDS_EXACT: frozenset[str] = frozenset({
+    "kirim",
+    "chiqim",
+    "sotuv",
+    "hisobot",
+    "chek",
+    "cheki",
+    "nakladnoy",
+    "nakladniy",
+    "faktura",
+    "balans",
+    "jurnal",
+    "klient",
+    "qarz",
+    "tolov",
+    "ombor",
+    "plus",
+    "minus",
+    "menyu",
+    "yordam",
+    "kassa",
+    "status",
+    "savat",
+    "savatlar",
+    "hafta",
+    "kunlik",
+    "foyda",
+})
+
+# fuzz.ratio uchun qo'shimcha shakllar (STT xatolari) — max() bilan operatsion yaqinlik
+OPERATIONAL_WORDS_SIM: tuple[str, ...] = tuple(
+    {*OPERATIONAL_WORDS_EXACT, "to'lov", "tolov", "naklad", "chekka", "kirimlar"}
+)
+
+# Agar token operatsion so'zga juda yaqin bo'lsa, lekin tovarga past foizda mos kelsa — tovarni tanlamang.
+_OP_AMBIGUITY_MIN = 62
+_OP_BEATS_PRODUCT_MARGIN = 8
+
+# Birlik / grammatik tokenlar — tovar fuzzy qilinmaydi (voice_pipeline skip_words bilan mos)
+_GRAMMAR_UNIT_SKIP: frozenset[str] = frozenset({
+    "ta",
+    "dona",
+    "karobka",
+    "shtuk",
+    "paket",
+    "ga",
+    "da",
+    "ni",
+    "dan",
+    "bilan",
+    "va",
+    "yana",
+})
+
+
+def _strip_word_edges(s: str) -> str:
+    return s.strip().strip('.,!?;:«»()"\'')
+
+
+def _norm_op_token(s: str) -> str:
+    t = _strip_word_edges(s).lower()
+    for a in ("ʻ", "'", "’", "`"):
+        t = t.replace(a, "")
+    return t
+
+
+def _max_operational_similarity(raw: str) -> int:
+    """Token operatsion lug'atga qanchalik yaqin (0–100)."""
+    if not raw:
+        return 0
+    m = 0
+    for op in OPERATIONAL_WORDS_SIM:
+        m = max(m, fuzz.ratio(raw, op))
+    return m
+
+
+def operational_token_blocks_product_fuzzy(raw_name: str, product_best_score: int) -> bool:
+    """
+    True bo'lsa, bu tokenni tovar nomi sifatida fuzzy qilish xavfli yoki taqiqlangan.
+    Testlar va tashqi tekshiruvlar uchun ochiq helper.
+    """
+    raw = _norm_op_token(raw_name)
+    if not raw or raw.isdigit():
+        return True
+    if raw in OPERATIONAL_WORDS_EXACT:
+        return True
+    op_sim = _max_operational_similarity(raw)
+    if op_sim >= _OP_AMBIGUITY_MIN and product_best_score <= op_sim + _OP_BEATS_PRODUCT_MARGIN:
+        return True
+    if op_sim > product_best_score:
+        return True
+    return False
+
 
 class FuzzyMatcher:
     """Har bir Telegram foydalanuvchisi uchun keshlangan fuzzy ro'yxatlar."""
@@ -100,22 +195,31 @@ class FuzzyMatcher:
         products, _, aliases = snap
         if not products:
             return None
-        raw_lower = raw_name.lower().strip()
+        raw_stripped = _strip_word_edges(raw_name)
+        raw_lower = raw_stripped.lower()
+        raw_norm = _norm_op_token(raw_stripped)
+        if not raw_norm:
+            return None
+        if raw_norm in OPERATIONAL_WORDS_EXACT:
+            return None
         if raw_lower in aliases:
             return aliases[raw_lower]
         product_lowers = [p.lower() for p in products]
         result = process.extractOne(raw_lower, product_lowers, scorer=fuzz.ratio)
-        if result and result[1] >= threshold:
-            idx = product_lowers.index(result[0])
-            matched = products[idx]
-            logger.info(
-                "Fuzzy product: '%s' -> '%s' (%s%%)",
-                raw_name,
-                matched,
-                result[1],
-            )
-            return matched
-        return None
+        if not result or result[1] < threshold:
+            return None
+        prod_score = int(result[1])
+        if operational_token_blocks_product_fuzzy(raw_name, prod_score):
+            return None
+        idx = product_lowers.index(result[0])
+        matched = products[idx]
+        logger.info(
+            "Fuzzy product: '%s' -> '%s' (%s%%)",
+            raw_name,
+            matched,
+            prod_score,
+        )
+        return matched
 
     def match_client(self, raw_name: str, uid: int, threshold: int = 60) -> Optional[str]:
         snap = self._snapshot(uid)
@@ -158,6 +262,11 @@ class FuzzyMatcher:
         while i < len(words):
             word = words[i]
             if word.isdigit():
+                fixed_words.append(word)
+                i += 1
+                continue
+
+            if _norm_op_token(word) in _GRAMMAR_UNIT_SKIP:
                 fixed_words.append(word)
                 i += 1
                 continue
