@@ -4919,6 +4919,18 @@ def _start_polling_lock_heartbeat(lock_client, lock_meta):
 def main() -> None:
     # Lock avval — takroriy instance tez chiqadi; ilovani_qur og'ir (handlerlar).
     conf = config_init()
+    # PRINT_SECRET diagnostika — Bot va API bir xil secretmi (Railway hash solishtirish)
+    try:
+        from shared.services.print_session import _secret_pair
+        import hashlib as _hs_ps
+        _ps = _secret_pair()
+        _ps_hash = _hs_ps.sha256(_ps[0].encode()).hexdigest()[:8]
+        log.info(
+            "🔑 PRINT_SECRET: source=%s hash_prefix=%s len=%d",
+            _ps[1], _ps_hash, len(_ps[0]),
+        )
+    except Exception as _pse:
+        log.warning("⚠️ PRINT_SECRET yuklanmadi: %s", _pse)
     lock_client = None
     lock_meta = None
     lock_heartbeat_stop = None

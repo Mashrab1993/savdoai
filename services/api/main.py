@@ -162,6 +162,16 @@ async def lifespan(app: FastAPI):
         os.getenv("RAILWAY_ENVIRONMENT") or "local",
         bool((os.getenv("PRINT_SECRET") or "").strip()),
     )
+    try:
+        from shared.services.print_session import _secret_pair
+        _api_ps = _secret_pair()
+        _api_hash = hashlib.sha256(_api_ps[0].encode()).hexdigest()[:8]
+        log.info(
+            "🔑 PRINT_SECRET: source=%s hash_prefix=%s len=%d",
+            _api_ps[1], _api_hash, len(_api_ps[0]),
+        )
+    except Exception as _pse2:
+        log.warning("⚠️ PRINT_SECRET: %s", _pse2)
     yield
     await pool_close()
     log.info("API to'xtatildi")
