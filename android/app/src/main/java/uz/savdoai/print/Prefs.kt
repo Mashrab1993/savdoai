@@ -12,19 +12,22 @@ object Prefs {
     fun width(c: Context): Int = p(c).getInt("width", 80)
     fun saveWidth(c: Context, w: Int) = p(c).edit().putInt("width", w).apply()
 
-    private const val API_DEFAULT = "https://savdoai-production.up.railway.app"
-    /** Eski noto‘g‘ri default — /api/print 404. */
-    private const val API_LEGACY_BAD = "https://savdoai-api-production.up.railway.app"
+    /** Haqiqiy FastAPI servis URL — Railway "web" servisi. */
+    private const val API_DEFAULT = "https://web-production-30ebb.up.railway.app"
 
-    /** Oxirgi slash va bo‘shliqlarni olib tashlaydi; bir xil bazaviy URL bilan solishtirish uchun. */
+    /** Eski noto'g'ri URL lar — avtomatik tuzatiladi. */
+    private val LEGACY_URLS = setOf(
+        "https://savdoai-api-production.up.railway.app",
+        "https://savdoai-production.up.railway.app",
+    )
+
     fun normalizeApiBase(s: String): String = s.trim().trimEnd('/')
 
-    /** FastAPI servisi (RUNBOOK), veb domen emas. */
+    /** FastAPI servisi URL. Eski noto'g'ri URL lar avtomatik yangilanadi. */
     fun api(c: Context): String {
         val raw = p(c).getString("api", null) ?: return API_DEFAULT
         val normalized = normalizeApiBase(raw)
-        val legacyNorm = normalizeApiBase(API_LEGACY_BAD)
-        if (normalized.equals(legacyNorm, ignoreCase = true)) {
+        if (LEGACY_URLS.any { normalizeApiBase(it).equals(normalized, ignoreCase = true) }) {
             p(c).edit().putString("api", API_DEFAULT).apply()
             return API_DEFAULT
         }

@@ -942,10 +942,17 @@ async def sessiya_ol(uid: int, sess_id: int) -> Optional[dict]:
         chiqimlar = await c.fetch(
             "SELECT * FROM chiqimlar WHERE sessiya_id=$1 ORDER BY id",
             sess_id)
+        # chiqimlar jadvalida "tovar_nomi" — chek uchun "nomi" ham kerak
+        tovarlar = []
+        for ch in chiqimlar:
+            td = dict(ch)
+            td.setdefault("nomi", td.get("tovar_nomi", "?"))
+            td.setdefault("narx", td.get("sotish_narxi", 0))
+            tovarlar.append(td)
         return {
             **sess_d,
             "klient":     sess_d.get("klient_ismi"),
-            "tovarlar":   [dict(ch) for ch in chiqimlar],
+            "tovarlar":   tovarlar,
             "jami_summa": float(sess_d.get("jami", 0) or 0),
             "tolandan":   float(sess_d.get("tolangan", 0) or 0),
             "qarz":       float(sess_d.get("qarz", 0) or 0),

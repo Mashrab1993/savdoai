@@ -313,7 +313,7 @@ def sotuv_cheki(
         r.info("Mijoz:", klient, bold=True)
     r.sep()
     for i, t in enumerate(data.get("tovarlar") or [], 1):
-        nomi = (t.get("nomi") or "?").strip()
+        nomi = (t.get("nomi") or t.get("tovar_nomi") or "?").strip()
         miq = float(t.get("miqdor") or 0)
         bir = (t.get("birlik") or "dona").strip()
         narx = float(t.get("narx") or t.get("sotish_narxi") or 0)

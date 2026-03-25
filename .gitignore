@@ -17,6 +17,7 @@ Thumbs.db
 *.zip
 # Claude / local patch extract (do not commit)
 _patch_extract/
+_SAVDOAI_FULL_ARCHIVE/
 *.swp
 *.swo
 .vscode/
@@ -25,3 +26,7 @@ torch_cache/
 .cache/
 tsconfig.tsbuildinfo
 *.tsbuildinfo
+
+# Android signing keys
+*.keystore
+*.jks

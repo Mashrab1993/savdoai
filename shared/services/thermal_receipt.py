@@ -179,10 +179,10 @@ def _format_thermal_receipt_lines(
 
     tovarlar = data.get("tovarlar") or []
     for i, t in enumerate(tovarlar, 1):
-        nomi = _ts((t.get("nomi") or "?").strip())
+        nomi = _ts((t.get("nomi") or t.get("tovar_nomi") or "?").strip())
         miq = float(t.get("miqdor") or 0)
         bir = _ts((t.get("birlik") or "dona").strip())
-        narx = float(t.get("narx") or 0)
+        narx = float(t.get("narx") or t.get("sotish_narxi") or 0)
         jami = float(t.get("jami") or 0) or (miq * narx)
         ms = _miq_str(miq)
 

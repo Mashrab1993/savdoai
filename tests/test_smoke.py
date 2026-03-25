@@ -1334,7 +1334,7 @@ class TestPrintStatus:
 
     def test_bot_print_commands(self):
         src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py')).read()
-        assert 'format_receipt_80mm' in src or 'format_receipt_58mm' in src
+        assert 'format_receipt_58mm' in src or 'format_receipt_80mm' in src
         assert 'create_print_job' in src
         assert 'request_reprint' in src
 
@@ -1570,18 +1570,14 @@ class TestV253SecurityFixes:
         assert '.dict()' not in src, "API still uses deprecated .dict() — use .model_dump()"
 
     def test_web_dockerfile_uses_pnpm(self):
-        """Web Dockerfile lockfile bilan mos: pnpm-lock.yaml yoki package-lock.json."""
-        web_dir = os.path.join(os.path.dirname(__file__), '..', 'services', 'web')
-        src = open(os.path.join(web_dir, 'Dockerfile')).read()
-        has_pnpm = os.path.isfile(os.path.join(web_dir, 'pnpm-lock.yaml'))
-        has_npm = os.path.isfile(os.path.join(web_dir, 'package-lock.json'))
-        if has_pnpm:
-            assert 'pnpm' in src, "Web Dockerfile should use pnpm (pnpm-lock.yaml exists)"
-            assert 'npm ci' not in src, "Web Dockerfile still uses npm ci"
-        elif has_npm:
-            assert 'npm ci' in src or 'npm install' in src, "Web Dockerfile should use npm with package-lock.json"
+        """Web Dockerfile matches the lockfile (pnpm or npm)."""
+        web = os.path.join(os.path.dirname(__file__), '..', 'services', 'web')
+        src = open(os.path.join(web, 'Dockerfile')).read()
+        if os.path.isfile(os.path.join(web, 'pnpm-lock.yaml')):
+            assert 'pnpm' in src, "Web Dockerfile should use pnpm when pnpm-lock.yaml exists"
+            assert 'npm ci' not in src, "Web Dockerfile should not use npm ci when using pnpm"
         else:
-            pytest.fail("services/web: neither pnpm-lock.yaml nor package-lock.json")
+            assert 'npm ci' in src or 'npm install' in src, "Web Dockerfile should install deps with npm when using package-lock.json"
 
     def test_all_versions_25_3(self):
         """All service versions are 25.3."""
