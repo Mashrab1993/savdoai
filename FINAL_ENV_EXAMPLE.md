@@ -32,5 +32,5 @@
 
 | Name | Required | Example | Security |
 |------|----------|---------|----------|
-| NEXT_PUBLIC_API_URL | YES | `https://<savdoai-public-host>.up.railway.app` (API service **`savdoai`**, not the web URL) | PUBLIC |
+| NEXT_PUBLIC_API_URL | YES | **Must** be the **live** FastAPI service public HTTPS origin (not the Next.js host). **IaC:** API = **`savdoai`**. **Live drift:** API = **`web`** — then use **`web`’s** URL; do **not** assume a `savdoai` hostname points at the API. | PUBLIC |
 | PORT | NO | 3000 | — |

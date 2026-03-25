@@ -52,6 +52,8 @@ Requires: DATABASE_URL, REDIS_URL
 
 ## Railway Deployment
 
+**Production operator checklist** (live vs IaC, `NEXT_PUBLIC_API_URL`, `/healthz`): **`docs/RAILWAY_TOPOLOGY.md`** → section *Production operator checklist*.
+
 ### Service naming (matches `railway.toml`)
 
 | Role | Railway service name in this repo |
@@ -60,7 +62,19 @@ Requires: DATABASE_URL, REDIS_URL
 | Web (Next.js) | **`savdoai-web`** |
 | Bot | **`savdoai-bot`** |
 
-If your dashboard shows an extra service named **`web`**, it is **not** defined in `railway.toml` — often a legacy or duplicate Next deploy. Prefer **`savdoai-web`** for this repository’s frontend so `NEXT_PUBLIC_API_URL` and the GitHub repo attach to the correct service. Remove or stop using the duplicate to avoid opening the wrong URL or stale builds.
+#### Live dashboard mapping (documented drift example)
+
+| Railway dashboard name | Role |
+|------------------------|------|
+| **`web`** | FastAPI HTTP API (`services/api`) |
+| **`savdoai`** | Telegram bot worker (`services/bot`) |
+| **`savdoai-web`** | Next.js frontend (`services/web`) |
+
+**Dashboard names may differ from `railway.toml`.** The table above is a **documented** live pattern; always verify Dockerfile / start command per service. The repo’s **`${{savdoai.URL}}`** in `railway.toml` only auto-resolves when the **API** service is literally named **`savdoai`**. If your API is named **`web`**, set **`NEXT_PUBLIC_API_URL`** manually to that API’s HTTPS origin, or use **`${{web.URL}}`** in Railway — see **`docs/RAILWAY_TOPOLOGY.md`**.
+
+**`savdoai-web`** is the **Next.js** app, not the FastAPI service. It is **optional** only if the browser dashboard is unused; otherwise keep it deployed.
+
+**API health check on Railway:** use **`/healthz`** (configured in `railway.toml` as `healthCheckPath`; lightweight probe).
 
 ### Deploy Order
 1. PostgreSQL (managed)
@@ -89,8 +103,8 @@ If your dashboard shows an extra service named **`web`**, it is **not** defined 
 - **`NEXT_PUBLIC_API_URL`** — **build-time** (must be present when `next build` / Docker **builder** runs). Must be the **API** service public HTTPS URL (no trailing slash), **not** the web app URL.
 
 Example values:
-- Railway template in `railway.toml`: `NEXT_PUBLIC_API_URL = "${{savdoai.URL}}"` — requires the API service to be named **`savdoai`** in the same project (interpolation uses the **exact** service name).
-- Manual: Railway → **`savdoai`** (API) → **Settings** → **Networking** → copy the **HTTPS** URL (origin only, e.g. `https://savdoai-production.up.railway.app`) → set on **`savdoai-web`** as `NEXT_PUBLIC_API_URL`. Do **not** append `/PORT`, paths, or the web hostname.
+- Railway template in `railway.toml`: `NEXT_PUBLIC_API_URL = "${{savdoai.URL}}"` — matches **IAC** where the API service is named **`savdoai`** (exact name for interpolation).
+- Manual (always valid): Railway → **the FastAPI service** (in some dashboards named **`web`**, in IAC named **`savdoai`**) → **Settings** → **Networking** → copy the **HTTPS** URL (origin only) → set on **`savdoai-web`** as `NEXT_PUBLIC_API_URL`. Do **not** append `/PORT`, paths, or the web hostname.
 
 After changing this variable, **redeploy the web service with a full rebuild** (the Next.js client bundle embeds `NEXT_PUBLIC_*` at compile time).
 
@@ -99,7 +113,8 @@ After changing this variable, **redeploy the web service with a full rebuild** (
 ### Post-Deploy Smoke Checks
 
 ```bash
-# API
+# API (Railway healthcheck uses /healthz)
+curl -i https://YOUR-API.railway.app/healthz
 curl https://YOUR-API.railway.app/health
 
 # Web

@@ -1,8 +1,9 @@
 # SAVDOAI v25.3 — Railway Config
 # 5 servis: API + Bot + Web + Postgres + Redis
 #
-# Service names below must match Railway project service names.
-# Live topology uses API=savdoai, frontend=savdoai-web (not savdoai-api).
+# Service names below must match Railway project service names for ${{...}} interpolation.
+# IaC: savdoai=API, savdoai-bot=bot, savdoai-web=Next.js. Live drift (documented): web=API, savdoai=bot, savdoai-web=Next.js — see docs/RAILWAY_TOPOLOGY.md
+# If live API is named "web", NEXT_PUBLIC_API_URL must use the web service URL — not ${{savdoai.URL}} unless API is actually named savdoai.
 
 [build]
 builder = "NIXPACKS"
@@ -14,7 +15,7 @@ dockerfilePath = "services/api/Dockerfile"
 [services.deploy]
 startCommand = "cd /app/services/api && python -m uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000} --workers 1"
 # Lightweight probe (no DB) — avoids edge marking the service unhealthy if /health is slow
-# PRINT_SECRET: Railway → savdoai service → Variables (bot bilan bir xil qiymat; print HMAC uchun)
+# PRINT_SECRET: same value on API + bot (print HMAC). IAC names this API block "savdoai"; if the dashboard names the API "web", set PRINT_SECRET on that API service too — see docs/RAILWAY_TOPOLOGY.md
 healthCheckPath = "/healthz"
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 5

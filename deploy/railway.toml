@@ -1,7 +1,9 @@
 # SAVDOAI v25.3 — Railway Config
 # 5 servis: API + Bot + Web + Postgres + Redis
 #
-# Service names must match Railway (API=savdoai, web=savdoai-web).
+# IaC: savdoai=API, savdoai-bot=bot, savdoai-web=Next.js. Keep in sync with root railway.toml.
+# Live drift (documented): web=API, savdoai=bot, savdoai-web=Next.js — docs/RAILWAY_TOPOLOGY.md
+# API healthcheck: /healthz. If live API is "web", NEXT_PUBLIC_API_URL must target web — see docs.
 
 [build]
 builder = "NIXPACKS"

@@ -36,6 +36,8 @@ Bank/SAP darajasidagi buxgalteriya + ovoz bilan boshqarish.
 
 Batafsil: `docs/ISHGA_TUSHIRISH.md`
 
+Railway servis nomlari va rollar: `docs/RAILWAY_TOPOLOGY.md`
+
 ## Testlar
 
 ```bash
