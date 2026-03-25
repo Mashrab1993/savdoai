@@ -188,7 +188,7 @@ class FuzzyMatcher:
             return [], []
         return snap[0], snap[1]
 
-    def match_product(self, raw_name: str, uid: int, threshold: int = 65) -> Optional[str]:
+    def match_product(self, raw_name: str, uid: int, threshold: int = 85) -> Optional[str]:
         snap = self._snapshot(uid)
         if not snap:
             return None
@@ -202,24 +202,52 @@ class FuzzyMatcher:
             return None
         if raw_norm in OPERATIONAL_WORDS_EXACT:
             return None
+        # Minimal uzunlik — 3 harfdan kam so'zni fuzzy qilma
+        if len(raw_norm) < 3:
+            return None
+        # Alias — aniq match (fonetik variatsiya)
         if raw_lower in aliases:
             return aliases[raw_lower]
+
         product_lowers = [p.lower() for p in products]
-        result = process.extractOne(raw_lower, product_lowers, scorer=fuzz.ratio)
-        if not result or result[1] < threshold:
-            return None
-        prod_score = int(result[1])
-        if operational_token_blocks_product_fuzzy(raw_name, prod_score):
-            return None
-        idx = product_lowers.index(result[0])
-        matched = products[idx]
-        logger.info(
-            "Fuzzy product: '%s' -> '%s' (%s%%)",
-            raw_name,
-            matched,
-            prod_score,
+
+        # ═══ 2-BOSQICHLI AQLLI MATCHING ═══
+
+        # 1-bosqich: partial_ratio — so'z tovar nomi ICHIDA bormi?
+        # "colgate" ichida "Colgate 100ml" bor → partial=100%
+        result_partial = process.extractOne(
+            raw_lower, product_lowers, scorer=fuzz.partial_ratio
         )
-        return matched
+        if result_partial and result_partial[1] >= 90:
+            # Partial yaxshi — lekin ratio ham tekshir (tasodifiy qisqa match oldini olish)
+            idx_p = product_lowers.index(result_partial[0])
+            ratio_check = fuzz.ratio(raw_lower, result_partial[0])
+            if ratio_check >= 55:
+                matched = products[idx_p]
+                if operational_token_blocks_product_fuzzy(raw_name, result_partial[1]):
+                    return None
+                logger.info(
+                    "Fuzzy product: '%s' -> '%s' (partial=%s%% ratio=%s%%)",
+                    raw_name, matched, result_partial[1], ratio_check,
+                )
+                return matched
+
+        # 2-bosqich: fuzz.ratio — to'liq o'xshashlik (faqat juda yaqin so'zlar)
+        result_ratio = process.extractOne(
+            raw_lower, product_lowers, scorer=fuzz.ratio
+        )
+        if result_ratio and result_ratio[1] >= threshold:
+            if operational_token_blocks_product_fuzzy(raw_name, result_ratio[1]):
+                return None
+            idx = product_lowers.index(result_ratio[0])
+            matched = products[idx]
+            logger.info(
+                "Fuzzy product: '%s' -> '%s' (%s%%)",
+                raw_name, matched, result_ratio[1],
+            )
+            return matched
+
+        return None
 
     def match_client(self, raw_name: str, uid: int, threshold: int = 60) -> Optional[str]:
         snap = self._snapshot(uid)
