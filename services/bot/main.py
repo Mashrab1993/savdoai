@@ -4811,8 +4811,108 @@ def ilovani_qur(conf:Config) -> Application:
     return app
 
 
+def _polling_lock_key(bot_token: str) -> str:
+    """Bot token asosida barqaror lock kaliti (token logga chiqmaydi)."""
+    import hashlib
+    token_hash = hashlib.sha256(bot_token.encode("utf-8")).hexdigest()[:16]
+    return f"savdoai:telegram:polling-lock:{token_hash}"
+
+
+def _acquire_polling_singleton_lock(bot_token: str):
+    """
+    Redis bor bo'lsa, faqat bitta polling instance ishlashini kafolatlaydi.
+    Lock band bo'lsa process chiqadi — "other getUpdates" konfliktini oldini oladi.
+    """
+    redis_url = _os.environ.get("REDIS_URL", "").strip()
+    if not redis_url:
+        log.warning("REDIS_URL topilmadi — polling singleton lock o'chirilgan.")
+        return None, None
+
+    import redis
+    import socket
+    import uuid
+
+    lock_ttl = int(_os.environ.get("BOT_POLL_LOCK_TTL_SECONDS", "120"))
+    owner = f"{socket.gethostname()}:{_os.getpid()}:{uuid.uuid4().hex[:8]}"
+    key = _polling_lock_key(bot_token)
+    client = redis.from_url(
+        redis_url,
+        decode_responses=True,
+        socket_connect_timeout=3,
+        socket_timeout=3,
+    )
+
+    ok = client.set(key, owner, nx=True, ex=lock_ttl)
+    if not ok:
+        current_owner = client.get(key)
+        raise RuntimeError(
+            f"Polling lock band: {key} owner={current_owner}. "
+            "Boshqa bot instance allaqachon getUpdates qilmoqda."
+        )
+
+    log.info("🔒 Polling singleton lock olindi: %s", key)
+    return client, (key, owner)
+
+
+def _release_polling_singleton_lock(lock_client, lock_meta) -> None:
+    if not lock_client or not lock_meta:
+        return
+    key, owner = lock_meta
+    try:
+        current = lock_client.get(key)
+        if current == owner:
+            lock_client.delete(key)
+            log.info("🔓 Polling singleton lock bo'shatildi: %s", key)
+    except Exception as e:
+        log.warning("Polling lock bo'shatishda xato: %s", e)
+
+
+def _start_polling_lock_heartbeat(lock_client, lock_meta):
+    """
+    Polling davomida lock TTL yangilanib turadi.
+    """
+    if not lock_client or not lock_meta:
+        return None
+
+    import threading
+
+    key, owner = lock_meta
+    lock_ttl = int(_os.environ.get("BOT_POLL_LOCK_TTL_SECONDS", "120"))
+    interval = max(10, lock_ttl // 3)
+    stop_event = threading.Event()
+
+    def _worker() -> None:
+        while not stop_event.is_set():
+            stop_event.wait(interval)
+            if stop_event.is_set():
+                break
+            try:
+                current = lock_client.get(key)
+                if current == owner:
+                    lock_client.expire(key, lock_ttl)
+                else:
+                    log.warning("⚠️ Polling lock owner o'zgardi: %s", key)
+                    break
+            except Exception as e:
+                log.warning("Polling lock heartbeat xato: %s", e)
+
+    t = threading.Thread(target=_worker, name="polling-lock-heartbeat", daemon=True)
+    t.start()
+    return stop_event
+
+
 def main() -> None:
     conf=config_init(); app=ilovani_qur(conf)
+    lock_client = None
+    lock_meta = None
+    lock_heartbeat_stop = None
+    try:
+        lock_client, lock_meta = _acquire_polling_singleton_lock(conf.bot_token)
+        lock_heartbeat_stop = _start_polling_lock_heartbeat(lock_client, lock_meta)
+    except RuntimeError as e:
+        log.critical("⛔ Bot ishga tushmadi: %s", e)
+        raise SystemExit(1) from e
+
     log.info("▶️  Polling boshlandi...")
     # Webhook tozalash (agar webhook qolgan bo'lsa — polling ishlamaydi!)
     try:
@@ -4832,6 +4932,10 @@ def main() -> None:
     except Exception as e:
         log.error("⛔ Bot xatosi: %s", e, exc_info=True)
         raise
+    finally:
+        if lock_heartbeat_stop is not None:
+            lock_heartbeat_stop.set()
+        _release_polling_singleton_lock(lock_client, lock_meta)
 
 
 if __name__=="__main__":

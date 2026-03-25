@@ -32,6 +32,8 @@ name = "savdoai-bot"
 dockerfilePath = "services/bot/Dockerfile"
 [services.deploy]
 startCommand = "cd /app/services/bot && python main.py"
+# Polling bot should run as a single consumer per BOT_TOKEN.
+# If live conflict "terminated by other getUpdates" appears, verify only one Railway service/replica is running this token.
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 5
 [services.variables]
