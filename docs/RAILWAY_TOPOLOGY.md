@@ -44,6 +44,12 @@ Some production dashboards use **different service names** than `railway.toml`. 
 | **Background worker** (Celery) | `services/worker/` | **Not** defined in `railway.toml` — deploy only if you need async jobs |
 | **Cognitive / MoE** (optional) | `services/cognitive/` | **Not** in `railway.toml`; bot image copies it for in-process use |
 
+### Telegram: `Conflict: terminated by other getUpdates`
+
+Telegram allows **one long-polling `getUpdates` consumer per bot token**. The bot uses a **Redis singleton lock** in `services/bot/main.py` so only one process that shares the same `REDIS_URL` polls. If the error still appears, another consumer usually exists **outside** that lock: a duplicate Railway service or extra replica, an old deployment still running, a **local** `python main.py` with the same `BOT_TOKEN`, another project using the token, or webhook state (the worker calls `deleteWebhook` at startup; use Bot API `getWebhookInfo` if you need to verify).
+
+**Checks:** one bot worker service; **Replicas = 1**; `REDIS_URL` set on that service (if unset, the lock is skipped and coordination is disabled); search other machines/projects for the same token.
+
 ## Config-as-code service names (`railway.toml`)
 
 The root `railway.toml` and `deploy/railway.toml` are intended to stay aligned. They define **three** application services:

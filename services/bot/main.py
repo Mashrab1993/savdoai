@@ -4902,7 +4902,8 @@ def _start_polling_lock_heartbeat(lock_client, lock_meta):
 
 
 def main() -> None:
-    conf=config_init(); app=ilovani_qur(conf)
+    # Lock avval — takroriy instance tez chiqadi; ilovani_qur og'ir (handlerlar).
+    conf = config_init()
     lock_client = None
     lock_meta = None
     lock_heartbeat_stop = None
@@ -4913,25 +4914,27 @@ def main() -> None:
         log.critical("⛔ Bot ishga tushmadi: %s", e)
         raise SystemExit(1) from e
 
-    log.info("▶️  Polling boshlandi...")
-    # Webhook tozalash (agar webhook qolgan bo'lsa — polling ishlamaydi!)
     try:
-        import httpx
-        r = httpx.get(f"https://api.telegram.org/bot{conf.bot_token}/deleteWebhook?drop_pending_updates=true", timeout=10)
-        log.info("🔄 Webhook tozalandi: %s", r.text[:100])
-    except Exception as _wh:
-        log.warning("Webhook tozalash: %s", _wh)
-    try:
-        app.run_polling(
-            allowed_updates=Update.ALL_TYPES,
-            drop_pending_updates=True,
-            close_loop=False,
-        )
-    except KeyboardInterrupt:
-        log.info("⏹️  Bot to'xtatildi (KeyboardInterrupt)")
-    except Exception as e:
-        log.error("⛔ Bot xatosi: %s", e, exc_info=True)
-        raise
+        app = ilovani_qur(conf)
+        log.info("▶️  Polling boshlandi...")
+        # Webhook tozalash (agar webhook qolgan bo'lsa — polling ishlamaydi!)
+        try:
+            import httpx
+            r = httpx.get(f"https://api.telegram.org/bot{conf.bot_token}/deleteWebhook?drop_pending_updates=true", timeout=10)
+            log.info("🔄 Webhook tozalandi: %s", r.text[:100])
+        except Exception as _wh:
+            log.warning("Webhook tozalash: %s", _wh)
+        try:
+            app.run_polling(
+                allowed_updates=Update.ALL_TYPES,
+                drop_pending_updates=True,
+                close_loop=False,
+            )
+        except KeyboardInterrupt:
+            log.info("⏹️  Bot to'xtatildi (KeyboardInterrupt)")
+        except Exception as e:
+            log.error("⛔ Bot xatosi: %s", e, exc_info=True)
+            raise
     finally:
         if lock_heartbeat_stop is not None:
             lock_heartbeat_stop.set()
