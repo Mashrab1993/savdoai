@@ -15,21 +15,51 @@ from typing import Optional
 log = logging.getLogger(__name__)
 
 _IS_PROD = bool(os.getenv("RAILWAY_ENVIRONMENT") or os.getenv("RAILWAY_SERVICE_ID"))
-_RAW_PRINT = (os.getenv("PRINT_SECRET") or "").strip()
-_JWT_FALLBACK = (os.getenv("JWT_SECRET") or "").strip()
-if _RAW_PRINT:
-    SECRET = _RAW_PRINT
-elif _JWT_FALLBACK:
-    SECRET = _JWT_FALLBACK
+
+
+def _load_secret() -> tuple[str, str]:
+    """
+    HMAC print token uchun yagona secret.
+    Production: faqat PRINT_SECRET (JWT_SECRET ga fallback yo'q — bot/API mismatch 502 emas, 401 bo'lmasin).
+    Development: JWT_SECRET yoki zaif dev default.
+    """
+    raw = (os.getenv("PRINT_SECRET") or "").strip()
+    if raw:
+        return raw, "PRINT_SECRET"
     if _IS_PROD:
-        log.warning("PRINT_SECRET o'rnatilmagan — JWT_SECRET dan foydalanilmoqda (PRINT_SECRET tavsiya).")
-else:
-    SECRET = "savdoai-dev-print-secret-NOT-FOR-PRODUCTION"
-    if _IS_PROD:
-        log.critical(
-            "PRINT_SECRET va JWT_SECRET bo'sh — print sessiyasi zaif! "
-            "PRINT_SECRET ni Railway ga qo'shing."
+        raise RuntimeError(
+            "PRINT_SECRET muhit o'zgaruvchisi productionda majburiy. "
+            "Railway da bot va API servislariga bir xil PRINT_SECRET qo'ying. "
+            "JWT_SECRET print token uchun ishlatilmaydi."
         )
+    jwt = (os.getenv("JWT_SECRET") or "").strip()
+    if jwt:
+        log.warning(
+            "PRINT_SECRET o'rnatilmagan — JWT_SECRET dan foydalanilmoqda (faqat development)."
+        )
+        return jwt, "JWT_SECRET_FALLBACK"
+    log.warning(
+        "PRINT_SECRET va JWT_SECRET bo'sh — savdoai-dev-print-secret ishlatilmoqda (faqat dev)."
+    )
+    return "savdoai-dev-print-secret-NOT-FOR-PRODUCTION", "dev-default"
+
+
+# Lazy init: eager _load_secret() at import time crashed the whole API on Railway when
+# PRINT_SECRET was unset (process never bound → edge 502). Secret loads on first use.
+_pair: tuple[str, str] | None = None
+
+
+def _secret_pair() -> tuple[str, str]:
+    global _pair
+    if _pair is None:
+        _pair = _load_secret()
+    return _pair
+
+
+def get_secret_source() -> str:
+    """HMAC secret manbai (log/trace; qiymat emas)."""
+    return _secret_pair()[1]
+
 
 TTL = int(os.getenv("PRINT_SESSION_TTL", "300"))
 
@@ -145,7 +175,7 @@ class PrintSession:
 
 def _sign(job_id: str, uid: int, created_ts: float) -> str:
     return hmac.new(
-        SECRET.encode(),
+        _secret_pair()[0].encode(),
         f"{job_id}:{uid}:{int(created_ts)}".encode(),
         hashlib.sha256,
     ).hexdigest()[:16]

@@ -57,6 +57,9 @@ from config import Config, cfg as _cfg_fn, config_init
 import sys as _sys, os as _os
 _sys.path.insert(0, _os.path.dirname(_os.path.dirname(_os.path.dirname(__file__))))
 
+# Print HMAC — productionda PRINT_SECRET majburiy (bot va API bir xil qiymat).
+import shared.services.print_session  # noqa: F401
+
 import services.bot.db  as db
 from shared.database.pool import rls_conn as _rls_conn, pool_init as _pool_init
 import services.bot.bot_services.voice      as ovoz_xizmat

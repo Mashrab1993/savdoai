@@ -62,6 +62,8 @@ if not _JWT_SECRET_RAW:
         log.warning("⚠️ JWT_SECRET o'rnatilmagan — faqat dev uchun default ishlatilmoqda.")
 JWT_SECRET = _JWT_SECRET_RAW
 
+# Process uptime — restart/crash ajratish (/live, /healthz, print_escpos trace)
+from shared.observability.process_uptime import process_info  # noqa: E402
 
 # ════════════════════════════════════════════════════════════
 #  STARTUP / SHUTDOWN
@@ -153,6 +155,13 @@ async def lifespan(app: FastAPI):
             log.warning("Qdrant ulana olmadi (RAG o'chirildi): %s", _e)
 
     log.info("🚀 SavdoAI API v%s tayyor", __version__)
+    log.info(
+        "API boot ok: pid=%s port=%s env=%s print_secret_set=%s",
+        os.getpid(),
+        os.getenv("PORT", "8000"),
+        os.getenv("RAILWAY_ENVIRONMENT") or "local",
+        bool((os.getenv("PRINT_SECRET") or "").strip()),
+    )
     yield
     await pool_close()
     log.info("API to'xtatildi")
@@ -196,6 +205,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Har so'rovga X-Request-ID (502 da loglarni bog'lash)
+from shared.middleware.request_id import RequestIDMiddleware  # noqa: E402
+
+app.add_middleware(RequestIDMiddleware)
+
 # ═══ v21.3 YANGI ROUTELAR ═══
 try:
     from services.api.routes.kassa import router as kassa_router
@@ -210,6 +224,8 @@ try:
     log.info("✅ WebSocket ulandi")
 except Exception as e:
     log.warning("⚠️ WebSocket yuklanmadi: %s", e)
+
+# Print HMAC: shared.services.print_session (lazy secret — import-time crash oldini olish)
 
 try:
     from services.api.routes.printer import router as printer_router
@@ -315,6 +331,7 @@ async def health():
         "db_ping_ms": db.get("ping_ms"),
         "db_pool": f"{db.get('used',0)}/{db.get('size',0)}",
         "latency_ms": latency_ms,
+        **process_info(),
     }
 
 
@@ -698,9 +715,22 @@ async def qarz_tolash_endpoint(
 # ════════════════════════════════════════════════════════════
 
 @app.get("/healthz")
-async def healthz():
-    """Kubernetes/Railway health probe"""
-    return {"status": "ok"}
+async def healthz(request: Request):
+    """Kubernetes/Railway health probe — process uptime (restart/crash diagnostikasi)."""
+    rid = getattr(request.state, "request_id", None)
+    log.info("probe healthz 200 request_id=%s", rid)
+    return {"status": "ok", **process_info()}
+
+
+@app.get("/live")
+async def live(request: Request):
+    """
+    Minimal liveness — DB/Redis tekshirilmaydi.
+    502: edge vs app: bu endpoint javob bersa, process ishlayapti; javob bo'lmasa — upstream/crash.
+    """
+    rid = getattr(request.state, "request_id", None)
+    log.info("probe live 200 request_id=%s", rid)
+    return {"status": "alive", **process_info()}
 
 
 @app.get("/readyz")
@@ -1134,7 +1164,7 @@ async def rate_limit_middleware(request: Request, call_next):
     if request.method == "OPTIONS":
         return await call_next(request)
     # Health/readyz endpoints skip
-    if request.url.path in ("/health", "/healthz", "/readyz"):
+    if request.url.path in ("/health", "/healthz", "/readyz", "/live"):
         return await call_next(request)
     # Android printer helper — bir nechta tezkor so'rov (yuklash + ack)
     if request.url.path.startswith("/api/print"):
