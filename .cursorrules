@@ -4,8 +4,8 @@
 # ║                                                                         ║
 # ║  Stack: Python 3.12 | FastAPI | python-telegram-bot 21.3 | asyncpg     ║
 # ║         PostgreSQL (RLS) | Redis | Celery | Next.js 16 | Railway       ║
-# ║  AI:    Gemini 2.5 Pro (STT) | Claude Haiku (tuzatish) |              ║
-# ║         Claude Sonnet (tahlil) | Silero VAD (shovqin filtr)           ║
+# ║  AI:    Gemini 2.5 Pro (STT/Vision/TTS) | Claude Sonnet 4.6 (mantiq) |              ║
+# ║         Silero VAD (shovqin filtr)                                     ║
 # ╚══════════════════════════════════════════════════════════════════════════╝
 
 # ═══════════════════════════════════════════════════════════════
@@ -67,10 +67,10 @@
 #  3. OVOZ PIPELINE — TEZLIK VA ANIQLIK
 # ═══════════════════════════════════════════════════════════════
 
-## 3-qatlamli AI stack:
-# 1. Gemini 2.5 Pro → STT (ovoz → matn). FAQAT shu ishni qiladi.
-# 2. Claude Haiku   → text_fixer (STT xatolarini tuzatadi)
-# 3. Claude Sonnet  → analyst (matn → JSON, hisob-kitob)
+## 2-qatlamli AI stack:
+# 1. Gemini 2.5 Pro → STT, Vision, TTS, hujjat, excel
+# 2. Claude Sonnet 4.6 → analyst (matn → JSON, hisob-kitob, suhbat)
+# (Claude Haiku o'chirildi — FuzzyMatcher yetarli)
 
 ## STT prompt — MUHIM:
 # - voice.py: _build_stt_extra_for_user() → DB dan 500 tovar, 200 klient

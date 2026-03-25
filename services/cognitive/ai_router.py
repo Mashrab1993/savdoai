@@ -3,7 +3,7 @@
 ║  MASHRAB MOLIYA v21.3 TURBO — DUAL-BRAIN AI ROUTER                       ║
 ║  Mixture of Experts (MoE) Architecture                                   ║
 ║                                                                           ║
-║  🧠 BRAIN 1 — GEMINI 3.1 Flash-Lite (KO'Z VA QULOQ):                    ║
+║  🧠 BRAIN 1 — GEMINI 2.5 Pro (KO'Z VA QULOQ):                    ║
 ║     ✅ Voice/Audio → Matn (O'zbek STT)                                   ║
 ║     ✅ OCR (rasm, nakladnoy, chek o'qish)                                ║
 ║     ✅ Real-time O'zbek NLP (intent recognition)                         ║
@@ -117,7 +117,7 @@ class AIResponse:
 # ════════════════════════════════════════════════════════════════════
 
 class _GeminiClient:
-    """Google Gemini 3.1 Flash-Lite — Ko'z va Quloq"""
+    """Google Gemini 2.5 Pro — Ko'z va Quloq"""
 
     def __init__(self):
         self._client = None

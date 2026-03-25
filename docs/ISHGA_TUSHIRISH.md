@@ -92,7 +92,7 @@ Railway Dashboard da quyidagi servislarni yarating:
 │    ADMIN_IDS = <sizning Telegram ID>                     │
 │    DB_MIN = 2                                             │
 │    DB_MAX = 15                                            │
-│    GEMINI_MODEL = gemini-3.1-flash-lite                  │
+│    GEMINI_MODEL = gemini-2.5-pro                  │
 └─────────────────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────────────────┐
@@ -279,7 +279,7 @@ Railway Hobby plan: $5/oy
   JAMI: ~$28-33/oy
 
 Anthropic API: ~$5-20/oy (foydalanishga qarab)
-Gemini API: BEPUL (flash-lite)
+Gemini API: gemini-2.5-pro
 
 UMUMIY: ~$33-53/oy
 

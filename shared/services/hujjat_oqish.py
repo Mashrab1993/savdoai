@@ -641,7 +641,7 @@ async def ai_hujjat_savol(h: dict, savol: str, gemini_key: str = "") -> str:
         client = genai.Client(api_key=gemini_key)
         loop = asyncio.get_event_loop()
         response = await asyncio.wait_for(loop.run_in_executor(None, lambda: client.models.generate_content(
-            model="gemini-2.5-flash", contents=prompt,
+            model="gemini-2.5-pro", contents=prompt,
             config=types.GenerateContentConfig(temperature=0.2, max_output_tokens=2000))), timeout=30)
         javob = (response.text or "").strip()
         if javob: return f"🤖 *AI JAVOB:*\n\n{javob}"

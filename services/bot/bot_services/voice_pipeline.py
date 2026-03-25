@@ -1,5 +1,5 @@
 """
-Voice Pipeline - 3 qatlamli ovoz qayta ishlash.
+Voice Pipeline - 2 qatlamli ovoz qayta ishlash (Gemini STT + FuzzyMatcher).
 """
 from __future__ import annotations
 
@@ -8,7 +8,7 @@ import re
 import time
 
 from .fuzzy_matcher import fuzzy_matcher
-from .text_fixer import fix_stt_text
+from .text_fixer import fix_stt_text  # passthrough, import buzilmasin
 
 logger = logging.getLogger(__name__)
 
@@ -27,7 +27,6 @@ async def process_voice(raw_stt_text: str, user_id: int | None = None) -> dict:
         "original": raw_stt_text,
         "cleaned": "",
         "fuzzy_fixed": "",
-        "haiku_fixed": "",
         "text": "",
         "confidence": "low",
         "processing_ms": 0,
@@ -55,17 +54,13 @@ async def process_voice(raw_stt_text: str, user_id: int | None = None) -> dict:
     has_unknown_words = _has_unknown_words(fuzzy_fixed, uid)
     if not has_unknown_words:
         result["text"] = fuzzy_fixed
-        result["haiku_fixed"] = fuzzy_fixed
         result["confidence"] = "high"
         result["processing_ms"] = int((time.time() - start) * 1000)
         return result
 
-    # Haiku O'CHIRILDI — faqat zarar qilardi (tovarlarni o'chirib tashlardi)
-    # Gemini STT + Fuzzy yetarli — Claude Sonnet analyst o'zi tushunadi
     result["text"] = fuzzy_fixed
-    result["haiku_fixed"] = fuzzy_fixed
     result["confidence"] = "medium"
-    logger.info("Pipeline: Haiku skip, fuzzy natija → analyst (%d belgi)", len(fuzzy_fixed))
+    logger.info("Pipeline: fuzzy natija → analyst (%d belgi)", len(fuzzy_fixed))
 
     result["processing_ms"] = int((time.time() - start) * 1000)
     return result

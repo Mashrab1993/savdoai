@@ -82,7 +82,7 @@ async def matn_ovozga(matn: str) -> Optional[bytes]:
             loop.run_in_executor(
                 None,
                 lambda: client.models.generate_content(
-                    model="gemini-2.5-flash",
+                    model="gemini-2.5-pro",
                     contents=f"Quyidagi matnni o'zbek tilida o'qi: {matn}",
                     config=types.GenerateContentConfig(
                         response_modalities=["AUDIO"],

@@ -14,7 +14,7 @@
 ║  ✅ "kam qolganlar" → kam qoldiq                                    ║
 ║  ✅ va boshqa 40+ O'zbek buyruq                                     ║
 ║                                                                      ║
-║  Gemini 3.1 Flash-Lite → matn → shu modul intent aniqlaydi         ║
+║  Gemini 2.5 Pro → matn → shu modul intent aniqlaydi         ║
 ╚══════════════════════════════════════════════════════════════════════╝
 """
 from __future__ import annotations

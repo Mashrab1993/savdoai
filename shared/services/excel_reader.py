@@ -509,7 +509,7 @@ Javobni "📊 MASHRAB MOLIYA" bilan boshla. Aniq raqamlar ber."""
         loop = asyncio.get_event_loop()
         response = await asyncio.wait_for(
             loop.run_in_executor(None, lambda: client.models.generate_content(
-                model="gemini-2.5-flash", contents=prompt,
+                model="gemini-2.5-pro", contents=prompt,
                 config=types.GenerateContentConfig(temperature=0.1, max_output_tokens=3000))),
             timeout=30)
         javob = (response.text or "").strip()

@@ -1,6 +1,6 @@
 """
 SAVDOAI v25.0 — ENTERPRISE OVOZ XIZMATI
-Gemini 3.1 Flash Lite + Audio Engine
+Gemini 2.5 Pro + Audio Engine
 
 Pipeline:
 1. Audio Engine: OGG -> WAV -> VAD -> Chunks
