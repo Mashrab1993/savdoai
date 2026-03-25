@@ -335,6 +335,19 @@ async def health():
     }
 
 
+@app.get("/version")
+@app.get("/version/")
+async def version():
+    return {
+        "status": "ok",
+        "service": "api",
+        "version": __version__,
+        "env": os.getenv("RAILWAY_ENVIRONMENT") or "local",
+        "port": os.getenv("PORT", "8000"),
+        **process_info(),
+    }
+
+
 @app.get("/dashboard", include_in_schema=False)
 async def dashboard_redirect():
     """Redirect to Next.js Web Dashboard"""
