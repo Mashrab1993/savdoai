@@ -62,7 +62,7 @@ class DeepLinkActivity : AppCompatActivity() {
         PrintLog.i(
             "DeepLink parsed | deepLinkUri=$uri jobId=$jobId width=$width " +
                 "token=${PrintLog.maskToken(token)} apiBaseUrl=${Prefs.api(this)} " +
-                "btOn=${BluetoothPrinter.btOn()}"
+                "btOn=${BluetoothPrinter.btOn(this)}"
         )
     }
 
@@ -94,11 +94,29 @@ class DeepLinkActivity : AppCompatActivity() {
         }
         try {
             val bytes = contentResolver.openInputStream(uri)?.readBytes()
-            if (bytes != null && bytes.isNotEmpty()) {
-                PrintService.direct(this, bytes)
-            } else {
+            if (bytes == null || bytes.isEmpty()) {
                 Toast.makeText(this, PrintUserMessages.EMPTY_RECEIPT, Toast.LENGTH_SHORT).show()
+                finish()
+                return
             }
+            // Himoya: ESC/POS fayl tekshiruvi — \x1B\x40 (INIT) yoki \x1B\x74 (code page)
+            // va hajmi < 100KB (normal chek 1-5KB)
+            if (bytes.size > 100_000) {
+                Toast.makeText(this, "Fayl juda katta (>100KB). Bu chek fayli emas.", Toast.LENGTH_LONG).show()
+                finish()
+                return
+            }
+            val hasEscPos = bytes.size >= 2 && (
+                (bytes[0] == 0x1B.toByte() && bytes[1] == 0x40.toByte()) ||  // ESC @
+                (bytes[0] == 0x1B.toByte() && bytes[1] == 0x74.toByte())     // ESC t
+            )
+            if (!hasEscPos) {
+                PrintLog.w("DeepLink file: ESC/POS header topilmadi, bytes[0..1]=${bytes.take(2).map { it.toInt() and 0xFF }}")
+                Toast.makeText(this, "Bu ESC/POS chek fayli emas.", Toast.LENGTH_LONG).show()
+                finish()
+                return
+            }
+            PrintService.direct(this, bytes)
         } catch (e: Exception) {
             PrintLog.e("DeepLink file read", e)
             Toast.makeText(this, PrintUserMessages.ENCODING_ERROR, Toast.LENGTH_SHORT).show()

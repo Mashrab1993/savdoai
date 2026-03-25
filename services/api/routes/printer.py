@@ -5,6 +5,7 @@ import json
 import logging
 import re
 import time
+from collections import defaultdict
 
 from fastapi import APIRouter, HTTPException, Request, Response
 
@@ -24,6 +25,28 @@ plog = logging.getLogger("print_escpos")
 
 _JOB_RE = re.compile(r"^[a-f0-9]{8,32}$")
 
+# ═══ RATE LIMITER — IP bo'yicha 30 req/daqiqa ═══
+_rate: dict[str, list[float]] = defaultdict(list)
+_RATE_WINDOW = 60.0  # 1 daqiqa
+_RATE_MAX = 30       # maksimal so'rovlar
+
+
+def _rate_check(ip: str) -> bool:
+    """IP bo'yicha rate limit tekshirish. False = limit oshdi."""
+    now = time.time()
+    hits = _rate[ip]
+    # Eski yozuvlarni tozalash
+    _rate[ip] = [t for t in hits if now - t < _RATE_WINDOW]
+    if len(_rate[ip]) >= _RATE_MAX:
+        return False
+    _rate[ip].append(now)
+    # Xotira himoyasi: 10000 dan ortiq IP saqlama
+    if len(_rate) > 10000:
+        oldest_ips = sorted(_rate.keys(), key=lambda k: _rate[k][-1] if _rate[k] else 0)[:5000]
+        for k in oldest_ips:
+            _rate.pop(k, None)
+    return True
+
 
 def _jid_ok(job_id: str) -> bool:
     return bool(job_id and _JOB_RE.match(job_id))
@@ -41,6 +64,11 @@ def _emit_escpos_e2e(trace: dict, t0: float, status_code: int) -> None:
 
 @router.get("/escpos/{job_id}")
 async def get_escpos(request: Request, job_id: str, t: str = "", w: int = 80):
+    # Rate limit — IP bo'yicha
+    client_ip = request.client.host if request.client else "unknown"
+    if not _rate_check(client_ip):
+        raise HTTPException(status_code=429, detail="Ko'p so'rov. 1 daqiqa kuting.")
+
     rid = getattr(request.state, "request_id", None) or "unknown"
     t0 = time.perf_counter()
     tp = _token_present(t)

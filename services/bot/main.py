@@ -124,14 +124,29 @@ import time as _time
 _kesh: dict = {}
 _KESH_TTL       = 60   # umumiy kesh TTL
 _KESH_USER_TTL  = 120  # user kesh — 2 daqiqa (user har xabarda tekshiriladi)
+_KESH_MAX_SIZE  = 2000  # Xotira himoyasi — maksimal kesh yozuvlar soni
 
 def _kesh_ol(kalit: str):
     e = _kesh.get(kalit)
     if e and _time.time() - e["t"] < e.get("ttl", _KESH_TTL):
         return e["v"]
+    # Expired — tozalash
+    if e:
+        _kesh.pop(kalit, None)
     return None
 
 def _kesh_yoz(kalit: str, qiymat, ttl: int = _KESH_TTL) -> None:
+    # Bounded cleanup — xotira himoyasi
+    if len(_kesh) >= _KESH_MAX_SIZE:
+        now = _time.time()
+        expired = [k for k, v in _kesh.items() if now - v["t"] >= v.get("ttl", _KESH_TTL)]
+        for k in expired:
+            _kesh.pop(k, None)
+        # Agar hali ham ko'p — eng eskilarini o'chirish
+        if len(_kesh) >= _KESH_MAX_SIZE:
+            oldest = sorted(_kesh.items(), key=lambda x: x[1]["t"])[:_KESH_MAX_SIZE // 4]
+            for k, _ in oldest:
+                _kesh.pop(k, None)
     _kesh[kalit] = {"v": qiymat, "t": _time.time(), "ttl": ttl}
 
 def _kesh_tozala(kalit: str) -> None:

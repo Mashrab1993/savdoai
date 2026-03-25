@@ -74,7 +74,7 @@ DO'KONCHI XABARI: {matn}
 Qisqa, samimiy, foydali javob ber (2-5 jumla):"""
         
         response = await client.messages.create(
-            model="claude-sonnet-4-6",
+            model=os.getenv("CLAUDE_MODEL", "claude-sonnet-4-6"),
             max_tokens=500,
             system=_TIZIM_PROMPT,
             messages=[{"role": "user", "content": user_msg}],

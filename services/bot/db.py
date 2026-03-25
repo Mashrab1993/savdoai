@@ -34,7 +34,6 @@ from typing import Any, Optional
 
 import asyncio
 import asyncpg
-import asyncio
 import asyncpg.exceptions
 import pytz
 
@@ -78,7 +77,9 @@ CREATE TABLE IF NOT EXISTS users (
     telefon         TEXT,
     dokon_nomi      TEXT,
     segment         TEXT CHECK (segment IN (
-                        'optom','chakana','oshxona','xozmak','universal')),
+                        'optom','chakana','oshxona','xozmak','kiyim','gosht',
+                        'meva','qurilish','avto','dorixona','texnika','mebel',
+                        'mato','gul','kosmetika','universal')),
     faol            BOOLEAN       NOT NULL DEFAULT FALSE,
     obuna_tugash    DATE,
     min_qoldiq      DECIMAL(18,3) NOT NULL DEFAULT 5,

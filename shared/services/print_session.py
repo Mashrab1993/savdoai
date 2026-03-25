@@ -178,7 +178,23 @@ def _sign(job_id: str, uid: int, created_ts: float) -> str:
         _secret_pair()[0].encode(),
         f"{job_id}:{uid}:{int(created_ts)}".encode(),
         hashlib.sha256,
-    ).hexdigest()[:16]
+    ).hexdigest()[:32]  # 128-bit entropy (yangi tokenlar)
+
+
+def _verify_compat(token: str, job_id: str, uid: int, created_ts: float) -> bool:
+    """Backward compatible verify: 16-char (eski) va 32-char (yangi) tokenlarni qo'llab-quvvatlaydi."""
+    full_hex = hmac.new(
+        _secret_pair()[0].encode(),
+        f"{job_id}:{uid}:{int(created_ts)}".encode(),
+        hashlib.sha256,
+    ).hexdigest()
+    # Yangi 32-char token
+    if len(token) >= 32:
+        return hmac.compare_digest(token, full_hex[:32])
+    # Eski 16-char token (deploy vaqtida aktiv sessiyalar uchun)
+    if len(token) >= 16:
+        return hmac.compare_digest(token, full_hex[:16])
+    return False
 
 
 def _save(s: PrintSession) -> None:
@@ -217,14 +233,14 @@ def verify_token(job_id: str, token: str) -> bool:
     s = _load(job_id)
     if not s or not token:
         return False
-    return hmac.compare_digest(token, _sign(job_id, s.user_id, s.created_at))
+    return _verify_compat(token, job_id, s.user_id, s.created_at)
 
 
 def verify(job_id: str, uid: int, token: str) -> bool:
     s = _load(job_id)
     if not s or s.user_id != uid:
         return False
-    return hmac.compare_digest(token, _sign(job_id, uid, s.created_at))
+    return _verify_compat(token, job_id, uid, s.created_at)
 
 
 def get(job_id: str) -> Optional[PrintSession]:
@@ -244,8 +260,18 @@ def create(
     escpos_58: bytes = b"",
 ) -> PrintSession:
     now = time.time()
-    for k in [k for k, v in _mem.items() if now > v.expires_at + 120]:
-        _mem.pop(k, None)
+    # Memory cleanup: expired sessions + stale idempotency keys
+    expired_jobs = [k for k, v in _mem.items() if now > v.expires_at + 120]
+    for k in expired_jobs:
+        s = _mem.pop(k, None)
+        if s and s.idemp_key:
+            _idemp.pop(s.idemp_key, None)
+
+    # Safety: _idemp dan _mem da yo'q bo'lgan kalitlarni tozalash
+    if len(_idemp) > 500:
+        stale_keys = [ik for ik, jid in _idemp.items() if jid not in _mem]
+        for ik in stale_keys:
+            _idemp.pop(ik, None)
 
     ik = f"{dtype}_{sid}_{uid}"
     if ik in _idemp:

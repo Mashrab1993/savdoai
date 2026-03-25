@@ -75,7 +75,7 @@ async def tovar_ekspert_tahlil(conn, uid: int, tovar_nomi: str, tovar_row: dict 
     tovar = dict(tovar)
     tid = tovar["id"]
 
-    # PARALLEL — 5 query bir vaqtda
+    # KETMA-KET — asyncpg bitta conn da parallel ishlamaydi
     oy_boshi = _kun_boshi(_bugun().replace(day=1))
 
     sotuv_stat_task = conn.fetchrow("""

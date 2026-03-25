@@ -257,33 +257,57 @@ async def limit_tekshir(conn, admin_uid: int, shogird_id: int, summa: Decimal) -
 async def kunlik_hisobot(conn, admin_uid: int, sana: Optional[str] = None) -> dict:
     """Kunlik xarajat hisoboti (barcha shogirdlar)"""
     if sana:
-        sana_filter = f"AND x.sana::date = '{sana}'"
+        # Parameterized query — SQL injection himoyasi
+        import re as _re
+        if not _re.match(r"^\d{4}-\d{2}-\d{2}$", sana):
+            sana = None  # Noto'g'ri format — bugungi kunga fallback
+
+    if sana:
+        rows = await conn.fetch("""
+            SELECT s.ism, s.id as shogird_id,
+                COALESCE(SUM(x.summa), 0) as jami,
+                COUNT(x.id) as soni,
+                COUNT(CASE WHEN NOT x.tasdiqlangan THEN 1 END) as kutilmoqda
+            FROM shogirdlar s
+            LEFT JOIN xarajatlar x ON x.shogird_id = s.id
+                AND NOT x.bekor_qilingan AND x.sana::date = $2::date
+            WHERE s.admin_uid = $1 AND s.faol = TRUE
+            GROUP BY s.id, s.ism
+            ORDER BY jami DESC
+        """, admin_uid, sana)
     else:
-        sana_filter = "AND x.sana >= CURRENT_DATE"
-    
-    rows = await conn.fetch(f"""
-        SELECT s.ism, s.id as shogird_id,
-            COALESCE(SUM(x.summa), 0) as jami,
-            COUNT(x.id) as soni,
-            COUNT(CASE WHEN NOT x.tasdiqlangan THEN 1 END) as kutilmoqda
-        FROM shogirdlar s
-        LEFT JOIN xarajatlar x ON x.shogird_id = s.id 
-            AND NOT x.bekor_qilingan {sana_filter}
-        WHERE s.admin_uid = $1 AND s.faol = TRUE
-        GROUP BY s.id, s.ism
-        ORDER BY jami DESC
-    """, admin_uid)
-    
+        rows = await conn.fetch("""
+            SELECT s.ism, s.id as shogird_id,
+                COALESCE(SUM(x.summa), 0) as jami,
+                COUNT(x.id) as soni,
+                COUNT(CASE WHEN NOT x.tasdiqlangan THEN 1 END) as kutilmoqda
+            FROM shogirdlar s
+            LEFT JOIN xarajatlar x ON x.shogird_id = s.id
+                AND NOT x.bekor_qilingan AND x.sana >= CURRENT_DATE
+            WHERE s.admin_uid = $1 AND s.faol = TRUE
+            GROUP BY s.id, s.ism
+            ORDER BY jami DESC
+        """, admin_uid)
+
     jami = sum(r["jami"] for r in rows)
-    
+
     # Kategoriya bo'yicha
-    kat_rows = await conn.fetch(f"""
-        SELECT x.kategoriya_nomi, SUM(x.summa) as jami, COUNT(*) as soni
-        FROM xarajatlar x
-        WHERE x.admin_uid = $1 AND NOT x.bekor_qilingan {sana_filter}
-        GROUP BY x.kategoriya_nomi
-        ORDER BY jami DESC
-    """, admin_uid)
+    if sana:
+        kat_rows = await conn.fetch("""
+            SELECT x.kategoriya_nomi, SUM(x.summa) as jami, COUNT(*) as soni
+            FROM xarajatlar x
+            WHERE x.admin_uid = $1 AND NOT x.bekor_qilingan AND x.sana::date = $2::date
+            GROUP BY x.kategoriya_nomi
+            ORDER BY jami DESC
+        """, admin_uid, sana)
+    else:
+        kat_rows = await conn.fetch("""
+            SELECT x.kategoriya_nomi, SUM(x.summa) as jami, COUNT(*) as soni
+            FROM xarajatlar x
+            WHERE x.admin_uid = $1 AND NOT x.bekor_qilingan AND x.sana >= CURRENT_DATE
+            GROUP BY x.kategoriya_nomi
+            ORDER BY jami DESC
+        """, admin_uid)
     
     return {
         "shogirdlar": [dict(r) for r in rows],
@@ -295,6 +319,9 @@ async def kunlik_hisobot(conn, admin_uid: int, sana: Optional[str] = None) -> di
 async def shogird_hisobot(conn, admin_uid: int, shogird_id: int, 
                            kunlar: int = 7) -> dict:
     """Bitta shogird hisoboti"""
+    # kunlar ni int ga majburlash — SQL injection himoyasi
+    kunlar = max(1, min(int(kunlar), 365))
+    
     shogird = await conn.fetchrow("""
         SELECT * FROM shogirdlar WHERE id = $1 AND admin_uid = $2
     """, shogird_id, admin_uid)
@@ -308,9 +335,9 @@ async def shogird_hisobot(conn, admin_uid: int, shogird_id: int,
                  ELSE '⏳' END as holat
         FROM xarajatlar x
         WHERE x.shogird_id = $1 AND x.admin_uid = $2
-            AND x.sana >= NOW() - INTERVAL '%s days'
+            AND x.sana >= NOW() - make_interval(days => $3)
         ORDER BY x.sana DESC
-    """ % kunlar, shogird_id, admin_uid)
+    """, shogird_id, admin_uid, kunlar)
     
     jami = sum(x["summa"] for x in xarajatlar if not x["bekor_qilingan"])
     

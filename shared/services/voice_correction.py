@@ -109,14 +109,18 @@ def ovoz_tuzat(matn: str, db_tovarlar: list[str] | None = None) -> str:
     """
     Gemini STT dan kelgan matnni tuzatish.
     
-    1. Mahsulot nomlari tuzatish (lug'at bo'yicha)
-    2. DB dagi tovarlar bilan fuzzy match
+    1. Mahsulot nomlari tuzatish (lug'at bo'yicha — asosan kimyoviy/oziq-ovqat)
+    2. DB dagi tovarlar bilan fuzzy match (ASOSIY — har qanday segment uchun ishlaydi)
     3. Birlik tuzatish
     4. Raqam tuzatish
     
+    MUHIM: MAHSULOT_TUZATISH statik lug'at faqat umumiy tovarlar uchun.
+    Boshqa segmentlar (kiyim, qurilish, avto...) uchun db_tovarlar orqali
+    DB dagi haqiqiy tovar nomlari bilan fuzzy match ishlaydi.
+    
     Args:
         matn: Gemini dan kelgan xom transkripsiya
-        db_tovarlar: DB dagi tovar nomlari (ixtiyoriy)
+        db_tovarlar: DB dagi tovar nomlari (ixtiyoriy, lekin TAVSIYA ETILADI)
     
     Returns:
         Tuzatilgan matn
@@ -224,6 +228,7 @@ def _o_xshashlik(a: str, b: str) -> float:
 _tovar_cache: dict[int, list[str]] = {}
 _cache_vaqt: dict[int, float] = {}
 _CACHE_TTL = 300  # 5 daqiqa
+_CACHE_MAX_USERS = 500  # Xotira himoyasi
 
 
 async def tovar_nomlarini_ol(uid: int) -> list[str]:
@@ -233,6 +238,16 @@ async def tovar_nomlarini_ol(uid: int) -> list[str]:
 
     if uid in _tovar_cache and (now - _cache_vaqt.get(uid, 0)) < _CACHE_TTL:
         return _tovar_cache[uid]
+
+    # Bounded cleanup — eski/expired yozuvlarni tozalash
+    if len(_tovar_cache) >= _CACHE_MAX_USERS:
+        expired = [u for u, t in _cache_vaqt.items() if now - t > _CACHE_TTL]
+        for u in expired:
+            _tovar_cache.pop(u, None)
+            _cache_vaqt.pop(u, None)
+        if len(_tovar_cache) >= _CACHE_MAX_USERS:
+            _tovar_cache.clear()
+            _cache_vaqt.clear()
 
     try:
         from shared.database.pool import get_pool

@@ -29,10 +29,11 @@ class CMD:
     INIT = b"\x1B\x40"
     BOLD_ON = b"\x1B\x45\x01"
     BOLD_OFF = b"\x1B\x45\x00"
-    DBL_ON = b"\x1B\x21\x30"
-    DBL_OFF = b"\x1B\x21\x00"
-    WIDE_ON = b"\x1B\x21\x20"
-    WIDE_OFF = b"\x1B\x21\x00"
+    # ESC ! n: bit 4=double-height, bit 5=double-width
+    DBL_ON = b"\x1B\x21\x30"     # double-height + double-width
+    DBL_OFF = b"\x1B\x21\x00"    # reset all print modes
+    WIDE_ON = b"\x1B\x21\x20"    # double-width only
+    WIDE_OFF = b"\x1B\x21\x00"   # reset all print modes (= DBL_OFF)
     CENTER = b"\x1B\x61\x01"
     LEFT = b"\x1B\x61\x00"
     FEED5 = b"\x1B\x64\x05"
@@ -226,7 +227,8 @@ class Receipt:
         if h >= need:
             self._cmd(CMD.WIDE_ON, CMD.BOLD_ON)
             self._ln(_pad(lab, amt, h))
-            self._cmd(CMD.WIDE_OFF, CMD.BOLD_OFF, CMD.DBL_OFF)
+            # WIDE_OFF resets ESC ! to 0x00 (all modes off), BOLD_OFF resets ESC E
+            self._cmd(CMD.WIDE_OFF, CMD.BOLD_OFF)
         else:
             self._cmd(CMD.BOLD_ON)
             self._ln(_pad(lab, amt, self.c))

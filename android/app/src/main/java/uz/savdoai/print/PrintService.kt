@@ -55,7 +55,7 @@ class PrintService : Service() {
         val apiBaseUrl = Prefs.api(this)
         PrintLog.i(
             "PrintService dl | apiBaseUrl=$apiBaseUrl jobId=$jid width=$w token=${PrintLog.maskToken(tok)} " +
-                "btOn=${BluetoothPrinter.btOn()}"
+                "btOn=${BluetoothPrinter.btOn(this)}"
         )
         upd("📡 Chek yuklanmoqda...")
         when (val r = PrintApi.fetchEscPos(apiBaseUrl, jid, tok, w)) {
@@ -110,13 +110,13 @@ class PrintService : Service() {
             }
             return
         }
-        if (!BluetoothPrinter.btOn()) {
+        if (!BluetoothPrinter.btOn(this)) {
             end(false, PrintUserMessages.BLUETOOTH_OFF)
             return
         }
         upd("🖨️ Printerga ulanmoqda...")
         val api = Prefs.api(this)
-        when (val r = BluetoothPrinter.print(mac, data)) {
+        when (val r = BluetoothPrinter.print(mac, data, this)) {
             is BluetoothPrinter.Result.OK -> {
                 if (jid != null && tok != null) PrintApi.ack(api, jid, true, tok, "")
                 PrintLog.i("print complete | jobId=${jid ?: "-"} ok=true")

@@ -24,6 +24,7 @@ log = logging.getLogger(__name__)
 
 _recent_messages: dict[str, float] = {}
 _DUPLICATE_WINDOW = 5.0  # 5 sekund ichida bir xil xabar = duplicate
+_MAX_RECENT = 5000  # Xotira himoyasi
 
 def is_duplicate_message(user_id: int, content: str) -> bool:
     """
@@ -34,9 +35,13 @@ def is_duplicate_message(user_id: int, content: str) -> bool:
     now = time.monotonic()
     
     # Eski yozuvlarni tozalash (60s dan eski)
-    expired = [k for k, t in _recent_messages.items() if now - t > 60]
-    for k in expired:
-        _recent_messages.pop(k, None)
+    if len(_recent_messages) > _MAX_RECENT // 2:
+        expired = [k for k, t in _recent_messages.items() if now - t > 60]
+        for k in expired:
+            _recent_messages.pop(k, None)
+        # Hali ham ko'p bo'lsa — barchasini tozalash
+        if len(_recent_messages) > _MAX_RECENT:
+            _recent_messages.clear()
     
     if h in _recent_messages and now - _recent_messages[h] < _DUPLICATE_WINDOW:
         log.warning("Duplicate message detected: uid=%d hash=%s", user_id, h[:8])

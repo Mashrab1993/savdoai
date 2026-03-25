@@ -1,7 +1,9 @@
 package uz.savdoai.print
 
 import android.bluetooth.BluetoothAdapter
+import android.bluetooth.BluetoothManager
 import android.bluetooth.BluetoothSocket
+import android.content.Context
 import java.io.IOException
 import java.util.UUID
 
@@ -12,10 +14,20 @@ object BluetoothPrinter {
         data class Err(val msg: String, val retry: Boolean = true) : Result()
     }
 
-    fun btOn(): Boolean = BluetoothAdapter.getDefaultAdapter()?.isEnabled == true
+    /** Android 12+ uchun BluetoothManager, eski versiyalar uchun getDefaultAdapter. */
+    private fun getAdapter(ctx: Context? = null): BluetoothAdapter? {
+        if (android.os.Build.VERSION.SDK_INT >= 31 && ctx != null) {
+            val mgr = ctx.getSystemService(Context.BLUETOOTH_SERVICE) as? BluetoothManager
+            return mgr?.adapter
+        }
+        @Suppress("DEPRECATION")
+        return BluetoothAdapter.getDefaultAdapter()
+    }
 
-    fun print(mac: String, data: ByteArray): Result {
-        val a = BluetoothAdapter.getDefaultAdapter()
+    fun btOn(ctx: Context? = null): Boolean = getAdapter(ctx)?.isEnabled == true
+
+    fun print(mac: String, data: ByteArray, ctx: Context? = null): Result {
+        val a = getAdapter(ctx)
             ?: return Result.Err(PrintUserMessages.BLUETOOTH_MISSING, false)
         if (!a.isEnabled) return Result.Err(PrintUserMessages.BLUETOOTH_OFF, true)
         val dev = try {

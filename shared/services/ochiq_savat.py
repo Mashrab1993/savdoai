@@ -140,6 +140,24 @@ async def savatga_qosh(conn, uid: int, klient_ismi: str,
     qo_shildi = 0
     yangilandi = 0
 
+    # ── BATCH PRE-FETCH: N+1 → 2 query ──
+    # 1) Savatdagi mavjud tovarlarni bir query da olish
+    existing_rows = await conn.fetch("""
+        SELECT id, lower(tovar_nomi) as nomi_lower, tovar_nomi, miqdor, narx, jami
+        FROM savat_tovarlar WHERE savat_id=$1
+    """, savat_id)
+    existing_map = {r["nomi_lower"]: dict(r) for r in existing_rows}
+
+    # 2) User tovarlarini keshga olish (agar 5+ tovar bo'lsa — batch samaraliroq)
+    tovar_cache: dict[str, dict] = {}
+    if len(tovarlar) >= 3:
+        all_tv = await conn.fetch("""
+            SELECT id, nomi, lower(nomi) as nomi_lower, sotish_narxi, birlik, kategoriya
+            FROM tovarlar WHERE user_id=$1
+        """, uid)
+        for tv in all_tv:
+            tovar_cache[tv["nomi_lower"]] = dict(tv)
+
     for t in tovarlar:
         nomi = (t.get("nomi") or "").strip()
         if not nomi:
@@ -150,18 +168,38 @@ async def savatga_qosh(conn, uid: int, klient_ismi: str,
         birlik = t.get("birlik", "dona")
         kategoriya = t.get("kategoriya", "Boshqa")
 
-        # Tovar ID topish
+        # Tovar ID topish — avval keshdan, keyin DB
         tovar_id = None
-        tr = await conn.fetchrow("""
-            SELECT id, nomi, sotish_narxi, birlik, kategoriya FROM tovarlar
-            WHERE user_id=$1 AND lower(nomi) LIKE lower($2) LIMIT 1
-        """, uid, f"%{nomi}%")
+        tr = None
+        nomi_lower = nomi.lower()
+
+        if tovar_cache:
+            # Keshdan exact match
+            tr_cached = tovar_cache.get(nomi_lower)
+            if not tr_cached:
+                # Keshdan fuzzy match
+                for k, v in tovar_cache.items():
+                    if nomi_lower in k or k in nomi_lower:
+                        tr_cached = v
+                        break
+            if tr_cached:
+                tr = tr_cached
+                tovar_id = tr["id"]
+        else:
+            # DB dan (kam tovar bo'lganda — individual query)
+            tr_row = await conn.fetchrow("""
+                SELECT id, nomi, sotish_narxi, birlik, kategoriya FROM tovarlar
+                WHERE user_id=$1 AND lower(nomi) LIKE lower($2) LIMIT 1
+            """, uid, f"%{nomi}%")
+            if tr_row:
+                tr = dict(tr_row)
+                tovar_id = tr["id"]
+
         if tr:
-            tovar_id = tr["id"]
             if not kategoriya or kategoriya == "Boshqa":
-                kategoriya = tr["kategoriya"] or "Boshqa"
+                kategoriya = tr.get("kategoriya") or "Boshqa"
             if not birlik or birlik == "dona":
-                birlik = tr["birlik"] or birlik
+                birlik = tr.get("birlik") or birlik
 
         # Smart Narx (agar narx=0)
         if narx <= 0:
@@ -186,13 +224,9 @@ async def savatga_qosh(conn, uid: int, klient_ismi: str,
         else:
             jami = D(t.get("jami", 0))
 
-        # ═══ DUBLIKAT TEKSHIRISH ═══
+        # ═══ DUBLIKAT TEKSHIRISH (keshdan) ═══
         # Agar shu tovar allaqachon savatda bo'lsa — miqdor OSHIRADI
-        existing = await conn.fetchrow("""
-            SELECT id, miqdor, narx, jami FROM savat_tovarlar
-            WHERE savat_id=$1 AND lower(tovar_nomi)=lower($2)
-            LIMIT 1
-        """, savat_id, nomi)
+        existing = existing_map.get(nomi_lower)
 
         if existing:
             # Miqdor oshirish
@@ -210,15 +244,28 @@ async def savatga_qosh(conn, uid: int, klient_ismi: str,
                 SET miqdor=$2, narx=$3, jami=$4
                 WHERE id=$1
             """, existing["id"], yangi_miqdor, yangi_narx, yangi_jami)
+            # Keshni yangilash — keyingi iteratsiyalar uchun
+            existing_map[nomi_lower] = {
+                "id": existing["id"], "nomi_lower": nomi_lower,
+                "tovar_nomi": nomi, "miqdor": yangi_miqdor,
+                "narx": yangi_narx, "jami": yangi_jami,
+            }
             yangilandi += 1
             log.info("🔄 Savat dublikat: %s x%s → x%s", nomi, existing["miqdor"], yangi_miqdor)
         else:
             # Yangi tovar qo'shish
-            await conn.execute("""
+            new_id = await conn.fetchval("""
                 INSERT INTO savat_tovarlar
                     (savat_id, user_id, tovar_nomi, tovar_id, miqdor, birlik, narx, jami, kategoriya)
                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+                RETURNING id
             """, savat_id, uid, nomi, tovar_id, miqdor, birlik, narx, jami, kategoriya)
+            # Keshga qo'shish — bir xil tovar yana kelsa UPDATE bo'ladi, yangi qator emas
+            existing_map[nomi_lower] = {
+                "id": new_id, "nomi_lower": nomi_lower,
+                "tovar_nomi": nomi, "miqdor": miqdor,
+                "narx": narx, "jami": jami,
+            }
             qo_shildi += 1
 
     # Savat jamini yangilash

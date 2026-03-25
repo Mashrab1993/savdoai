@@ -19,7 +19,7 @@ import asyncio, io, json, logging, subprocess, tempfile, os, re
 from typing import Optional
 log = logging.getLogger(__name__)
 _gemini_client = None
-_VISION_MODEL = "gemini-2.5-pro"
+_VISION_MODEL = os.environ.get("VISION_MODEL", "gemini-2.5-pro")
 
 
 # ═══════════════════════════════════════════════════════════════

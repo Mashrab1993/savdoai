@@ -111,8 +111,10 @@
 # qarzlar(user_id, yopildi) WHERE NOT yopildi
 # sotuv_sessiyalar(user_id, sana)
 
-## Segment CHECK:
-# CHECK(segment IN('optom','chakana','oshxona','xozmak','kiyim','universal'))
+## Segment CHECK (16 ta segment — schema.sql va db.py bir xil bo'lishi SHART):
+# CHECK(segment IN('optom','chakana','oshxona','xozmak','kiyim','gosht',
+#                  'meva','qurilish','avto','dorixona','texnika','mebel',
+#                  'mato','gul','kosmetika','universal'))
 
 # ═══════════════════════════════════════════════════════════════
 #  5. TELEGRAM BOT — UX QOIDALARI
@@ -173,8 +175,9 @@
 ## Muhit o'zgaruvchilari (ZARUR):
 # BOT_TOKEN, DATABASE_URL, REDIS_URL
 # ANTHROPIC_API_KEY, GEMINI_API_KEY
-# JWT_SECRET, ADMIN_IDS
+# JWT_SECRET, PRINT_SECRET, ADMIN_IDS
 # GEMINI_MODEL=gemini-2.5-pro
+# PRINT_SECRET — API va Bot da BIR XIL qiymat bo'lishi SHART!
 
 # ═══════════════════════════════════════════════════════════════
 #  8. TEST — 287+ TEST DOIM O'TISHI SHART

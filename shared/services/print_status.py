@@ -2,13 +2,14 @@
 ╔══════════════════════════════════════════════════════════════════════╗
 ║  MASHRAB MOLIYA v21.4 — PRINT STATUS OQIMI                         ║
 ║                                                                      ║
+║  DIQQAT: Bu modul MATNLI chek oldindan ko'rish (preview) uchun.     ║
+║  Haqiqiy ESC/POS chop etish uchun → print_session.py ishlatiladi.  ║
+║                                                                      ║
+║  print_status.py  = Telegram preview + job lifecycle (in-memory)    ║
+║  print_session.py = ESC/POS binary + HMAC token + Redis (durable)  ║
+║                                                                      ║
 ║  Mini printer lifecycle:                                             ║
 ║  PREVIEW → CONFIRMED → PRINTING → PRINTED → FAILED → REPRINT       ║
-║                                                                      ║
-║  🖨️ 58mm / 80mm thermal receipt                                    ║
-║  📊 Print history — kim, qachon, necha marta                       ║
-║  🛡️ Double-print himoya                                             ║
-║  🔄 Reprint — xato bo'lsa qayta chop                               ║
 ╚══════════════════════════════════════════════════════════════════════╝
 """
 from __future__ import annotations
@@ -56,6 +57,17 @@ class PrintJob:
 # ═══ PRINT JOB REGISTRY — xotiradan ═══
 _jobs: dict[str, PrintJob] = {}
 _job_counter: int = 0
+_MAX_JOBS = 1000  # Xotira himoyasi
+
+
+def _cleanup_old_jobs() -> None:
+    """1 soatdan eski joblarni tozalash — memory leak oldini olish."""
+    if len(_jobs) < _MAX_JOBS // 2:
+        return
+    now = time.time()
+    expired = [jid for jid, j in _jobs.items() if now - j.created_at > 3600]
+    for jid in expired:
+        _jobs.pop(jid, None)
 
 
 def _next_id(uid: int) -> str:
@@ -67,6 +79,7 @@ def _next_id(uid: int) -> str:
 def create_print_job(user_id: int, doc_type: str, content: str,
                       width_mm: int = 80, meta: dict = None) -> PrintJob:
     """Yangi print job yaratish — PREVIEW holatda"""
+    _cleanup_old_jobs()
     job = PrintJob(
         job_id=_next_id(user_id),
         user_id=user_id,

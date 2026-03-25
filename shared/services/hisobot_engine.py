@@ -54,7 +54,7 @@ async def hisobot_yig(conn, uid: int, boshlanish: datetime,
                        oldingi_bosh: datetime = None,
                        oldingi_tug: datetime = None) -> dict:
     """
-    PARALLEL hisobot yig'ish — barcha querylar bir vaqtda ishlaydi.
+    KETMA-KET hisobot yig'ish (asyncpg bitta connectionda parallel qilmaydi).
     
     Args:
         conn: DB connection
@@ -66,7 +66,9 @@ async def hisobot_yig(conn, uid: int, boshlanish: datetime,
     if tugash is None:
         tugash = datetime.now(TZ)
 
-    # ── PARALLEL: 8 ta query bir vaqtda ──
+    # ── KETMA-KET: asyncpg bitta connection da parallel qo'llab-quvvatlamaydi ──
+    # Har query alohida await qilinadi. Haqiqiy parallellik uchun
+    # alohida connection pool dan foydalanish kerak.
     sotuv_task = conn.fetchrow("""
         SELECT COUNT(DISTINCT id) AS soni,
                COALESCE(SUM(jami), 0) AS jami,
@@ -478,7 +480,7 @@ async def klient_qarz_tarix(conn, uid: int, klient_ism: str) -> dict | None:
     klient = dict(klient)
     kid = klient["id"]
 
-    # 2. PARALLEL — 5 query bir vaqtda
+    # 2. KETMA-KET — asyncpg bitta conn da parallel ishlamaydi
     faol_qarzlar_task = conn.fetch("""
         SELECT id, jami, qolgan, tolangan,
                yaratilgan, muddat,

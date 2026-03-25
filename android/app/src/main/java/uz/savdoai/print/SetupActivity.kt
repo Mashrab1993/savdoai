@@ -2,6 +2,8 @@ package uz.savdoai.print
 
 import android.Manifest
 import android.bluetooth.BluetoothAdapter
+import android.bluetooth.BluetoothManager
+import android.content.Context
 import android.content.pm.PackageManager
 import android.os.*
 import android.widget.*
@@ -86,7 +88,12 @@ class SetupActivity : AppCompatActivity() {
     }
 
     private fun scan() {
-        val a = BluetoothAdapter.getDefaultAdapter()
+        val a = if (Build.VERSION.SDK_INT >= 31) {
+            (getSystemService(Context.BLUETOOTH_SERVICE) as? BluetoothManager)?.adapter
+        } else {
+            @Suppress("DEPRECATION")
+            BluetoothAdapter.getDefaultAdapter()
+        }
         if (a == null) {
             tv.text = "❌ ${PrintUserMessages.BLUETOOTH_MISSING}"
             return
@@ -120,7 +127,7 @@ class SetupActivity : AppCompatActivity() {
         val b = EscPosEncoding.buildDiagnosticEscPos(w)
         PrintLog.i("Setup testPrint | widthMm=$w bytes=${b.size}")
         Thread {
-            val r = BluetoothPrinter.print(mac, b)
+            val r = BluetoothPrinter.print(mac, b, this@SetupActivity)
             runOnUiThread {
                 tv.text = when (r) {
                     is BluetoothPrinter.Result.OK -> "✅ Test o'tdi!"
