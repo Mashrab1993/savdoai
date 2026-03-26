@@ -747,22 +747,22 @@ async def kirim_saqlash(uid: int, t: dict) -> dict:
             RETURNING *
         """, uid, nomi, kategoriya, birlik, narx)
 
-        # Qoldiqni oshirish
-        await c.execute(
-            "UPDATE tovarlar SET qoldiq = qoldiq + $2 WHERE id = $1",
-            tovar["id"], miqdor
-        )
+            # Qoldiqni oshirish
+            await c.execute(
+                "UPDATE tovarlar SET qoldiq = qoldiq + $2 WHERE id = $1",
+                tovar["id"], miqdor
+            )
 
-        # Kirimni saqlash
-        kirim = await c.fetchrow("""
-            INSERT INTO kirimlar
-                (user_id, tovar_id, tovar_nomi, kategoriya,
-                 miqdor, birlik, narx, jami, manba, izoh)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-            RETURNING *
-        """, uid, tovar["id"], nomi, kategoriya,
-            miqdor, birlik, narx, jami,
-            t.get("manba"), t.get("izoh"))
+            # Kirimni saqlash
+            kirim = await c.fetchrow("""
+                INSERT INTO kirimlar
+                    (user_id, tovar_id, tovar_nomi, kategoriya,
+                     miqdor, birlik, narx, jami, manba, izoh)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+                RETURNING *
+            """, uid, tovar["id"], nomi, kategoriya,
+                miqdor, birlik, narx, jami,
+                t.get("manba"), t.get("izoh"))
 
     log.info("📥 Kirim: %s %s %s = %s so'm", miqdor, birlik, nomi, jami)
 

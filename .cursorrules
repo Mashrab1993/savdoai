@@ -4,263 +4,193 @@
 # ║                                                                         ║
 # ║  Stack: Python 3.12 | FastAPI | python-telegram-bot 21.3 | asyncpg     ║
 # ║         PostgreSQL (RLS) | Redis | Celery | Next.js 16 | Railway       ║
-# ║  AI:    Gemini 2.5 Pro (STT/Vision/TTS) | Claude Sonnet 4.6 (mantiq) |              ║
+# ║  AI:    Gemini 2.5 Pro (STT/Vision/TTS) | Claude Sonnet 4.6 (mantiq)  ║
 # ║         Silero VAD (shovqin filtr)                                     ║
+# ║                                                                         ║
+# ║  Repo:    https://github.com/Mashrab1993/savdoai                      ║
+# ║  Deploy:  Railway auto-deploy (main branch → 4 servis)                ║
+# ║  Railway: https://railway.com/project/f9933a08-1054-4778-b969-e6a1e7e17b14 ║
+# ║  Bot:     @savdoai_mashrab_bot                                         ║
 # ╚══════════════════════════════════════════════════════════════════════════╝
 
 # ═══════════════════════════════════════════════════════════════
-#  1. ARXITEKTURA — HECH QACHON BUZMA
+#  1. MONOREPO TUZILISHI — O'ZGARTIRMA
 # ═══════════════════════════════════════════════════════════════
-
-## Monorepo tuzilishi (O'ZGARTIRMA):
+#
 # savdoai-main/
 # ├── services/
-# │   ├── api/         → FastAPI REST (JWT + RLS + Redis cache)
-# │   ├── bot/         → Telegram bot (python-telegram-bot)
-# │   ├── cognitive/   → AI Router (Gemini + Claude dual-brain)
-# │   ├── web/         → Next.js 16 dashboard (pnpm)
-# │   └── worker/      → Celery background tasks
-# ├── shared/          → Barcha servislar uchun umumiy kutubxona
-# │   ├── database/    → asyncpg pool + RLS + schema.sql
-# │   ├── cache/       → Redis cache
-# │   ├── services/    → Business logic (ledger, pipeline, guards,
-# │   │                   hisobot_engine, smart_bot_engine, advanced_features,
-# │   │                   mutaxassis, suhbatdosh, hujjat_oqish, vision)
-# │   ├── utils/       → hisob.py (Decimal), uzb_nlp.py, fmt.py
-# │   └── rag/         → Qdrant vector DB (ixtiyoriy)
-# └── tests/           → pytest (287+ test)
-
-## Import qoidalari:
-# - shared/ HAMMA servislardan import qilinadi
-# - services/ bir-birini IMPORT QILMAYDI (faqat HTTP/gRPC orqali)
-# - Bot → shared.database.pool, shared.utils.*, shared.services.*
-# - API → shared.database.pool, shared.cache.*, shared.services.*
-
-# ═══════════════════════════════════════════════════════════════
-#  2. PYTHON QOIDALARI — QONUN KUCHIDA
-# ═══════════════════════════════════════════════════════════════
-
-## Decimal — HECH QACHON float ishlatma:
-# PUL HISOBLASH FAQAT Decimal bilan. float TAQIQLANGAN.
-# from shared.utils.hisob import D, Y, narx_hisob, sotuv_hisob
-# D("45000") ✅ | float(45000) ❌ | 45000.0 ❌
-
-## asyncpg — FAQAT parametrized query:
-# await c.execute("SELECT * FROM t WHERE id=$1", uid)  ✅
-# await c.execute(f"SELECT * FROM t WHERE id={uid}")    ❌ SQL INJECTION!
-# user_yangilab — faqat _USER_YOZISH_MUMKIN fieldlar
-
-## RLS — har doim rls_conn(uid) ishlatiladi:
-# async with rls_conn(uid) as c:  ✅  (SET app.current_uid avtomatik)
-# async with pool.acquire() as c: ❌  (RLS bypass — faqat system ops)
-
-## Error handling:
-# except Exception as e: log.error("...: %s", e)  ✅
-# except:  ❌  (TAQIQLANGAN — bare except)
-# except Exception: pass  ⚠️ (faqat fallback da, log bilan)
-
-## async def — barcha DB/network operatsiyalar async:
-# async def sotuv_saqlash(uid, data):  ✅
-# def sotuv_saqlash(uid, data):        ❌ (bloklaydi!)
+# │   ├── api/            → FastAPI REST (1388 qator) — JWT, RLS, Redis, CORS
+# │   │   ├── main.py, deps.py
+# │   │   └── routes/     → kassa.py, printer.py, websocket.py
+# │   ├── bot/            → Telegram bot (python-telegram-bot 21.3)
+# │   │   ├── main.py     → 4846 qator — ASOSIY fayl, barcha handlerlar
+# │   │   ├── db.py       → 1383 qator — DB operatsiyalar
+# │   │   ├── config.py   → Config dataclass
+# │   │   ├── message_handler.py → Claude suhbat
+# │   │   └── bot_services/ → voice, analyst, fuzzy_matcher, nakladnoy,
+# │   │                       export_pdf, export_excel, rasm_handler, tts,
+# │   │                       audio_engine, voice_pipeline, offline_queue
+# │   ├── cognitive/      → AI Router (Gemini + Claude dual-brain)
+# │   │   ├── ai_router.py (567), engine.py (766), api.py (102)
+# │   ├── web/            → Next.js 16 dashboard (41 fayl, 6506 qator)
+# │   │   └── shadcn/ui, O'zbek/Rus i18n, 14 sahifa
+# │   └── worker/         → Celery (tasks.py 862 qator)
+# ├── shared/             → Barcha servislar uchun umumiy (27 service)
+# │   ├── database/       → pool.py (RLS), schema.sql (667 qator, 19 jadval)
+# │   ├── cache/          → redis_cache.py
+# │   ├── services/       → ledger, pipeline, guards, ochiq_savat,
+# │   │                     hisobot_engine, smart_bot_engine, smart_narx,
+# │   │                     advanced_features, mutaxassis, suhbatdosh,
+# │   │                     vision, hujjat_oqish, excel_reader, invoice,
+# │   │                     thermal_receipt, print_session, print_intent,
+# │   │                     bot_print_handler, escpos_xprinter, seed_catalog,
+# │   │                     shogird_xarajat, voice_commands, voice_correction
+# │   ├── utils/          → hisob.py (Decimal), uzb_nlp.py (8 sheva), fmt.py
+# │   ├── rag/            → vector_db.py (Qdrant, ixtiyoriy)
+# │   ├── receipt/        → normalize.py, output.py
+# │   └── migrations/versions/ → 001-006 SQL migratsiyalar
+# ├── android/            → Kotlin Bluetooth ESC/POS printer (985 qator)
+# └── tests/              → 14 fayl, 4717 qator, 287+ test
+#
+# QOIDA: shared/ → HAMMA servislardan import qilinadi
+# QOIDA: services/ → bir-birini IMPORT QILMAYDI (faqat HTTP orqali)
 
 # ═══════════════════════════════════════════════════════════════
-#  3. OVOZ PIPELINE — TEZLIK VA ANIQLIK
+#  2. PYTHON — BUZILMAS QOIDALAR
 # ═══════════════════════════════════════════════════════════════
-
-## 2-qatlamli AI stack:
-# 1. Gemini 2.5 Pro → STT, Vision, TTS, hujjat, excel
-# 2. Claude Sonnet 4.6 → analyst (matn → JSON, hisob-kitob, suhbat)
-# (Claude Haiku o'chirildi — FuzzyMatcher yetarli)
-
-## STT prompt — MUHIM:
-# - voice.py: _build_stt_extra_for_user() → DB dan 500 tovar, 200 klient
-# - Har bir user o'z tovarlarini ko'radi (RLS)
-# - Cache TTL = 60s (yangi tovar 1 daqiqada Gemini ga ko'rinadi)
-# - Sheva qoidalari, qarz so'zlari, pul formatlari prompt da bor
-
-## Performance:
-# - Qisqa audio (<30s): to'g'ridan-to'g'ri Gemini
-# - Uzun audio (>30s): FFmpeg → Silero VAD → Chunking → asyncio.gather (PARALLEL)
-# - Retry: 2 urinish, 1-8s kutish (sekin emas!)
-# - N+1 query → batch SELECT (sotuv_saqlash, savat_yop)
-
-## Auto-learning:
-# - Yangi tovar sotilsa → avtomatik tovarlar jadvaliga qo'shiladi
-# - STT + Fuzzy cache darhol tozalanadi
-# - Keyingi ovozda Gemini yangi tovarni biladi
-
-# ═══════════════════════════════════════════════════════════════
-#  4. DATABASE — BUZILMAS QOIDALAR
-# ═══════════════════════════════════════════════════════════════
-
-## PostgreSQL schema: shared/database/schema.sql
-## Migratsiyalar: shared/migrations/versions/
-
-## RLS (Row Level Security):
-# HAMMA jadvallar user_id bilan himoyalangan
-# SET LOCAL app.current_uid = '123';  → rls_conn() avtomatik qiladi
-# HECH QACHON qo'lda SET qilma
-
-## Tranzaksiya:
-# async with c.transaction():  → ACID kafolat
-# Sotuv = sessiya + chiqimlar + qoldiq + qarz → HAMMASI 1 tranzaksiyada
-
-## Index bo'lishi SHART:
-# tovarlar(user_id, lower(nomi)) — UNIQUE
-# klientlar(user_id, lower(ism)) — UNIQUE
-# qarzlar(user_id, yopildi) WHERE NOT yopildi
-# sotuv_sessiyalar(user_id, sana)
-
-## Segment CHECK (16 ta segment — schema.sql va db.py bir xil bo'lishi SHART):
-# CHECK(segment IN('optom','chakana','oshxona','xozmak','kiyim','gosht',
-#                  'meva','qurilish','avto','dorixona','texnika','mebel',
-#                  'mato','gul','kosmetika','universal'))
+#
+# ✅ Decimal — PUL hisoblashda FAQAT Decimal. float TAQIQLANGAN.
+#    from shared.utils.hisob import D, Y, narx_hisob
+#    D("45000") ✅ | float(45000) ❌
+#
+# ✅ asyncpg — FAQAT parametrized query:
+#    await c.execute("SELECT * FROM t WHERE id=$1", uid)  ✅
+#    await c.execute(f"SELECT * FROM t WHERE id={uid}")    ❌ SQL INJECTION!
+#
+# ✅ RLS — rls_conn(uid) DOIM ishlatiladi:
+#    async with rls_conn(uid) as c:  ✅ (SET app.uid avtomatik)
+#    async with pool.acquire() as c: ❌ (RLS bypass — faqat system ops)
+#
+# ✅ Tranzaksiya — bog'liq operatsiyalar 1 ta transaction:
+#    async with c.transaction():
+#        await c.execute(INSERT sessiya)
+#        await c.execute(UPDATE qoldiq)    ← HAMMASI ICHIDA!
+#        await c.execute(INSERT qarz)      ← HAMMASI ICHIDA!
+#
+# ✅ Error handling:
+#    except Exception as e: log.error("...: %s", e)  ✅
+#    except:  ❌ (bare except TAQIQLANGAN)
+#
+# ❌ TAQIQLANGAN:
+#    - Bir xil nomli funksiyani 2 marta aniqlash (Python oxirgisini oladi!)
+#    - add_handler ni 2 marta ro'yxatga olish
+#    - print() production kodda
+#    - time.sleep() async kodda (asyncio.sleep!)
+#    - requests (httpx ishlatilsin)
+#    - app.user_id (FAQAT app.uid — pastda §4 ko'ring)
 
 # ═══════════════════════════════════════════════════════════════
-#  5. TELEGRAM BOT — UX QOIDALARI
+#  3. AI STACK — 2 QATLAMLI
 # ═══════════════════════════════════════════════════════════════
-
-## Ovoz qabul qilish:
-# 1. ⏳ darhol ko'rsatiladi (foydalanuvchi kutayotganini biladi)
-# 2. Uzun audio → progress callback (30%, 65%, 90%, 95%)
-# 3. Low confidence → Claude ga yuboradi (rad QILMAYDI!)
-# 4. Faqat "none" confidence → "qayta yuboring" deydi
-
-## Savat tizimi (OPTOM uchun):
-# - Har ovoz → savatga qo'shiladi (klient bo'yicha)
-# - "Salimov bo'ldi" yoki "Salimov nakladnoy" → savat yopiladi → PDF
-# - 100+ klient PARALLEL ishlaydi
-
-## MarkdownV2 — esc() funksiyasi DOIM ishlatiladi:
-# await msg.reply_text(f"Jami: {esc(pul(jami))}", parse_mode="MarkdownV2")
-# Yoki _safe_reply() ishlatilsin — fallback bor
-
-## Telegram limits:
-# - Xabar: 4096 belgi max → _truncate() ishlatiladi
-# - File: 50MB (Bot API), 2GB (Local Bot API)
+#
+# 1-qatlam: Gemini 2.5 Pro → STT, Vision, TTS, Excel tahlil
+# 2-qatlam: Claude Sonnet 4.6 → analyst (matn→JSON), suhbat, hisob-kitob
+#
+# STT: voice.py → DB dan 500 tovar + 200 klient → prompt
+#      Qisqa (<30s) → to'g'ridan-to'g'ri Gemini
+#      Uzun (>30s)  → FFmpeg → Silero VAD → Chunking → asyncio.gather
+#
+# Auto-learning: yangi tovar sotilsa → DB ga qo'shiladi → STT cache tozalanadi
 
 # ═══════════════════════════════════════════════════════════════
-#  6. API — XAVFSIZLIK
+#  4. DATABASE — XAVFSIZLIK
 # ═══════════════════════════════════════════════════════════════
-
-## JWT: deps.py → get_uid() — barcha endpointlar shu dependency dan
-## CORS: allow_origin_regex — wildcard "*" TAQIQLANGAN
-## Rate limit: Redis (deps.py) + in-memory GC (middleware)
-## Export: user_id tekshiruvi — boshqa user faylini yuklab olish MUMKIN EMAS
-
-## Pydantic v2:
-# .model_dump() ishlatiladi (eski .dict() TAQIQLANGAN)
+#
+# ⚠️ RLS SETTING NOMI = app.uid (app.user_id EMAS!)
+#    pool.py:    SET app.uid = '123'
+#    schema.sql: current_setting('app.uid', true)::BIGINT
+#    IKKALASI BIR XIL — aks holda RLS ISHLAMAYDI!
+#
+# Schema: shared/database/schema.sql (667 qator)
+# Migratsiya: shared/migrations/versions/ (001-006)
+# Segment: 16 ta (optom,chakana,oshxona,xozmak,kiyim,gosht,meva,
+#                  qurilish,avto,dorixona,texnika,mebel,mato,gul,
+#                  kosmetika,universal)
+#
+# QOIDA: schema.sql o'zgartirsang → migration ham yoz!
+# QOIDA: Migration = DO $$ BEGIN ... EXCEPTION WHEN ... END $$; (xavfsiz)
 
 # ═══════════════════════════════════════════════════════════════
-#  7. DEPLOY — RAILWAY + GITHUB
+#  5. TELEGRAM BOT — UX
 # ═══════════════════════════════════════════════════════════════
+#
+# Ovoz: ⏳ darhol → STT → confidence → Claude → draft → tasdiq → saqlash
+# Savat: har ovoz → savatga (klient bo'yicha) → "bo'ldi" → nakladnoy
+# MarkdownV2: esc() yoki _safe_reply() DOIM ishlatilsin
+# Limit: 4096 belgi → _truncate()
+#
+# ⚠️ CHEK CHIQAR TIZIMI (v25.3):
+#    Har operatsiya (kirim/sotuv/qaytarish/qarz/nakladnoy) oxirida:
+#    ctx.user_data["_oxirgi_chek_data"] = {
+#        "amal": "...", "tovarlar": [...], "klient": "...", "jami_summa": N
+#    }
+#    "chek chiqar" desa → print_intent.py ushlaydi → bot_print_handler.py
+#    → _oxirgi_chek_data dan ESC/POS printer chek chiqaradi
+#    → agar data yo'q → DB dan oxirgi sotuv (fallback)
+#
+#    QOIDA: yangi operatsiya qo'shsang → oxirida _oxirgi_chek_data SAQLASHNI UNUTMA!
 
-## GitHub → Railway auto-deploy:
-# main branch push → Railway 4 servis avtomatik rebuild
+# ═══════════════════════════════════════════════════════════════
+#  6. DEPLOY — GITHUB → RAILWAY
+# ═══════════════════════════════════════════════════════════════
+#
+# GitHub: https://github.com/Mashrab1993/savdoai (main branch)
+# Railway: auto-deploy (push → rebuild → 4 servis)
+#
+# ENV (ZARUR): BOT_TOKEN, DATABASE_URL, REDIS_URL,
+#              ANTHROPIC_API_KEY, GEMINI_API_KEY,
+#              JWT_SECRET, PRINT_SECRET, ADMIN_IDS
+#
 # HECH QACHON force push qilma!
 
-## Deploy checklist:
-# 1. pytest tests/ -q  → 287+ PASSED
-# 2. .env.example to'liq
-# 3. railway.toml servislar to'g'ri
-# 4. Dockerfile lar ishga tushadi
-# 5. schema.sql + migratsiyalar yangilangan
-
-## Docker images:
-# Bot: python:3.12-slim + ffmpeg + torch(CPU) + onnxruntime
-# API: python:3.12-slim
-# Web: node:20-alpine + pnpm
-# Worker: python:3.12-slim + postgresql-client
-
-## Muhit o'zgaruvchilari (ZARUR):
-# BOT_TOKEN, DATABASE_URL, REDIS_URL
-# ANTHROPIC_API_KEY, GEMINI_API_KEY
-# JWT_SECRET, PRINT_SECRET, ADMIN_IDS
-# GEMINI_MODEL=gemini-2.5-pro
-# PRINT_SECRET — API va Bot da BIR XIL qiymat bo'lishi SHART!
-
 # ═══════════════════════════════════════════════════════════════
-#  8. TEST — 287+ TEST DOIM O'TISHI SHART
+#  7. TEST — 287+ TEST DOIM O'TISHI SHART
 # ═══════════════════════════════════════════════════════════════
-
-## Test ishlatish:
-# python -m pytest tests/ -q          → tez
-# python -m pytest tests/ -v --tb=short → batafsil
-# python -m shared.utils.hisob        → 36 hisob test
-# python -m shared.utils.uzb_nlp      → 94 NLP test
-
-## Yangi kod yozganda:
-# 1. Avval mavjud test ishlatib ko'r
-# 2. Yangi funksiyaga test yoz
-# 3. smoke test qo'sh (tests/test_smoke.py)
-# 4. HAMMA test o'tguncha PUSH QILMA
-
-# ═══════════════════════════════════════════════════════════════
-#  9. KODLASH USLUBI
-# ═══════════════════════════════════════════════════════════════
-
-## Til: Kodda o'zbek nomlari (sotuv_saqlash, qarz_hisob, tovarlar)
-## Izohlar: O'zbek + ingliz aralash
-## Loglar: Emoji + kontekst: log.info("📤 Sotuv: sess=%d jami=%s", id, jami)
-## Versiya: __version__ = "25.3" — HAMMA servisda bir xil
-
-## TAQIQLANGAN:
-# - print() production kodda (faqat _test() da)
-# - time.sleep() async kodda (asyncio.sleep ishlatilsin)
-# - requests kutubxonasi (httpx ishlatilsin)
-# - float pul hisoblashda (Decimal!)
-# - SELECT * production query da (ustunlarni aniq yoz)
-# - Bare except: (except Exception as e: ishlatilsin)
-
-## MAJBURIY:
-# - Type hints: async def sotuv(uid: int, data: dict) -> dict:
-# - Docstring: """Sotuv saqlash. ACID tranzaksiya."""
-# - try/except: barcha tashqi chaqiruvlar (DB, API, AI)
-# - finally: temp file o'chirish, connection yopish
-# - log.info/warning/error: har bir muhim qadam
-
-# ═══════════════════════════════════════════════════════════════
-#  10. REGEX — EHTIYOT BO'L
-# ═══════════════════════════════════════════════════════════════
-
-## PUL_NORM backreference:
-# r"\g<1>000"  ✅ (named backreference)
-# r"\1000"     ❌ (Python \100 = '@' octal deb o'qiydi!)
-
-## Sheva pattern:
-# r"\b" + word + r"\b"  → so'z chegarasi
-# re.IGNORECASE | re.UNICODE  → doim
-
-# ═══════════════════════════════════════════════════════════════
-#  11. GIT WORKFLOW
-# ═══════════════════════════════════════════════════════════════
-
-## Branch: main (production) — DOIM ISHLAYDIGAN HOLDA
-## Commit: O'zbek + Emoji
-#   ✅ "✅ STT prompt 500 tovar, VAD routing, parallel chunks"
-#   ❌ "fix stuff" | "update" | "asdf"
-## Push: FAQAT test o'tgandan keyin
-## Pull: har doim pull --rebase (merge commit yo'q)
-
-# ═══════════════════════════════════════════════════════════════
-#  12. FAYL O'ZGARTIRGANDA QOIDALAR
-# ═══════════════════════════════════════════════════════════════
-
-## shared/utils/hisob.py → python -m shared.utils.hisob (36 test)
-## shared/utils/uzb_nlp.py → python -m shared.utils.uzb_nlp (94 test)
-## services/bot/main.py → pytest tests/test_smoke.py -v
-## services/bot/db.py → pytest tests/test_smoke.py tests/test_runtime.py -v
-## services/api/main.py → pytest tests/test_smoke.py -v
-## shared/database/schema.sql → migratsiya yoz!
-## Dockerfile → Railway da test deploy qil
-## requirements.txt → pip install va test
-
-# ═══════════════════════════════════════════════════════════════
-#  YAKUNIY SO'Z
-# ═══════════════════════════════════════════════════════════════
-
-# Bu tizim O'ZBEKISTON SAVDOGARLARI uchun yaratilgan.
-# Har bir qator kod — PULSIZ sotuvchining vaqtini tejashi kerak.
-# Tezlik, aniqlik, xavfsizlik — BU UCHTA NARSA HECH QACHON BUZILMASIN.
 #
-# 720+ test. 70+ fayl. 0 xato. SOATDAY ISHLAYDI. 🕐
+# pytest tests/ -q                  → 287+ test
+# python -m shared.utils.hisob     → 36 test
+# python -m shared.utils.uzb_nlp   → 94 test
+# QOIDA: test o'tguncha PUSH QILMA
+
+# ═══════════════════════════════════════════════════════════════
+#  8. KODLASH USLUBI
+# ═══════════════════════════════════════════════════════════════
+#
+# Til: o'zbek nomlari (sotuv_saqlash, qarz_hisob)
+# Log: emoji + kontekst: log.info("📤 Sotuv: sess=%d jami=%s", id, j)
+# Versiya: __version__ = "25.3"
+# Type hints: async def sotuv(uid: int, data: dict) -> dict:
+# Docstring: """Sotuv saqlash. ACID tranzaksiya."""
+
+# ═══════════════════════════════════════════════════════════════
+#  9. FAYL O'ZGARTIRGANDA
+# ═══════════════════════════════════════════════════════════════
+#
+# hisob.py     → python -m shared.utils.hisob
+# uzb_nlp.py   → python -m shared.utils.uzb_nlp
+# main.py      → pytest tests/test_smoke.py -v
+# db.py        → pytest tests/test_smoke.py tests/test_runtime.py -v
+# schema.sql   → migration yoz!
+
+# ═══════════════════════════════════════════════════════════════
+#  10. v25.3 TUZATILGAN XATOLAR — QAYTA TAKRORLANMASIN!
+# ═══════════════════════════════════════════════════════════════
+#
+# 1. Variable ishlatishdan oldin aniqlangan ekanligini DOIM tekshir
+# 2. Funksiya nomi 1 MARTA: grep "^async def" main.py | sort | uniq -d → BO'SH
+# 3. RLS: FAQAT app.uid — app.user_id TAQIQLANGAN
+# 4. Tranzaksiya: INSERT+UPDATE+INSERT → HAMMASI 1 transaction ichida
+# 5. Yangi operatsiya → _oxirgi_chek_data saqlash UNUTMA
+# 6. Handler: add_handler 1 MARTA — tekshir
+#
+# 157 fayl | 40,364 qator | 287+ test | TITAN TEST 98/99 ✅ | 🕐

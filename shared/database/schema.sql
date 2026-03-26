@@ -528,15 +528,15 @@ ALTER TABLE guruh_narxlar ENABLE ROW LEVEL SECURITY;
 ALTER TABLE klient_narxlar ENABLE ROW LEVEL SECURITY;
 
 DO $$ BEGIN
-  CREATE POLICY rls_narx_guruhlari ON narx_guruhlari USING (user_id = current_setting('app.user_id')::BIGINT);
+  CREATE POLICY rls_narx_guruhlari ON narx_guruhlari USING (user_id = current_setting('app.uid', true)::BIGINT);
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 DO $$ BEGIN
-  CREATE POLICY rls_guruh_narxlar ON guruh_narxlar USING (user_id = current_setting('app.user_id')::BIGINT);
+  CREATE POLICY rls_guruh_narxlar ON guruh_narxlar USING (user_id = current_setting('app.uid', true)::BIGINT);
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 DO $$ BEGIN
-  CREATE POLICY rls_klient_narxlar ON klient_narxlar USING (user_id = current_setting('app.user_id')::BIGINT);
+  CREATE POLICY rls_klient_narxlar ON klient_narxlar USING (user_id = current_setting('app.uid', true)::BIGINT);
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- 6. Indexlar
@@ -602,15 +602,15 @@ ALTER TABLE xarajat_kategoriyalar ENABLE ROW LEVEL SECURITY;
 ALTER TABLE xarajatlar ENABLE ROW LEVEL SECURITY;
 
 DO $$ BEGIN
-  CREATE POLICY rls_shogirdlar ON shogirdlar USING (admin_uid = current_setting('app.user_id')::BIGINT);
+  CREATE POLICY rls_shogirdlar ON shogirdlar USING (admin_uid = current_setting('app.uid', true)::BIGINT);
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 DO $$ BEGIN
-  CREATE POLICY rls_xarajat_kat ON xarajat_kategoriyalar USING (admin_uid = current_setting('app.user_id')::BIGINT);
+  CREATE POLICY rls_xarajat_kat ON xarajat_kategoriyalar USING (admin_uid = current_setting('app.uid', true)::BIGINT);
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 DO $$ BEGIN
-  CREATE POLICY rls_xarajatlar ON xarajatlar USING (admin_uid = current_setting('app.user_id')::BIGINT);
+  CREATE POLICY rls_xarajatlar ON xarajatlar USING (admin_uid = current_setting('app.uid', true)::BIGINT);
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- 6. Indexlar

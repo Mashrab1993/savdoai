@@ -106,7 +106,13 @@ async def send_print_session(
 
 
 async def handle_print_intent_message(update, ctx, kind: str, db_module) -> bool:
-    """kind: 'print' | 'reprint' — oxirgi sotuvdan chek."""
+    """
+    kind: 'print' | 'reprint' — oxirgi operatsiyadan chek.
+
+    Manba prioriteti:
+    1. ctx.user_data["_oxirgi_chek_data"] — oxirgi kirim/sotuv/qaytarish/nakladnoy
+    2. DB dan oxirgi sotuv sessiyasi (fallback)
+    """
     uid = update.effective_user.id
     try:
         user = await db_module.user_ol(uid)
@@ -117,6 +123,38 @@ async def handle_print_intent_message(update, ctx, kind: str, db_module) -> bool
         dokon = user.get("dokon_nomi") or "Mashrab Moliya"
         tel = user.get("telefon") or ""
 
+        # ═══ 1. KONTEKST: oxirgi operatsiya (kirim/sotuv/qaytarish/nakladnoy) ═══
+        saved = ctx.user_data.get("_oxirgi_chek_data")
+        if saved:
+            d = dict(saved)
+            d["user_id"] = uid
+            amal = d.get("amal", "chiqim")
+            kl = d.get("klient") or d.get("klient_ismi") or "Mijoz"
+            jami = float(d.get("jami_summa") or d.get("jami") or 0)
+            sess_id = int(d.get("sessiya_id") or d.get("id") or 0)
+
+            AMAL_NOMI = {
+                "kirim": "📥 Kirim", "chiqim": "📤 Sotuv",
+                "qaytarish": "↩️ Qaytarish", "qarz_tolash": "💰 Qarz to'lash",
+                "nakladnoy": "📋 Nakladnoy",
+            }
+            amal_str = AMAL_NOMI.get(amal, "📋 Operatsiya")
+            note = f"🖨 *{amal_str}:* {kl} — *{jami:,.0f}* so'm"
+            if kind == "reprint":
+                note = "🔄 *Qayta chop* — " + note
+
+            await update.message.reply_text(
+                note + "\n⏳ Chek tayyorlanmoqda...",
+                parse_mode="Markdown",
+            )
+            js = await send_print_session(
+                update.message, d, dokon, tel, uid, sess_id,
+            )
+            if js:
+                ctx.user_data["last_print_job"] = js.get("job_id")
+            return True
+
+        # ═══ 2. FALLBACK: DB dan oxirgi sotuv ═══
         async with db_module._P().acquire() as c:
             ox = await c.fetchrow(
                 "SELECT id, klient_ismi, jami, sana FROM sotuv_sessiyalar "
@@ -124,7 +162,10 @@ async def handle_print_intent_message(update, ctx, kind: str, db_module) -> bool
                 uid,
             )
         if not ox:
-            await update.message.reply_text("❌ Hali sotuv yo'q. Avval sotuv qiling.")
+            await update.message.reply_text(
+                "❌ Chek chiqarish uchun ma'lumot yo'q.\n"
+                "Avval sotuv yoki kirim qiling."
+            )
             return True
 
         sess = await db_module.sessiya_ol(uid, ox["id"])

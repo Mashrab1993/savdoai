@@ -745,7 +745,7 @@ async def matn_qabul(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
             async with db._P().acquire() as _sc:
                 _savat = await savat_ol(_sc, uid, _savat_klient)
             if _savat:
-                await _savat_yop_va_nakladnoy(update, uid, _savat_klient)
+                await _savat_yop_va_nakladnoy(update, uid, _savat_klient, ctx)
                 return
         except Exception as _se:
             log.debug("Savat boldi: %s", _se)
@@ -1740,6 +1740,14 @@ async def _nakladnoy_yuborish(update:Update, ctx:ContextTypes.DEFAULT_TYPE,
         await update.effective_message.reply_text(
             "🖨️ *Mini printer uchun:*\n\n"+chek_md(chek),
             parse_mode=ParseMode.MARKDOWN)
+
+        # ═══ CHEK CHIQAR UCHUN SAQLASH ═══
+        ctx.user_data["_oxirgi_chek_data"] = {
+            "amal": "chiqim", "tovarlar": tovarlar,
+            "klient": klient, "klient_ismi": klient,
+            "jami_summa": float(jami), "tolangan": float(tolangan),
+            "qarz": float(qarz),
+        }
     except Exception as xato:
         log.error("_nakladnoy_yuborish: %s",xato,exc_info=True)
         try: await tahrirlash.edit_text("❌ Nakladnoy yaratishda xato yuz berdi")
@@ -1853,7 +1861,7 @@ async def tasdiq_cb(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
     if q.data.startswith("t:savat_yop:"):
         klient = q.data.replace("t:savat_yop:", "")
         await xat(q, f"📋 {klient} — bir daqiqa...")
-        await _savat_yop_va_nakladnoy(update, uid, klient)
+        await _savat_yop_va_nakladnoy(update, uid, klient, ctx)
         return
 
     if q.data.startswith("t:savat_bekor:"):
@@ -2001,6 +2009,13 @@ async def tasdiq_cb(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
                                                      caption="🔊 Kirim tasdiqlandi")
             except Exception as _tts_e:
                 log.debug("TTS kirim: %s", _tts_e)
+
+            # ═══ CHEK CHIQAR UCHUN SAQLASH ═══
+            ctx.user_data["_oxirgi_chek_data"] = {
+                "amal": "kirim", "tovarlar": tovarlar,
+                "jami_summa": natija.get("jami_summa", 0),
+                "klient": natija.get("manba", ""), "manba": natija.get("manba", ""),
+            }
 
         elif amal=="chiqim":
             # ── 1. Validatsiya ───────────────────────────────
@@ -2157,6 +2172,16 @@ async def tasdiq_cb(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
             if klient:
                 ctx.user_data["_oxirgi_klient"] = klient
 
+            # ═══ CHEK CHIQAR UCHUN SAQLASH ═══
+            ctx.user_data["_oxirgi_chek_data"] = {
+                "amal": "chiqim", "tovarlar": tovarlar,
+                "klient": klient, "klient_ismi": klient,
+                "jami_summa": natija.get("jami_summa", 0),
+                "tolangan": natija.get("tolangan", 0),
+                "qarz": float(qarz_total),
+                "sessiya_id": sess_id,
+            }
+
             # ═══ OVOZLI SOTUV XABAR ═══
             try:
                 from services.bot.bot_services.tts import tts_tayyor, matn_ovozga, sotuv_xulosa
@@ -2206,6 +2231,15 @@ async def tasdiq_cb(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
             except Exception as _prt2:
                 log.warning("Print tugma (majbur): %s", _prt2)
 
+            # ═══ CHEK CHIQAR UCHUN SAQLASH ═══
+            ctx.user_data["_oxirgi_chek_data"] = {
+                "amal": "chiqim", "tovarlar": natija_m.get("tovarlar", []),
+                "klient": natija_m.get("klient", ""),
+                "klient_ismi": natija_m.get("klient", ""),
+                "jami_summa": natija_m.get("jami_summa", 0),
+                "sessiya_id": sotuv_m.get("sessiya_id", 0),
+            }
+
         elif q.data == "t:zarar_tasdiq":
             natija_z = ctx.user_data.pop("kutilayotgan", None)
             if not natija_z:
@@ -2240,6 +2274,15 @@ async def tasdiq_cb(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
             except Exception as _prt3:
                 log.warning("Print tugma (zarar): %s", _prt3)
 
+            # ═══ CHEK CHIQAR UCHUN SAQLASH ═══
+            ctx.user_data["_oxirgi_chek_data"] = {
+                "amal": "chiqim", "tovarlar": natija_z.get("tovarlar", []),
+                "klient": natija_z.get("klient", ""),
+                "klient_ismi": natija_z.get("klient", ""),
+                "jami_summa": natija_z.get("jami_summa", 0),
+                "sessiya_id": sotuv_z.get("sessiya_id", 0),
+            }
+
         elif amal=="qaytarish":
             if not tovarlar or not klient:
                 await xat(q,"❌ Klient yoki tovar aniqlanmadi."); return
@@ -2261,6 +2304,13 @@ async def tasdiq_cb(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
                     f"💰 Jami: *{pul(jami_q)}*\n\n"+chek_md(chek))
             if topilmadilar: xabar_+=f"\n\n⚠️ Topilmadi: {', '.join(topilmadilar)}"
             await xat(q,xabar_,parse_mode=ParseMode.MARKDOWN)
+
+            # ═══ CHEK CHIQAR UCHUN SAQLASH ═══
+            ctx.user_data["_oxirgi_chek_data"] = {
+                "amal": "qaytarish", "tovarlar": tovarlar,
+                "klient": klient, "klient_ismi": klient,
+                "jami_summa": jami_q,
+            }
 
         elif amal=="qarz_tolash":
             if not klient: await xat(q,"❌ Klient ismi aniqlanmadi."); return
@@ -2288,6 +2338,15 @@ async def tasdiq_cb(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
                                                      caption="🔊 To'lov qabul qilindi")
             except Exception as _tts_e:
                 log.debug("TTS qarz: %s", _tts_e)
+
+            # ═══ CHEK CHIQAR UCHUN SAQLASH ═══
+            ctx.user_data["_oxirgi_chek_data"] = {
+                "amal": "qarz_tolash",
+                "klient": n.get("klient", klient), "klient_ismi": n.get("klient", klient),
+                "jami_summa": float(n.get("tolandi", summa)),
+                "tolangan": float(n.get("tolandi", summa)),
+                "qarz": 0, "qolgan_qarz": float(n.get("qolgan_qarz", 0)),
+            }
         else:
             await xat(q,"❌ Noma'lum amal.")
     except Exception as xato:
@@ -2973,185 +3032,7 @@ async def cmd_klient_guruh(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("❌ Xato yuz berdi.")
 
 
-# ════════════ NARX GURUH BOSHQARUVI ════════════
 
-async def cmd_narx_guruh(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
-    """Narx guruhi yaratish: /narx_guruh Ulgurji"""
-    if not await faol_tekshir(update): return
-    uid = update.effective_user.id
-    if not cfg().is_admin(uid):
-        await update.message.reply_text("🔒 Faqat admin uchun."); return
-    
-    matn = (update.message.text or "").strip()
-    qismlar = matn.split(maxsplit=1)
-    if len(qismlar) < 2:
-        await update.message.reply_text(
-            "🏷 *Narx guruhi yaratish*\n\n"
-            "Format: `/narx_guruh <nomi>`\n\n"
-            "Masalan:\n"
-            "`/narx_guruh Ulgurji`\n"
-            "`/narx_guruh Chakana`\n"
-            "`/narx_guruh VIP`",
-            parse_mode=ParseMode.MARKDOWN)
-        return
-    
-    nomi = qismlar[1].strip()
-    try:
-        from shared.services.smart_narx import guruh_yaratish
-        async with db._P().acquire() as c:
-            gid = await guruh_yaratish(c, uid, nomi)
-        await update.message.reply_text(
-            f"✅ *Narx guruhi yaratildi!*\n\n"
-            f"🏷 Nomi: *{nomi}*\n"
-            f"🆔 ID: {gid}\n\n"
-            f"Endi narx qo'ying:\n"
-            f"`/narx_qoy {nomi} Ariel 43000`",
-            parse_mode=ParseMode.MARKDOWN)
-    except Exception as e:
-        log.error("narx_guruh: %s", e, exc_info=True)
-        await update.message.reply_text("❌ Guruh yaratishda xato yuz berdi.")
-
-
-async def cmd_narx_qoy(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
-    """Guruh narxi: /narx_qoy Ulgurji Ariel 43000"""
-    if not await faol_tekshir(update): return
-    uid = update.effective_user.id
-    if not cfg().is_admin(uid):
-        await update.message.reply_text("🔒 Faqat admin uchun."); return
-    
-    matn = (update.message.text or "").strip()
-    qismlar = matn.split()
-    if len(qismlar) < 4:
-        await update.message.reply_text(
-            "💰 *Narx qo'yish*\n\n"
-            "Format: `/narx_qoy <guruh> <tovar> <narx>`\n\n"
-            "Masalan:\n"
-            "`/narx_qoy Ulgurji Ariel 43000`\n"
-            "`/narx_qoy Chakana Tide 47000`\n\n"
-            "Klient shaxsiy narx:\n"
-            "`/klient_narx Salimov Ariel 42000`",
-            parse_mode=ParseMode.MARKDOWN)
-        return
-    
-    guruh_nomi = qismlar[1]
-    tovar_nomi = qismlar[2]
-    try:
-        narx = Decimal(qismlar[3].replace(",","").replace(".",""))
-    except Exception:
-        await update.message.reply_text("❌ Narx raqam bo'lishi kerak."); return
-    
-    try:
-        async with db._P().acquire() as c:
-            # Guruh topish
-            guruh = await c.fetchrow("SELECT id FROM narx_guruhlari WHERE LOWER(nomi) LIKE LOWER($1) LIMIT 1", f"%{guruh_nomi}%")
-            if not guruh:
-                await update.message.reply_text(f"❌ *{guruh_nomi}* guruhi topilmadi.\n`/narx_guruh {guruh_nomi}` bilan yarating.", parse_mode=ParseMode.MARKDOWN)
-                return
-            # Tovar topish
-            tovar = await c.fetchrow("SELECT id, nomi FROM tovarlar WHERE LOWER(nomi) LIKE LOWER($1) LIMIT 1", f"%{tovar_nomi}%")
-            if not tovar:
-                await update.message.reply_text(f"❌ *{tovar_nomi}* tovari topilmadi.", parse_mode=ParseMode.MARKDOWN)
-                return
-            from shared.services.smart_narx import guruh_narx_qoyish
-            await guruh_narx_qoyish(c, uid, guruh["id"], tovar["id"], narx)
-        await update.message.reply_text(
-            f"✅ *Narx qo'yildi!*\n\n"
-            f"🏷 Guruh: *{guruh_nomi}*\n"
-            f"📦 Tovar: *{tovar['nomi']}*\n"
-            f"💰 Narx: *{narx:,.0f}* so'm",
-            parse_mode=ParseMode.MARKDOWN)
-    except Exception as e:
-        log.error("narx_qoy: %s", e, exc_info=True)
-        await update.message.reply_text("❌ Narx qo'yishda xato yuz berdi.")
-
-
-async def cmd_klient_narx(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
-    """Klient shaxsiy narx: /klient_narx Salimov Ariel 42000"""
-    if not await faol_tekshir(update): return
-    uid = update.effective_user.id
-    if not cfg().is_admin(uid):
-        await update.message.reply_text("🔒 Faqat admin uchun."); return
-    
-    matn = (update.message.text or "").strip()
-    qismlar = matn.split()
-    if len(qismlar) < 4:
-        await update.message.reply_text(
-            "👤 *Klient shaxsiy narx*\n\n"
-            "Format: `/klient_narx <klient> <tovar> <narx>`\n\n"
-            "Masalan:\n"
-            "`/klient_narx Salimov Ariel 42000`\n"
-            "`/klient_narx Karimov Tide 38000`",
-            parse_mode=ParseMode.MARKDOWN)
-        return
-    
-    klient_ism = qismlar[1]
-    tovar_nomi = qismlar[2]
-    try:
-        narx = Decimal(qismlar[3].replace(",","").replace(".",""))
-    except Exception:
-        await update.message.reply_text("❌ Narx raqam bo'lishi kerak."); return
-    
-    try:
-        async with db._P().acquire() as c:
-            klient = await c.fetchrow("SELECT id, ism FROM klientlar WHERE LOWER(ism) LIKE LOWER($1) LIMIT 1", f"%{klient_ism}%")
-            if not klient:
-                await update.message.reply_text(f"❌ *{klient_ism}* klienti topilmadi.", parse_mode=ParseMode.MARKDOWN); return
-            tovar = await c.fetchrow("SELECT id, nomi FROM tovarlar WHERE LOWER(nomi) LIKE LOWER($1) LIMIT 1", f"%{tovar_nomi}%")
-            if not tovar:
-                await update.message.reply_text(f"❌ *{tovar_nomi}* tovari topilmadi.", parse_mode=ParseMode.MARKDOWN); return
-            from shared.services.smart_narx import shaxsiy_narx_qoyish
-            await shaxsiy_narx_qoyish(c, uid, klient["id"], tovar["id"], narx)
-        await update.message.reply_text(
-            f"✅ *Shaxsiy narx qo'yildi!*\n\n"
-            f"👤 Klient: *{klient['ism']}*\n"
-            f"📦 Tovar: *{tovar['nomi']}*\n"
-            f"💰 Narx: *{narx:,.0f}* so'm\n\n"
-            f"Endi \"{klient['ism']}ga {tovar['nomi']}\" desangiz narx avtomatik.",
-            parse_mode=ParseMode.MARKDOWN)
-    except Exception as e:
-        log.error("klient_narx: %s", e, exc_info=True)
-        await update.message.reply_text("❌ Narx qo'yishda xato yuz berdi.")
-
-
-async def cmd_klient_guruh(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
-    """Klientni guruhga biriktirish: /klient_guruh Salimov Ulgurji"""
-    if not await faol_tekshir(update): return
-    uid = update.effective_user.id
-    if not cfg().is_admin(uid):
-        await update.message.reply_text("🔒 Faqat admin uchun."); return
-    
-    matn = (update.message.text or "").strip()
-    qismlar = matn.split()
-    if len(qismlar) < 3:
-        await update.message.reply_text(
-            "🏷 *Klientni guruhga biriktirish*\n\n"
-            "Format: `/klient_guruh <klient> <guruh>`\n\n"
-            "Masalan:\n"
-            "`/klient_guruh Salimov Ulgurji`",
-            parse_mode=ParseMode.MARKDOWN)
-        return
-    
-    klient_ism = qismlar[1]
-    guruh_nomi = qismlar[2]
-    
-    try:
-        async with db._P().acquire() as c:
-            klient = await c.fetchrow("SELECT id, ism FROM klientlar WHERE LOWER(ism) LIKE LOWER($1) LIMIT 1", f"%{klient_ism}%")
-            if not klient:
-                await update.message.reply_text(f"❌ *{klient_ism}* topilmadi.", parse_mode=ParseMode.MARKDOWN); return
-            guruh = await c.fetchrow("SELECT id, nomi FROM narx_guruhlari WHERE LOWER(nomi) LIKE LOWER($1) LIMIT 1", f"%{guruh_nomi}%")
-            if not guruh:
-                await update.message.reply_text(f"❌ *{guruh_nomi}* guruhi topilmadi.", parse_mode=ParseMode.MARKDOWN); return
-            from shared.services.smart_narx import klient_guruhga_qoyish
-            await klient_guruhga_qoyish(c, klient["id"], guruh["id"])
-        await update.message.reply_text(
-            f"✅ *Biriktirildi!*\n\n"
-            f"👤 {klient['ism']} → 🏷 {guruh['nomi']}\n\n"
-            f"Endi {klient['ism']}ga sotuv qilsangiz {guruh['nomi']} narxlari ishlatiladi.",
-            parse_mode=ParseMode.MARKDOWN)
-    except Exception as e:
-        log.error("klient_guruh: %s", e, exc_info=True)
-        await update.message.reply_text("❌ Xato yuz berdi.")
 
 
 # ════════════ SHOGIRD XARAJAT NAZORATI ════════════
@@ -3944,7 +3825,7 @@ QOIDALAR:
                     else:
                         log.warning("Excel AI tahlil: javob qisqa (%d belgi)", len(_ai_tahlil) if _ai_tahlil else 0)
                 else:
-                    log.warning("Excel AI tahlil: gem_key=%s matn=%d belgi", bool(_gem_key), len(_matn_raw))
+                    log.warning("Excel AI tahlil: anth_key=%s matn=%d belgi", bool(_anth_key), len(_matn_raw))
             except Exception as _ai_e:
                 log.warning("Excel AI tahlil xato: %s", _ai_e)
             
@@ -4539,7 +4420,7 @@ async def _savat_qosh_va_javob(update: Update, uid: int, natija: dict, tahrirlas
     return False
 
 
-async def _savat_yop_va_nakladnoy(update_or_query, uid: int, klient_ismi: str):
+async def _savat_yop_va_nakladnoy(update_or_query, uid: int, klient_ismi: str, ctx=None):
     """Savatni yopish va nakladnoy generatsiya (Word + Excel + PDF)"""
     try:
         from shared.services.ochiq_savat import savat_yop
@@ -4639,6 +4520,15 @@ async def _savat_yop_va_nakladnoy(update_or_query, uid: int, klient_ismi: str):
                                                    caption="🔊 Nakladnoy tayyor")
                 except Exception as _tts_e:
                     log.debug("TTS nakladnoy: %s", _tts_e)
+
+                # ═══ CHEK CHIQAR UCHUN SAQLASH ═══
+                if ctx is not None:
+                    ctx.user_data["_oxirgi_chek_data"] = {
+                        "amal": "chiqim", "tovarlar": tovarlar,
+                        "klient": klient_ismi, "klient_ismi": klient_ismi,
+                        "jami_summa": float(jami), "tolangan": float(tolangan),
+                        "qarz": float(qarz),
+                    }
         except Exception as nakl_e:
             log.error("Savat nakladnoy: %s", nakl_e, exc_info=True)
             if msg:
@@ -4817,11 +4707,6 @@ def ilovani_qur(conf:Config) -> Application:
     app.add_handler(CommandHandler("savatlar",         cmd_savatlar))
     app.add_handler(CommandHandler("savat",            cmd_savat))
     app.add_handler(CallbackQueryHandler(shogird_xarajat_cb, pattern=r"^sx:"))
-    # Narx guruhlari
-    app.add_handler(CommandHandler("narx_guruh",       cmd_narx_guruh))
-    app.add_handler(CommandHandler("narx_qoy",         cmd_narx_qoy))
-    app.add_handler(CommandHandler("klient_narx",      cmd_klient_narx))
-    app.add_handler(CommandHandler("klient_guruh",     cmd_klient_guruh))
     app.add_error_handler(xato_handler)
     return app
 
