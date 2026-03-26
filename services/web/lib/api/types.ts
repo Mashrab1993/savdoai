@@ -23,6 +23,13 @@ export interface LoginResponse {
   token_type?: string
 }
 
+// POST /auth/login → {token, user_id}
+export interface LoginRequest {
+  login?: string
+  telefon?: string
+  parol: string
+}
+
 // GET /api/v1/me → users table row
 export interface MeResponse {
   id: number

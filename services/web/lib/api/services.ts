@@ -5,7 +5,7 @@
 import { api } from "./client"
 import { getPublicApiBaseUrl } from "./base-url"
 import type {
-  LoginResponse, MeResponse, DashboardResponse,
+  LoginResponse, LoginRequest, MeResponse, DashboardResponse,
   DailyReportResponse, WeeklyReportResponse, MonthlyReportResponse,
   ReportEntry,
   ClientDto, ProductDto, DebtDto, ExpenseDto, ApprenticeDto,
@@ -32,6 +32,10 @@ export const authService = {
   tokenLogin: (token: string) => {
     return Promise.resolve({ access_token: token } as LoginResponse)
   },
+
+  // Login+parol yoki telefon+parol bilan kirish
+  loginWithCredentials: (data: LoginRequest) =>
+    api.post<LoginResponse>("/auth/login", data),
 
   me: () => api.get<MeResponse>("/api/v1/me"),
 }

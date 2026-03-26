@@ -31,9 +31,9 @@ export function TopHeader({ title, onMenuClick }: TopHeaderProps) {
   const h = translations.header
   const { user, logout } = useAuth()
 
-  const displayName = user?.full_name?.trim() || user?.username?.trim() || ""
+  const displayName = user?.ism?.trim() || user?.full_name?.trim() || user?.username?.trim() || user?.dokon_nomi?.trim() || ""
   const shortName = displayName.split(" ")[0] || ""
-  const displayEmail = user?.email?.trim() ?? ""
+  const displayEmail = user?.telefon?.trim() || user?.email?.trim() ?? ""
 
   const initials = displayName
     ? displayName.split(" ").filter(Boolean).map((w: string) => w[0]).join("").toUpperCase().slice(0, 2)

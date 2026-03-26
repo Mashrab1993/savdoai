@@ -386,6 +386,129 @@ async def auth_telegram(data: TelegramAuthSo_rov):
     return {"token": token, "user_id": uid}
 
 
+# ════════════════════════════════════════════════════════════
+#  LOGIN/PAROL — Web panel uchun
+# ════════════════════════════════════════════════════════════
+
+def _parol_hash(parol: str) -> str:
+    """Parolni xavfsiz hash qilish (PBKDF2-SHA256, salt bilan)"""
+    import os as _os2
+    salt = _os2.urandom(16).hex()
+    h = hashlib.pbkdf2_hmac("sha256", parol.encode(), salt.encode(), 100_000).hex()
+    return f"{salt}:{h}"
+
+
+def _parol_tekshir(parol: str, stored: str) -> bool:
+    """Saqlangan hash bilan parolni solishtirish"""
+    if not stored or ":" not in stored:
+        return False
+    salt, h = stored.split(":", 1)
+    return hashlib.pbkdf2_hmac("sha256", parol.encode(), salt.encode(), 100_000).hex() == h
+
+
+def _telefon_tozala(tel: str) -> str:
+    """Telefon raqamni normallashtirish: +998901234567 → 998901234567"""
+    t = tel.replace(" ", "").replace("-", "").replace("(", "").replace(")", "")
+    if t.startswith("+"): t = t[1:]
+    if len(t) == 9 and t[0] in "3456789":
+        t = "998" + t
+    return t
+
+
+class LoginSorov(BaseModel):
+    login: Optional[str] = None
+    telefon: Optional[str] = None
+    parol: str = Field(..., min_length=1)
+
+
+@app.post("/auth/login")
+async def auth_login(data: LoginSorov):
+    """
+    Web panel kirish — login+parol YOKI telefon+parol.
+    Admin do'konchilariga login/parol beradi.
+    """
+    login = (data.login or "").strip().lower()
+    telefon = (data.telefon or "").strip()
+    parol = data.parol.strip()
+
+    if not login and not telefon:
+        raise HTTPException(400, "Login yoki telefon kiriting")
+
+    async with get_pool().acquire() as c:
+        if login:
+            user = await c.fetchrow(
+                "SELECT * FROM users WHERE lower(login)=$1 AND faol=TRUE",
+                login,
+            )
+        else:
+            tel = _telefon_tozala(telefon)
+            user = await c.fetchrow(
+                "SELECT * FROM users WHERE replace(replace(telefon,' ',''),'-','') LIKE '%' || $1 || '%' AND faol=TRUE LIMIT 1",
+                tel[-9:],
+            )
+
+    if not user:
+        raise HTTPException(401, "Login yoki parol noto'g'ri")
+
+    if not user.get("parol_hash"):
+        raise HTTPException(401, "Parol o'rnatilmagan. Admin bilan bog'laning.")
+
+    if not _parol_tekshir(parol, user["parol_hash"]):
+        raise HTTPException(401, "Login yoki parol noto'g'ri")
+
+    token = jwt_yarat(user["id"])
+    log.info("🔐 Web login: uid=%d login=%s", user["id"], login or telefon)
+    return {"token": token, "user_id": user["id"]}
+
+
+@app.post("/api/v1/admin/parol")
+async def admin_parol_qoy(data: dict, uid: int = Depends(get_uid)):
+    """Admin: do'konchiga login/parol berish"""
+    # Admin tekshiruvi
+    admin_ids = os.getenv("ADMIN_IDS", "").split(",")
+    if str(uid) not in [a.strip() for a in admin_ids]:
+        raise HTTPException(403, "Faqat admin uchun")
+
+    target_id = data.get("user_id")
+    login = (data.get("login") or "").strip()
+    parol = (data.get("parol") or "").strip()
+
+    if not target_id or not parol:
+        raise HTTPException(400, "user_id va parol kerak")
+    if len(parol) < 4:
+        raise HTTPException(400, "Parol kamida 4 belgi bo'lishi kerak")
+
+    hashed = _parol_hash(parol)
+
+    async with get_pool().acquire() as c:
+        user = await c.fetchrow("SELECT id, ism FROM users WHERE id=$1", int(target_id))
+        if not user:
+            raise HTTPException(404, "Foydalanuvchi topilmadi")
+
+        if login:
+            # Login band emasligini tekshirish
+            existing = await c.fetchrow(
+                "SELECT id FROM users WHERE lower(login)=$1 AND id!=$2",
+                login.lower(), int(target_id),
+            )
+            if existing:
+                raise HTTPException(409, f"'{login}' login allaqachon band")
+            await c.execute(
+                "UPDATE users SET login=$1, parol_hash=$2, yangilangan=NOW() WHERE id=$3",
+                login, hashed, int(target_id),
+            )
+        else:
+            await c.execute(
+                "UPDATE users SET parol_hash=$1, yangilangan=NOW() WHERE id=$2",
+                hashed, int(target_id),
+            )
+
+    from shared.cache.redis_cache import user_cache_tozala
+    await user_cache_tozala(int(target_id))
+    log.info("🔐 Admin parol qo'ydi: target=%d login=%s", int(target_id), login)
+    return {"ok": True, "user_id": int(target_id), "login": login or None}
+
+
 @app.get("/api/v1/me")
 async def me(uid: int = Depends(get_uid)):
     """Joriy foydalanuvchi"""

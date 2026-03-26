@@ -16,6 +16,8 @@ interface AuthState {
 interface AuthContextValue extends AuthState {
   /** Authenticate with a JWT token (obtained from Telegram bot or admin) */
   loginWithToken: (token: string) => Promise<void>
+  /** Login with credentials (login+parol or telefon+parol) */
+  loginWithCredentials: (data: { login?: string; telefon?: string; parol: string }) => Promise<void>
   /** Legacy compat — redirects to token flow */
   login: (emailOrToken: string, password?: string) => Promise<void>
   logout: () => void
@@ -96,6 +98,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return loginWithToken(emailOrToken)
   }, [loginWithToken])
 
+  const loginWithCredentials = useCallback(async (data: { login?: string; telefon?: string; parol: string }) => {
+    setState(s => ({ ...s, loading: true, error: null }))
+    try {
+      // 1. Call /auth/login with credentials
+      const res = await authService.loginWithCredentials(data)
+      const token = res.token || res.access_token || ""
+
+      if (!token) {
+        throw new Error("Token olinmadi")
+      }
+
+      // 2. Store token
+      localStorage.setItem(TOKEN_KEY, token)
+
+      // 3. Verify by calling /me
+      const user = await authService.me()
+      localStorage.setItem(USER_KEY, JSON.stringify(user))
+
+      setState({ user, token, loading: false, error: null })
+      router.push("/dashboard")
+    } catch (err) {
+      localStorage.removeItem(TOKEN_KEY)
+      localStorage.removeItem(USER_KEY)
+      const msg = err instanceof ApiResponseError
+        ? err.detail
+        : (err instanceof Error ? err.message : "Serverga ulanib bo'lmadi")
+      setState(s => ({ ...s, loading: false, error: msg }))
+    }
+  }, [router])
+
   const logout = useCallback(() => {
     localStorage.removeItem(TOKEN_KEY)
     localStorage.removeItem(USER_KEY)
@@ -108,7 +140,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   return (
-    <AuthContext.Provider value={{ ...state, login, loginWithToken, logout, clearError }}>
+    <AuthContext.Provider value={{ ...state, login, loginWithToken, loginWithCredentials, logout, clearError }}>
       {children}
     </AuthContext.Provider>
   )

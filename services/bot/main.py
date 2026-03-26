@@ -4605,6 +4605,91 @@ def ilovani_qur(conf:Config) -> Application:
             parse_mode=ParseMode.MARKDOWN_V2)
     app.add_handler(CommandHandler("token", cmd_token))
 
+    # /parol — Admin do'konchiga login/parol berish
+    async def cmd_parol(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+        uid = update.effective_user.id
+        if not conf.is_admin(uid):
+            await update.message.reply_text("🔒 Faqat admin uchun.")
+            return
+
+        matn = (update.message.text or "").strip()
+        qismlar = matn.split()
+        # /parol <user_id> <login> <parol>
+        # /parol <user_id> <parol>  (loginsiz, faqat parol)
+        if len(qismlar) < 3:
+            await update.message.reply_text(
+                "🔐 *Do'konchiga login/parol berish*\n\n"
+                "Format:\n"
+                "`/parol <user_id> <login> <parol>`\n\n"
+                "Masalan:\n"
+                "`/parol 123456789 salimov 1234`\n"
+                "`/parol 123456789 s1234`  _(loginsiz)_\n\n"
+                "User ID ni bilish uchun do'konchi botga /start bossin\\.",
+                parse_mode=ParseMode.MARKDOWN_V2)
+            return
+
+        try:
+            target_id = int(qismlar[1])
+        except ValueError:
+            await update.message.reply_text("❌ User ID raqam bo'lishi kerak.")
+            return
+
+        if len(qismlar) >= 4:
+            new_login = qismlar[2]
+            new_parol = qismlar[3]
+        else:
+            new_login = ""
+            new_parol = qismlar[2]
+
+        if len(new_parol) < 4:
+            await update.message.reply_text("❌ Parol kamida 4 belgi bo'lishi kerak.")
+            return
+
+        try:
+            import hashlib as _ph, os as _po
+            salt = _po.urandom(16).hex()
+            hashed = f"{salt}:{_ph.pbkdf2_hmac('sha256', new_parol.encode(), salt.encode(), 100_000).hex()}"
+
+            async with db._P().acquire() as c:
+                user = await c.fetchrow("SELECT id, ism, telefon FROM users WHERE id=$1", target_id)
+                if not user:
+                    await update.message.reply_text(f"❌ User ID {target_id} topilmadi.")
+                    return
+
+                if new_login:
+                    existing = await c.fetchrow(
+                        "SELECT id FROM users WHERE lower(login)=$1 AND id!=$2",
+                        new_login.lower(), target_id,
+                    )
+                    if existing:
+                        await update.message.reply_text(f"❌ '{new_login}' login allaqachon band.")
+                        return
+                    await c.execute(
+                        "UPDATE users SET login=$1, parol_hash=$2, yangilangan=NOW() WHERE id=$3",
+                        new_login, hashed, target_id,
+                    )
+                else:
+                    await c.execute(
+                        "UPDATE users SET parol_hash=$1, yangilangan=NOW() WHERE id=$2",
+                        hashed, target_id,
+                    )
+
+            ism = user.get("ism", "")
+            tel = user.get("telefon", "")
+            msg = f"✅ *Parol o'rnatildi\\!*\n\n"
+            msg += f"👤 {esc(ism or str(target_id))}\n"
+            if new_login:
+                msg += f"🔑 Login: `{esc(new_login)}`\n"
+            if tel:
+                msg += f"📱 Telefon: `{esc(tel)}`\n"
+            msg += f"🔒 Parol: `{esc(new_parol)}`\n\n"
+            msg += f"Web panel: login yoki telefon \\+ parol bilan kiradi\\."
+            await update.message.reply_text(msg, parse_mode=ParseMode.MARKDOWN_V2)
+        except Exception as e:
+            log.error("cmd_parol: %s", e, exc_info=True)
+            await update.message.reply_text(f"❌ Xato: {e}")
+    app.add_handler(CommandHandler("parol", cmd_parol))
+
     royxat=ConversationHandler(
         entry_points=[CommandHandler("start",cmd_start)],
         states={

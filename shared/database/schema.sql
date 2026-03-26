@@ -31,6 +31,8 @@ CREATE TABLE IF NOT EXISTS users (
     ism             TEXT            NOT NULL DEFAULT '',
     username        TEXT,
     telefon         TEXT,
+    login           TEXT,
+    parol_hash      TEXT,
     inn             TEXT,
     manzil          TEXT,
     dokon_nomi      TEXT            NOT NULL DEFAULT 'Mening Do''konim',
@@ -45,6 +47,8 @@ CREATE TABLE IF NOT EXISTS users (
     yangilangan     TIMESTAMPTZ     NOT NULL DEFAULT NOW()
 );
 CREATE INDEX IF NOT EXISTS idx_users_faol ON users(faol) WHERE faol=TRUE;
+CREATE UNIQUE INDEX IF NOT EXISTS idx_users_login ON users(lower(login)) WHERE login IS NOT NULL AND login != '';
+CREATE UNIQUE INDEX IF NOT EXISTS idx_users_telefon_unique ON users(telefon) WHERE telefon IS NOT NULL AND telefon != '';
 
 -- ────────────────────────────────────────────────────────────────────
 -- 2. API SESSIONS
