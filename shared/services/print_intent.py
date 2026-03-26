@@ -6,6 +6,7 @@ import re
 # To'liq iboralar (tez yo'l)
 _PHRASES_PRINT = frozenset(
     {
+        # O'zbek — standart
         "printer chek",
         "chek chiqar",
         "printerdan chiqar",
@@ -18,6 +19,34 @@ _PHRASES_PRINT = frozenset(
         "chekni chop",
         "mini printer",
         "chek chiqarish",
+        # Gemini STT ko'p ishlatadigan variantlar
+        "chek chiqaring",
+        "chek chiqarib ber",
+        "chek chiqarib bering",
+        "chekni chiqar",
+        "chekni chiqaring",
+        "chek qil",
+        "chek qiling",
+        "chek kerak",
+        "chek tayyorla",
+        "chek yoz",
+        "chek bosib ber",
+        "chek print",
+        "printer",
+        "printerda chiqar",
+        "printerga yuborish",
+        "printerga yubor",
+        "chek olaman",
+        "chek bergin",
+        "chek bering",
+        "chek chiqaramiz",
+        "chek chiqara",
+        # Rus tili (Gemini rus tilida yozishi mumkin)
+        "чек",
+        "чек выдай",
+        "распечатай чек",
+        "напечатай чек",
+        "принтер",
     }
 )
 _PHRASES_REPRINT = frozenset(
@@ -29,6 +58,8 @@ _PHRASES_REPRINT = frozenset(
         "qayta chop",
         "qayta print",
         "reprint",
+        "yana bir chek",
+        "chekni qayta",
     }
 )
 
@@ -43,6 +74,8 @@ _WORDS = frozenset(
         "printerda",
         "printerdan",
         "thermal",
+        "чек",
+        "принтер",
     }
 )
 

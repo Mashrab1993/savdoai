@@ -564,6 +564,18 @@ async def ovoz_qabul(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
         # ⏳ o'chirib, natija yuborish
         try: await holat.delete()
         except Exception: pass
+
+        # ═══ OVOZDA "CHEK CHIQAR" TEKSHIRUVI ═══
+        try:
+            from shared.services.print_intent import detect_print_intent
+            from shared.services.bot_print_handler import handle_print_intent_message
+            _pk = detect_print_intent(matn)
+            if _pk:
+                if await handle_print_intent_message(update, ctx, _pk, db):
+                    return
+        except Exception as _pi:
+            log.debug("Print intent (ovoz): %s", _pi)
+
         await _qayta_ishlash(update,ctx,matn)
     except Exception as xato:
         log.error("ovoz_qabul: %s",xato,exc_info=True)
