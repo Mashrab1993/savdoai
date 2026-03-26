@@ -1760,6 +1760,18 @@ async def _nakladnoy_yuborish(update:Update, ctx:ContextTypes.DEFAULT_TYPE,
             "jami_summa": float(jami), "tolangan": float(tolangan),
             "qarz": float(qarz),
         }
+
+        # ═══ AVTOMATIK PRINTER CHEK (do'konchi yozmasdan) ═══
+        try:
+            from shared.services.bot_print_handler import send_print_session
+            _tel_u = (user.get("telefon") or "") if user else ""
+            _pj = await send_print_session(
+                update.effective_message, natija, dokon, _tel_u, uid, 0,
+            )
+            if _pj:
+                ctx.user_data["last_print_job"] = _pj.get("job_id")
+        except Exception as _prt_n:
+            log.debug("Nakladnoy auto-print: %s", _prt_n)
     except Exception as xato:
         log.error("_nakladnoy_yuborish: %s",xato,exc_info=True)
         try: await tahrirlash.edit_text("❌ Nakladnoy yaratishda xato yuz berdi")
@@ -4541,6 +4553,24 @@ async def _savat_yop_va_nakladnoy(update_or_query, uid: int, klient_ismi: str, c
                         "jami_summa": float(jami), "tolangan": float(tolangan),
                         "qarz": float(qarz),
                     }
+
+                # ═══ AVTOMATIK PRINTER CHEK (do'konchi yozmasdan) ═══
+                try:
+                    from shared.services.bot_print_handler import send_print_session
+                    _tel_u = (user.get("telefon") or "") if user else ""
+                    _chek_data = {
+                        "amal": "chiqim", "tovarlar": tovarlar,
+                        "klient": klient_ismi, "klient_ismi": klient_ismi,
+                        "jami_summa": float(jami), "tolangan": float(tolangan),
+                        "qarz": float(qarz),
+                    }
+                    _pj = await send_print_session(
+                        msg, _chek_data, dokon, _tel_u, uid, 0,
+                    )
+                    if _pj and ctx is not None:
+                        ctx.user_data["last_print_job"] = _pj.get("job_id")
+                except Exception as _prt_s:
+                    log.debug("Savat auto-print: %s", _prt_s)
         except Exception as nakl_e:
             log.error("Savat nakladnoy: %s", nakl_e, exc_info=True)
             if msg:
