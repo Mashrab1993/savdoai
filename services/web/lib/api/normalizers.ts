@@ -43,6 +43,7 @@ export interface ProductVM {
   price: number
   stock: number
   lowStockThreshold: number
+  unit: string
   description: string
   status: "in-stock" | "low-stock" | "out-of-stock"
 }
@@ -61,6 +62,7 @@ export function normalizeProduct(d: ProductDto): ProductVM {
     price: d.sotish_narxi ?? d.narx ?? 0,
     stock,
     lowStockThreshold: threshold,
+    unit: d.birlik ?? "",
     description: d.tavsif ?? d.birlik ?? "",
     status,
   }

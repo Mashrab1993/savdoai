@@ -62,16 +62,17 @@ export default function SalesPage() {
 
   // Savatga qo'shish
   function addToCart(product: ReturnType<typeof normalizeProduct>) {
+    const productId = Number(product.id)
     setCart(prev => {
-      const existing = prev.find(c => c.id === product.id)
+      const existing = prev.find(c => c.id === productId)
       if (existing) {
-        return prev.map(c => c.id === product.id
+        return prev.map(c => c.id === productId
           ? { ...c, miqdor: c.miqdor + 1, jami: (c.miqdor + 1) * c.narx }
           : c
         )
       }
       return [...prev, {
-        id: product.id,
+        id: productId,
         nomi: product.name,
         birlik: product.unit || "dona",
         narx: product.price,

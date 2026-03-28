@@ -56,8 +56,8 @@ export function useWebSocket(options?: UseWebSocketOptions): UseWebSocketReturn 
   const [lastMessage, setLastMessage] = useState<WSMessage | null>(null)
   const wsRef = useRef<WebSocket | null>(null)
   const reconnectCount = useRef(0)
-  const reconnectTimer = useRef<ReturnType<typeof setTimeout>>()
-  const pingTimer = useRef<ReturnType<typeof setInterval>>()
+  const reconnectTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+  const pingTimer = useRef<ReturnType<typeof setInterval> | undefined>(undefined)
 
   const getToken = useCallback(() => {
     if (typeof window === "undefined") return null
