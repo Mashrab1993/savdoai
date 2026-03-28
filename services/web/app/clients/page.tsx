@@ -238,7 +238,7 @@ export default function ClientsPage() {
                       <div className="flex items-center justify-end gap-1">
                         <Button variant="ghost" size="icon" className="h-7 w-7"
                           title={locale === "uz" ? "Tarix" : "История"}
-                          onClick={() => openTarix(client.id)}>
+                          onClick={() => openTarix(Number(client.id))}>
                           <Eye className="w-3.5 h-3.5" />
                         </Button>
                         <Button variant="ghost" size="icon" className="h-7 w-7"
@@ -249,7 +249,7 @@ export default function ClientsPage() {
                               address: client.address || "",
                               creditLimit: String(client.creditLimit || 0),
                             })
-                            setEditingClientId(client.id)
+                            setEditingClientId(Number(client.id))
                             setModalOpen(true)
                           }}>
                           <Pencil className="w-3.5 h-3.5" />
@@ -260,7 +260,7 @@ export default function ClientsPage() {
                               ? `"${client.name}" ni o'chirishni tasdiqlaysizmi?`
                               : `Удалить "${client.name}"?`)) return
                             try {
-                              await clientService.remove(client.id)
+                              await clientService.remove(Number(client.id))
                               refetch()
                             } catch (err) {
                               const msg = err instanceof ApiResponseError ? err.detail : String(err)

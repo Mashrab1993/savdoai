@@ -270,7 +270,7 @@ export default function ProductsPage() {
                       <div className="flex items-center justify-end gap-1">
                         <Button variant="ghost" size="icon" className="h-7 w-7"
                           title={locale === "uz" ? "Tarix" : "История"}
-                          onClick={() => openTarix(product.id)}>
+                          onClick={() => openTarix(Number(product.id))}>
                           <Eye className="w-3.5 h-3.5" />
                         </Button>
                         <Button variant="ghost" size="icon" className="h-7 w-7"
@@ -278,7 +278,7 @@ export default function ProductsPage() {
                             const newPrice = prompt(locale === "uz" ? "Yangi sotish narxi:" : "Новая цена продажи:", String(product.price))
                             if (!newPrice) return
                             try {
-                              await productService.update(product.id, { sotish_narxi: Number(newPrice) })
+                              await productService.update(Number(product.id), { sotish_narxi: Number(newPrice) })
                               refetch()
                             } catch { /* silent */ }
                           }}>
@@ -290,7 +290,7 @@ export default function ProductsPage() {
                               ? `"${product.name}" ni o'chirishni tasdiqlaysizmi?`
                               : `Удалить "${product.name}"?`)) return
                             try {
-                              await productService.remove(product.id)
+                              await productService.remove(Number(product.id))
                               refetch()
                             } catch (err) {
                               alert(err instanceof Error ? err.message : String(err))
