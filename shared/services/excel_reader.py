@@ -81,7 +81,7 @@ def excel_toliq_oqi(data: bytes) -> dict:
                             # Telefon raqamlarni filtrlash (9+ raqamli)
                             if v != 0 and abs(v) < 100_000_000_000 and len(str(cell).replace(' ','').replace(',','').replace('.','')) < 12:
                                 sheet_raqamlar.append(v)
-                        except: pass
+                        except Exception: pass
 
                 sheet_data = {
                     "nom": sn, "qator_soni": len(rows),
@@ -111,7 +111,7 @@ def excel_toliq_oqi(data: bytes) -> dict:
                 for c in jami_row:
                     try:
                         vals.append(float(c) if isinstance(c, (int, float)) and c else 0)
-                    except:
+                    except Exception: 
                         vals.append(0)
                 while len(vals) < 10:
                     vals.append(0)
@@ -164,7 +164,7 @@ def excel_toliq_oqi(data: bytes) -> dict:
                             klient_ism = cells[3].strip()
                             if klient_ism and len(klient_ism) > 2:
                                 klientlar[klient_ism]["dolg"] += dolg_val
-                    except:
+                    except Exception: 
                         pass
 
                 # Oplata (3-ustun raqam bo'lsa)
@@ -177,7 +177,7 @@ def excel_toliq_oqi(data: bytes) -> dict:
                                 klient_ism = cells[4].strip()
                                 if klient_ism and len(klient_ism) > 2:
                                     klientlar[klient_ism]["oplata"] += opl_val
-                    except:
+                    except Exception: 
                         pass
 
                 # Rasxod tafsilot (6-ustun = summa, 7-ustun = izoh)
@@ -205,7 +205,7 @@ def excel_toliq_oqi(data: bytes) -> dict:
                                 rasxod_kategoriya["QOLDIQ"] += rsx_val
                             else:
                                 rasxod_kategoriya["BOSHQA"] += rsx_val
-                    except:
+                    except Exception: 
                         pass
 
             # Sheet info
@@ -260,7 +260,7 @@ def excel_toliq_oqi(data: bytes) -> dict:
 def _pul(v):
     try:
         return f"{float(v):,.0f}"
-    except:
+    except Exception: 
         return "0"
 
 

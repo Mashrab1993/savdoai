@@ -15,7 +15,7 @@ import {
 import { Download, TrendingUp, Users, DollarSign, Package, Loader2 } from "lucide-react"
 import { useApi } from "@/hooks/use-api"
 import { getPublicApiBaseUrl } from "@/lib/api/base-url"
-import { reportService, dashboardService } from "@/lib/api/services"
+import { reportService, dashboardService, foydaService } from "@/lib/api/services"
 import { normalizeDashboard } from "@/lib/api/normalizers"
 import { PageLoading, PageError } from "@/components/shared/page-states"
 import type { ReportEntry } from "@/lib/api/types"
@@ -52,7 +52,7 @@ export default function ReportsPage() {
   const { locale } = useLocale()
   const L = translations.reports
 
-  const [dateRange, setDateRange] = useState<"daily" | "weekly" | "monthly">("monthly")
+  const [dateRange, setDateRange] = useState<"daily" | "weekly" | "monthly" | "foyda">("monthly")
   const [exporting, setExporting] = useState(false)
   const [exportDone, setExportDone] = useState(false)
 
@@ -65,6 +65,8 @@ export default function ReportsPage() {
   const { data: dailyRaw, loading: dailyLoading, error: dailyError, refetch: refetchDaily } = useApi(dailyFetcher)
   const { data: weeklyRaw, loading: weeklyLoading, error: weeklyError, refetch: refetchWeekly } = useApi(weeklyFetcher)
   const { data: monthlyRaw, loading: monthlyLoading, error: monthlyError, refetch: refetchMonthly } = useApi(monthlyFetcher)
+  const foydaFetcher = useCallback(() => foydaService.get(30), [])
+  const { data: foydaData, loading: foydaLoading, refetch: refetchFoyda } = useApi(foydaFetcher)
 
   const dashboard = rawDashboard ? normalizeDashboard(rawDashboard) : null
 
@@ -72,11 +74,12 @@ export default function ReportsPage() {
   const activeRaw: ReportEntry[] =
     dateRange === "daily" ? (dailyRaw ?? []) :
     dateRange === "weekly" ? (weeklyRaw ?? []) :
+    dateRange === "foyda" ? [] :
     (monthlyRaw ?? [])
 
   const chartData = normalizeEntries(activeRaw)
 
-  const loading = dashLoading || (dateRange === "daily" ? dailyLoading : dateRange === "weekly" ? weeklyLoading : monthlyLoading)
+  const loading = dashLoading || (dateRange === "daily" ? dailyLoading : dateRange === "weekly" ? weeklyLoading : dateRange === "foyda" ? foydaLoading : monthlyLoading)
   const error = dashError ?? (dateRange === "daily" ? dailyError : dateRange === "weekly" ? weeklyError : monthlyError)
 
   // ── KPI cards from dashboard endpoint ──────────────────────────────────────
@@ -151,6 +154,7 @@ export default function ReportsPage() {
               <SelectItem value="daily">{L.last8months[locale]}</SelectItem>
               <SelectItem value="weekly">{L.lastYear[locale]}</SelectItem>
               <SelectItem value="monthly">{L.ytd[locale]}</SelectItem>
+              <SelectItem value="foyda">{locale === "uz" ? "Foyda tahlili" : "Анализ прибыли"}</SelectItem>
             </SelectContent>
           </Select>
           <Button variant="outline" className="gap-2" onClick={handleExport} disabled={exporting}>

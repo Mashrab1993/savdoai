@@ -15,6 +15,7 @@
 ╚══════════════════════════════════════════════════════════════════════════╝
 """
 from __future__ import annotations
+from shared.utils import like_escape
 import asyncio
 import logging
 import re
@@ -29,7 +30,7 @@ TZ = pytz.timezone("Asia/Tashkent")
 
 def _pul(v) -> str:
     try: return f"{Decimal(str(v or 0)):,.0f}"
-    except: return "0"
+    except Exception: return "0"
 
 def _bugun():
     return datetime.now(TZ).date()
@@ -154,7 +155,7 @@ async def tabiiy_savol_javob(conn, uid: int, matn: str) -> Optional[str]:
                 JOIN sotuv_sessiyalar ss ON ss.id = ch.sessiya_id
                 WHERE ch.user_id=$1 AND ss.sana >= $2 AND ss.sana < $3
                   AND lower(ch.tovar_nomi) LIKE lower($4)
-            """, uid, kecha, bugun, f"%{tovar}%")
+            """, uid, kecha, bugun, f"%{like_escape(tovar)}%")
             if row and row["miqdor"]:
                 return (f"📊 Kecha {int(row['miqdor'])} ta {tovar} sotildi, "
                         f"o'rtacha {_pul(row['narx'])} dan, jami {_pul(row['jami'])}")
@@ -174,7 +175,7 @@ async def tabiiy_savol_javob(conn, uid: int, matn: str) -> Optional[str]:
             row = await conn.fetchrow("""
                 SELECT nomi, qoldiq FROM tovarlar
                 WHERE user_id=$1 AND lower(nomi) LIKE lower($2) LIMIT 1
-            """, uid, f"%{tovar}%")
+            """, uid, f"%{like_escape(tovar)}%")
             if row:
                 return f"📦 {row['nomi']}: *{row['qoldiq']}* ta qoldi"
             return f"❌ {tovar} topilmadi"
@@ -230,7 +231,7 @@ async def zarar_tekshir(conn, uid: int, tovarlar: list[dict]) -> list[dict]:
             SELECT olish_narxi FROM tovarlar
             WHERE user_id=$1 AND lower(nomi) LIKE lower($2) AND olish_narxi > 0
             LIMIT 1
-        """, uid, f"%{nomi}%")
+        """, uid, f"%{like_escape(nomi)}%")
 
         if row:
             olish = float(row["olish_narxi"] or 0)
@@ -271,7 +272,7 @@ async def shablon_olish(conn, uid: int, klient_ismi: str) -> Optional[dict]:
         SELECT id FROM sotuv_sessiyalar
         WHERE user_id=$1 AND lower(klient_ismi) LIKE lower($2)
         ORDER BY sana DESC LIMIT 3
-    """, uid, f"%{klient_ismi}%")
+    """, uid, f"%{like_escape(klient_ismi)}%")
 
     if not sessiyalar:
         return None
@@ -429,7 +430,7 @@ async def qoldiq_tuzatish(conn, uid: int, nomi: str, miqdor: int, sabab: str) ->
     tovar = await conn.fetchrow("""
         SELECT id, nomi, qoldiq FROM tovarlar
         WHERE user_id=$1 AND lower(nomi) LIKE lower($2) LIMIT 1
-    """, uid, f"%{nomi}%")
+    """, uid, f"%{like_escape(nomi)}%")
 
     if not tovar:
         return {"ok": False, "xato": f"'{nomi}' topilmadi"}

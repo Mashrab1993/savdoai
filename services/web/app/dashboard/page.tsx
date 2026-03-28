@@ -10,14 +10,16 @@ import {
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import {
-  AreaChart, Area,
+  AreaChart, Area, BarChart, Bar,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
 } from "recharts"
 import { useLocale } from "@/lib/locale-context"
 import { translations } from "@/lib/i18n"
 import { formatCurrency } from "@/lib/format"
+import { useEffect } from "react"
 import { useApi } from "@/hooks/use-api"
-import { dashboardService } from "@/lib/api/services"
+import { useWebSocket } from "@/hooks/use-websocket"
+import { dashboardService, dashboardTopService } from "@/lib/api/services"
 import { normalizeDashboard, type DashboardVM } from "@/lib/api/normalizers"
 import { PageLoading, PageError } from "@/components/shared/page-states"
 import type { ReportEntry } from "@/lib/api/types"
@@ -35,6 +37,13 @@ export default function DashboardPage() {
 
   const { data: rawStats, loading: statsLoading, error: statsError, refetch } = useApi(dashboardService.get)
   const { data: monthlyData } = useApi(dashboardService.monthly)
+  const { data: topData } = useApi(dashboardTopService.get)
+
+  // Real-time yangilanish — WebSocket orqali
+  const { lastMessage } = useWebSocket()
+  useEffect(() => {
+    if (lastMessage?.type === "sync") refetch()
+  }, [lastMessage, refetch])
 
   const stats: DashboardVM = rawStats ? normalizeDashboard(rawStats) : {
     totalClients: 0, activeClients: 0, totalRevenue: 0, todayCashIncome: 0,
@@ -199,6 +208,98 @@ export default function DashboardPage() {
               )}
             </div>
 
+            {/* Top Tovar + Top Klient + 7-kun Trend */}
+            {topData && (
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+                {/* Top 5 Tovar */}
+                {topData.top_tovar && topData.top_tovar.length > 0 && (
+                  <div className="bg-card border border-border rounded-xl p-5">
+                    <h3 className="font-semibold text-foreground text-sm mb-1">
+                      {locale === "uz" ? "Top tovarlar" : "Топ товары"}
+                    </h3>
+                    <p className="text-xs text-muted-foreground mb-4">
+                      {locale === "uz" ? "Oxirgi 30 kun" : "Последние 30 дней"}
+                    </p>
+                    <ResponsiveContainer width="100%" height={180}>
+                      <BarChart data={topData.top_tovar} layout="vertical" margin={{ left: 5, right: 10 }}>
+                        <XAxis type="number" tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
+                               tickFormatter={v => fmt(v)} axisLine={false} tickLine={false} />
+                        <YAxis type="category" dataKey="nomi" width={90}
+                               tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
+                               axisLine={false} tickLine={false} />
+                        <Tooltip formatter={(v: number) => [`${fmt(v)} so'm`, ""]}
+                                 contentStyle={tooltipStyle} />
+                        <Bar dataKey="jami" fill="hsl(var(--chart-1))" radius={[0, 4, 4, 0]}
+                             barSize={16} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                )}
+
+                {/* Top 5 Klient */}
+                {topData.top_klient && topData.top_klient.length > 0 && (
+                  <div className="bg-card border border-border rounded-xl p-5">
+                    <h3 className="font-semibold text-foreground text-sm mb-1">
+                      {locale === "uz" ? "Top mijozlar" : "Топ клиенты"}
+                    </h3>
+                    <p className="text-xs text-muted-foreground mb-4">
+                      {locale === "uz" ? "Eng ko'p sotib olgan" : "Больше всех купили"}
+                    </p>
+                    <ResponsiveContainer width="100%" height={180}>
+                      <BarChart data={topData.top_klient} layout="vertical" margin={{ left: 5, right: 10 }}>
+                        <XAxis type="number" tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
+                               tickFormatter={v => fmt(v)} axisLine={false} tickLine={false} />
+                        <YAxis type="category" dataKey="ism" width={90}
+                               tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
+                               axisLine={false} tickLine={false} />
+                        <Tooltip formatter={(v: number) => [`${fmt(v)} so'm`, ""]}
+                                 contentStyle={tooltipStyle} />
+                        <Bar dataKey="jami" fill="hsl(var(--chart-2))" radius={[0, 4, 4, 0]}
+                             barSize={16} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                )}
+
+                {/* 7 kunlik trend */}
+                {topData.kunlik_trend && topData.kunlik_trend.length > 0 && (
+                  <div className="bg-card border border-border rounded-xl p-5">
+                    <h3 className="font-semibold text-foreground text-sm mb-1">
+                      {locale === "uz" ? "7 kunlik trend" : "Тренд за 7 дней"}
+                    </h3>
+                    <p className="text-xs text-muted-foreground mb-4">
+                      {locale === "uz" ? "Sotuv va qarz" : "Продажи и долги"}
+                    </p>
+                    <ResponsiveContainer width="100%" height={180}>
+                      <AreaChart data={topData.kunlik_trend} margin={{ top: 5, right: 5, bottom: 0, left: 0 }}>
+                        <defs>
+                          <linearGradient id="trendSotuv" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="hsl(var(--chart-1))" stopOpacity={0.3} />
+                            <stop offset="95%" stopColor="hsl(var(--chart-1))" stopOpacity={0} />
+                          </linearGradient>
+                        </defs>
+                        <XAxis dataKey="kun" tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))" }}
+                               axisLine={false} tickLine={false}
+                               tickFormatter={v => v.slice(5)} />
+                        <YAxis tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))" }}
+                               axisLine={false} tickLine={false}
+                               tickFormatter={v => fmt(v)} />
+                        <Tooltip formatter={(v: number) => [`${fmt(v)} so'm`, ""]}
+                                 contentStyle={tooltipStyle} />
+                        <Area type="monotone" dataKey="sotuv" stroke="hsl(var(--chart-1))"
+                              fill="url(#trendSotuv)" strokeWidth={2}
+                              name={locale === "uz" ? "Sotuv" : "Продажи"} />
+                        <Area type="monotone" dataKey="qarz" stroke="hsl(var(--destructive))"
+                              fill="none" strokeWidth={1.5} strokeDasharray="4 4"
+                              name={locale === "uz" ? "Qarz" : "Долг"} />
+                        <Legend wrapperStyle={{ fontSize: 10 }} />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Quick Actions */}
             <div className="bg-card border border-border rounded-xl p-5">
               <div className="flex items-center justify-between mb-3">
@@ -207,11 +308,11 @@ export default function DashboardPage() {
                 </h3>
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                {/* Working modules */}
                 {[
                   { label: locale === "uz" ? "Mijozlar" : "Клиенты",   href: "/clients",   icon: Users },
                   { label: locale === "uz" ? "Mahsulotlar" : "Товары",  href: "/products",  icon: Package },
                   { label: locale === "uz" ? "Hisobotlar" : "Отчёты",   href: "/reports",   icon: TrendingUp },
+                  { label: locale === "uz" ? "Savdolar" : "Продажи",    href: "/invoices",  icon: FileText },
                 ].map(({ label, href, icon: Icon }) => (
                   <Link key={href} href={href}>
                     <Button variant="outline" className="w-full h-10 justify-start gap-2 text-xs">
@@ -220,19 +321,6 @@ export default function DashboardPage() {
                     </Button>
                   </Link>
                 ))}
-                {/* Roadmap module — navigates to the informational invoices page */}
-                <Link href="/invoices">
-                  <Button
-                    variant="outline"
-                    className="w-full h-10 justify-start gap-2 text-xs text-muted-foreground border-dashed"
-                  >
-                    <FileText className="w-3.5 h-3.5 shrink-0" />
-                    <span className="truncate">{locale === "uz" ? "Fakturalar" : "Счета"}</span>
-                    <span className="ml-auto text-[9px] font-bold uppercase tracking-wide bg-secondary px-1.5 py-0.5 rounded shrink-0">
-                      {locale === "uz" ? "Beta" : "Beta"}
-                    </span>
-                  </Button>
-                </Link>
               </div>
             </div>
           </>

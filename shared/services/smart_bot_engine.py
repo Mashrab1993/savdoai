@@ -14,6 +14,7 @@
 ╚══════════════════════════════════════════════════════════════════════════╝
 """
 from __future__ import annotations
+from shared.utils import like_escape
 import asyncio
 import logging
 from datetime import datetime, timedelta
@@ -28,7 +29,7 @@ D = lambda v: Decimal(str(v or 0))
 
 def _pul(v) -> str:
     try: return f"{Decimal(str(v or 0)):,.0f}"
-    except: return "0"
+    except Exception: return "0"
 
 def _bugun():
     return datetime.now(TZ).date()
@@ -107,7 +108,7 @@ async def narx_tavsiya(conn, uid: int, tovar_nomi: str) -> dict:
         SELECT id, nomi, olish_narxi, qoldiq
         FROM tovarlar WHERE user_id=$1 AND lower(nomi) LIKE lower($2)
         ORDER BY qoldiq DESC NULLS LAST LIMIT 1
-    """, uid, f"%{tovar_nomi.strip()}%")
+    """, uid, f"%{like_escape(tovar_nomi.strip())}%")
 
     if not tovar:
         return {"topildi": False, "nomi": tovar_nomi}
@@ -224,7 +225,7 @@ async def inventarizatsiya(conn, uid: int, tovarlar: list[dict]) -> dict:
             SELECT id, nomi, qoldiq FROM tovarlar
             WHERE user_id=$1 AND lower(nomi) LIKE lower($2)
             LIMIT 1
-        """, uid, f"%{nomi}%")
+        """, uid, f"%{like_escape(nomi)}%")
 
         if not tovar:
             topilmadi.append(nomi)

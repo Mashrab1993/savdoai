@@ -11,3 +11,17 @@ from .uzb_nlp import (
 )
 
 from .hisob import kassa_tekshir, oylik_foyda_hisob
+
+
+def like_escape(s: str) -> str:
+    """LIKE query uchun maxsus belgilarni escape qilish.
+    '%' va '_' PostgreSQL da maxsus — ular escape qilinmasa
+    noto'g'ri natija beradi.
+
+    Ishlatish:
+        f"%{like_escape(nomi.strip())}%"
+    """
+    return (s
+            .replace("\\", "\\\\")
+            .replace("%", "\\%")
+            .replace("_", "\\_"))

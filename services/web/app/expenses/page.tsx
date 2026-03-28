@@ -118,13 +118,23 @@ export default function ExpensesPage() {
     return e
   }
 
-  // Add expense: no create endpoint — modal is disabled for now
-  function handleCreate() {
+  // Add expense via API
+  async function handleCreate() {
     const e = validate()
     if (Object.keys(e).length) { setFormErrors(e); return }
-    setModalOpen(false)
-    setForm(emptyForm)
-    setFormErrors({})
+    try {
+      await expenseService.create({
+        kategoriya_nomi: form.category,
+        summa: form.amount,
+        izoh: form.title + (form.notes ? ` — ${form.notes}` : ""),
+      })
+      setModalOpen(false)
+      setForm(emptyForm)
+      setFormErrors({})
+      refetch()
+    } catch {
+      refetch()
+    }
   }
 
   const tooltipStyle = {
@@ -199,7 +209,7 @@ export default function ExpensesPage() {
                   </SelectContent>
                 </Select>
               </div>
-              <Button disabled className="gap-2 shrink-0" title={locale === "uz" ? "Tez orada" : "Скоро"}>
+              <Button onClick={() => setModalOpen(true)} className="gap-2 shrink-0">
                 <Plus className="w-4 h-4" /> {L.addExpense[locale]}
               </Button>
             </div>

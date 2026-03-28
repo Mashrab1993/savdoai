@@ -65,6 +65,10 @@ export const clientService = {
     return extractItems(raw)
   },
   create: (data: Partial<ClientDto>) => api.post<ClientDto>("/api/v1/klient", data),
+  update: (id: number, data: Record<string, unknown>) =>
+    api.put<{ id: number; status: string }>(`/api/v1/klient/${id}`, data),
+  remove: (id: number) =>
+    api.delete<{ id: number; status: string }>(`/api/v1/klient/${id}`),
 }
 
 // ── Products ──────────────────────────────────────────────────────────────────
@@ -75,6 +79,20 @@ export const productService = {
     return extractItems(raw)
   },
   get: (id: number) => api.get<ProductDto>(`/api/v1/tovar/${id}`),
+  create: (data: Record<string, unknown>) =>
+    api.post<{ id: number; nomi: string; status: string }>("/api/v1/tovar", data),
+  update: (id: number, data: Record<string, unknown>) =>
+    api.put<{ id: number; status: string }>(`/api/v1/tovar/${id}`, data),
+  remove: (id: number) =>
+    api.delete<{ id: number; status: string }>(`/api/v1/tovar/${id}`),
+  updateStock: (id: number, qoldiq: number) =>
+    api.post<{ id: number; nomi: string; eski_qoldiq: number; yangi_qoldiq: number }>(
+      `/api/v1/tovar/${id}/qoldiq`, { qoldiq }
+    ),
+  exportExcel: () =>
+    api.get<{ filename: string; content_base64: string; tovar_soni: number }>(
+      "/api/v1/tovar/export/excel"
+    ),
 }
 
 // ── Debts ─────────────────────────────────────────────────────────────────────
@@ -176,6 +194,24 @@ export const expenseService = {
   pending: () => api.get<ExpenseDto[]>("/api/v1/xarajatlar/kutilmoqda"),
   approve: (id: number) => api.post(`/api/v1/xarajat/${id}/tasdiqlash`),
   reject: (id: number) => api.post(`/api/v1/xarajat/${id}/bekor`),
+  create: (data: { kategoriya_nomi: string; summa: number; izoh?: string; shogird_id?: number }) =>
+    api.post<{ status: string; id?: number }>("/api/v1/xarajat", data),
+}
+
+// ── Notifications ─────────────────────────────────────────────────────────────
+export interface NotificationItem {
+  tur: "qarz_muddati" | "kam_qoldiq" | "xarajat_tasdiq"
+  darajasi: "xavfli" | "ogohlantirish" | "info"
+  matn: string
+  klient?: string
+  tovar?: string
+  summa?: number
+  qoldiq?: number
+  soni?: number
+}
+
+export const notificationService = {
+  list: () => api.get<{ items: NotificationItem[]; jami: number }>("/api/v1/bildirishnomalar"),
 }
 
 // ── Prices ────────────────────────────────────────────────────────────────────
@@ -198,4 +234,144 @@ export const cashService = {
     api.post<CashTransactionDto>("/api/v1/kassa/operatsiya", data),
   deleteTransaction: (id: number) =>
     api.delete(`/api/v1/kassa/operatsiya/${id}`),
+}
+
+// ── Savdolar (sotuv sessiyalari) ──────────────────────────────────────────────
+export interface SavdoDto {
+  id: number
+  klient_ismi?: string
+  jami?: number
+  tolangan?: number
+  qarz?: number
+  izoh?: string
+  sana?: string
+  tovar_soni?: number
+}
+
+export interface SavdolarResponse {
+  total: number
+  items: SavdoDto[]
+  stats: {
+    bugun_tushum: number
+    bugun_tolangan: number
+    bugun_qarz: number
+    bugun_soni: number
+  }
+}
+
+export const savdoService = {
+  list: (params?: { limit?: number; offset?: number; klient?: string; sana_dan?: string; sana_gacha?: string }) => {
+    const q = new URLSearchParams()
+    if (params?.limit) q.set("limit", String(params.limit))
+    if (params?.offset) q.set("offset", String(params.offset))
+    if (params?.klient) q.set("klient", params.klient)
+    if (params?.sana_dan) q.set("sana_dan", params.sana_dan)
+    if (params?.sana_gacha) q.set("sana_gacha", params.sana_gacha)
+    const qs = q.toString()
+    return api.get<SavdolarResponse>(`/api/v1/savdolar${qs ? `?${qs}` : ""}`)
+  },
+  detail: (id: number) => api.get<SavdoDto & { tovarlar: Array<Record<string, unknown>> }>(`/api/v1/savdo/${id}`),
+  create: (data: {
+    klient?: string
+    tovarlar: Array<{ nomi: string; miqdor: number; birlik: string; narx: number; kategoriya?: string }>
+    jami_summa: number
+    tolangan: number
+    qarz: number
+    izoh?: string
+  }) => api.post<{ sessiya_id: number; status: string }>("/api/v1/sotuv", data),
+}
+
+// ── Dashboard Top (charts) ────────────────────────────────────────────────────
+export interface DashboardTopResponse {
+  top_tovar: Array<{ nomi: string; jami: number; miqdor: number; foyda: number }>
+  top_klient: Array<{ ism: string; jami: number; soni: number; qarz: number }>
+  kunlik_trend: Array<{ kun: string; sotuv: number; qarz: number }>
+}
+
+export const dashboardTopService = {
+  get: (kunlar?: number) =>
+    api.get<DashboardTopResponse>(`/api/v1/dashboard/top${kunlar ? `?kunlar=${kunlar}` : ""}`),
+}
+
+// ── Tovar Import ──────────────────────────────────────────────────────────────
+export const tovarImportService = {
+  importBatch: (tovarlar: Array<{
+    nomi: string; kategoriya?: string; birlik?: string;
+    olish_narxi?: number; sotish_narxi?: number; qoldiq?: number
+  }>) => api.post<{ yaratildi: number; yangilandi: number; xatolar: string[]; jami: number }>(
+    "/api/v1/tovar/import", { tovarlar }
+  ),
+}
+
+// ── Admin Statistika ──────────────────────────────────────────────────────────
+export interface StatistikaResponse {
+  tovar_soni: number
+  klient_soni: number
+  faol_qarz: number
+  kam_qoldiq_soni: number
+  muddat_otgan_qarz: number
+  bugun: { soni: number; jami: number }
+  hafta: { soni: number; jami: number }
+  oy: { soni: number; jami: number }
+}
+
+export const statistikaService = {
+  get: () => api.get<StatistikaResponse>("/api/v1/statistika"),
+}
+
+// ── Foyda Tahlili ─────────────────────────────────────────────────────────────
+export interface FoydaResponse {
+  kunlar: number
+  brutto_sotuv: number
+  tannarx: number
+  sof_foyda: number
+  xarajatlar: number
+  toza_foyda: number
+  margin_foiz: number
+  top_foyda: Array<{ nomi: string; foyda: number; miqdor: number }>
+  top_zarar: Array<{ nomi: string; zarar: number; miqdor: number }>
+}
+
+export const foydaService = {
+  get: (kunlar?: number) =>
+    api.get<FoydaResponse>(`/api/v1/hisobot/foyda${kunlar ? `?kunlar=${kunlar}` : ""}`),
+}
+
+// ── Profil ─────────────────────────────────────────────────────────────
+export const profilService = {
+  update: (data: { ism?: string; dokon_nomi?: string; telefon?: string; manzil?: string; inn?: string; til?: string }) =>
+    api.put<{ status: string }>("/api/v1/me", data),
+  changePassword: (eski_parol: string, yangi_parol: string) =>
+    api.put<{ status: string }>("/api/v1/me/parol", { eski_parol, yangi_parol }),
+}
+
+// ── Klient Tarix ──────────────────────────────────────────────────────
+export const klientTarixService = {
+  get: (klientId: number, limit?: number) =>
+    api.get<{
+      klient: Record<string, unknown>
+      sotuvlar: Array<Record<string, unknown>>
+      qarzlar: Array<Record<string, unknown>>
+    }>(`/api/v1/klient/${klientId}/tarix${limit ? `?limit=${limit}` : ""}`),
+}
+
+// ── Global Search ─────────────────────────────────────────────────────────────
+export const searchService = {
+  search: (q: string, tur?: "tovar" | "klient" | "barchasi") =>
+    api.get<{
+      tovarlar: Array<{ id: number; nomi: string; kategoriya: string; qoldiq: number; sotish_narxi: number }>
+      klientlar: Array<{ id: number; ism: string; telefon: string; jami_sotib: number }>
+      jami: number
+    }>(`/api/v1/search?q=${encodeURIComponent(q)}${tur ? `&tur=${tur}` : ""}`),
+}
+
+// ── Tovar Tarix ───────────────────────────────────────────────────────────────
+export const tovarTarixService = {
+  get: (tovarId: number, limit?: number) =>
+    api.get<{
+      tovar: Record<string, unknown>
+      sotuvlar: Array<Record<string, unknown>>
+      kirimlar: Array<Record<string, unknown>>
+      statistika: { sotuv_soni: number; jami_sotilgan: number; jami_tushum: number }
+    }>(`/api/v1/tovar/${tovarId}/tarix${limit ? `?limit=${limit}` : ""}`),
 }

@@ -36,6 +36,7 @@ import asyncio
 import asyncpg
 import asyncpg.exceptions
 import pytz
+from shared.utils import like_escape
 
 # ── DB xato handleri ─────────────────────────────────────
 class DBXato(Exception):
@@ -69,170 +70,29 @@ _pool: Optional[asyncpg.Pool] = None
 #  § 2. SCHEMA
 # ════════════════════════════════════════════════════════════════
 
-_SCHEMA = """
+_SCHEMA_MINIMAL = """
 CREATE TABLE IF NOT EXISTS users (
     id              BIGINT        PRIMARY KEY,
+    ism             TEXT          NOT NULL DEFAULT '',
     to_liq_ism      TEXT          NOT NULL DEFAULT '',
     username        TEXT,
     telefon         TEXT,
-    dokon_nomi      TEXT,
-    segment         TEXT CHECK (segment IN (
-                        'optom','chakana','oshxona','xozmak','kiyim','gosht',
-                        'meva','qurilish','avto','dorixona','texnika','mebel',
-                        'mato','gul','kosmetika','universal')),
-    faol            BOOLEAN       NOT NULL DEFAULT FALSE,
+    dokon_nomi      TEXT          DEFAULT '',
+    segment         TEXT          DEFAULT 'universal',
+    faol            BOOLEAN       DEFAULT FALSE,
     obuna_tugash    DATE,
-    min_qoldiq      DECIMAL(18,3) NOT NULL DEFAULT 5,
-    yaratilgan      TIMESTAMPTZ   NOT NULL DEFAULT NOW()
-);
-
-CREATE TABLE IF NOT EXISTS klientlar (
-    id              SERIAL        PRIMARY KEY,
-    user_id         BIGINT        NOT NULL,
-    ism             TEXT          NOT NULL,
-    telefon         TEXT,
+    til             TEXT          DEFAULT 'uz',
+    plan            TEXT          DEFAULT 'free',
+    login           TEXT,
+    parol_hash      TEXT,
+    inn             TEXT,
     manzil          TEXT,
-    eslatma         TEXT,
-    kredit_limit    DECIMAL(18,2) NOT NULL DEFAULT 0,
-    jami_sotib      DECIMAL(18,2) NOT NULL DEFAULT 0,
-    yaratilgan      TIMESTAMPTZ   NOT NULL DEFAULT NOW()
-);
-CREATE INDEX IF NOT EXISTS idx_kl_uid_ism
-    ON klientlar(user_id, lower(ism));
-CREATE INDEX IF NOT EXISTS idx_kl_uid_tel
-    ON klientlar(user_id, telefon) WHERE telefon IS NOT NULL;
-
-CREATE TABLE IF NOT EXISTS tovarlar (
-    id               SERIAL        PRIMARY KEY,
-    user_id          BIGINT        NOT NULL,
-    nomi             TEXT          NOT NULL,
-    kategoriya       TEXT          NOT NULL DEFAULT 'Boshqa',
-    birlik           TEXT          NOT NULL DEFAULT 'dona',
-    olish_narxi      DECIMAL(18,2) NOT NULL DEFAULT 0,
-    sotish_narxi     DECIMAL(18,2) NOT NULL DEFAULT 0,
-    min_sotish_narxi DECIMAL(18,2) NOT NULL DEFAULT 0,
-    qoldiq           DECIMAL(18,3) NOT NULL DEFAULT 0,
-    min_qoldiq       DECIMAL(18,3) NOT NULL DEFAULT 0,
-    yaratilgan       TIMESTAMPTZ   NOT NULL DEFAULT NOW()
-);
-CREATE UNIQUE INDEX IF NOT EXISTS idx_tv_uid_nom
-    ON tovarlar(user_id, lower(nomi));
-
-CREATE TABLE IF NOT EXISTS kirimlar (
-    id              SERIAL        PRIMARY KEY,
-    user_id         BIGINT        NOT NULL,
-    tovar_id        INT,
-    tovar_nomi      TEXT          NOT NULL,
-    kategoriya      TEXT          NOT NULL DEFAULT 'Boshqa',
-    miqdor          DECIMAL(18,3) NOT NULL,
-    birlik          TEXT          NOT NULL DEFAULT 'dona',
-    narx            DECIMAL(18,2) NOT NULL DEFAULT 0,
-    jami            DECIMAL(18,2) NOT NULL DEFAULT 0,
-    manba           TEXT,
-    izoh            TEXT,
-    sana            TIMESTAMPTZ   NOT NULL DEFAULT NOW()
-);
-CREATE INDEX IF NOT EXISTS idx_kr_uid_sana ON kirimlar(user_id, sana DESC);
-
-CREATE TABLE IF NOT EXISTS sotuv_sessiyalar (
-    id              SERIAL        PRIMARY KEY,
-    user_id         BIGINT        NOT NULL,
-    klient_id       INT,
-    klient_ismi     TEXT,
-    jami            DECIMAL(18,2) NOT NULL DEFAULT 0,
-    tolangan        DECIMAL(18,2) NOT NULL DEFAULT 0,
-    qarz            DECIMAL(18,2) NOT NULL DEFAULT 0,
-    izoh            TEXT,
-    sana            TIMESTAMPTZ   NOT NULL DEFAULT NOW()
-);
-CREATE INDEX IF NOT EXISTS idx_ss_uid_sana
-    ON sotuv_sessiyalar(user_id, sana DESC);
-
-CREATE TABLE IF NOT EXISTS chiqimlar (
-    id               SERIAL        PRIMARY KEY,
-    user_id          BIGINT        NOT NULL,
-    sessiya_id       INT           NOT NULL,
-    klient_id        INT,
-    klient_ismi      TEXT,
-    tovar_id         INT,
-    tovar_nomi       TEXT          NOT NULL,
-    kategoriya       TEXT          NOT NULL DEFAULT 'Boshqa',
-    miqdor           DECIMAL(18,3) NOT NULL,
-    qaytarilgan      DECIMAL(18,3) NOT NULL DEFAULT 0,
-    birlik           TEXT          NOT NULL DEFAULT 'dona',
-    olish_narxi      DECIMAL(18,2) NOT NULL DEFAULT 0,
-    sotish_narxi     DECIMAL(18,2) NOT NULL DEFAULT 0,
-    chegirma_foiz    DECIMAL(5,2)  NOT NULL DEFAULT 0,
-    jami             DECIMAL(18,2) NOT NULL DEFAULT 0,
-    izoh             TEXT,
-    sana             TIMESTAMPTZ   NOT NULL DEFAULT NOW()
-);
-CREATE INDEX IF NOT EXISTS idx_ch_uid_sana ON chiqimlar(user_id, sana DESC);
-CREATE INDEX IF NOT EXISTS idx_ch_sessiya  ON chiqimlar(sessiya_id);
-
-CREATE TABLE IF NOT EXISTS qaytarishlar (
-    id              SERIAL        PRIMARY KEY,
-    user_id         BIGINT        NOT NULL,
-    chiqim_id       INT,
-    sessiya_id      INT,
-    klient_ismi     TEXT,
-    tovar_nomi      TEXT,
-    miqdor          DECIMAL(18,3),
-    birlik          TEXT          DEFAULT 'dona',
-    narx            DECIMAL(18,2),
-    jami            DECIMAL(18,2),
-    sabab           TEXT,
-    sana            TIMESTAMPTZ   NOT NULL DEFAULT NOW()
-);
-CREATE INDEX IF NOT EXISTS idx_qr_uid_sana ON qaytarishlar(user_id, sana DESC);
-
-CREATE TABLE IF NOT EXISTS qarzlar (
-    id               SERIAL        PRIMARY KEY,
-    user_id          BIGINT        NOT NULL,
-    klient_id        INT,
-    klient_ismi      TEXT          NOT NULL,
-    sessiya_id       INT,
-    dastlabki_summa  DECIMAL(18,2) NOT NULL,
-    tolangan         DECIMAL(18,2) NOT NULL DEFAULT 0,
-    qolgan           DECIMAL(18,2) NOT NULL,
-    muddat           DATE,
-    izoh             TEXT,
-    yopildi          BOOLEAN       NOT NULL DEFAULT FALSE,
-    yaratilgan       TIMESTAMPTZ   NOT NULL DEFAULT NOW(),
-    yangilangan      TIMESTAMPTZ   NOT NULL DEFAULT NOW()
-);
-CREATE INDEX IF NOT EXISTS idx_qrz_uid_aktiv
-    ON qarzlar(user_id, yopildi) WHERE yopildi = FALSE;
-
-CREATE TABLE IF NOT EXISTS nakladnoylar (
-    id              SERIAL        PRIMARY KEY,
-    user_id         BIGINT        NOT NULL,
-    sessiya_id      INT,
-    raqam           TEXT          NOT NULL,
-    klient_ismi     TEXT,
-    jami_summa      DECIMAL(18,2) NOT NULL DEFAULT 0,
-    qarz            DECIMAL(18,2) NOT NULL DEFAULT 0,
-    sana            TIMESTAMPTZ   NOT NULL DEFAULT NOW()
-);
-CREATE INDEX IF NOT EXISTS idx_nl_uid_sana ON nakladnoylar(user_id, sana DESC);
-
-CREATE TABLE IF NOT EXISTS menyu (
-    id              SERIAL        PRIMARY KEY,
-    user_id         BIGINT        NOT NULL,
-    nomi            TEXT          NOT NULL,
-    kategoriya      TEXT          NOT NULL DEFAULT 'Taom',
-    narx            DECIMAL(18,2) NOT NULL DEFAULT 0,
-    mavjud          BOOLEAN       NOT NULL DEFAULT TRUE,
-    yaratilgan      TIMESTAMPTZ   NOT NULL DEFAULT NOW()
-);
-CREATE INDEX IF NOT EXISTS idx_mn_uid ON menyu(user_id, mavjud) WHERE mavjud = TRUE;
-
-CREATE TABLE IF NOT EXISTS nakladnoy_counter (
-    user_id         BIGINT        PRIMARY KEY,
-    oxirgi_raqam    INT           NOT NULL DEFAULT 0,
-    yangilangan     TIMESTAMPTZ   NOT NULL DEFAULT NOW()
+    yaratilgan      TIMESTAMPTZ   DEFAULT NOW()
 );
 """
+# ESLATMA: To'liq schema shared/database/schema.sql da.
+# Bu faqat users jadvali — bot ishga tushishi uchun eng minimal fallback.
+# Dockerfile da shared/ papka COPY qilinishi SHART!
 
 
 # ════════════════════════════════════════════════════════════════
@@ -284,8 +144,14 @@ async def schema_init() -> None:
     if _os2.path.exists(_schema_path):
         with open(_schema_path, encoding="utf-8") as _sf:
             sql = _sf.read()
+        log.info("Schema: shared/database/schema.sql dan yuklandi")
     else:
-        sql = _SCHEMA  # fallback: embedded schema
+        log.warning(
+            "⚠️ schema.sql TOPILMADI: %s — bot/db.py embedded schema ishlatilmoqda. "
+            "Bu schema ESKIRGAN bo'lishi mumkin! Dockerfile da COPY to'g'ri ekanini tekshiring.",
+            _schema_path
+        )
+        sql = _SCHEMA_MINIMAL  # fallback: faqat users jadvali!
 
     # ═══ STATEMENT-BY-STATEMENT EXECUTION ═══
     # asyncpg conn.execute() ga butun SQL berib bo'lmaydi
@@ -389,7 +255,12 @@ def _oy_boshi() -> date:
 
 async def user_ol(uid: int) -> Optional[asyncpg.Record]:
     async with _P().acquire() as c:
-        return await c.fetchrow("SELECT * FROM users WHERE id = $1", uid)
+        return await c.fetchrow("""
+            SELECT id, ism, to_liq_ism, username, telefon, inn, manzil,
+                   dokon_nomi, segment, faol, obuna_tugash, til, plan,
+                   yaratilgan
+            FROM users WHERE id = $1
+        """, uid)
 
 
 async def user_yoz(uid: int, to_liq_ism: str,
@@ -438,13 +309,13 @@ async def user_faollashtir(uid: int, obuna_kun: int = 30) -> None:
 
 async def barcha_users() -> list:
     async with _P().acquire() as c:
-        _rows = await c.fetch("SELECT * FROM users ORDER BY yaratilgan DESC")
+        _rows = await c.fetch("SELECT id, ism, to_liq_ism, username, telefon, dokon_nomi, segment, faol, obuna_tugash, yaratilgan FROM users ORDER BY yaratilgan DESC")
         return [dict(r) for r in _rows]
 
 
 async def faol_users() -> list:
     async with _P().acquire() as c:
-        _rows = await c.fetch("SELECT * FROM users WHERE faol = TRUE")
+        _rows = await c.fetch("SELECT id, ism, to_liq_ism, username, telefon, dokon_nomi, segment, faol, obuna_tugash, yaratilgan FROM users WHERE faol = TRUE")
         return [dict(r) for r in _rows]
 
 
@@ -452,7 +323,7 @@ async def obuna_tugayotganlar(kun: int = 3) -> list:
     chegara = _bugun() + timedelta(days=kun)
     async with _P().acquire() as c:
         _rows = await c.fetch(
-            "SELECT * FROM users WHERE faol = TRUE AND obuna_tugash = $1",
+            "SELECT id, ism, to_liq_ism, username, telefon, dokon_nomi, segment, faol, obuna_tugash, yaratilgan FROM users WHERE faol = TRUE AND obuna_tugash = $1",
             chegara
         )
         return [dict(r) for r in _rows]
@@ -469,16 +340,16 @@ async def klient_topish(uid: int, ism: str) -> Optional[dict]:
     async with _P().acquire() as c:
         # 1. Exact match
         r = await c.fetchrow("""
-            SELECT * FROM klientlar
+            SELECT id, user_id, ism, telefon, manzil, eslatma, kredit_limit, jami_sotib, yaratilgan, narx_guruh_id FROM klientlar
             WHERE user_id = $1 AND lower(ism) = lower($2)
         """, uid, s)
         if r: return dict(r)
         # 2. ILIKE fuzzy (partial match)
         r = await c.fetchrow("""
-            SELECT * FROM klientlar
+            SELECT id, user_id, ism, telefon, manzil, eslatma, kredit_limit, jami_sotib, yaratilgan, narx_guruh_id FROM klientlar
             WHERE user_id = $1 AND lower(ism) LIKE lower($2)
             ORDER BY jami_sotib DESC LIMIT 1
-        """, uid, f"%{s}%")
+        """, uid, f"%{like_escape(s)}%")
         return dict(r) if r else None
 
 
@@ -489,7 +360,7 @@ async def klient_olish_yaratish(uid: int, ism: str) -> dict:
         r = await c.fetchrow("""
             INSERT INTO klientlar (user_id, ism) VALUES ($1, $2)
             ON CONFLICT (user_id, lower(ism))
-            DO UPDATE SET ism = klientlar.ism RETURNING *
+            DO UPDATE SET ism = klientlar.ism RETURNING id, user_id, ism, telefon, manzil, eslatma, kredit_limit, jami_sotib, yaratilgan, narx_guruh_id
         """, uid, ism.strip())
         return dict(r) if r else {}
 
@@ -497,7 +368,7 @@ async def klient_olish_yaratish(uid: int, ism: str) -> dict:
 async def klientlar_ol(uid: int, limit: int = 20, offset: int = 0) -> list:
     async with _P().acquire() as c:
         rows = await c.fetch("""
-            SELECT * FROM klientlar WHERE user_id = $1
+            SELECT id, user_id, ism, telefon, manzil, eslatma, kredit_limit, jami_sotib, yaratilgan, narx_guruh_id FROM klientlar WHERE user_id = $1
             ORDER BY jami_sotib DESC, ism ASC LIMIT $2 OFFSET $3
         """, uid, limit, offset)
         return [dict(r) for r in rows]
@@ -513,27 +384,27 @@ async def klient_qidirish(uid: int, qidiruv: str) -> list:
     q = qidiruv.strip()
     async with _P().acquire() as c:
         _rows = await c.fetch("""
-            SELECT * FROM klientlar
+            SELECT id, user_id, ism, telefon, manzil, eslatma, kredit_limit, jami_sotib, yaratilgan, narx_guruh_id FROM klientlar
             WHERE user_id = $1
               AND (lower(ism) LIKE lower($2) OR telefon LIKE $3)
             ORDER BY jami_sotib DESC LIMIT 10
-        """, uid, f"%{q}%", f"%{q}%")
+        """, uid, f"%{like_escape(q)}%", f"%{like_escape(q)}%")
         return [dict(r) for r in _rows]
 
 
 async def klient_to_liq_hisobi(uid: int, klient_id: int) -> Optional[dict]:
     async with _P().acquire() as c:
         k = await c.fetchrow(
-            "SELECT * FROM klientlar WHERE id = $1 AND user_id = $2",
+            "SELECT id, user_id, ism, telefon, manzil, eslatma, kredit_limit, jami_sotib, yaratilgan, narx_guruh_id FROM klientlar WHERE id = $1 AND user_id = $2",
             klient_id, uid)
         if not k: return None
         sotuvlar = await c.fetch("""
-            SELECT * FROM sotuv_sessiyalar
+            SELECT id, user_id, klient_id, klient_ismi, jami, tolangan, qarz, izoh, sana FROM sotuv_sessiyalar
             WHERE user_id = $1 AND klient_id = $2
             ORDER BY sana DESC LIMIT 20
         """, uid, klient_id)
         qarzlar = await c.fetch("""
-            SELECT * FROM qarzlar
+            SELECT id, user_id, klient_id, klient_ismi, sessiya_id, dastlabki_summa, tolangan, qolgan, muddat, izoh, yopildi, yaratilgan, yangilangan FROM qarzlar
             WHERE user_id = $1 AND klient_id = $2 AND yopildi = FALSE
             ORDER BY yaratilgan ASC
         """, uid, klient_id)
@@ -573,7 +444,7 @@ async def klient_kredit_tekshir(uid: int,
                                   yangi_qarz: float) -> dict:
     async with _P().acquire() as c:
         k = await c.fetchrow(
-            "SELECT * FROM klientlar WHERE id=$1 AND user_id=$2",
+            "SELECT id, user_id, ism, telefon, manzil, eslatma, kredit_limit, jami_sotib, yaratilgan, narx_guruh_id FROM klientlar WHERE id=$1 AND user_id=$2",
             klient_id, uid)
         if not k: return {"ok": True, "xato": None}
         k = dict(k)
@@ -607,16 +478,16 @@ async def tovar_topish(uid: int, nomi: str) -> Optional[dict]:
     async with _P().acquire() as c:
         # 1. Exact match
         r = await c.fetchrow("""
-            SELECT * FROM tovarlar
+            SELECT id, user_id, nomi, kategoriya, birlik, olish_narxi, sotish_narxi, min_sotish_narxi, qoldiq, min_qoldiq, yaratilgan FROM tovarlar
             WHERE user_id=$1 AND lower(nomi)=lower($2)
         """, uid, s)
         if r: return dict(r)
         # 2. ILIKE fuzzy
         r = await c.fetchrow("""
-            SELECT * FROM tovarlar
+            SELECT id, user_id, nomi, kategoriya, birlik, olish_narxi, sotish_narxi, min_sotish_narxi, qoldiq, min_qoldiq, yaratilgan FROM tovarlar
             WHERE user_id=$1 AND lower(nomi) LIKE lower($2)
             ORDER BY qoldiq DESC LIMIT 1
-        """, uid, f"%{s}%")
+        """, uid, f"%{like_escape(s)}%")
         return dict(r) if r else None
 
 
@@ -630,7 +501,7 @@ async def tovar_olish_yaratish(uid: int, nomi: str,
             INSERT INTO tovarlar (user_id, nomi, kategoriya, birlik)
             VALUES ($1, $2, $3, $4)
             ON CONFLICT (user_id, lower(nomi))
-            DO UPDATE SET nomi = EXCLUDED.nomi RETURNING *
+            DO UPDATE SET nomi = EXCLUDED.nomi RETURNING id, user_id, nomi, kategoriya, birlik, olish_narxi, sotish_narxi, min_sotish_narxi, qoldiq, min_qoldiq, yaratilgan
         """, uid, nomi.strip(), kategoriya, birlik)
         return dict(r) if r else {}
 
@@ -638,7 +509,7 @@ async def tovar_olish_yaratish(uid: int, nomi: str,
 async def tovarlar_ol(uid: int, limit: int = 20, offset: int = 0) -> list:
     async with _P().acquire() as c:
         _rows = await c.fetch("""
-            SELECT * FROM tovarlar WHERE user_id=$1
+            SELECT id, user_id, nomi, kategoriya, birlik, olish_narxi, sotish_narxi, min_sotish_narxi, qoldiq, min_qoldiq, yaratilgan FROM tovarlar WHERE user_id=$1
             ORDER BY kategoriya, nomi LIMIT $2 OFFSET $3
         """, uid, limit, offset)
         return [dict(r) for r in _rows]
@@ -657,7 +528,7 @@ async def tovar_qoldiq_ol(uid: int, nomi: str) -> Optional[Decimal]:
             SELECT qoldiq FROM tovarlar
             WHERE user_id=$1 AND lower(nomi) LIKE lower($2)
             LIMIT 1
-        """, uid, f"%{nomi.strip()}%")
+        """, uid, f"%{like_escape(nomi.strip())}%")
         return D(row["qoldiq"]) if row else None
 
 
@@ -677,7 +548,7 @@ async def tovar_qoldiq_atomic_tekshir(uid: int, tovarlar: list) -> list:
                     SELECT nomi, qoldiq FROM tovarlar
                     WHERE user_id=$1 AND lower(nomi) LIKE lower($2)
                     FOR UPDATE LIMIT 1
-                """, uid, f"%{nomi.strip()}%")
+                """, uid, f"%{like_escape(nomi.strip())}%")
                 if row and D(row["qoldiq"]) < miqdor:
                     kamchilik.append({
                         "nomi": nomi,
@@ -689,7 +560,7 @@ async def tovar_qoldiq_atomic_tekshir(uid: int, tovarlar: list) -> list:
 async def kam_qoldiq_tovarlar(uid: int) -> list:
     async with _P().acquire() as c:
         _rows = await c.fetch("""
-            SELECT * FROM tovarlar
+            SELECT id, user_id, nomi, kategoriya, birlik, olish_narxi, sotish_narxi, min_sotish_narxi, qoldiq, min_qoldiq, yaratilgan FROM tovarlar
             WHERE user_id=$1 AND min_qoldiq > 0 AND qoldiq <= min_qoldiq
             ORDER BY (qoldiq / NULLIF(min_qoldiq, 0)) ASC
         """, uid)
@@ -699,17 +570,30 @@ async def kam_qoldiq_tovarlar(uid: int) -> list:
 async def zarar_sotuv_tekshir(uid: int, tovarlar_r: list) -> list[dict]:
     from shared.utils.hisob import foyda_hisob
     zararlilar = []
+    # Tovar nomlarini yig'ish
+    nomlar = [t.get("nomi", "").strip().lower() for t in tovarlar_r if t.get("nomi")]
+    if not nomlar:
+        return []
+
     async with _P().acquire() as c:
+        # ── BATCH QUERY: N+1 o'rniga 1 ta query ──
+        tv_rows = await c.fetch("""
+            SELECT id, nomi, olish_narxi, sotish_narxi FROM tovarlar
+            WHERE user_id=$1 AND lower(nomi) = ANY($2)
+        """, uid, nomlar)
+        tv_map = {r["nomi"].lower(): dict(r) for r in tv_rows}
+
         for t in tovarlar_r:
-            tv = await c.fetchrow("""
-                SELECT * FROM tovarlar
-                WHERE user_id=$1 AND lower(nomi) LIKE lower($2) LIMIT 1
-            """, uid, f"%{t.get('nomi','')}%")
-            if not tv: continue
-            tv = dict(tv)
+            nomi = t.get("nomi", "").strip()
+            if not nomi:
+                continue
+            tv = tv_map.get(nomi.lower())
+            if not tv:
+                continue
             olish_n  = float(tv.get("olish_narxi") or 0)
             sotish_n = float(t.get("narx") or 0)
-            if olish_n <= 0 or sotish_n <= 0: continue
+            if olish_n <= 0 or sotish_n <= 0:
+                continue
             f = foyda_hisob(sotish_n, olish_n, 1)
             if f["zararli"]:
                 zararlilar.append({
@@ -744,7 +628,7 @@ async def kirim_saqlash(uid: int, t: dict) -> dict:
             ON CONFLICT (user_id, lower(nomi)) DO UPDATE SET
                 kategoriya  = EXCLUDED.kategoriya,
                 olish_narxi = EXCLUDED.olish_narxi
-            RETURNING *
+            RETURNING id, user_id, nomi, kategoriya, birlik, olish_narxi, sotish_narxi, qoldiq
         """, uid, nomi, kategoriya, birlik, narx)
 
             # Qoldiqni oshirish
@@ -759,7 +643,7 @@ async def kirim_saqlash(uid: int, t: dict) -> dict:
                     (user_id, tovar_id, tovar_nomi, kategoriya,
                      miqdor, birlik, narx, jami, manba, izoh)
                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-                RETURNING *
+                RETURNING id, tovar_id, tovar_nomi, miqdor, birlik, narx, jami, sana
             """, uid, tovar["id"], nomi, kategoriya,
                 miqdor, birlik, narx, jami,
                 t.get("manba"), t.get("izoh"))
@@ -817,7 +701,7 @@ async def sotuv_saqlash(uid: int, data: dict) -> dict:
             sess = await c.fetchrow("""
                 INSERT INTO sotuv_sessiyalar
                     (user_id, klient_id, klient_ismi, jami, tolangan, qarz, izoh)
-                VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *
+                VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id, klient_id, klient_ismi, jami, tolangan, qarz, sana
             """, uid, klient_id, klient_ismi, jami, tolangan, qarz, izoh)
             sess_id = sess["id"]
 
@@ -935,12 +819,12 @@ async def sotuv_saqlash(uid: int, data: dict) -> dict:
 async def sessiya_ol(uid: int, sess_id: int) -> Optional[dict]:
     async with _P().acquire() as c:
         sess = await c.fetchrow("""
-            SELECT * FROM sotuv_sessiyalar WHERE id=$1 AND user_id=$2
+            SELECT id, user_id, klient_id, klient_ismi, jami, tolangan, qarz, izoh, sana FROM sotuv_sessiyalar WHERE id=$1 AND user_id=$2
         """, sess_id, uid)
         if not sess: return None
         sess_d = dict(sess)  # Record → dict
         chiqimlar = await c.fetch(
-            "SELECT * FROM chiqimlar WHERE sessiya_id=$1 ORDER BY id",
+            "SELECT id, user_id, sessiya_id, klient_id, klient_ismi, tovar_id, tovar_nomi, kategoriya, miqdor, qaytarilgan, birlik, olish_narxi, sotish_narxi, chegirma_foiz, jami, sana FROM chiqimlar WHERE sessiya_id=$1 ORDER BY id",
             sess_id)
         # chiqimlar jadvalida "tovar_nomi" — chek uchun "nomi" ham kerak
         tovarlar = []
@@ -976,7 +860,7 @@ async def qaytarish_tovarlar_ol(uid: int,
               AND lower(ch.tovar_nomi) LIKE lower($3)
               AND ch.miqdor > ch.qaytarilgan
             ORDER BY ch.sana DESC LIMIT 10
-        """, uid, klient.strip(), f"%{tovar_nomi.strip()}%")
+        """, uid, klient.strip(), f"%{like_escape(tovar_nomi.strip())}%")
         return [dict(r) for r in _rows]
 
 
@@ -990,7 +874,7 @@ async def qaytarish_saqlash(uid: int,
         async with c.transaction():  # ACID
             for q in qaytarishlar:
                 chiqim = await c.fetchrow(
-                    "SELECT * FROM chiqimlar WHERE id=$1", q["chiqim_id"])
+                    "SELECT id, user_id, sessiya_id, klient_id, klient_ismi, tovar_id, tovar_nomi, kategoriya, miqdor, qaytarilgan, birlik, olish_narxi, sotish_narxi, chegirma_foiz, jami, sana FROM chiqimlar WHERE id=$1", q["chiqim_id"])
                 if not chiqim:
                     continue
                 chiqim = dict(chiqim)
@@ -1065,7 +949,7 @@ async def qarz_tolash(uid: int,
     async with _P().acquire() as c:
         async with c.transaction():
             qarzlar = await c.fetch("""
-                SELECT * FROM qarzlar
+                SELECT id, user_id, klient_id, klient_ismi, sessiya_id, dastlabki_summa, tolangan, qolgan, muddat, izoh, yopildi, yaratilgan, yangilangan FROM qarzlar
                 WHERE user_id=$1 AND lower(klient_ismi)=lower($2)
                   AND yopildi=FALSE
                 ORDER BY yaratilgan ASC
@@ -1117,7 +1001,7 @@ async def muddatli_qarzlar(uid: int, kun: int = 3) -> list:
     chegara = _bugun() + timedelta(days=kun)
     async with _P().acquire() as c:
         _rows = await c.fetch("""
-            SELECT * FROM qarzlar
+            SELECT id, user_id, klient_id, klient_ismi, sessiya_id, dastlabki_summa, tolangan, qolgan, muddat, izoh, yopildi, yaratilgan, yangilangan FROM qarzlar
             WHERE user_id=$1 AND yopildi=FALSE
               AND muddat IS NOT NULL AND muddat <= $2
             ORDER BY muddat ASC
@@ -1161,7 +1045,7 @@ async def nakladnoy_saqlash(uid: int, sessiya_id: Optional[int],
 async def menyu_ol(uid: int) -> list:
     async with _P().acquire() as c:
         _rows = await c.fetch("""
-            SELECT * FROM menyu WHERE user_id=$1 AND mavjud=TRUE
+            SELECT id, user_id, nomi, kategoriya, narx, mavjud, yaratilgan FROM menyu WHERE user_id=$1 AND mavjud=TRUE
             ORDER BY kategoriya, nomi
         """, uid)
         return [dict(r) for r in _rows]
@@ -1173,7 +1057,7 @@ async def menyu_qoshish(uid: int, nomi: str,
     async with _P().acquire() as c:
         return await c.fetchrow("""
             INSERT INTO menyu (user_id, nomi, narx, kategoriya)
-            VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING RETURNING *
+            VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING RETURNING id, nomi, narx, kategoriya, mavjud
         """, uid, nomi.strip(), Decimal(str(narx)), kategoriya)
 
 

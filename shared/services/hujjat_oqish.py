@@ -12,6 +12,7 @@
 ╚══════════════════════════════════════════════════════════════════════════╝
 """
 from __future__ import annotations
+from shared.utils import like_escape
 import io, json, logging, os, re, tempfile, time, hashlib, sqlite3
 from typing import Optional
 from collections import Counter
@@ -78,7 +79,7 @@ class DiskCache:
         row = self.conn.execute("SELECT boshi, sozlar FROM indeks WHERE num=?", (num,)).fetchone()
         if row:
             try: sozlar = json.loads(row[1])
-            except: sozlar = []
+            except Exception: sozlar = []
             return {"boshi": row[0], "sozlar": sozlar}
         return {"boshi": "", "sozlar": []}
     
@@ -87,7 +88,7 @@ class DiskCache:
         result = {}
         for num, boshi, sozlar_json in rows:
             try: sozlar = json.loads(sozlar_json)
-            except: sozlar = []
+            except Exception: sozlar = []
             result[num] = {"boshi": boshi, "sozlar": sozlar}
         return result
     
@@ -111,7 +112,7 @@ class DiskCache:
         for k in kalit_sozlar:
             rows = self.conn.execute(
                 "SELECT num FROM indeks WHERE boshi LIKE ? OR sozlar LIKE ? ORDER BY num LIMIT ?",
-                (f"%{k}%", f"%{k}%", limit)).fetchall()
+                (f"%{like_escape(k)}%", f"%{like_escape(k)}%", limit)).fetchall()
             for (num,) in rows:
                 if num not in topilgan:
                     topilgan.append(num)
@@ -121,7 +122,7 @@ class DiskCache:
         if len(kalit_sozlar) == 1:
             rows = self.conn.execute(
                 "SELECT num FROM sahifalar WHERE matn LIKE ? ORDER BY num LIMIT ?",
-                (f"%{kalit_sozlar[0]}%", limit)).fetchall()
+                (f"%{like_escape(kalit_sozlar[0])}%", limit)).fetchall()
             return [num for (num,) in rows]
         return []
     
@@ -130,7 +131,7 @@ class DiskCache:
     
     def __del__(self):
         try: self.conn.close()
-        except: pass
+        except Exception: pass
 
 
 def _fayl_id(data: bytes) -> str:
@@ -197,7 +198,7 @@ def pdf_oqi(data: bytes) -> dict:
                             if table and len(table) > 1:
                                 result["jadvallar"].append({"sahifa": i, "jadval_raqam": t_idx+1,
                                     "sarlavha": table[0], "qatorlar": table[1:6], "qator_soni": len(table)})
-                    except: pass
+                    except Exception: pass
                 
                 # Umumiy — birinchi 5 + oxirgi 3
                 if i <= 5 or i > jami - 3:
@@ -239,7 +240,7 @@ def docx_oqi(data: bytes) -> dict:
             if "Heading" in stil:
                 daraja = 1
                 try: daraja = int(re.search(r'\d', stil).group())
-                except: pass
+                except Exception: pass
                 result["sarlavhalar"].append({"daraja": daraja, "matn": matn})
                 result["mundarija"].append({"sahifa": sahifa_num, "sarlavha": matn[:80]})
             buf.append(matn); buf_len += len(matn)
@@ -409,7 +410,7 @@ def rtf_oqi(data: bytes) -> dict:
     try:
         from striprtf.striprtf import rtf_to_text
         matn = rtf_to_text(data.decode('utf-8', errors='replace'))
-    except: matn = data.decode('utf-8', errors='replace')
+    except Exception: matn = data.decode('utf-8', errors='replace')
     return _matn_cache(matn, "rtf", data)
 
 def html_oqi(data: bytes) -> dict:
@@ -420,7 +421,7 @@ def html_oqi(data: bytes) -> dict:
         result = _matn_cache(matn, "html", data)
         result["mundarija"] = [{"sahifa": 0, "sarlavha": tag.get_text()[:80]} for tag in soup.find_all(['h1','h2','h3','h4'])[:50]]
         return result
-    except: return _matn_cache(data.decode('utf-8', errors='replace'), "html", data)
+    except Exception: return _matn_cache(data.decode('utf-8', errors='replace'), "html", data)
 
 def fb2_oqi(data: bytes) -> dict:
     try:
@@ -434,7 +435,7 @@ def fb2_oqi(data: bytes) -> dict:
         result = _matn_cache("\n".join(parts), "fb2", data)
         result["mundarija"] = mundarija
         return result
-    except: return _matn_cache(data.decode('utf-8', errors='replace'), "fb2", data)
+    except Exception: return _matn_cache(data.decode('utf-8', errors='replace'), "fb2", data)
 
 def md_oqi(data: bytes) -> dict:
     matn = data.decode('utf-8', errors='replace')
@@ -445,7 +446,7 @@ def md_oqi(data: bytes) -> dict:
 
 def json_oqi(data: bytes) -> dict:
     try: matn = json.dumps(json.loads(data), indent=2, ensure_ascii=False)
-    except: matn = data.decode('utf-8', errors='replace')
+    except Exception: matn = data.decode('utf-8', errors='replace')
     return _matn_cache(matn, "json", data)
 
 def odt_oqi(data: bytes) -> dict:
@@ -492,13 +493,13 @@ def hujjat_oqi(data: bytes, fayl_nomi: str) -> dict:
                 r = _matn_cache(matn, "txt", data)
                 r["tur"] = "txt"; r["qator_soni"] = matn.count("\n") + 1
                 return r
-            except: return {"tur": "txt", "xato": "O'qib bo'lmadi"}
+            except Exception: return {"tur": "txt", "xato": "O'qib bo'lmadi"}
     try:
         matn = data.decode("utf-8", errors="replace")
         if matn.strip():
             r = _matn_cache(matn, "txt", data)
             r["tur"] = "txt"; return r
-    except: pass
+    except Exception: pass
     return {"tur": "noaniq", "xato": f"'{fayl_nomi}' qo'llab-quvvatlanmaydi.\nFormatlar: PDF, Word, Excel, EPUB, PowerPoint, FB2, RTF, HTML, JSON, MD, kod fayllar"}
 
 
@@ -576,7 +577,7 @@ def hujjatdan_izlash(h: dict, sorov: str) -> str:
 
 def _pul(v):
     try: return f"{float(v):,.0f}"
-    except: return "0"
+    except Exception: return "0"
 
 def hujjat_xulosa_matn(h: dict, fayl_nomi: str) -> str:
     tur = h.get("tur","?"); sahifalar = h.get("sahifalar_soni", 0)

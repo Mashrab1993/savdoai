@@ -134,6 +134,59 @@ export default function SettingsPage() {
     pushPayments: false,
   })
   const [notifSaved, setNotifSaved] = useState(false)
+  const [profileForm, setProfileForm] = useState({
+    ism: user?.ism ?? "",
+    telefon: user?.telefon ?? "",
+    dokon_nomi: user?.dokon_nomi ?? "",
+    manzil: "",
+    inn: "",
+  })
+  const [profileSaving, setProfileSaving] = useState(false)
+  const [profileSaveMsg, setProfileSaveMsg] = useState("")
+  const [pwdForm, setPwdForm] = useState({ current: "", newPwd: "", confirm: "" })
+  const [pwdSaving, setPwdSaving] = useState(false)
+  const [pwdMsg, setPwdMsg] = useState("")
+
+  async function saveProfile() {
+    setProfileSaving(true)
+    setProfileSaveMsg("")
+    try {
+      const { api } = await import("@/lib/api/client")
+      await api.put("/api/v1/me", profileForm)
+      setProfileSaveMsg(locale === "uz" ? "Saqlandi!" : "Сохранено!")
+      setTimeout(() => setProfileSaveMsg(""), 3000)
+    } catch {
+      setProfileSaveMsg(locale === "uz" ? "Xato yuz berdi" : "Ошибка")
+    } finally {
+      setProfileSaving(false)
+    }
+  }
+
+  async function handlePwdChange() {
+    setPwdMsg("")
+    if (pwdForm.newPwd.length < 4) {
+      setPwdMsg(locale === "uz" ? "Kamida 4 belgi" : "Минимум 4 символа")
+      return
+    }
+    if (pwdForm.newPwd !== pwdForm.confirm) {
+      setPwdMsg(locale === "uz" ? "Parollar mos kelmaydi" : "Пароли не совпадают")
+      return
+    }
+    setPwdSaving(true)
+    try {
+      const { api } = await import("@/lib/api/client")
+      await api.put("/api/v1/me/parol", {
+        eski_parol: pwdForm.current,
+        yangi_parol: pwdForm.newPwd,
+      })
+      setPwdMsg("✅ " + (locale === "uz" ? "Parol o'zgartirildi" : "Пароль изменён"))
+      setPwdForm({ current: "", newPwd: "", confirm: "" })
+    } catch {
+      setPwdMsg(locale === "uz" ? "Xato — eski parol noto'g'ri" : "Ошибка — неверный старый пароль")
+    } finally {
+      setPwdSaving(false)
+    }
+  }
 
   function saveNotifPrefs() {
     setNotifSaved(true)
@@ -179,33 +232,51 @@ export default function SettingsPage() {
                     </AvatarFallback>
                   </Avatar>
                   <div>
-                    <p className="text-sm font-semibold text-foreground">{user?.ism ?? user?.full_name ?? user?.username ?? "—"}</p>
-                    <p className="text-xs text-muted-foreground">{user?.telefon ?? "—"}</p>
-                    <div className="flex items-center gap-2 mt-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="gap-1.5 text-xs h-7 px-2.5 opacity-50 cursor-not-allowed"
-                        disabled
-                        tabIndex={-1}
-                      >
-                        <Camera className="w-3 h-3" /> {S.changePhoto[locale]}
-                      </Button>
-                      <span className="text-[11px] text-muted-foreground/60">{S.photoHint[locale]}</span>
-                    </div>
+                    <p className="text-sm font-semibold text-foreground">{profileForm.ism || user?.ism || "—"}</p>
+                    <p className="text-xs text-muted-foreground">{profileForm.telefon || user?.telefon || "—"}</p>
                   </div>
                 </div>
 
                 <Separator />
 
                 <div className="grid grid-cols-2 gap-4">
-                  <ReadOnlyField label={S.username[locale]} value={user?.username ?? ""} />
-                  <ReadOnlyField label={S.fullName[locale]} value={user?.ism ?? user?.full_name ?? ""} />
-                  <ReadOnlyField label={S.email[locale]} value={user?.telefon ?? ""} />
-                  <ReadOnlyField label={S.role[locale]} value={user?.role ?? ""} />
+                  <div className="space-y-1.5">
+                    <Label className="text-muted-foreground">{S.username[locale]}</Label>
+                    <ReadOnlyField label="" value={user?.username ?? ""} />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-muted-foreground">{S.fullName[locale]}</Label>
+                    <Input value={profileForm.ism} onChange={e => setProfileForm(f => ({...f, ism: e.target.value}))} />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-muted-foreground">{S.email[locale]}</Label>
+                    <Input value={profileForm.telefon} onChange={e => setProfileForm(f => ({...f, telefon: e.target.value}))} />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-muted-foreground">{locale === "uz" ? "Do'kon nomi" : "Название магазина"}</Label>
+                    <Input value={profileForm.dokon_nomi} onChange={e => setProfileForm(f => ({...f, dokon_nomi: e.target.value}))} />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-muted-foreground">{locale === "uz" ? "Manzil" : "Адрес"}</Label>
+                    <Input value={profileForm.manzil} onChange={e => setProfileForm(f => ({...f, manzil: e.target.value}))} />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-muted-foreground">INN</Label>
+                    <Input value={profileForm.inn} onChange={e => setProfileForm(f => ({...f, inn: e.target.value}))} />
+                  </div>
                 </div>
 
-                <p className="text-xs text-muted-foreground">{S.readOnlyNote[locale]}</p>
+                {profileSaveMsg && (
+                  <p className="text-xs text-green-600 dark:text-green-400 flex items-center gap-1.5">
+                    <CheckCircle2 className="w-3.5 h-3.5" /> {profileSaveMsg}
+                  </p>
+                )}
+
+                <Button onClick={saveProfile} disabled={profileSaving}>
+                  {profileSaving
+                    ? (locale === "uz" ? "Saqlanmoqda..." : "Сохранение...")
+                    : (locale === "uz" ? "Profilni saqlash" : "Сохранить профиль")}
+                </Button>
               </div>
             </div>
           </TabsContent>
@@ -333,21 +404,19 @@ export default function SettingsPage() {
                   <h3 className="text-sm font-semibold text-foreground">{S.secTitle[locale]}</h3>
                   <p className="text-xs text-muted-foreground mt-0.5">{S.secSub[locale]}</p>
                 </div>
-                <Badge variant="secondary" className="text-[10px] font-semibold uppercase tracking-wide">
-                  {S.comingSoonBadge[locale]}
-                </Badge>
+                <SectionBadge type="server" />
               </div>
 
               <div className="p-6 space-y-6">
-                <p className="text-xs text-muted-foreground bg-secondary/70 rounded-lg px-3 py-2.5">{S.secNote[locale]}</p>
-
-                {/* Password fields — visually dimmed */}
-                <div className="space-y-3 opacity-40 pointer-events-none select-none" aria-hidden>
+                {/* Password change — working */}
+                <div className="space-y-3">
                   <div className="space-y-1.5">
                     <Label>{S.currentPwd[locale]}</Label>
                     <div className="relative">
                       <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
-                      <Input type="password" placeholder="••••••••" className="pl-9" disabled />
+                      <Input type="password" placeholder="••••••••" className="pl-9"
+                             value={pwdForm.current}
+                             onChange={e => setPwdForm(f => ({...f, current: e.target.value}))} />
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-3">
@@ -355,19 +424,27 @@ export default function SettingsPage() {
                       <Label>{S.newPwd[locale]}</Label>
                       <div className="relative">
                         <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
-                        <Input type="password" placeholder="••••••••" className="pl-9" disabled />
+                        <Input type="password" placeholder="••••••••" className="pl-9"
+                               value={pwdForm.newPwd}
+                               onChange={e => setPwdForm(f => ({...f, newPwd: e.target.value}))} />
                       </div>
                     </div>
                     <div className="space-y-1.5">
                       <Label>{S.confirmPwd[locale]}</Label>
                       <div className="relative">
                         <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
-                        <Input type="password" placeholder="••••••••" className="pl-9" disabled />
+                        <Input type="password" placeholder="••••••••" className="pl-9"
+                               value={pwdForm.confirm}
+                               onChange={e => setPwdForm(f => ({...f, confirm: e.target.value}))} />
                       </div>
                     </div>
                   </div>
-                  <Button disabled size="sm" className="gap-2">
-                    {S.updatePwd[locale]}
+                  {pwdMsg && (
+                    <p className={`text-xs ${pwdMsg.includes("✅") ? "text-green-600" : "text-destructive"}`}>{pwdMsg}</p>
+                  )}
+                  <Button size="sm" className="gap-2" disabled={pwdSaving}
+                          onClick={handlePwdChange}>
+                    {pwdSaving ? (locale === "uz" ? "O'zgartirilmoqda..." : "Изменение...") : S.updatePwd[locale]}
                   </Button>
                 </div>
 

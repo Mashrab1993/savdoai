@@ -1,0 +1,50 @@
+# ═══════════════════════════════════════════════════════════
+#  SAVDOAI CI — pytest + syntax check
+#  Push yoki PR da avtomatik ishga tushadi
+# ═══════════════════════════════════════════════════════════
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Python 3.12 o'rnatish
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Kutubxonalar o'rnatish
+        run: |
+          pip install --upgrade pip
+          pip install pytest ruff asyncpg pytz pydantic httpx tenacity openpyxl reportlab \
+            pdfplumber python-docx python-pptx ebooklib lxml beautifulsoup4 striprtf \
+            pydub Pillow anthropic google-genai redis celery python-dotenv \
+            python-telegram-bot fastapi uvicorn websockets thefuzz python-Levenshtein
+
+      - name: Ruff lint tekshirish
+        run: |
+          ruff check shared/ services/ --select=E9,F63,F7,F82 --target-version=py312
+
+      - name: Testlar ishga tushirish
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: |
+          python -m pytest tests/ -q --tb=short
+
+      - name: Inline testlar tekshirish
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: |
+          python -m shared.utils.hisob
+          python -m shared.utils.uzb_nlp
+          python -m services.cognitive.engine

@@ -1,6 +1,8 @@
 "use client"
 
-import { Bell, Search, Moon, Sun, ChevronDown, Menu, Settings, LogOut } from "lucide-react"
+import { useState, useEffect, useCallback } from "react"
+import { Bell, Search, Moon, Sun, ChevronDown, Menu, Settings, LogOut,
+         AlertTriangle, PackageMinus, Clock } from "lucide-react"
 import { useTheme } from "next-themes"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -19,6 +21,97 @@ import { translations } from "@/lib/i18n"
 import { useAuth } from "@/lib/auth/auth-context"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
+
+
+// ── Notification Bell — real-time bildirishnomalar ────────────
+function NotificationBell({ locale }: { locale: string }) {
+  const [items, setItems] = useState<Array<{
+    tur: string; darajasi: string; matn: string
+  }>>([])
+  const [loading, setLoading] = useState(false)
+  const [open, setOpen] = useState(false)
+
+  const fetchNotifications = useCallback(async () => {
+    setLoading(true)
+    try {
+      const { notificationService } = await import("@/lib/api/services")
+      const data = await notificationService.list()
+      setItems(data?.items ?? [])
+    } catch {
+      // Silent fail — notification is optional
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  // Har 2 daqiqada yangilash
+  useEffect(() => {
+    fetchNotifications()
+    const interval = setInterval(fetchNotifications, 120_000)
+    return () => clearInterval(interval)
+  }, [fetchNotifications])
+
+  const count = items.length
+  const hasUrgent = items.some(i => i.darajasi === "xavfli")
+
+  const iconMap: Record<string, typeof AlertTriangle> = {
+    qarz_muddati: AlertTriangle,
+    kam_qoldiq: PackageMinus,
+    xarajat_tasdiq: Clock,
+  }
+
+  const colorMap: Record<string, string> = {
+    xavfli: "text-red-500",
+    ogohlantirish: "text-yellow-500",
+    info: "text-blue-500",
+  }
+
+  return (
+    <DropdownMenu open={open} onOpenChange={(v) => { setOpen(v); if (v) fetchNotifications() }}>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" size="icon" className="relative h-8 w-8"
+                aria-label={locale === "uz" ? "Bildirishnomalar" : "Уведомления"}>
+          <Bell className="h-4 w-4" />
+          {count > 0 && (
+            <span className={cn(
+              "absolute -top-0.5 -right-0.5 min-w-[16px] h-4 rounded-full text-[10px] font-bold flex items-center justify-center text-white px-1",
+              hasUrgent ? "bg-red-500" : "bg-yellow-500"
+            )}>
+              {count > 9 ? "9+" : count}
+            </span>
+          )}
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-80 max-h-96 overflow-y-auto">
+        <DropdownMenuLabel className="text-xs font-semibold">
+          {locale === "uz" ? "Bildirishnomalar" : "Уведомления"}
+          {count > 0 && <span className="ml-1 text-muted-foreground">({count})</span>}
+        </DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        {loading && items.length === 0 ? (
+          <div className="py-6 text-center text-xs text-muted-foreground">
+            {locale === "uz" ? "Yuklanmoqda..." : "Загрузка..."}
+          </div>
+        ) : count === 0 ? (
+          <div className="py-6 text-center text-xs text-muted-foreground">
+            {locale === "uz" ? "Yangi bildirishnomalar yo'q" : "Нет уведомлений"}
+          </div>
+        ) : (
+          items.map((item, idx) => {
+            const Icon = iconMap[item.tur] || Bell
+            const color = colorMap[item.darajasi] || "text-muted-foreground"
+            return (
+              <DropdownMenuItem key={idx} className="flex items-start gap-2.5 py-2.5 cursor-default">
+                <Icon className={cn("w-4 h-4 mt-0.5 shrink-0", color)} />
+                <span className="text-xs text-foreground leading-snug">{item.matn}</span>
+              </DropdownMenuItem>
+            )
+          })
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  )
+}
 
 interface TopHeaderProps {
   title: string
@@ -63,12 +156,14 @@ export function TopHeader({ title, onMenuClick }: TopHeaderProps) {
       {/* Right: actions */}
       <div className="flex items-center gap-1 ml-auto shrink-0">
 
-        {/* Global search — desktop only */}
-        <div className="relative hidden lg:block mr-1">
+        {/* Global search — desktop only, navigates to /search */}
+        <div className="relative hidden lg:block mr-1 cursor-pointer" onClick={() => window.location.href = "/search"}>
           <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
           <Input
             placeholder={h.search[locale]}
-            className="pl-8 w-44 h-8 bg-background text-xs border-border/60 focus-visible:ring-1"
+            className="pl-8 w-44 h-8 bg-background text-xs border-border/60 focus-visible:ring-1 cursor-pointer"
+            readOnly
+            onFocus={() => window.location.href = "/search"}
           />
         </div>
 
@@ -87,17 +182,8 @@ export function TopHeader({ title, onMenuClick }: TopHeaderProps) {
           <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
         </Button>
 
-        {/* Notifications — static indicator */}
-        <Button
-          variant="ghost"
-          size="icon"
-          className="relative h-8 w-8"
-          aria-label={h.notifications[locale]}
-        >
-          <Bell className="h-4 w-4" />
-          {/* Neutral dot — shown only when backend sends unread notifications */}
-          <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-muted-foreground/40" />
-        </Button>
+        {/* Notifications — live data */}
+        <NotificationBell locale={locale} />
 
         {/* Profile */}
         <DropdownMenu>

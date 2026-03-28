@@ -77,7 +77,7 @@ async def matn_ovozga(matn: str) -> Optional[bytes]:
 
         client = genai.Client(api_key=_TTS_API_KEY)
 
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
         response = await asyncio.wait_for(
             loop.run_in_executor(
                 None,
@@ -138,7 +138,7 @@ async def _wav_to_ogg(audio_bytes: bytes) -> Optional[bytes]:
 
         out_path = inp_path.replace(".wav", ".ogg")
 
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
         await loop.run_in_executor(
             None,
             lambda: subprocess.run(

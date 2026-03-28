@@ -13,6 +13,8 @@ import logging
 from decimal import Decimal
 from typing import Optional
 
+from shared.utils import like_escape
+
 log = logging.getLogger(__name__)
 
 
@@ -54,9 +56,9 @@ async def narx_aniqla(conn, uid: int, klient_id: Optional[int], tovar_id: int) -
     # 3. OXIRGI SOTUV NARXI
     if klient_id:
         row = await conn.fetchrow("""
-            SELECT c.narx FROM chiqimlar c
+            SELECT c.sotish_narxi AS narx FROM chiqimlar c
             JOIN sotuv_sessiyalar s ON s.id = c.sessiya_id
-            WHERE s.klient_id = $1 AND c.tovar_id = $2 AND c.narx > 0
+            WHERE s.klient_id = $1 AND c.tovar_id = $2 AND c.sotish_narxi > 0
             ORDER BY c.id DESC LIMIT 1
         """, klient_id, tovar_id)
         if row and row["narx"] > 0:
@@ -83,15 +85,15 @@ async def narx_aniqla_nomi(conn, uid: int, klient_ismi: Optional[str], tovar_nom
     # Klient topish
     if klient_ismi:
         row = await conn.fetchrow("""
-            SELECT id FROM klientlar WHERE LOWER(ism) = LOWER($1) LIMIT 1
-        """, klient_ismi.strip())
+            SELECT id FROM klientlar WHERE user_id = $2 AND LOWER(ism) = LOWER($1) LIMIT 1
+        """, klient_ismi.strip(), uid)
         if row:
             klient_id = row["id"]
     
     # Tovar topish (fuzzy)
     row = await conn.fetchrow("""
-        SELECT id FROM tovarlar WHERE LOWER(nomi) = LOWER($1) LIMIT 1
-    """, tovar_nomi.strip())
+        SELECT id FROM tovarlar WHERE user_id = $2 AND LOWER(nomi) = LOWER($1) LIMIT 1
+    """, tovar_nomi.strip(), uid)
     if row:
         tovar_id = row["id"]
     
@@ -99,9 +101,9 @@ async def narx_aniqla_nomi(conn, uid: int, klient_ismi: Optional[str], tovar_nom
         # Fuzzy search
         row = await conn.fetchrow("""
             SELECT id FROM tovarlar 
-            WHERE LOWER(nomi) LIKE LOWER($1) 
+            WHERE user_id = $2 AND LOWER(nomi) LIKE LOWER($1) 
             LIMIT 1
-        """, f"%{tovar_nomi.strip()}%")
+        """, f"%{like_escape(tovar_nomi.strip())}%", uid)
         if row:
             tovar_id = row["id"]
     
@@ -135,11 +137,11 @@ async def guruh_narx_qoyish(conn, uid: int, guruh_id: int, tovar_id: int, narx: 
     """, uid, guruh_id, tovar_id, narx)
 
 
-async def klient_guruhga_qoyish(conn, klient_id: int, guruh_id: int) -> None:
+async def klient_guruhga_qoyish(conn, uid: int, klient_id: int, guruh_id: int) -> None:
     """Klientni guruhga biriktirish"""
     await conn.execute("""
-        UPDATE klientlar SET narx_guruh_id = $1 WHERE id = $2
-    """, guruh_id, klient_id)
+        UPDATE klientlar SET narx_guruh_id = $1 WHERE id = $2 AND user_id = $3
+    """, guruh_id, klient_id, uid)
 
 
 # ═══════════════════════════════════════

@@ -636,12 +636,12 @@ async def _nakl_async(user_id: int, sessiya_id: int,
 
     async with rls_conn(user_id) as c:
         sess = await c.fetchrow(
-            "SELECT * FROM sotuv_sessiyalar WHERE id=$1", sessiya_id
+            "SELECT id, klient_ismi, jami, tolangan, qarz, sana FROM sotuv_sessiyalar WHERE id=$1 AND user_id=$2", sessiya_id, user_id
         )
         if not sess:
             raise ValueError(f"Sessiya {sessiya_id} topilmadi")
         tovarlar = await c.fetch(
-            "SELECT * FROM chiqimlar WHERE sessiya_id=$1", sessiya_id
+            "SELECT tovar_nomi, miqdor, birlik, sotish_narxi, jami FROM chiqimlar WHERE sessiya_id=$1 AND user_id=$2", sessiya_id, user_id
         )
         nakl_no = await c.fetchval(
             "SELECT nakladnoy_raqami_ol($1)", user_id
@@ -847,7 +847,14 @@ async def _ledger_recon_async():
             for aid in admin_ids:
                 if aid.strip():
                     try:
-                        await _send_tg(int(aid.strip()), xabar)
+                        import httpx
+                        bot_token = os.environ.get("BOT_TOKEN", "")
+                        if bot_token:
+                            async with httpx.AsyncClient(timeout=10) as http:
+                                await http.post(
+                                    f"https://api.telegram.org/bot{bot_token}/sendMessage",
+                                    json={"chat_id": int(aid.strip()), "text": xabar, "parse_mode": "Markdown"}
+                                )
                     except Exception:
                         pass
         else:

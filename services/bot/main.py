@@ -62,6 +62,7 @@ import shared.services.print_session  # noqa: F401
 
 import services.bot.db  as db
 from shared.database.pool import rls_conn as _rls_conn, pool_init as _pool_init
+from shared.utils import like_escape
 import services.bot.bot_services.voice      as ovoz_xizmat
 import services.bot.bot_services.analyst    as ai_xizmat
 from services.bot.bot_services.voice_pipeline import process_voice
@@ -94,6 +95,16 @@ logging.basicConfig(
 )
 for _s in ("httpx","httpcore","telegram.ext._application"):
     logging.getLogger(_s).setLevel(logging.WARNING)
+
+# Sentry (ixtiyoriy — SENTRY_DSN bo'lsa uladi)
+_SENTRY_DSN = _os.getenv("SENTRY_DSN")
+if _SENTRY_DSN:
+    try:
+        import sentry_sdk
+        sentry_sdk.init(dsn=_SENTRY_DSN, traces_sample_rate=0.05)
+        logging.getLogger(__name__).info("✅ Sentry ulandi (bot)")
+    except ImportError:
+        pass
 __version__ = "25.3"
 __author__  = "Mashrab Moliya"
 
@@ -2938,14 +2949,14 @@ async def cmd_narx_qoy(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
             # Guruh topish
             guruh = await c.fetchrow(
                 "SELECT id FROM narx_guruhlari WHERE user_id=$1 AND LOWER(nomi) LIKE LOWER($2)",
-                uid, f"%{guruh_nom}%")
+                uid, f"%{like_escape(guruh_nom)}%")
             if not guruh:
                 await update.message.reply_text(f"❌ *{guruh_nom}* guruhi topilmadi.\n/narx_guruh bilan yarating.", parse_mode=ParseMode.MARKDOWN)
                 return
             # Tovar topish
             tovar = await c.fetchrow(
                 "SELECT id, nomi FROM tovarlar WHERE user_id=$1 AND LOWER(nomi) LIKE LOWER($2)",
-                uid, f"%{tovar_nom}%")
+                uid, f"%{like_escape(tovar_nom)}%")
             if not tovar:
                 await update.message.reply_text(f"❌ *{tovar_nom}* tovari topilmadi.", parse_mode=ParseMode.MARKDOWN)
                 return
@@ -2990,13 +3001,13 @@ async def cmd_klient_narx(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
         async with db._P().acquire() as c:
             klient = await c.fetchrow(
                 "SELECT id, ism FROM klientlar WHERE user_id=$1 AND LOWER(ism) LIKE LOWER($2)",
-                uid, f"%{klient_nom}%")
+                uid, f"%{like_escape(klient_nom)}%")
             if not klient:
                 await update.message.reply_text(f"❌ *{klient_nom}* klienti topilmadi.", parse_mode=ParseMode.MARKDOWN)
                 return
             tovar = await c.fetchrow(
                 "SELECT id, nomi FROM tovarlar WHERE user_id=$1 AND LOWER(nomi) LIKE LOWER($2)",
-                uid, f"%{tovar_nom}%")
+                uid, f"%{like_escape(tovar_nom)}%")
             if not tovar:
                 await update.message.reply_text(f"❌ *{tovar_nom}* tovari topilmadi.", parse_mode=ParseMode.MARKDOWN)
                 return
@@ -3037,15 +3048,15 @@ async def cmd_klient_guruh(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
         async with db._P().acquire() as c:
             klient = await c.fetchrow(
                 "SELECT id, ism FROM klientlar WHERE user_id=$1 AND LOWER(ism) LIKE LOWER($2)",
-                uid, f"%{klient_nom}%")
+                uid, f"%{like_escape(klient_nom)}%")
             if not klient:
                 await update.message.reply_text(f"❌ *{klient_nom}* topilmadi.", parse_mode=ParseMode.MARKDOWN); return
             guruh = await c.fetchrow(
                 "SELECT id, nomi FROM narx_guruhlari WHERE user_id=$1 AND LOWER(nomi) LIKE LOWER($2)",
-                uid, f"%{guruh_nom}%")
+                uid, f"%{like_escape(guruh_nom)}%")
             if not guruh:
                 await update.message.reply_text(f"❌ *{guruh_nom}* guruhi topilmadi.", parse_mode=ParseMode.MARKDOWN); return
-            await klient_guruhga_qoyish(c, klient["id"], guruh["id"])
+            await klient_guruhga_qoyish(c, uid, klient["id"], guruh["id"])
         await update.message.reply_text(
             f"✅ *Biriktirildi!*\n\n"
             f"👤 *{klient['ism']}* → 🏷 *{guruh['nomi']}*\n\n"
@@ -3502,10 +3513,10 @@ async def cmd_klient(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
     if not topildi and qidiruv.startswith("+"):
         async with db._P().acquire() as c:
             topildi=await c.fetch("""
-                SELECT * FROM klientlar
+                SELECT id, user_id, ism, telefon, manzil, eslatma, kredit_limit, jami_sotib, yaratilgan, narx_guruh_id FROM klientlar
                 WHERE user_id=$1 AND telefon LIKE $2
                 LIMIT 10
-            """,uid,f"%{qidiruv.replace('+998','')}%")
+            """,uid,f"%{like_escape(qidiruv.replace('+998',''))}%")
 
     if not topildi:
         await update.message.reply_text(f"❌ '{qidiruv}' topilmadi."); return

@@ -479,9 +479,6 @@ class CognitiveDvigatel:
 
         # RAG: Sheva lug'atidan boyitish
         try:
-            from shared.rag.vector_db import rag_ol
-            rag = rag_ol()
-            boyitilgan = (await rag.qidirish.__func__(rag, matn, 2) or []) and boyitilgan
             from shared.rag.vector_db import matn_boyitish_rag
             boyitilgan = matn_boyitish_rag(boyitilgan)
         except Exception as rag_e:
@@ -501,7 +498,7 @@ class CognitiveDvigatel:
         tools_list = [t["schema"] for t in TOOLS.values()]
 
         try:
-            loop = asyncio.get_event_loop()
+            loop = asyncio.get_running_loop()
             response = await asyncio.wait_for(
                 loop.run_in_executor(
                     None,

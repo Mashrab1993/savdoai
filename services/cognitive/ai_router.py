@@ -148,7 +148,7 @@ class _GeminiClient:
 
     async def call(self, content_parts: list, timeout: float = 30) -> str:
         """Async Gemini chaqiruv"""
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
         return await asyncio.wait_for(
             loop.run_in_executor(None, lambda: self._call_sync(content_parts)),
             timeout=timeout,
@@ -191,7 +191,7 @@ class _ClaudeClient:
     async def call(self, system: str, user_msg: str,
                     max_tokens: int = 4096, timeout: float = 30) -> str:
         """Async Claude chaqiruv"""
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
         return await asyncio.wait_for(
             loop.run_in_executor(
                 None,

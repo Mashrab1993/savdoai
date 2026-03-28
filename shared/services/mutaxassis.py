@@ -21,6 +21,7 @@
 ╚══════════════════════════════════════════════════════════════════════════╝
 """
 from __future__ import annotations
+from shared.utils import like_escape
 import asyncio
 import logging
 from datetime import datetime, timedelta
@@ -34,7 +35,7 @@ TZ = pytz.timezone("Asia/Tashkent")
 
 def _pul(v) -> str:
     try: return f"{Decimal(str(v or 0)):,.0f}"
-    except: return "0"
+    except Exception: return "0"
 
 def _foiz(v) -> str:
     return f"{v:+.1f}%" if v else "0%"
@@ -62,12 +63,12 @@ async def tovar_ekspert_tahlil(conn, uid: int, tovar_nomi: str, tovar_row: dict 
             SELECT id, nomi, olish_narxi, qoldiq, birlik, min_qoldiq
             FROM tovarlar WHERE user_id=$1 AND lower(nomi) LIKE lower($2)
             ORDER BY qoldiq DESC NULLS LAST LIMIT 1
-        """, uid, f"%{nom}%")
+        """, uid, f"%{like_escape(nom)}%")
         if not tovar:
             tovar = await conn.fetchrow("""
                 SELECT id, nomi, olish_narxi, qoldiq, birlik, min_qoldiq
                 FROM tovarlar WHERE user_id=$1 AND nomi ILIKE $2 LIMIT 1
-            """, uid, f"%{nom}%")
+            """, uid, f"%{like_escape(nom)}%")
         if not tovar:
             return {"topildi": False, "nomi": tovar_nomi}
         tovar = dict(tovar)
@@ -292,16 +293,16 @@ async def klient_ekspert_tahlil(conn, uid: int, klient_ismi: str, klient_row: di
         klient = dict(klient_row)
     else:
         klient = await conn.fetchrow("""
-            SELECT * FROM klientlar
+            SELECT id, user_id, ism, telefon, manzil, eslatma, kredit_limit, jami_sotib, yaratilgan FROM klientlar
             WHERE user_id=$1 AND lower(ism) LIKE lower($2)
             ORDER BY jami_sotib DESC NULLS LAST LIMIT 1
-        """, uid, f"%{nom}%")
+        """, uid, f"%{like_escape(nom)}%")
         if not klient:
             klient = await conn.fetchrow("""
-                SELECT * FROM klientlar
+                SELECT id, user_id, ism, telefon, manzil, eslatma, kredit_limit, jami_sotib, yaratilgan FROM klientlar
                 WHERE user_id=$1 AND ism ILIKE $2
                 ORDER BY jami_sotib DESC NULLS LAST LIMIT 1
-            """, uid, f"%{nom}%")
+            """, uid, f"%{like_escape(nom)}%")
         if not klient:
             return {"topildi": False, "ism": klient_ismi}
         klient = dict(klient)

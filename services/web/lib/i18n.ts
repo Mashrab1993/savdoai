@@ -6,7 +6,7 @@ export const translations = {
     clients:     { uz: "Mijozlar",                    ru: "Клиенты" },
     products:    { uz: "Mahsulotlar / Ombor",         ru: "Товары / Склад" },
     debts:       { uz: "Qarzdorliklar",               ru: "Долги" },
-    invoices:    { uz: "Savdolar / Hisob-fakturalar", ru: "Продажи / Счета" },
+    invoices:    { uz: "Savdolar / Hisob-fa...", ru: "Продажи" },
     reports:     { uz: "Hisobotlar",                  ru: "Отчёты" },
     apprentices: { uz: "Shogirdlar",                  ru: "Работники" },
     expenses:    { uz: "Xarajatlar",                  ru: "Расходы" },

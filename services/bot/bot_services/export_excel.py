@@ -1,6 +1,7 @@
 """Excel eksport — openpyxl"""
 from __future__ import annotations
 import io
+import logging
 from datetime import datetime
 from typing import Any
 import pytz
@@ -11,6 +12,7 @@ from openpyxl.styles import (
 from openpyxl.utils import get_column_letter
 
 TZ     = pytz.timezone("Asia/Tashkent")
+log    = logging.getLogger(__name__)
 KOK    = "1a56db"
 YASHIL = "059669"
 SARIQ  = "d97706"

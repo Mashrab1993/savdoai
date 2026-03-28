@@ -16,14 +16,17 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { Search, Plus, Pencil, Trash2, Users, DollarSign, AlertCircle } from "lucide-react"
+import { Search, Plus, Pencil, Trash2, Users, DollarSign, AlertCircle, Eye } from "lucide-react"
 import { useLocale } from "@/lib/locale-context"
 import { translations } from "@/lib/i18n"
 import { useApi } from "@/hooks/use-api"
-import { clientService } from "@/lib/api/services"
+import { clientService, klientTarixService } from "@/lib/api/services"
 import { normalizeClient, type ClientVM } from "@/lib/api/normalizers"
 import { PageLoading, PageError } from "@/components/shared/page-states"
 import { ApiResponseError } from "@/lib/api/client"
+import {
+  Sheet, SheetContent, SheetHeader, SheetTitle,
+} from "@/components/ui/sheet"
 
 function fmt(n: number) {
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M so'm`
@@ -44,6 +47,10 @@ export default function ClientsPage() {
   const [modalOpen, setModalOpen] = useState(false)
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
+  const [editingClientId, setEditingClientId] = useState<number | null>(null)
+  const [tarixOpen, setTarixOpen] = useState(false)
+  const [tarixData, setTarixData] = useState<any>(null)
+  const [tarixLoading, setTarixLoading] = useState(false)
   const [form, setForm] = useState<Partial<ClientFormShape>>({})
   const [formErrors, setFormErrors] = useState<Record<string, string>>({})
 
@@ -67,6 +74,7 @@ export default function ClientsPage() {
     setForm({})
     setFormErrors({})
     setSaveError(null)
+    setEditingClientId(null)
     setModalOpen(true)
   }
 
@@ -83,15 +91,27 @@ export default function ClientsPage() {
     setSaving(true)
     setSaveError(null)
     try {
-      const created = await clientService.create({
-        ism: form.name,
-        telefon: form.phone || undefined,
-        manzil: form.address || undefined,
-        kredit_limit: form.creditLimit ? Number(form.creditLimit) : 0,
-      })
-      // Add to optimistic list immediately while server data refreshes
-      setOptimisticClients(prev => [normalizeClient(created), ...prev])
+      if (editingClientId) {
+        // Update existing client
+        await clientService.update(editingClientId, {
+          ism: form.name,
+          telefon: form.phone || undefined,
+          manzil: form.address || undefined,
+          kredit_limit: form.creditLimit ? Number(form.creditLimit) : 0,
+        })
+      } else {
+        // Create new client
+        const created = await clientService.create({
+          ism: form.name,
+          telefon: form.phone || undefined,
+          manzil: form.address || undefined,
+          kredit_limit: form.creditLimit ? Number(form.creditLimit) : 0,
+        })
+        setOptimisticClients(prev => [normalizeClient(created), ...prev])
+      }
       setModalOpen(false)
+      setEditingClientId(null)
+      setForm({})
       refetch()
     } catch (err) {
       const msg = err instanceof ApiResponseError ? err.detail : (locale === "uz" ? "Saqlashda xato" : "Ошибка сохранения")
@@ -99,6 +119,16 @@ export default function ClientsPage() {
     } finally {
       setSaving(false)
     }
+  }
+
+  async function openTarix(clientId: number) {
+    setTarixOpen(true)
+    setTarixLoading(true)
+    try {
+      const data = await klientTarixService.get(clientId, 20)
+      setTarixData(data)
+    } catch { setTarixData(null) }
+    finally { setTarixLoading(false) }
   }
 
   const totalRevenue = clients.reduce((s, c) => s + c.totalPurchases, 0)
@@ -206,11 +236,37 @@ export default function ClientsPage() {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-1">
-                        {/* Edit/delete not supported by backend yet */}
-                        <Button variant="ghost" size="icon" className="h-7 w-7" disabled title={locale === "uz" ? "Tez orada" : "Скоро"}>
+                        <Button variant="ghost" size="icon" className="h-7 w-7"
+                          title={locale === "uz" ? "Tarix" : "История"}
+                          onClick={() => openTarix(client.id)}>
+                          <Eye className="w-3.5 h-3.5" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-7 w-7"
+                          onClick={() => {
+                            setForm({
+                              name: client.name,
+                              phone: client.phone,
+                              address: client.address || "",
+                              creditLimit: String(client.creditLimit || 0),
+                            })
+                            setEditingClientId(client.id)
+                            setModalOpen(true)
+                          }}>
                           <Pencil className="w-3.5 h-3.5" />
                         </Button>
-                        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" disabled title={locale === "uz" ? "Tez orada" : "Скоро"}>
+                        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive"
+                          onClick={async () => {
+                            if (!confirm(locale === "uz"
+                              ? `"${client.name}" ni o'chirishni tasdiqlaysizmi?`
+                              : `Удалить "${client.name}"?`)) return
+                            try {
+                              await clientService.remove(client.id)
+                              refetch()
+                            } catch (err) {
+                              const msg = err instanceof ApiResponseError ? err.detail : String(err)
+                              alert(msg)
+                            }
+                          }}>
                           <Trash2 className="w-3.5 h-3.5" />
                         </Button>
                       </div>
@@ -228,7 +284,9 @@ export default function ClientsPage() {
       <Dialog open={modalOpen} onOpenChange={setModalOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>{L.addNewClient[locale]}</DialogTitle>
+            <DialogTitle>{editingClientId
+              ? (locale === "uz" ? "Klientni tahrirlash" : "Редактировать клиента")
+              : L.addNewClient[locale]}</DialogTitle>
           </DialogHeader>
           <div className="grid gap-4 py-2">
             {[
@@ -257,11 +315,101 @@ export default function ClientsPage() {
           <DialogFooter>
             <Button variant="outline" onClick={() => setModalOpen(false)}>{translations.actions.cancel[locale]}</Button>
             <Button onClick={handleSave} disabled={saving}>
-              {saving ? (locale === "uz" ? "Saqlanmoqda..." : "Сохранение...") : L.addClient[locale]}
+              {saving
+                ? (locale === "uz" ? "Saqlanmoqda..." : "Сохранение...")
+                : editingClientId
+                  ? (locale === "uz" ? "Saqlash" : "Сохранить")
+                  : L.addClient[locale]}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Klient tarix drawer */}
+      <Sheet open={tarixOpen} onOpenChange={setTarixOpen}>
+        <SheetContent className="w-full sm:max-w-md overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle>
+              {locale === "uz" ? "Klient tarixi" : "История клиента"}
+              {tarixData?.klient?.ism && ` — ${tarixData.klient.ism}`}
+            </SheetTitle>
+          </SheetHeader>
+          {tarixLoading ? (
+            <div className="py-12 text-center text-sm text-muted-foreground">
+              {locale === "uz" ? "Yuklanmoqda..." : "Загрузка..."}
+            </div>
+          ) : tarixData ? (
+            <div className="mt-4 space-y-5">
+              {/* Klient ma'lumot */}
+              <div className="bg-secondary rounded-xl p-4 space-y-2">
+                {[
+                  { l: locale === "uz" ? "Telefon" : "Телефон", v: tarixData.klient?.telefon || "—" },
+                  { l: locale === "uz" ? "Kredit limit" : "Кредитный лимит", v: fmt(tarixData.klient?.kredit_limit ?? 0) },
+                  { l: locale === "uz" ? "Jami sotib olgan" : "Всего покупок", v: fmt(tarixData.klient?.jami_sotib ?? 0) },
+                ].map(r => (
+                  <div key={r.l} className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">{r.l}</span>
+                    <span className="font-medium">{r.v}</span>
+                  </div>
+                ))}
+              </div>
+
+              {/* Sotuvlar */}
+              {tarixData.sotuvlar?.length > 0 && (
+                <div>
+                  <p className="text-xs font-semibold text-muted-foreground mb-2">
+                    {locale === "uz" ? "Oxirgi sotuvlar" : "Последние продажи"} ({tarixData.sotuvlar.length})
+                  </p>
+                  <div className="space-y-1.5">
+                    {tarixData.sotuvlar.map((s: any) => (
+                      <div key={s.id} className="flex justify-between items-center bg-card border border-border rounded-lg px-3 py-2">
+                        <div>
+                          <p className="text-sm font-medium">{fmt(s.jami ?? 0)}</p>
+                          <p className="text-[10px] text-muted-foreground">
+                            {s.sana ? new Date(s.sana).toLocaleDateString("uz-UZ") : "—"} · {s.tovar_soni ?? 0} ta tovar
+                          </p>
+                        </div>
+                        {(s.qarz ?? 0) > 0 && (
+                          <span className="text-xs text-destructive font-medium">{fmt(s.qarz)}</span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Qarzlar */}
+              {tarixData.qarzlar?.length > 0 && (
+                <div>
+                  <p className="text-xs font-semibold text-muted-foreground mb-2">
+                    {locale === "uz" ? "Qarzlar" : "Долги"} ({tarixData.qarzlar.length})
+                  </p>
+                  <div className="space-y-1.5">
+                    {tarixData.qarzlar.map((q: any) => (
+                      <div key={q.id} className="flex justify-between items-center bg-card border border-border rounded-lg px-3 py-2">
+                        <div>
+                          <p className="text-sm font-medium">{fmt(q.qolgan ?? 0)}</p>
+                          <p className="text-[10px] text-muted-foreground">
+                            {q.yaratilgan ? new Date(q.yaratilgan).toLocaleDateString("uz-UZ") : "—"}
+                            {q.muddat && ` · muddat: ${new Date(q.muddat).toLocaleDateString("uz-UZ")}`}
+                          </p>
+                        </div>
+                        <span className={`text-xs font-medium ${q.yopildi ? "text-green-600" : "text-destructive"}`}>
+                          {q.yopildi ? "✅" : `${fmt(q.qolgan ?? 0)}`}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="py-12 text-center text-sm text-muted-foreground">
+              {locale === "uz" ? "Ma'lumot topilmadi" : "Данные не найдены"}
+            </div>
+          )}
+        </SheetContent>
+      </Sheet>
     </AdminLayout>
   )
 }

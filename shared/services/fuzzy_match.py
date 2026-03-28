@@ -11,6 +11,7 @@
 ╚══════════════════════════════════════════════════════════════════════╝
 """
 from __future__ import annotations
+from shared.utils import like_escape
 import re
 import logging
 from typing import Optional
@@ -95,17 +96,17 @@ async def fuzzy_klient_top(conn, uid: int, ism: str, limit: int = 5) -> list:
     
     # DB dan kandidatlar olish (keng filter)
     rows = await conn.fetch("""
-        SELECT * FROM klientlar
+        SELECT id, user_id, ism, telefon, manzil, eslatma, kredit_limit, jami_sotib, yaratilgan FROM klientlar
         WHERE user_id = $1
           AND (lower(ism) LIKE lower($2) OR lower(ism) LIKE $3)
         ORDER BY jami_sotib DESC
         LIMIT 20
-    """, uid, f"%{ism.strip()}%", f"%{ism_n}%")
+    """, uid, f"%{like_escape(ism.strip())}%", f"%{like_escape(ism_n)}%")
     
     if not rows:
         # Barcha klientlardan qidirish (oxirgi 100)
         rows = await conn.fetch("""
-            SELECT * FROM klientlar
+            SELECT id, user_id, ism, telefon, manzil, eslatma, kredit_limit, jami_sotib, yaratilgan FROM klientlar
             WHERE user_id = $1
             ORDER BY jami_sotib DESC LIMIT 100
         """, uid)
@@ -135,16 +136,16 @@ async def fuzzy_tovar_top(conn, uid: int, nomi: str, limit: int = 5) -> list:
         return []
     
     rows = await conn.fetch("""
-        SELECT * FROM tovarlar
+        SELECT id, user_id, nomi, kategoriya, birlik, olish_narxi, sotish_narxi, min_sotish_narxi, qoldiq, min_qoldiq, yaratilgan FROM tovarlar
         WHERE user_id = $1
           AND (lower(nomi) LIKE lower($2) OR lower(nomi) LIKE $3)
         ORDER BY qoldiq DESC
         LIMIT 20
-    """, uid, f"%{nomi.strip()}%", f"%{nomi_n}%")
+    """, uid, f"%{like_escape(nomi.strip())}%", f"%{like_escape(nomi_n)}%")
     
     if not rows:
         rows = await conn.fetch("""
-            SELECT * FROM tovarlar
+            SELECT id, user_id, nomi, kategoriya, birlik, olish_narxi, sotish_narxi, min_sotish_narxi, qoldiq, min_qoldiq, yaratilgan FROM tovarlar
             WHERE user_id = $1
             ORDER BY qoldiq DESC LIMIT 100
         """, uid)

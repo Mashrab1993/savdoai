@@ -1,5 +1,5 @@
 """
-MASHRAB MOLIYA v21.3 TURBO — COGNITIVE API
+MASHRAB MOLIYA v25.3 — COGNITIVE API
 Dual-Brain MoE Gateway
 Gemini (Ko'z+Quloq) + Claude (Mantiq) → bitta endpoint
 """
@@ -11,6 +11,15 @@ from pydantic import BaseModel
 from fastapi import Request
 
 COGNITIVE_API_KEY = os.environ.get("COGNITIVE_API_KEY", os.environ.get("ANTHROPIC_API_KEY", ""))
+
+# Sentry (ixtiyoriy)
+_SENTRY_DSN = os.environ.get("SENTRY_DSN")
+if _SENTRY_DSN:
+    try:
+        import sentry_sdk
+        sentry_sdk.init(dsn=_SENTRY_DSN, traces_sample_rate=0.05)
+    except ImportError:
+        pass
 
 async def _verify_api_key(request: Request):
     """Cognitive API himoya — API key MAJBURIY"""

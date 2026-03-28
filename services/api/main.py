@@ -28,6 +28,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 from shared.database.pool import pool_init, pool_close, schema_init, rls_conn, get_pool
 from shared.cache.redis_cache import redis_init, cache_ol, cache_yoz
 from shared.cache.redis_cache import k_hisobot_kunlik, k_qarzlar, k_user, TTL_HISOBOT, TTL_USER
+from shared.utils import like_escape
 try:
     from shared.rag.vector_db import rag_init
 except (ImportError, ModuleNotFoundError):
@@ -72,6 +73,95 @@ from shared.observability.process_uptime import process_info  # noqa: E402
 # ════════════════════════════════════════════════════════════
 #  PYDANTIC MODELLAR (Request/Response validatsiya)
 # ════════════════════════════════════════════════════════════
+
+# ── Response modellar ──────────────────────────────────────
+
+class HealthResponse(BaseModel):
+    status: str = "ok"
+    version: str
+    service: str = "api"
+    db_ping_ms: Optional[float] = None
+    db_pool: Optional[str] = None
+    latency_ms: Optional[float] = None
+
+
+class DashboardResponse(BaseModel):
+    bugun_sotuv_soni: int = 0
+    bugun_sotuv_jami: float = 0
+    bugun_yangi_qarz: float = 0
+    jami_qarz: float = 0
+    klient_soni: int = 0
+    tovar_soni: int = 0
+    kam_qoldiq_soni: int = 0
+
+
+class TovarResponse(BaseModel):
+    id: int
+    nomi: str
+    kategoriya: str = "Boshqa"
+    birlik: str = "dona"
+    olish_narxi: float = 0
+    sotish_narxi: float = 0
+    min_sotish_narxi: float = 0
+    qoldiq: float = 0
+    min_qoldiq: float = 0
+
+
+class KlientResponse(BaseModel):
+    id: int
+    ism: str
+    telefon: Optional[str] = None
+    manzil: Optional[str] = None
+    kredit_limit: float = 0
+    jami_sotib: float = 0
+    aktiv_qarz: float = 0
+
+
+class SotuvResponse(BaseModel):
+    sessiya_id: int
+    status: str = "saqlandi"
+
+
+class BildirishnomaTuri(BaseModel):
+    tur: str
+    darajasi: str
+    matn: str
+    klient: Optional[str] = None
+    tovar: Optional[str] = None
+    summa: Optional[float] = None
+    qoldiq: Optional[float] = None
+    soni: Optional[int] = None
+
+
+class BildirishnomaResponse(BaseModel):
+    items: List[BildirishnomaTuri] = []
+    jami: int = 0
+
+
+class FoydaResponse(BaseModel):
+    kunlar: int
+    brutto_sotuv: float
+    tannarx: float
+    sof_foyda: float
+    xarajatlar: float
+    toza_foyda: float
+    margin_foiz: float
+    top_foyda: List[dict] = []
+    top_zarar: List[dict] = []
+
+
+class StatistikaResponse(BaseModel):
+    tovar_soni: int
+    klient_soni: int
+    faol_qarz: float
+    kam_qoldiq_soni: int
+    muddat_otgan_qarz: int
+    bugun: dict
+    hafta: dict
+    oy: dict
+
+
+# ── Request modellar ───────────────────────────────────────
 
 class TovarModel(BaseModel):
     nomi:           str          = Field(..., min_length=1, max_length=200)
@@ -170,10 +260,26 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title       = "SavdoAI Mashrab Moliya API",
     version     = __version__,
-    description = "O'zbek bozori uchun AI-powered savdo boshqaruv tizimi REST API",
+    description = "O'zbek bozori uchun AI-powered savdo boshqaruv tizimi REST API — 62+ endpoint, CRUD, hisobotlar, foyda tahlili, real-time WebSocket",
     lifespan    = lifespan,
     docs_url    = "/docs",
     redoc_url   = "/redoc",
+    openapi_tags = [
+        {"name": "Auth",           "description": "Autentifikatsiya — login, token"},
+        {"name": "Dashboard",      "description": "Bosh sahifa statistikasi"},
+        {"name": "Tovarlar",       "description": "Tovarlar CRUD, import, export"},
+        {"name": "Klientlar",      "description": "Klientlar CRUD, tarix"},
+        {"name": "Sotuv",          "description": "Sotuv operatsiyalari"},
+        {"name": "Qarz",           "description": "Qarzlar va to'lovlar"},
+        {"name": "Hisobotlar",     "description": "Kunlik, haftalik, oylik, foyda"},
+        {"name": "Xarajatlar",     "description": "Xarajatlar boshqaruvi"},
+        {"name": "Kassa",          "description": "Kassa operatsiyalari"},
+        {"name": "Narx",           "description": "Narx guruhlari va shaxsiy narxlar"},
+        {"name": "Ledger",         "description": "SAP-grade buxgalteriya"},
+        {"name": "Bildirishnoma",  "description": "Ogohlantirish va bildirishnomalar"},
+        {"name": "Export",         "description": "Excel/PDF eksport"},
+        {"name": "Monitoring",     "description": "Health check va metrikalar"},
+    ],
 )
 
 # CORS — browser Origin must match exactly (no trailing slash). WEB_URL is the web app origin, not API.
@@ -213,14 +319,14 @@ app.add_middleware(RequestIDMiddleware)
 # ═══ v21.3 YANGI ROUTELAR ═══
 try:
     from services.api.routes.kassa import router as kassa_router
-    app.include_router(kassa_router)
+    app.include_router(kassa_router, tags=["Kassa"])
     log.info("✅ Kassa moduli ulandi")
 except Exception as e:
     log.warning("⚠️ Kassa moduli yuklanmadi: %s", e)
 
 try:
     from services.api.routes.websocket import router as ws_router
-    app.include_router(ws_router)
+    app.include_router(ws_router, tags=["Monitoring"])
     log.info("✅ WebSocket ulandi")
 except Exception as e:
     log.warning("⚠️ WebSocket yuklanmadi: %s", e)
@@ -229,7 +335,7 @@ except Exception as e:
 
 try:
     from services.api.routes.printer import router as printer_router
-    app.include_router(printer_router)
+    app.include_router(printer_router, tags=["Sotuv"])
     log.info("✅ Printer API ulandi")
 except Exception as e:
     log.warning("⚠️ Printer API yuklanmadi: %s", e)
@@ -301,7 +407,7 @@ async def root():
             <span>API ishlayapti</span>
         </div>
         <div class="stats">
-            <div class="stat"><div class="stat-num">37+</div><div class="stat-label">API Endpoints</div></div>
+            <div class="stat"><div class="stat-num">66+</div><div class="stat-label">API Endpoints</div></div>
             <div class="stat"><div class="stat-num">19</div><div class="stat-label">DB Jadvallar</div></div>
             <div class="stat"><div class="stat-num">2</div><div class="stat-label">AI Modellar</div></div>
         </div>
@@ -317,7 +423,7 @@ async def root():
     return HTMLResponse(content=html)
 
 
-@app.get("/health")
+@app.get("/health", tags=["Monitoring"])
 async def health():
     from shared.database.pool import pool_health
     import time as _t
@@ -335,8 +441,8 @@ async def health():
     }
 
 
-@app.get("/version")
-@app.get("/version/")
+@app.get("/version", tags=["Monitoring"])
+@app.get("/version/", tags=["Monitoring"])
 async def version():
     return {
         "status": "ok",
@@ -358,7 +464,7 @@ async def dashboard_redirect():
     return {"message": "Dashboard: WEB_DASHBOARD_URL sozlang"}
 
 
-@app.post("/auth/telegram")
+@app.post("/auth/telegram", tags=["Auth"])
 async def auth_telegram(data: TelegramAuthSo_rov):
     """
     Telegram bot → API token olish.
@@ -375,7 +481,7 @@ async def auth_telegram(data: TelegramAuthSo_rov):
 
     # User mavjudligini tekshirish/yaratish
     async with get_pool().acquire() as c:
-        u = await c.fetchrow("SELECT * FROM users WHERE id=$1", uid)
+        u = await c.fetchrow("SELECT id, ism, to_liq_ism, username, telefon, inn, manzil, dokon_nomi, segment, faol, obuna_tugash, til, plan, login, parol_hash, yaratilgan FROM users WHERE id=$1", uid)
         if not u:
             await c.execute(
                 "INSERT INTO users(id,ism) VALUES($1,$2) ON CONFLICT DO NOTHING",
@@ -421,12 +527,15 @@ class LoginSorov(BaseModel):
     parol: str = Field(..., min_length=1)
 
 
-@app.post("/auth/login")
-async def auth_login(data: LoginSorov):
+@app.post("/auth/login", tags=["Auth"])
+async def auth_login(data: LoginSorov, request: Request):
     """
     Web panel kirish — login+parol YOKI telefon+parol.
     Admin do'konchilariga login/parol beradi.
+    Rate limit: 5 urinish/daqiqa (brute-force himoya).
     """
+    from services.api.deps import login_rate_check
+    await login_rate_check(request)
     login = (data.login or "").strip().lower()
     telefon = (data.telefon or "").strip()
     parol = data.parol.strip()
@@ -437,13 +546,13 @@ async def auth_login(data: LoginSorov):
     async with get_pool().acquire() as c:
         if login:
             user = await c.fetchrow(
-                "SELECT * FROM users WHERE lower(login)=$1 AND faol=TRUE",
+                "SELECT id, ism, to_liq_ism, username, telefon, dokon_nomi, segment, faol, login, parol_hash FROM users WHERE lower(login)=$1 AND faol=TRUE",
                 login,
             )
         else:
             tel = _telefon_tozala(telefon)
             user = await c.fetchrow(
-                "SELECT * FROM users WHERE replace(replace(telefon,' ',''),'-','') LIKE '%' || $1 || '%' AND faol=TRUE LIMIT 1",
+                "SELECT id, ism, to_liq_ism, username, telefon, dokon_nomi, segment, faol, login, parol_hash FROM users WHERE replace(replace(telefon,' ',''),'-','') LIKE '%' || $1 || '%' AND faol=TRUE LIMIT 1",
                 tel[-9:],
             )
 
@@ -461,7 +570,7 @@ async def auth_login(data: LoginSorov):
     return {"token": token, "user_id": user["id"]}
 
 
-@app.post("/api/v1/admin/parol")
+@app.post("/api/v1/admin/parol", tags=["Auth"])
 async def admin_parol_qoy(data: dict, uid: int = Depends(get_uid)):
     """Admin: do'konchiga login/parol berish"""
     # Admin tekshiruvi
@@ -509,14 +618,14 @@ async def admin_parol_qoy(data: dict, uid: int = Depends(get_uid)):
     return {"ok": True, "user_id": int(target_id), "login": login or None}
 
 
-@app.get("/api/v1/me")
+@app.get("/api/v1/me", tags=["Auth"])
 async def me(uid: int = Depends(get_uid)):
     """Joriy foydalanuvchi"""
     cached = await cache_ol(k_user(uid))
     if cached:
         return cached
     async with rls_conn(uid) as c:
-        u = await c.fetchrow("SELECT * FROM users WHERE id=$1", uid)
+        u = await c.fetchrow("SELECT id, ism, to_liq_ism, username, telefon, inn, manzil, dokon_nomi, segment, faol, obuna_tugash, til, plan, login, parol_hash, yaratilgan FROM users WHERE id=$1", uid)
         if not u:
             raise HTTPException(404, "Topilmadi")
         result = dict(u)
@@ -524,7 +633,7 @@ async def me(uid: int = Depends(get_uid)):
         return result
 
 
-@app.get("/api/v1/dashboard")
+@app.get("/api/v1/dashboard", tags=["Dashboard"])
 async def dashboard(uid: int = Depends(get_uid)):
     """Dashboard statistikasi (5 daqiqa cache)"""
     cache_k = f"dashboard:{uid}"
@@ -565,7 +674,7 @@ async def dashboard(uid: int = Depends(get_uid)):
     return result
 
 
-@app.get("/api/v1/klientlar")
+@app.get("/api/v1/klientlar", tags=["Klientlar"])
 async def klientlar(
     limit: int = 20, offset: int = 0,
     qidiruv: Optional[str] = None,
@@ -583,11 +692,11 @@ async def klientlar(
                 WHERE lower(k.ism) LIKE lower($3) OR k.telefon LIKE $3
                 GROUP BY k.id
                 ORDER BY k.jami_sotib DESC LIMIT $1 OFFSET $2
-            """, limit, offset, f"%{qidiruv}%")
+            """, limit, offset, f"%{like_escape(qidiruv)}%")
             total = await c.fetchval("""
                 SELECT COUNT(*) FROM klientlar
                 WHERE lower(ism) LIKE lower($1) OR telefon LIKE $1
-            """, f"%{qidiruv}%")
+            """, f"%{like_escape(qidiruv)}%")
         else:
             rows = await c.fetch("""
                 SELECT k.*,
@@ -602,7 +711,7 @@ async def klientlar(
     return {"total": total, "items": [dict(r) for r in rows]}
 
 
-@app.get("/api/v1/tovarlar")
+@app.get("/api/v1/tovarlar", tags=["Tovarlar"])
 async def tovarlar(
     limit: int = 20, offset: int = 0,
     kategoriya: Optional[str] = None,
@@ -613,7 +722,7 @@ async def tovarlar(
     async with rls_conn(uid) as c:
         if kategoriya:
             rows = await c.fetch("""
-                SELECT * FROM tovarlar WHERE kategoriya=$3
+                SELECT id, user_id, nomi, kategoriya, birlik, olish_narxi, sotish_narxi, min_sotish_narxi, qoldiq, min_qoldiq, yaratilgan FROM tovarlar WHERE kategoriya=$3
                 ORDER BY nomi LIMIT $1 OFFSET $2
             """, limit, offset, kategoriya)
             total = await c.fetchval(
@@ -621,7 +730,7 @@ async def tovarlar(
             )
         else:
             rows  = await c.fetch(
-                "SELECT * FROM tovarlar ORDER BY kategoriya,nomi LIMIT $1 OFFSET $2",
+                "SELECT id, user_id, nomi, kategoriya, birlik, olish_narxi, sotish_narxi, min_sotish_narxi, qoldiq, min_qoldiq, yaratilgan FROM tovarlar ORDER BY kategoriya,nomi LIMIT $1 OFFSET $2",
                 limit, offset
             )
             total = await c.fetchval("SELECT COUNT(*) FROM tovarlar")
@@ -629,7 +738,7 @@ async def tovarlar(
     return {"total": total, "items": [dict(r) for r in rows]}
 
 
-@app.get("/api/v1/qarzlar")
+@app.get("/api/v1/qarzlar", tags=["Qarz"])
 async def qarzlar(uid: int = Depends(get_uid)):
     """Faol qarzlar (10 daqiqa cache)"""
     cached = await cache_ol(k_qarzlar(uid))
@@ -651,7 +760,7 @@ async def qarzlar(uid: int = Depends(get_uid)):
     return result
 
 
-@app.get("/api/v1/hisobot/kunlik")
+@app.get("/api/v1/hisobot/kunlik", tags=["Hisobotlar"])
 async def hisobot_kunlik(uid: int = Depends(get_uid)):
     """Bugungi hisobot (5 daqiqa cache)"""
     cached = await cache_ol(k_hisobot_kunlik(uid))
@@ -689,7 +798,7 @@ async def hisobot_kunlik(uid: int = Depends(get_uid)):
 #  KOGNITIV ENGINE PROXY
 # ════════════════════════════════════════════════════════════
 
-@app.post("/api/v1/tahlil")
+@app.post("/api/v1/tahlil", tags=["Sotuv"])
 async def tahlil(data: dict, uid: int = Depends(get_uid)):
     """
     AI tahlil — Cognitive Engine ga proksi.
@@ -723,9 +832,11 @@ async def tahlil(data: dict, uid: int = Depends(get_uid)):
 #  SOTUV VA KIRIM ENDPOINTLARI
 # ════════════════════════════════════════════════════════════
 
-@app.post("/api/v1/sotuv")
-async def sotuv_saqlash(data: SotuvSo_rov, uid: int = Depends(get_uid)):
-    """Sotuv operatsiyasini saqlash"""
+@app.post("/api/v1/sotuv", tags=["Sotuv"])
+async def sotuv_saqlash(data: SotuvSo_rov, request: Request, uid: int = Depends(get_uid)):
+    """Sotuv operatsiyasini saqlash. Rate limit: 30/daqiqa."""
+    from services.api.deps import endpoint_rate_check
+    await endpoint_rate_check(request, "sotuv")
     from shared.utils.hisob import sotuv_validatsiya, ai_hisob_tekshir
     from shared.cache.redis_cache import user_cache_tozala
 
@@ -754,7 +865,7 @@ async def sotuv_saqlash(data: SotuvSo_rov, uid: int = Depends(get_uid)):
     return {"sessiya_id": sess_id, "status": "saqlandi"}
 
 
-@app.post("/api/v1/kirim")
+@app.post("/api/v1/kirim", tags=["Sotuv"])
 async def kirim_saqlash(data: KirimSo_rov, uid: int = Depends(get_uid)):
     """Tovar kirimini saqlash"""
     from shared.utils.hisob import kirim_validatsiya
@@ -791,7 +902,7 @@ async def kirim_saqlash(data: KirimSo_rov, uid: int = Depends(get_uid)):
 #  QARZ TO'LASH
 # ════════════════════════════════════════════════════════════
 
-@app.post("/api/v1/qarz/tolash")
+@app.post("/api/v1/qarz/tolash", tags=["Qarz"])
 async def qarz_tolash_endpoint(
     data: QarzTolashSo_rov,
     uid: int = Depends(get_uid)
@@ -808,7 +919,7 @@ async def qarz_tolash_endpoint(
               AND yopildi=FALSE AND qolgan>0
             ORDER BY yaratilgan ASC
             FOR UPDATE
-        """, f"%{data.klient_ismi.strip()}%")
+        """, f"%{like_escape(data.klient_ismi.strip())}%")
 
         if not qarzlar:
             raise HTTPException(404, f"'{data.klient_ismi}' uchun qarz topilmadi")
@@ -835,7 +946,7 @@ async def qarz_tolash_endpoint(
         qolgan_jami = D(await c.fetchval("""
             SELECT COALESCE(SUM(qolgan),0) FROM qarzlar
             WHERE lower(klient_ismi) LIKE lower($1) AND yopildi=FALSE
-        """, f"%{data.klient_ismi.strip()}%") or 0)
+        """, f"%{like_escape(data.klient_ismi.strip())}%") or 0)
 
     await user_cache_tozala(uid)
     return {
@@ -850,7 +961,7 @@ async def qarz_tolash_endpoint(
 #  MONITORING ENDPOINTLARI
 # ════════════════════════════════════════════════════════════
 
-@app.get("/healthz")
+@app.get("/healthz", tags=["Monitoring"])
 async def healthz(request: Request):
     """Kubernetes/Railway health probe — process uptime (restart/crash diagnostikasi)."""
     rid = getattr(request.state, "request_id", None)
@@ -858,7 +969,7 @@ async def healthz(request: Request):
     return {"status": "ok", **process_info()}
 
 
-@app.get("/live")
+@app.get("/live", tags=["Monitoring"])
 async def live(request: Request):
     """
     Minimal liveness — DB/Redis tekshirilmaydi.
@@ -869,7 +980,7 @@ async def live(request: Request):
     return {"status": "alive", **process_info()}
 
 
-@app.get("/readyz")
+@app.get("/readyz", tags=["Monitoring"])
 async def readyz():
     """Ready probe — DB + Redis ulangandan keyin tayyor"""
     from shared.cache.redis_cache import redis_health
@@ -907,7 +1018,7 @@ async def readyz():
         **deps,
     })
 
-@app.post("/api/v1/klient")
+@app.post("/api/v1/klient", tags=["Klientlar"])
 async def klient_yarat(data: dict, uid: int = Depends(get_uid)):
     """Yangi klient yaratish yoki topish"""
     from shared.cache.redis_cache import user_cache_tozala
@@ -920,7 +1031,7 @@ async def klient_yarat(data: dict, uid: int = Depends(get_uid)):
             VALUES($1,$2,$3,$4,$5)
             ON CONFLICT(user_id, lower(ism)) DO UPDATE
                 SET telefon=EXCLUDED.telefon
-            RETURNING *
+            RETURNING id, user_id, ism, telefon, manzil, kredit_limit, jami_sotib, yaratilgan
         """, uid, ism,
             data.get("telefon"),
             data.get("manzil"),
@@ -930,7 +1041,7 @@ async def klient_yarat(data: dict, uid: int = Depends(get_uid)):
     return dict(klient)
 
 
-@app.get("/metrics")
+@app.get("/metrics", tags=["Monitoring"])
 async def metrics():
     """
     Prometheus-compat metrics (oddiy format).
@@ -962,7 +1073,7 @@ async def metrics():
 #  QIDIRUV
 # ════════════════════════════════════════════════════════════
 
-@app.get("/api/v1/search")
+@app.get("/api/v1/search", tags=["Sotuv"])
 async def search(
     q: str,
     tur: str = "barchasi",   # tovar | klient | barchasi
@@ -981,23 +1092,23 @@ async def search(
                 FROM tovarlar
                 WHERE lower(nomi) LIKE lower($1) OR lower(kategoriya) LIKE lower($1)
                 ORDER BY nomi LIMIT $2
-            """, f"%{q}%", limit)]
+            """, f"%{like_escape(q)}%", limit)]
         if tur in ("klient","barchasi"):
             klientlar_r = [dict(r) for r in await c.fetch("""
                 SELECT id,ism,telefon,jami_sotib
                 FROM klientlar
                 WHERE lower(ism) LIKE lower($1) OR (telefon IS NOT NULL AND telefon LIKE $1)
                 ORDER BY jami_sotib DESC LIMIT $2
-            """, f"%{q}%", limit)]
+            """, f"%{like_escape(q)}%", limit)]
     return {"tovarlar": tovarlar_r, "klientlar": klientlar_r,
             "jami": len(tovarlar_r) + len(klientlar_r)}
 
 
-@app.get("/api/v1/tovar/{tovar_id}")
+@app.get("/api/v1/tovar/{tovar_id}", tags=["Tovarlar"])
 async def tovar_bir(tovar_id: int, uid: int = Depends(get_uid)):
     """Bitta tovar to'liq ma'lumoti"""
     async with rls_conn(uid) as c:
-        t = await c.fetchrow("SELECT * FROM tovarlar WHERE id=$1", tovar_id)
+        t = await c.fetchrow("SELECT id, user_id, nomi, kategoriya, birlik, olish_narxi, sotish_narxi, min_sotish_narxi, qoldiq, min_qoldiq, yaratilgan FROM tovarlar WHERE id=$1", tovar_id)
         if not t:
             raise HTTPException(404, "Tovar topilmadi")
         return dict(t)
@@ -1007,7 +1118,7 @@ async def tovar_bir(tovar_id: int, uid: int = Depends(get_uid)):
 #  HISOBOTLAR (haftalik / oylik)
 # ════════════════════════════════════════════════════════════
 
-@app.get("/api/v1/hisobot/haftalik")
+@app.get("/api/v1/hisobot/haftalik", tags=["Hisobotlar"])
 async def hisobot_haftalik(uid: int = Depends(get_uid)):
     """7 kunlik hisobot"""
     from shared.cache.redis_cache import cache_ol, cache_yoz, TTL_HISOBOT
@@ -1043,7 +1154,7 @@ async def hisobot_haftalik(uid: int = Depends(get_uid)):
     return result
 
 
-@app.get("/api/v1/hisobot/oylik")
+@app.get("/api/v1/hisobot/oylik", tags=["Hisobotlar"])
 async def hisobot_oylik(uid: int = Depends(get_uid)):
     """30 kunlik hisobot"""
     from shared.cache.redis_cache import cache_ol, cache_yoz, TTL_HISOBOT
@@ -1084,12 +1195,15 @@ async def hisobot_oylik(uid: int = Depends(get_uid)):
 #  EXPORT TRIGGER (Worker ga yuboradi)
 # ════════════════════════════════════════════════════════════
 
-@app.post("/api/v1/export")
-async def export_trigger(data: dict, uid: int = Depends(get_uid)):
+@app.post("/api/v1/export", tags=["Export"])
+async def export_trigger(data: dict, request: Request, uid: int = Depends(get_uid)):
     """
     Excel/PDF eksportni Worker ga yuboradi.
     Katta hisobotlar background da tayyorlanadi.
+    Rate limit: 3 so'rov/daqiqa.
     """
+    from services.api.deps import endpoint_rate_check
+    await endpoint_rate_check(request, "export")
     tur      = data.get("tur", "kunlik")       # kunlik | haftalik | oylik
     format_  = data.get("format", "excel")     # excel | pdf
     sana_dan   = data.get("sana_dan", "")
@@ -1125,7 +1239,7 @@ async def export_trigger(data: dict, uid: int = Depends(get_uid)):
 #  EXPORT NATIJA OLISH
 # ════════════════════════════════════════════════════════════
 
-@app.get("/api/v1/export/{task_id}")
+@app.get("/api/v1/export/{task_id}", tags=["Export"])
 async def export_natija(task_id: str, uid: int = Depends(get_uid)):
     """
     Export task natijasini tekshirish.
@@ -1197,7 +1311,7 @@ async def export_natija(task_id: str, uid: int = Depends(get_uid)):
         raise HTTPException(503, "Export holati tekshirib bo'lmadi")
 
 
-@app.get("/api/v1/export/file/{task_id}")
+@app.get("/api/v1/export/file/{task_id}", tags=["Export"])
 async def export_file_yuklab(task_id: str, uid: int = Depends(get_uid)):
     """
     Tayyor export faylni yuklash.
@@ -1353,7 +1467,7 @@ async def rate_limit_middleware(request: Request, call_next):
 #  § LEDGER — SAP-GRADE Buxgalteriya
 # ════════════════════════════════════════════════════════════════
 
-@app.get("/api/v1/ledger/balans")
+@app.get("/api/v1/ledger/balans", tags=["Ledger"])
 async def ledger_balans(uid: int = Depends(get_uid)):
     """Balans tekshiruvi — debit = credit"""
     from shared.services.ledger import balans_tekshir, hisob_balans, HisobTuri
@@ -1366,7 +1480,7 @@ async def ledger_balans(uid: int = Depends(get_uid)):
     return {**b, "hisoblar": hisoblar}
 
 
-@app.get("/api/v1/ledger/jurnal")
+@app.get("/api/v1/ledger/jurnal", tags=["Ledger"])
 async def ledger_jurnal(uid: int = Depends(get_uid), limit: int = 50):
     """Jurnal yozuvlari"""
     async with rls_conn(uid) as c:
@@ -1379,12 +1493,12 @@ async def ledger_jurnal(uid: int = Depends(get_uid), limit: int = 50):
     return [dict(r) for r in rows]
 
 
-@app.get("/api/v1/ledger/jurnal/{jurnal_id}")
+@app.get("/api/v1/ledger/jurnal/{jurnal_id}", tags=["Ledger"])
 async def ledger_jurnal_detail(jurnal_id: str, uid: int = Depends(get_uid)):
     """Bitta jurnal yozuvi batafsil (qatorlar bilan)"""
     async with rls_conn(uid) as c:
         header = await c.fetchrow("""
-            SELECT * FROM jurnal_yozuvlar
+            SELECT id, jurnal_id, user_id, tur, sana, tavsif, jami_debit, jami_credit, manba_id, manba_jadval, idempotency_key, yaratilgan FROM jurnal_yozuvlar
             WHERE user_id = $1 AND jurnal_id = $2
         """, uid, jurnal_id)
         if not header:
@@ -1396,7 +1510,7 @@ async def ledger_jurnal_detail(jurnal_id: str, uid: int = Depends(get_uid)):
     return {"header": dict(header), "qatorlar": [dict(q) for q in qatorlar]}
 
 
-@app.get("/api/v1/ledger/hisob/{hisob}")
+@app.get("/api/v1/ledger/hisob/{hisob}", tags=["Ledger"])
 async def ledger_hisob(hisob: str, uid: int = Depends(get_uid)):
     """Bitta hisob balansi va tarixi"""
     from shared.services.ledger import hisob_balans, HisobTuri
@@ -1420,50 +1534,50 @@ async def ledger_hisob(hisob: str, uid: int = Depends(get_uid)):
 #  SHOGIRD XARAJAT API (Web Dashboard uchun)
 # ═══════════════════════════════════════════════════════════
 
-@app.get("/api/v1/shogirdlar")
+@app.get("/api/v1/shogirdlar", tags=["Xarajatlar"])
 async def api_shogirdlar(uid: int = Depends(get_uid)):
     from shared.services.shogird_xarajat import shogirdlar_royxati
     async with rls_conn(uid) as c:
         return [dict(s) for s in await shogirdlar_royxati(c, uid)]
 
-@app.get("/api/v1/shogird/dashboard")
+@app.get("/api/v1/shogird/dashboard", tags=["Xarajatlar"])
 async def api_shogird_dashboard(uid: int = Depends(get_uid)):
     from shared.services.shogird_xarajat import dashboard_data
     async with rls_conn(uid) as c:
         return await dashboard_data(c, uid)
 
-@app.get("/api/v1/xarajatlar/bugungi")
+@app.get("/api/v1/xarajatlar/bugungi", tags=["Xarajatlar"])
 async def api_xarajatlar_bugungi(uid: int = Depends(get_uid)):
     from shared.services.shogird_xarajat import kunlik_hisobot
     async with rls_conn(uid) as c:
         return await kunlik_hisobot(c, uid)
 
-@app.get("/api/v1/xarajatlar/oylik")
+@app.get("/api/v1/xarajatlar/oylik", tags=["Xarajatlar"])
 async def api_xarajatlar_oylik(uid: int = Depends(get_uid)):
     from shared.services.shogird_xarajat import oylik_hisobot
     async with rls_conn(uid) as c:
         return await oylik_hisobot(c, uid)
 
-@app.get("/api/v1/xarajatlar/kutilmoqda")
+@app.get("/api/v1/xarajatlar/kutilmoqda", tags=["Xarajatlar"])
 async def api_kutilmoqda(uid: int = Depends(get_uid)):
     from shared.services.shogird_xarajat import kutilmoqda_royxati
     async with rls_conn(uid) as c:
         return [dict(k) for k in await kutilmoqda_royxati(c, uid)]
 
-@app.get("/api/v1/shogird/{shogird_id}/hisobot")
+@app.get("/api/v1/shogird/{shogird_id}/hisobot", tags=["Xarajatlar"])
 async def api_shogird_hisobot(shogird_id: int, kunlar: int = 7, uid: int = Depends(get_uid)):
     from shared.services.shogird_xarajat import shogird_hisobot
     async with rls_conn(uid) as c:
         return await shogird_hisobot(c, uid, shogird_id, kunlar)
 
-@app.post("/api/v1/xarajat/{xarajat_id}/tasdiqlash")
+@app.post("/api/v1/xarajat/{xarajat_id}/tasdiqlash", tags=["Xarajatlar"])
 async def api_xarajat_tasdiq(xarajat_id: int, uid: int = Depends(get_uid)):
     from shared.services.shogird_xarajat import xarajat_tasdiqlash
     async with rls_conn(uid) as c:
         ok = await xarajat_tasdiqlash(c, xarajat_id, uid)
     return {"ok": ok}
 
-@app.post("/api/v1/xarajat/{xarajat_id}/bekor")
+@app.post("/api/v1/xarajat/{xarajat_id}/bekor", tags=["Xarajatlar"])
 async def api_xarajat_bekor(xarajat_id: int, uid: int = Depends(get_uid)):
     from shared.services.shogird_xarajat import xarajat_bekor
     async with rls_conn(uid) as c:
@@ -1475,13 +1589,13 @@ async def api_xarajat_bekor(xarajat_id: int, uid: int = Depends(get_uid)):
 #  NARX GURUH API (Web Dashboard uchun)
 # ═══════════════════════════════════════════════════════════
 
-@app.get("/api/v1/narx/guruhlar")
+@app.get("/api/v1/narx/guruhlar", tags=["Narx"])
 async def api_narx_guruhlar(uid: int = Depends(get_uid)):
     from shared.services.smart_narx import guruhlar_royxati
     async with rls_conn(uid) as c:
         return [dict(g) for g in await guruhlar_royxati(c, uid)]
 
-@app.post("/api/v1/narx/guruh")
+@app.post("/api/v1/narx/guruh", tags=["Narx"])
 async def api_narx_guruh_yarat(data: dict, uid: int = Depends(get_uid)):
     from shared.services.smart_narx import guruh_yaratish
     nomi = data.get("nomi", "")
@@ -1490,7 +1604,7 @@ async def api_narx_guruh_yarat(data: dict, uid: int = Depends(get_uid)):
         gid = await guruh_yaratish(c, uid, nomi, data.get("izoh", ""))
     return {"id": gid, "nomi": nomi}
 
-@app.post("/api/v1/narx/qoyish")
+@app.post("/api/v1/narx/qoyish", tags=["Narx"])
 async def api_narx_qoy(data: dict, uid: int = Depends(get_uid)):
     from shared.services.smart_narx import guruh_narx_qoyish, shaxsiy_narx_qoyish
     from decimal import Decimal
@@ -1503,9 +1617,1006 @@ async def api_narx_qoy(data: dict, uid: int = Depends(get_uid)):
             await shaxsiy_narx_qoyish(c, uid, int(data["klient_id"]), int(data["tovar_id"]), narx)
     return {"ok": True}
 
-@app.post("/api/v1/narx/klient_guruh")
+@app.post("/api/v1/narx/klient_guruh", tags=["Narx"])
 async def api_klient_guruhga(data: dict, uid: int = Depends(get_uid)):
     from shared.services.smart_narx import klient_guruhga_qoyish
     async with rls_conn(uid) as c:
-        await klient_guruhga_qoyish(c, int(data["klient_id"]), int(data["guruh_id"]))
+        await klient_guruhga_qoyish(c, uid, int(data["klient_id"]), int(data["guruh_id"]))
     return {"ok": True}
+
+
+# ════════════════════════════════════════════════════════════════
+#  TOVAR CRUD — Web panel uchun to'liq CRUD
+# ════════════════════════════════════════════════════════════════
+
+
+class TovarYaratSorov(BaseModel):
+    nomi:             str   = Field(..., min_length=1, max_length=200)
+    kategoriya:       str   = Field("Boshqa")
+    birlik:           str   = Field("dona")
+    olish_narxi:      float = Field(0, ge=0)
+    sotish_narxi:     float = Field(0, ge=0)
+    min_sotish_narxi: float = Field(0, ge=0)
+    qoldiq:           float = Field(0, ge=0)
+    min_qoldiq:       float = Field(0, ge=0)
+
+
+class TovarYangilaSorov(BaseModel):
+    nomi:             Optional[str]   = None
+    kategoriya:       Optional[str]   = None
+    birlik:           Optional[str]   = None
+    olish_narxi:      Optional[float] = None
+    sotish_narxi:     Optional[float] = None
+    min_sotish_narxi: Optional[float] = None
+    qoldiq:           Optional[float] = None
+    min_qoldiq:       Optional[float] = None
+
+
+class QoldiqYangilaSorov(BaseModel):
+    qoldiq: float = Field(..., ge=0)
+
+
+@app.post("/api/v1/tovar", tags=["Tovarlar"])
+async def tovar_yarat(data: TovarYaratSorov, uid: int = Depends(get_uid)):
+    """Yangi tovar yaratish"""
+    from shared.cache.redis_cache import user_cache_tozala
+    async with rls_conn(uid) as c:
+        tovar = await c.fetchrow("""
+            INSERT INTO tovarlar
+                (user_id, nomi, kategoriya, birlik,
+                 olish_narxi, sotish_narxi, min_sotish_narxi, qoldiq, min_qoldiq)
+            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+            ON CONFLICT (user_id, lower(nomi)) DO UPDATE SET
+                kategoriya       = EXCLUDED.kategoriya,
+                birlik           = EXCLUDED.birlik,
+                olish_narxi      = EXCLUDED.olish_narxi,
+                sotish_narxi     = EXCLUDED.sotish_narxi,
+                min_sotish_narxi = EXCLUDED.min_sotish_narxi
+            RETURNING id, nomi
+        """, uid, data.nomi.strip(), data.kategoriya, data.birlik,
+            data.olish_narxi, data.sotish_narxi, data.min_sotish_narxi,
+            data.qoldiq, data.min_qoldiq)
+    await user_cache_tozala(uid)
+    log.info("📦 Tovar yaratildi: %s (uid=%d)", data.nomi, uid)
+    return {"id": tovar["id"], "nomi": tovar["nomi"], "status": "yaratildi"}
+
+
+@app.put("/api/v1/tovar/{tovar_id}", tags=["Tovarlar"])
+async def tovar_yangilash(tovar_id: int, data: TovarYangilaSorov, uid: int = Depends(get_uid)):
+    """Tovar ma'lumotlarini yangilash"""
+    from shared.cache.redis_cache import user_cache_tozala
+    # Faqat berilgan maydonlarni yangilash
+    yangilar = {k: v for k, v in data.model_dump().items() if v is not None}
+    if not yangilar:
+        raise HTTPException(400, "Yangilash uchun kamida 1 ta maydon kerak")
+
+    # Xavfsiz maydonlar ro'yxati (SQL injection himoyasi)
+    _RUXSAT = {"nomi", "kategoriya", "birlik", "olish_narxi", "sotish_narxi",
+               "min_sotish_narxi", "qoldiq", "min_qoldiq"}
+    noma = set(yangilar.keys()) - _RUXSAT
+    if noma:
+        raise HTTPException(400, f"Ruxsat etilmagan maydon: {noma}")
+
+    set_q = ", ".join(f"{k} = ${i+3}" for i, k in enumerate(yangilar.keys()))
+    vals = list(yangilar.values())
+
+    async with rls_conn(uid) as c:
+        result = await c.execute(
+            f"UPDATE tovarlar SET {set_q} WHERE id=$1 AND user_id=$2",
+            tovar_id, uid, *vals
+        )
+    if "UPDATE 0" in result:
+        raise HTTPException(404, "Tovar topilmadi")
+    await user_cache_tozala(uid)
+    log.info("📦 Tovar yangilandi: id=%d (uid=%d)", tovar_id, uid)
+    return {"id": tovar_id, "status": "yangilandi"}
+
+
+@app.delete("/api/v1/tovar/{tovar_id}", tags=["Tovarlar"])
+async def tovar_ochirish(tovar_id: int, uid: int = Depends(get_uid)):
+    """Tovarni o'chirish (agar sotuvda ishlatilmagan bo'lsa)"""
+    from shared.cache.redis_cache import user_cache_tozala
+    async with rls_conn(uid) as c:
+        # Sotuvda ishlatilganmi tekshirish
+        sotuv_bor = await c.fetchval(
+            "SELECT EXISTS(SELECT 1 FROM chiqimlar WHERE tovar_id=$1)", tovar_id
+        )
+        if sotuv_bor:
+            raise HTTPException(
+                409,
+                "Bu tovar sotuvlarda ishlatilgan — o'chirib bo'lmaydi. "
+                "Qoldiqni 0 ga o'zgartiring."
+            )
+        result = await c.execute(
+            "DELETE FROM tovarlar WHERE id=$1 AND user_id=$2", tovar_id, uid
+        )
+    if "DELETE 0" in result:
+        raise HTTPException(404, "Tovar topilmadi")
+    await user_cache_tozala(uid)
+    log.info("🗑️ Tovar o'chirildi: id=%d (uid=%d)", tovar_id, uid)
+    return {"id": tovar_id, "status": "ochirildi"}
+
+
+@app.post("/api/v1/tovar/{tovar_id}/qoldiq", tags=["Tovarlar"])
+async def tovar_qoldiq_yangilash(tovar_id: int, data: QoldiqYangilaSorov,
+                                  uid: int = Depends(get_uid)):
+    """Inventarizatsiya — tovar qoldiqini yangilash"""
+    from shared.cache.redis_cache import user_cache_tozala
+    async with rls_conn(uid) as c:
+        old = await c.fetchrow(
+            "SELECT nomi, qoldiq FROM tovarlar WHERE id=$1 AND user_id=$2",
+            tovar_id, uid
+        )
+        if not old:
+            raise HTTPException(404, "Tovar topilmadi")
+        await c.execute(
+            "UPDATE tovarlar SET qoldiq=$2 WHERE id=$1 AND user_id=$3", tovar_id, data.qoldiq, uid
+        )
+    await user_cache_tozala(uid)
+    log.info("📋 Qoldiq yangilandi: %s %s→%s (uid=%d)",
+             old["nomi"], old["qoldiq"], data.qoldiq, uid)
+    return {
+        "id": tovar_id,
+        "nomi": old["nomi"],
+        "eski_qoldiq": float(old["qoldiq"]),
+        "yangi_qoldiq": data.qoldiq,
+        "status": "yangilandi",
+    }
+
+
+# ════════════════════════════════════════════════════════════════
+#  KLIENT CRUD — Web panel uchun to'liq CRUD
+# ════════════════════════════════════════════════════════════════
+
+
+class KlientYangilaSorov(BaseModel):
+    ism:          Optional[str]   = None
+    telefon:      Optional[str]   = None
+    manzil:       Optional[str]   = None
+    kredit_limit: Optional[float] = None
+    eslatma:      Optional[str]   = None
+
+
+@app.put("/api/v1/klient/{klient_id}", tags=["Klientlar"])
+async def klient_yangilash(klient_id: int, data: KlientYangilaSorov,
+                            uid: int = Depends(get_uid)):
+    """Klient ma'lumotlarini yangilash"""
+    from shared.cache.redis_cache import user_cache_tozala
+    yangilar = {k: v for k, v in data.model_dump().items() if v is not None}
+    if not yangilar:
+        raise HTTPException(400, "Yangilash uchun kamida 1 ta maydon kerak")
+
+    _RUXSAT = {"ism", "telefon", "manzil", "kredit_limit", "eslatma"}
+    noma = set(yangilar.keys()) - _RUXSAT
+    if noma:
+        raise HTTPException(400, f"Ruxsat etilmagan maydon: {noma}")
+
+    set_q = ", ".join(f"{k} = ${i+3}" for i, k in enumerate(yangilar.keys()))
+    vals = list(yangilar.values())
+
+    async with rls_conn(uid) as c:
+        result = await c.execute(
+            f"UPDATE klientlar SET {set_q} WHERE id=$1 AND user_id=$2",
+            klient_id, uid, *vals
+        )
+    if "UPDATE 0" in result:
+        raise HTTPException(404, "Klient topilmadi")
+    await user_cache_tozala(uid)
+    log.info("👤 Klient yangilandi: id=%d (uid=%d)", klient_id, uid)
+    return {"id": klient_id, "status": "yangilandi"}
+
+
+@app.delete("/api/v1/klient/{klient_id}", tags=["Klientlar"])
+async def klient_ochirish(klient_id: int, uid: int = Depends(get_uid)):
+    """Klientni o'chirish (agar faol qarz yoki sotuv bo'lmasa)"""
+    from shared.cache.redis_cache import user_cache_tozala
+    async with rls_conn(uid) as c:
+        # Faol qarz bormi
+        qarz_bor = await c.fetchval(
+            "SELECT EXISTS(SELECT 1 FROM qarzlar WHERE klient_id=$1 AND yopildi=FALSE AND qolgan>0)",
+            klient_id
+        )
+        if qarz_bor:
+            raise HTTPException(409, "Bu klientda faol qarz bor — o'chirib bo'lmaydi")
+        result = await c.execute(
+            "DELETE FROM klientlar WHERE id=$1 AND user_id=$2", klient_id, uid
+        )
+    if "DELETE 0" in result:
+        raise HTTPException(404, "Klient topilmadi")
+    await user_cache_tozala(uid)
+    log.info("🗑️ Klient o'chirildi: id=%d (uid=%d)", klient_id, uid)
+    return {"id": klient_id, "status": "ochirildi"}
+
+
+# ════════════════════════════════════════════════════════════════
+#  XARAJAT QO'SHISH — Admin o'zi web dan xarajat kiritishi
+# ════════════════════════════════════════════════════════════════
+
+
+class XarajatSorov(BaseModel):
+    kategoriya_nomi: str   = Field(..., min_length=1)
+    summa:           float = Field(..., gt=0)
+    izoh:            str   = Field("")
+    shogird_id:      Optional[int] = None
+
+
+@app.post("/api/v1/xarajat", tags=["Xarajatlar"])
+async def api_xarajat_qoshish(data: XarajatSorov, uid: int = Depends(get_uid)):
+    """Admin web paneldan xarajat qo'shish"""
+    async with rls_conn(uid) as c:
+        if data.shogird_id:
+            # Shogird xarajati
+            from shared.services.shogird_xarajat import xarajat_saqlash
+            natija = await xarajat_saqlash(
+                c, uid, data.shogird_id,
+                data.kategoriya_nomi, data.summa, data.izoh
+            )
+        else:
+            # Admin o'zi xarajat — shogirdsiz
+            from shared.services.shogird_xarajat import _default_kategoriyalar
+            await _default_kategoriyalar(c, uid)
+
+            # Adminning o'zi uchun shogird yaratish (agar yo'q bo'lsa)
+            admin_shogird = await c.fetchrow(
+                "SELECT id FROM shogirdlar WHERE admin_uid=$1 AND telegram_uid=$1",
+                uid
+            )
+            if not admin_shogird:
+                admin_shogird = await c.fetchrow("""
+                    INSERT INTO shogirdlar (admin_uid, telegram_uid, ism, lavozim)
+                    VALUES ($1, $1, 'Admin', 'admin')
+                    ON CONFLICT (admin_uid, telegram_uid) DO UPDATE SET faol=TRUE
+                    RETURNING id
+                """, uid)
+
+            from shared.services.shogird_xarajat import xarajat_saqlash
+            natija = await xarajat_saqlash(
+                c, uid, admin_shogird["id"],
+                data.kategoriya_nomi, data.summa, data.izoh
+            )
+            # Admin xarajatini avtomatik tasdiqlash
+            if natija.get("id"):
+                await c.execute(
+                    "UPDATE xarajatlar SET tasdiqlangan=TRUE, tasdiq_vaqti=NOW() WHERE id=$1",
+                    natija["id"]
+                )
+    log.info("💸 Xarajat qo'shildi: %s %s (uid=%d)", data.kategoriya_nomi, data.summa, uid)
+    return {"status": "saqlandi", **natija}
+
+
+# ════════════════════════════════════════════════════════════════
+#  BILDIRISHNOMALAR — Web panel notification tizimi
+# ════════════════════════════════════════════════════════════════
+
+
+@app.get("/api/v1/bildirishnomalar", tags=["Bildirishnoma"])
+async def bildirishnomalar(uid: int = Depends(get_uid)):
+    """
+    Web panel uchun bildirishnomalar:
+    - Muddati o'tgan qarzlar
+    - Kam qoldiqli tovarlar
+    - Tasdiq kutayotgan xarajatlar
+    """
+    natija = {"items": [], "jami": 0}
+
+    async with rls_conn(uid) as c:
+        # 1. Muddati o'tgan qarzlar
+        muddat_otgan = await c.fetch("""
+            SELECT klient_ismi, COUNT(*) as soni,
+                   SUM(qolgan) as jami_qarz
+            FROM qarzlar
+            WHERE yopildi=FALSE AND qolgan>0
+              AND muddat IS NOT NULL AND muddat < NOW()
+            GROUP BY klient_ismi
+            ORDER BY jami_qarz DESC LIMIT 10
+        """)
+        for r in muddat_otgan:
+            natija["items"].append({
+                "tur": "qarz_muddati",
+                "darajasi": "xavfli",
+                "matn": f"{r['klient_ismi']}: {r['soni']} ta qarz muddati o'tgan ({float(r['jami_qarz']):,.0f} so'm)",
+                "klient": r["klient_ismi"],
+                "summa": float(r["jami_qarz"]),
+            })
+
+        # 2. Kam qoldiqli tovarlar
+        kam_qoldiq = await c.fetch("""
+            SELECT nomi, qoldiq, min_qoldiq FROM tovarlar
+            WHERE min_qoldiq > 0 AND qoldiq <= min_qoldiq
+            ORDER BY (qoldiq / NULLIF(min_qoldiq, 0)) ASC
+            LIMIT 10
+        """)
+        for r in kam_qoldiq:
+            natija["items"].append({
+                "tur": "kam_qoldiq",
+                "darajasi": "ogohlantirish",
+                "matn": f"{r['nomi']}: qoldiq {float(r['qoldiq'])}, minimum {float(r['min_qoldiq'])}",
+                "tovar": r["nomi"],
+                "qoldiq": float(r["qoldiq"]),
+            })
+
+        # 3. Tasdiq kutayotgan xarajatlar
+        kutilmoqda = await c.fetchval("""
+            SELECT COUNT(*) FROM xarajatlar
+            WHERE admin_uid=$1 AND NOT tasdiqlangan AND NOT bekor_qilingan
+        """, uid)
+        if kutilmoqda and kutilmoqda > 0:
+            natija["items"].append({
+                "tur": "xarajat_tasdiq",
+                "darajasi": "info",
+                "matn": f"{kutilmoqda} ta xarajat tasdiqlashni kutmoqda",
+                "soni": kutilmoqda,
+            })
+
+    natija["jami"] = len(natija["items"])
+    return natija
+
+
+# ════════════════════════════════════════════════════════════════
+#  TOVAR EXCEL EXPORT — Web panel uchun
+# ════════════════════════════════════════════════════════════════
+
+
+@app.get("/api/v1/tovar/export/excel", tags=["Tovarlar"])
+async def tovar_excel_export(uid: int = Depends(get_uid)):
+    """Tovarlar ro'yxatini Excel faylga export qilish"""
+    import io
+    import base64
+    from openpyxl import Workbook
+    from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+
+    async with rls_conn(uid) as c:
+        rows = await c.fetch("""
+            SELECT nomi, kategoriya, birlik,
+                   olish_narxi, sotish_narxi, qoldiq, min_qoldiq
+            FROM tovarlar ORDER BY kategoriya, nomi
+        """)
+
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Tovarlar"
+
+    # Sarlavha stili
+    header_font = Font(name="Arial", bold=True, size=11, color="FFFFFF")
+    header_fill = PatternFill(start_color="2E75B6", end_color="2E75B6", fill_type="solid")
+    header_align = Alignment(horizontal="center", vertical="center")
+    thin_border = Border(
+        left=Side(style="thin"), right=Side(style="thin"),
+        top=Side(style="thin"), bottom=Side(style="thin")
+    )
+
+    # Ustun kengliklari
+    headers = ["Tovar nomi", "Kategoriya", "Birlik", "Olish narxi", "Sotish narxi", "Qoldiq", "Min qoldiq"]
+    widths = [30, 18, 10, 15, 15, 12, 12]
+    for i, (h, w) in enumerate(zip(headers, widths), 1):
+        cell = ws.cell(row=1, column=i, value=h)
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.alignment = header_align
+        cell.border = thin_border
+        ws.column_dimensions[chr(64 + i)].width = w
+
+    # Ma'lumotlar
+    num_fmt = '#,##0'
+    for r_idx, row in enumerate(rows, 2):
+        d = dict(row)
+        ws.cell(row=r_idx, column=1, value=d["nomi"]).border = thin_border
+        ws.cell(row=r_idx, column=2, value=d["kategoriya"]).border = thin_border
+        ws.cell(row=r_idx, column=3, value=d["birlik"]).border = thin_border
+        c4 = ws.cell(row=r_idx, column=4, value=float(d["olish_narxi"]))
+        c4.number_format = num_fmt
+        c4.border = thin_border
+        c5 = ws.cell(row=r_idx, column=5, value=float(d["sotish_narxi"]))
+        c5.number_format = num_fmt
+        c5.border = thin_border
+        c6 = ws.cell(row=r_idx, column=6, value=float(d["qoldiq"]))
+        c6.number_format = '#,##0.###'
+        c6.border = thin_border
+        c7 = ws.cell(row=r_idx, column=7, value=float(d["min_qoldiq"]))
+        c7.number_format = '#,##0.###'
+        c7.border = thin_border
+
+        # Kam qoldiq — qizil rang
+        if d["min_qoldiq"] > 0 and d["qoldiq"] <= d["min_qoldiq"]:
+            red_fill = PatternFill(start_color="FFE0E0", end_color="FFE0E0", fill_type="solid")
+            for col in range(1, 8):
+                ws.cell(row=r_idx, column=col).fill = red_fill
+
+    # Avtomatik filtr
+    ws.auto_filter.ref = f"A1:G{len(rows) + 1}"
+
+    # Oxirgi qator — jami
+    last = len(rows) + 2
+    ws.cell(row=last, column=1, value="JAMI:").font = Font(bold=True)
+    ws.cell(row=last, column=6, value=f"=SUM(F2:F{len(rows)+1})").font = Font(bold=True)
+    ws.cell(row=last, column=6).number_format = '#,##0.###'
+
+    buf = io.BytesIO()
+    wb.save(buf)
+    buf.seek(0)
+
+    log.info("📊 Tovar Excel export: %d ta tovar (uid=%d)", len(rows), uid)
+    return {
+        "filename": "tovarlar.xlsx",
+        "content_base64": base64.b64encode(buf.getvalue()).decode(),
+        "tovar_soni": len(rows),
+    }
+
+
+# ════════════════════════════════════════════════════════════════
+#  SAVDOLAR — Sotuv sessiyalari ro'yxati (Web panel uchun)
+# ════════════════════════════════════════════════════════════════
+
+
+@app.get("/api/v1/savdolar", tags=["Sotuv"])
+async def savdolar_royxati(
+    limit: int = 20, offset: int = 0,
+    klient: Optional[str] = None,
+    sana_dan: Optional[str] = None,
+    sana_gacha: Optional[str] = None,
+    uid: int = Depends(get_uid),
+):
+    """
+    Sotuv sessiyalari ro'yxati — sanalar va klient bo'yicha filtr.
+    Web panel /invoices sahifasi uchun.
+    """
+    limit = min(limit, 100)
+    async with rls_conn(uid) as c:
+        # Filtr shartlari
+        where_parts = []
+        params: list = [limit, offset]
+        idx = 3
+
+        if klient:
+            where_parts.append(f"lower(ss.klient_ismi) LIKE lower(${idx})")
+            params.append(f"%{like_escape(klient)}%")
+            idx += 1
+
+        if sana_dan:
+            where_parts.append(f"ss.sana >= ${idx}::timestamptz")
+            params.append(sana_dan)
+            idx += 1
+
+        if sana_gacha:
+            where_parts.append(f"ss.sana < ${idx}::timestamptz + interval '1 day'")
+            params.append(sana_gacha)
+            idx += 1
+
+        where_sql = (" AND " + " AND ".join(where_parts)) if where_parts else ""
+
+        rows = await c.fetch(f"""
+            SELECT ss.id, ss.klient_ismi, ss.jami, ss.tolangan, ss.qarz,
+                   ss.izoh, ss.sana,
+                   COUNT(ch.id) AS tovar_soni
+            FROM sotuv_sessiyalar ss
+            LEFT JOIN chiqimlar ch ON ch.sessiya_id = ss.id
+            WHERE 1=1 {where_sql}
+            GROUP BY ss.id
+            ORDER BY ss.sana DESC
+            LIMIT $1 OFFSET $2
+        """, *params)
+
+        # Jami (filtr bilan)
+        total = await c.fetchval(f"""
+            SELECT COUNT(*) FROM sotuv_sessiyalar ss WHERE 1=1 {where_sql}
+        """, *params[2:])
+
+        # Umumiy statistika (bugungi)
+        stats = await c.fetchrow("""
+            SELECT
+                COALESCE(SUM(jami), 0)     AS jami_tushum,
+                COALESCE(SUM(tolangan), 0) AS tolangan,
+                COALESCE(SUM(qarz), 0)     AS qarz,
+                COUNT(*)                   AS soni
+            FROM sotuv_sessiyalar
+            WHERE (sana AT TIME ZONE 'Asia/Tashkent')::date = CURRENT_DATE
+        """)
+
+    return {
+        "total": total or 0,
+        "items": [dict(r) for r in rows],
+        "stats": {
+            "bugun_tushum": float(stats["jami_tushum"]),
+            "bugun_tolangan": float(stats["tolangan"]),
+            "bugun_qarz": float(stats["qarz"]),
+            "bugun_soni": int(stats["soni"]),
+        },
+    }
+
+
+@app.get("/api/v1/savdo/{sessiya_id}", tags=["Sotuv"])
+async def savdo_tafsilot(sessiya_id: int, uid: int = Depends(get_uid)):
+    """Bitta sotuv sessiyasi tafsiloti — tovarlar bilan"""
+    async with rls_conn(uid) as c:
+        sess = await c.fetchrow(
+            "SELECT id, klient_ismi, jami, tolangan, qarz, izoh, sana FROM sotuv_sessiyalar WHERE id=$1 AND user_id=$2",
+            sessiya_id, uid
+        )
+        if not sess:
+            raise HTTPException(404, "Sotuv topilmadi")
+        tovarlar = await c.fetch("""
+            SELECT tovar_nomi, kategoriya, miqdor, birlik,
+                   sotish_narxi, olish_narxi, chegirma_foiz, jami
+            FROM chiqimlar WHERE sessiya_id=$1 AND user_id=$2 ORDER BY id
+        """, sessiya_id, uid)
+    return {**dict(sess), "tovarlar": [dict(r) for r in tovarlar]}
+
+
+# ════════════════════════════════════════════════════════════════
+#  DASHBOARD TOP — Grafiklar uchun top tovar va top klient
+# ════════════════════════════════════════════════════════════════
+
+
+@app.get("/api/v1/dashboard/top", tags=["Dashboard"])
+async def dashboard_top(kunlar: int = 30, uid: int = Depends(get_uid)):
+    """Dashboard uchun top 5 tovar va top 5 klient (oxirgi N kun)"""
+    from shared.cache.redis_cache import cache_ol, cache_yoz, TTL_HISOBOT
+    cache_k = f"dashboard_top:{uid}:{kunlar}"
+    cached = await cache_ol(cache_k)
+    if cached:
+        return cached
+
+    async with rls_conn(uid) as c:
+        top_tovar = await c.fetch("""
+            SELECT ch.tovar_nomi AS nomi, SUM(ch.jami) AS jami, SUM(ch.miqdor) AS miqdor,
+                   SUM((ch.sotish_narxi - ch.olish_narxi) * ch.miqdor) AS foyda
+            FROM chiqimlar ch
+            JOIN sotuv_sessiyalar ss ON ss.id = ch.sessiya_id
+            WHERE ss.sana >= NOW() - make_interval(days => $1)
+            GROUP BY ch.tovar_nomi
+            ORDER BY jami DESC LIMIT 5
+        """, kunlar)
+
+        top_klient = await c.fetch("""
+            SELECT klient_ismi AS ism, SUM(jami) AS jami, COUNT(*) AS soni,
+                   SUM(qarz) AS qarz
+            FROM sotuv_sessiyalar
+            WHERE sana >= NOW() - make_interval(days => $1) AND klient_ismi IS NOT NULL
+            GROUP BY klient_ismi
+            ORDER BY jami DESC LIMIT 5
+        """, kunlar)
+
+        # Kunlik trend (oxirgi 7 kun)
+        kunlik = await c.fetch("""
+            SELECT (sana AT TIME ZONE 'Asia/Tashkent')::date AS kun,
+                   COALESCE(SUM(jami), 0) AS sotuv,
+                   COALESCE(SUM(qarz), 0) AS qarz
+            FROM sotuv_sessiyalar
+            WHERE sana >= NOW() - interval '7 days'
+            GROUP BY kun ORDER BY kun
+        """)
+
+    result = {
+        "top_tovar": [
+            {"nomi": r["nomi"], "jami": float(r["jami"]), "miqdor": float(r["miqdor"]),
+             "foyda": float(r["foyda"] or 0)}
+            for r in top_tovar
+        ],
+        "top_klient": [
+            {"ism": r["ism"], "jami": float(r["jami"]), "soni": int(r["soni"]),
+             "qarz": float(r["qarz"] or 0)}
+            for r in top_klient
+        ],
+        "kunlik_trend": [
+            {"kun": str(r["kun"]), "sotuv": float(r["sotuv"]), "qarz": float(r["qarz"])}
+            for r in kunlik
+        ],
+    }
+    await cache_yoz(cache_k, result, TTL_HISOBOT)
+    return result
+
+
+# ════════════════════════════════════════════════════════════════
+#  TOVAR EXCEL IMPORT — Web dan tovar yuklash
+# ════════════════════════════════════════════════════════════════
+
+
+class TovarImportItem(BaseModel):
+    nomi:         str
+    kategoriya:   str   = "Boshqa"
+    birlik:       str   = "dona"
+    olish_narxi:  float = 0
+    sotish_narxi: float = 0
+    qoldiq:       float = 0
+
+
+class TovarImportSorov(BaseModel):
+    tovarlar: List[TovarImportItem]
+
+
+@app.post("/api/v1/tovar/import", tags=["Tovarlar"])
+async def tovar_import(data: TovarImportSorov, request: Request, uid: int = Depends(get_uid)):
+    """
+    Tovarlarni batch import qilish.
+    Web paneldan Excel o'qib, JSON sifatida yuboriladi.
+    ON CONFLICT → mavjud tovarni yangilaydi.
+    Rate limit: 5/daqiqa.
+    """
+    from services.api.deps import endpoint_rate_check
+    await endpoint_rate_check(request, "import")
+    from shared.cache.redis_cache import user_cache_tozala
+    if not data.tovarlar:
+        raise HTTPException(400, "Tovarlar ro'yxati bo'sh")
+    if len(data.tovarlar) > 1000:
+        raise HTTPException(400, "Maksimal 1000 ta tovar import qilish mumkin")
+
+    yaratildi = 0
+    yangilandi = 0
+    xatolar = []
+
+    async with rls_conn(uid) as c:
+        for i, t in enumerate(data.tovarlar):
+            nomi = t.nomi.strip()
+            if not nomi:
+                xatolar.append(f"#{i+1}: nom bo'sh")
+                continue
+            try:
+                result = await c.fetchrow("""
+                    INSERT INTO tovarlar
+                        (user_id, nomi, kategoriya, birlik, olish_narxi, sotish_narxi, qoldiq)
+                    VALUES ($1, $2, $3, $4, $5, $6, $7)
+                    ON CONFLICT (user_id, lower(nomi)) DO UPDATE SET
+                        kategoriya  = EXCLUDED.kategoriya,
+                        birlik      = EXCLUDED.birlik,
+                        olish_narxi = CASE WHEN EXCLUDED.olish_narxi > 0 THEN EXCLUDED.olish_narxi
+                                           ELSE tovarlar.olish_narxi END,
+                        sotish_narxi = CASE WHEN EXCLUDED.sotish_narxi > 0 THEN EXCLUDED.sotish_narxi
+                                            ELSE tovarlar.sotish_narxi END
+                    RETURNING (xmax = 0) AS yangi
+                """, uid, nomi, t.kategoriya, t.birlik,
+                    t.olish_narxi, t.sotish_narxi, t.qoldiq)
+
+                if result and result["yangi"]:
+                    yaratildi += 1
+                else:
+                    yangilandi += 1
+            except Exception as e:
+                xatolar.append(f"#{i+1} {nomi}: {str(e)[:50]}")
+
+    await user_cache_tozala(uid)
+    log.info("📥 Tovar import: %d yaratildi, %d yangilandi, %d xato (uid=%d)",
+             yaratildi, yangilandi, len(xatolar), uid)
+    return {
+        "yaratildi": yaratildi,
+        "yangilandi": yangilandi,
+        "xatolar": xatolar[:20],
+        "jami": yaratildi + yangilandi,
+    }
+
+
+# ════════════════════════════════════════════════════════════════
+#  STATISTIKA — Admin panel uchun tizim statistikasi
+# ════════════════════════════════════════════════════════════════
+
+
+@app.get("/api/v1/statistika", tags=["Dashboard"])
+async def admin_statistika(uid: int = Depends(get_uid)):
+    """Tizim statistikasi — admin uchun umumiy ko'rsatkichlar"""
+    async with rls_conn(uid) as c:
+        tovar_soni = await c.fetchval("SELECT COUNT(*) FROM tovarlar") or 0
+        klient_soni = await c.fetchval("SELECT COUNT(*) FROM klientlar") or 0
+        faol_qarz = await c.fetchval(
+            "SELECT COALESCE(SUM(qolgan), 0) FROM qarzlar WHERE yopildi=FALSE AND qolgan>0"
+        ) or 0
+        bugun_sotuv = await c.fetchrow("""
+            SELECT COUNT(*) AS soni, COALESCE(SUM(jami), 0) AS jami
+            FROM sotuv_sessiyalar
+            WHERE (sana AT TIME ZONE 'Asia/Tashkent')::date = CURRENT_DATE
+        """)
+        hafta_sotuv = await c.fetchrow("""
+            SELECT COUNT(*) AS soni, COALESCE(SUM(jami), 0) AS jami
+            FROM sotuv_sessiyalar
+            WHERE sana >= NOW() - interval '7 days'
+        """)
+        oy_sotuv = await c.fetchrow("""
+            SELECT COUNT(*) AS soni, COALESCE(SUM(jami), 0) AS jami
+            FROM sotuv_sessiyalar
+            WHERE sana >= NOW() - interval '30 days'
+        """)
+        kam_qoldiq = await c.fetchval(
+            "SELECT COUNT(*) FROM tovarlar WHERE min_qoldiq > 0 AND qoldiq <= min_qoldiq"
+        ) or 0
+        muddat_otgan = await c.fetchval(
+            "SELECT COUNT(*) FROM qarzlar WHERE yopildi=FALSE AND qolgan>0 AND muddat IS NOT NULL AND muddat < NOW()"
+        ) or 0
+
+    return {
+        "tovar_soni": tovar_soni,
+        "klient_soni": klient_soni,
+        "faol_qarz": float(faol_qarz),
+        "kam_qoldiq_soni": kam_qoldiq,
+        "muddat_otgan_qarz": muddat_otgan,
+        "bugun": {"soni": int(bugun_sotuv["soni"]), "jami": float(bugun_sotuv["jami"])},
+        "hafta": {"soni": int(hafta_sotuv["soni"]), "jami": float(hafta_sotuv["jami"])},
+        "oy":    {"soni": int(oy_sotuv["soni"]),    "jami": float(oy_sotuv["jami"])},
+    }
+
+
+# ════════════════════════════════════════════════════════════════
+#  FOYDA TAHLILI — maxsus endpoint
+# ════════════════════════════════════════════════════════════════
+
+
+@app.get("/api/v1/hisobot/foyda", tags=["Hisobotlar"])
+async def hisobot_foyda(
+    kunlar: int = 30,
+    uid: int = Depends(get_uid),
+):
+    """
+    Foyda tahlili — sof foyda, xarajatlar, top foyda/zarar tovarlar.
+    """
+    async with rls_conn(uid) as c:
+        # Sof foyda
+        foyda = await c.fetchrow("""
+            SELECT
+                COALESCE(SUM(ch.jami), 0) AS brutto,
+                COALESCE(SUM(ch.miqdor * ch.olish_narxi), 0) AS tannarx,
+                COALESCE(SUM(ch.jami - ch.miqdor * ch.olish_narxi), 0) AS sof_foyda
+            FROM chiqimlar ch
+            JOIN sotuv_sessiyalar ss ON ss.id = ch.sessiya_id
+            WHERE ss.sana >= NOW() - make_interval(days => $1)
+        """, kunlar)
+
+        # Xarajatlar
+        xarajat = await c.fetchval("""
+            SELECT COALESCE(SUM(summa), 0)
+            FROM xarajatlar
+            WHERE admin_uid=$1 AND tasdiqlangan=TRUE
+              AND vaqt >= NOW() - make_interval(days => $2)
+        """, uid, kunlar)
+
+        # Top foyda tovarlar
+        top_foyda = await c.fetch("""
+            SELECT ch.tovar_nomi,
+                   SUM(ch.jami - ch.miqdor * ch.olish_narxi) AS foyda,
+                   SUM(ch.miqdor) AS miqdor
+            FROM chiqimlar ch
+            JOIN sotuv_sessiyalar ss ON ss.id = ch.sessiya_id
+            WHERE ss.sana >= NOW() - make_interval(days => $1)
+              AND ch.olish_narxi > 0
+            GROUP BY ch.tovar_nomi
+            ORDER BY foyda DESC LIMIT 5
+        """, kunlar)
+
+        # Top zarar tovarlar
+        top_zarar = await c.fetch("""
+            SELECT ch.tovar_nomi,
+                   SUM(ch.jami - ch.miqdor * ch.olish_narxi) AS foyda,
+                   SUM(ch.miqdor) AS miqdor
+            FROM chiqimlar ch
+            JOIN sotuv_sessiyalar ss ON ss.id = ch.sessiya_id
+            WHERE ss.sana >= NOW() - make_interval(days => $1)
+              AND ch.olish_narxi > 0
+            GROUP BY ch.tovar_nomi
+            HAVING SUM(ch.jami - ch.miqdor * ch.olish_narxi) < 0
+            ORDER BY foyda ASC LIMIT 5
+        """, kunlar)
+
+    sof = float(foyda["sof_foyda"] or 0)
+    xar = float(xarajat or 0)
+    return {
+        "kunlar": kunlar,
+        "brutto_sotuv": float(foyda["brutto"] or 0),
+        "tannarx": float(foyda["tannarx"] or 0),
+        "sof_foyda": sof,
+        "xarajatlar": xar,
+        "toza_foyda": sof - xar,
+        "margin_foiz": round(sof / float(foyda["brutto"]) * 100, 1) if float(foyda["brutto"]) > 0 else 0,
+        "top_foyda": [{"nomi": r["tovar_nomi"], "foyda": float(r["foyda"]), "miqdor": float(r["miqdor"])} for r in top_foyda],
+        "top_zarar": [{"nomi": r["tovar_nomi"], "zarar": abs(float(r["foyda"])), "miqdor": float(r["miqdor"])} for r in top_zarar],
+    }
+
+
+# ════════════════════════════════════════════════════════════════
+#  QR-KOD — chek uchun QR kod generatsiya
+# ════════════════════════════════════════════════════════════════
+
+
+@app.get("/api/v1/qr/{sessiya_id}", tags=["Sotuv"])
+async def qr_kod_generatsiya(sessiya_id: int, uid: int = Depends(get_uid)):
+    """
+    Sotuv sessiyasi uchun QR-kod SVG generatsiya.
+    QR ichida chek URL bo'ladi — klient telefonida skanerlasa chek ko'rinadi.
+    """
+    import hashlib
+
+    async with rls_conn(uid) as c:
+        sess = await c.fetchrow(
+            "SELECT id, klient_ismi, jami, sana FROM sotuv_sessiyalar WHERE id=$1 AND user_id=$2",
+            sessiya_id, uid
+        )
+    if not sess:
+        raise HTTPException(404, "Sotuv topilmadi")
+
+    # QR mazmuni — chek URL yoki sotuv ma'lumoti
+    base_url = os.getenv("PRINT_LANDING_BASE_URL", "")
+    if base_url:
+        qr_content = f"{base_url}/p/{sessiya_id}"
+    else:
+        # Agar URL yo'q — sotuv ma'lumotini QR ga yozish
+        qr_content = (
+            f"SAVDOAI CHEK #{sessiya_id}\n"
+            f"Klient: {sess['klient_ismi'] or '-'}\n"
+            f"Jami: {float(sess['jami']):,.0f} so'm\n"
+            f"Sana: {sess['sana']}"
+        )
+
+    # QR-kod SVG generatsiya (kutubxonasiz — oddiy matn QR)
+    # Haqiqiy QR uchun qrcode kutubxonasi kerak, hozir placeholder SVG
+    # Bu endpoint QR kutubxona o'rnatilganda to'liq ishlaydi
+    qr_hash = hashlib.md5(qr_content.encode()).hexdigest()[:8]
+
+    return {
+        "sessiya_id": sessiya_id,
+        "klient": sess["klient_ismi"],
+        "jami": float(sess["jami"]),
+        "qr_content": qr_content,
+        "qr_hash": qr_hash,
+    }
+
+
+# ════════════════════════════════════════════════════════════════
+#  KLIENT TARIXI — sotuv va qarz tarixi
+# ════════════════════════════════════════════════════════════════
+
+
+@app.get("/api/v1/klient/{klient_id}/tarix", tags=["Klientlar"])
+async def klient_tarix(klient_id: int, limit: int = 20, uid: int = Depends(get_uid)):
+    """Klientning sotuv va qarz tarixi"""
+    limit = min(limit, 100)
+    async with rls_conn(uid) as c:
+        klient = await c.fetchrow(
+            "SELECT ism, telefon, kredit_limit, jami_sotib FROM klientlar WHERE id=$1 AND user_id=$2",
+            klient_id, uid
+        )
+        if not klient:
+            raise HTTPException(404, "Klient topilmadi")
+
+        sotuvlar = await c.fetch("""
+            SELECT ss.id, ss.jami, ss.tolangan, ss.qarz, ss.sana,
+                   COUNT(ch.id) AS tovar_soni
+            FROM sotuv_sessiyalar ss
+            LEFT JOIN chiqimlar ch ON ch.sessiya_id = ss.id
+            WHERE ss.klient_ismi = $1
+            GROUP BY ss.id
+            ORDER BY ss.sana DESC LIMIT $2
+        """, klient["ism"], limit)
+
+        qarzlar = await c.fetch("""
+            SELECT id, dastlabki_summa, tolangan, qolgan, muddat, yopildi, yaratilgan
+            FROM qarzlar WHERE klient_id=$1
+            ORDER BY yaratilgan DESC LIMIT $2
+        """, klient_id, limit)
+
+    return {
+        "klient": dict(klient),
+        "sotuvlar": [dict(r) for r in sotuvlar],
+        "qarzlar": [dict(r) for r in qarzlar],
+    }
+
+
+# ════════════════════════════════════════════════════════════════
+#  PROFIL YANGILASH — Settings sahifasi uchun
+# ════════════════════════════════════════════════════════════════
+
+
+class ProfilYangilaSorov(BaseModel):
+    ism:        Optional[str] = None
+    dokon_nomi: Optional[str] = None
+    telefon:    Optional[str] = None
+    manzil:     Optional[str] = None
+    inn:        Optional[str] = None
+    til:        Optional[str] = None
+
+
+@app.put("/api/v1/me", tags=["Auth"])
+async def profil_yangilash(data: ProfilYangilaSorov, uid: int = Depends(get_uid)):
+    """Foydalanuvchi profilini yangilash"""
+    yangilar = {k: v for k, v in data.model_dump().items() if v is not None}
+    if not yangilar:
+        raise HTTPException(400, "Yangilash uchun kamida 1 ta maydon kerak")
+
+    _RUXSAT = {"ism", "dokon_nomi", "telefon", "manzil", "inn", "til"}
+    noma = set(yangilar.keys()) - _RUXSAT
+    if noma:
+        raise HTTPException(400, f"Ruxsat etilmagan maydon: {noma}")
+
+    set_q = ", ".join(f"{k} = ${i+2}" for i, k in enumerate(yangilar.keys()))
+    vals = list(yangilar.values())
+
+    async with rls_conn(uid) as c:
+        await c.execute(
+            f"UPDATE users SET {set_q} WHERE id=$1",
+            uid, *vals
+        )
+    from shared.cache.redis_cache import user_cache_tozala
+    await user_cache_tozala(uid)
+    log.info("👤 Profil yangilandi: uid=%d, maydonlar=%s", uid, list(yangilar.keys()))
+    return {"status": "yangilandi", "maydonlar": list(yangilar.keys())}
+
+
+@app.put("/api/v1/me/parol", tags=["Auth"])
+async def parol_yangilash(data: dict, uid: int = Depends(get_uid)):
+    """Foydalanuvchi parolini o'zgartirish"""
+    eski = (data.get("eski_parol") or "").strip()
+    yangi = (data.get("yangi_parol") or "").strip()
+    if not yangi or len(yangi) < 4:
+        raise HTTPException(400, "Yangi parol kamida 4 belgi bo'lishi kerak")
+
+    async with rls_conn(uid) as c:
+        user = await c.fetchrow(
+            "SELECT parol_hash FROM users WHERE id=$1", uid
+        )
+        if not user:
+            raise HTTPException(404, "Foydalanuvchi topilmadi")
+
+        # Agar parol mavjud — eski parolni tekshirish
+        if user.get("parol_hash"):
+            if not _parol_tekshir(eski, user["parol_hash"]):
+                raise HTTPException(401, "Eski parol noto'g'ri")
+
+        new_hash = _parol_hash(yangi)
+        await c.execute("UPDATE users SET parol_hash=$2 WHERE id=$1", uid, new_hash)
+
+    log.info("🔐 Parol yangilandi: uid=%d", uid)
+    return {"status": "yangilandi"}
+
+
+# ════════════════════════════════════════════════════════════════
+#  TOVAR TARIXI — sotuv, kirim, narx o'zgarish tarixi
+# ════════════════════════════════════════════════════════════════
+
+
+@app.get("/api/v1/tovar/{tovar_id}/tarix", tags=["Tovarlar"])
+async def tovar_tarix(tovar_id: int, limit: int = 20, uid: int = Depends(get_uid)):
+    """Tovarning sotuv va kirim tarixi"""
+    limit = min(limit, 100)
+    async with rls_conn(uid) as c:
+        tovar = await c.fetchrow(
+            "SELECT nomi, kategoriya, birlik, olish_narxi, sotish_narxi, qoldiq FROM tovarlar WHERE id=$1 AND user_id=$2",
+            tovar_id, uid
+        )
+        if not tovar:
+            raise HTTPException(404, "Tovar topilmadi")
+
+        # Sotuvlar (chiqimlar)
+        sotuvlar = await c.fetch("""
+            SELECT ch.miqdor, ch.sotish_narxi, ch.jami, ch.sana,
+                   ss.klient_ismi
+            FROM chiqimlar ch
+            LEFT JOIN sotuv_sessiyalar ss ON ss.id = ch.sessiya_id
+            WHERE ch.tovar_id=$1 AND ch.user_id=$2
+            ORDER BY ch.sana DESC LIMIT $3
+        """, tovar_id, uid, limit)
+
+        # Kirimlar
+        kirimlar = await c.fetch("""
+            SELECT miqdor, narx, jami, manba, sana
+            FROM kirimlar WHERE tovar_id=$1 AND user_id=$2
+            ORDER BY sana DESC LIMIT $3
+        """, tovar_id, uid, limit)
+
+        # Statistika
+        stats = await c.fetchrow("""
+            SELECT COUNT(*) AS sotuv_soni,
+                   COALESCE(SUM(miqdor), 0) AS jami_sotilgan,
+                   COALESCE(SUM(jami), 0) AS jami_tushum
+            FROM chiqimlar WHERE tovar_id=$1 AND user_id=$2
+        """, tovar_id, uid)
+
+    return {
+        "tovar": dict(tovar),
+        "sotuvlar": [dict(r) for r in sotuvlar],
+        "kirimlar": [dict(r) for r in kirimlar],
+        "statistika": {
+            "sotuv_soni": int(stats["sotuv_soni"]),
+            "jami_sotilgan": float(stats["jami_sotilgan"]),
+            "jami_tushum": float(stats["jami_tushum"]),
+        },
+    }
+
+
+# ════════════════════════════════════════════════════════════════
+#  KASSA — tags qo'shilgan endpointlar
+# ════════════════════════════════════════════════════════════════
+# (Kassa endpointlar routes/kassa.py da — tags app.include_router da qo'shilishi kerak)

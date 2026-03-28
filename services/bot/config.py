@@ -1,6 +1,6 @@
 """
 ╔══════════════════════════════════════════════════════════╗
-║  MASHRAB MOLIYA — KONFIGURATSIYA  v21.3                 ║
+║  MASHRAB MOLIYA — KONFIGURATSIYA  v25.3                 ║
 ╚══════════════════════════════════════════════════════════╝
 """
 from __future__ import annotations

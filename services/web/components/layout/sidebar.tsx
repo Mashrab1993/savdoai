@@ -17,6 +17,7 @@ import {
   Receipt,
   Tag,
   Landmark,
+  ShoppingCart,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useState } from "react"
@@ -35,6 +36,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
 
   const navItems = [
     { href: "/dashboard",   label: nav.dashboard[locale],   icon: LayoutDashboard },
+    { href: "/sales",       label: locale === "uz" ? "Sotuv" : "Продажа", icon: ShoppingCart },
     { href: "/clients",     label: nav.clients[locale],     icon: Users },
     { href: "/products",    label: nav.products[locale],    icon: Package },
     { href: "/debts",       label: nav.debts[locale],       icon: CreditCard },
@@ -49,8 +51,8 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
     { href: "/cash",        label: nav.cash[locale],        icon: Landmark },
   ]
 
-  // Mark the invoices route as "next phase" with a subtle pill
-  const roadmapHrefs = new Set(["/invoices"])
+  // Mark future routes as "next phase" with a subtle pill
+  const roadmapHrefs = new Set<string>([])
 
   const renderNavItem = (item: { href: string; label: string; icon: React.ElementType }) => {
     const active = pathname === item.href || pathname.startsWith(item.href + "/")

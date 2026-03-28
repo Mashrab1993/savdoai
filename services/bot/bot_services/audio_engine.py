@@ -238,7 +238,7 @@ async def process_audio(input_path: str,
         if progress_callback:
             await progress_callback(10, "🔄 Audio tayyorlanmoqda...")
         
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
         ok = await loop.run_in_executor(
             _get_pool(),
             ffmpeg_convert, input_path, wav_path
@@ -309,7 +309,7 @@ async def process_short_audio(input_path: str) -> tuple[bytes, str]:
     wav_path = os.path.join(temp_dir, "short.wav")
     
     try:
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
         ok = await loop.run_in_executor(None, ffmpeg_convert, input_path, wav_path)
         
         if ok and os.path.exists(wav_path):

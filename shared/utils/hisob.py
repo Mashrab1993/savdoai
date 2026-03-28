@@ -35,11 +35,11 @@ def Y(v: Decimal, b: Decimal = TIYIN) -> Decimal:
 
 def pul(v: Any) -> str:
     try:    return f"{Y(D(v)):,.0f} so'm"
-    except: return "0 so'm"
+    except Exception: return "0 so'm"
 
 def pul_r(v: Any) -> str:
     try:    return f"{Y(D(v)):,.0f}"
-    except: return "0"
+    except Exception: return "0"
 
 def foiz_hisob(q: Any, j: Any) -> Decimal:
     qv, jv = D(q), D(j)

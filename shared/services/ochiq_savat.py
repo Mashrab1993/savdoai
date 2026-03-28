@@ -30,6 +30,7 @@
 ╚══════════════════════════════════════════════════════════════════════════╝
 """
 from __future__ import annotations
+from shared.utils import like_escape
 import logging
 from decimal import Decimal, ROUND_HALF_UP
 from typing import Optional
@@ -54,7 +55,7 @@ async def savat_och(conn, uid: int, klient_ismi: str) -> dict:
 
     # 1. Aniq match
     row = await conn.fetchrow("""
-        SELECT * FROM ochiq_savatlar
+        SELECT id, user_id, klient_id, klient_ismi, holat, jami_summa, tovar_soni, izoh, ochilgan, yopilgan, sessiya_id FROM ochiq_savatlar
         WHERE user_id=$1 AND lower(klient_ismi)=lower($2) AND holat='ochiq'
         ORDER BY ochilgan DESC LIMIT 1
     """, uid, klient_ismi)
@@ -64,12 +65,12 @@ async def savat_och(conn, uid: int, klient_ismi: str) -> dict:
 
     # 2. Fuzzy match — "Nasriddin" → "Nasriddin aka" topadi
     row = await conn.fetchrow("""
-        SELECT * FROM ochiq_savatlar
+        SELECT id, user_id, klient_id, klient_ismi, holat, jami_summa, tovar_soni, izoh, ochilgan, yopilgan, sessiya_id FROM ochiq_savatlar
         WHERE user_id=$1 AND holat='ochiq'
           AND (lower(klient_ismi) LIKE lower($2)
                OR lower($3) LIKE '%' || lower(klient_ismi) || '%')
         ORDER BY ochilgan DESC LIMIT 1
-    """, uid, f"%{klient_ismi}%", klient_ismi)
+    """, uid, f"%{like_escape(klient_ismi)}%", klient_ismi)
 
     if row:
         return dict(row)
@@ -80,7 +81,7 @@ async def savat_och(conn, uid: int, klient_ismi: str) -> dict:
         SELECT id, ism FROM klientlar
         WHERE user_id=$1 AND (lower(ism) LIKE lower($2) OR lower(ism) LIKE lower($3))
         LIMIT 1
-    """, uid, f"%{klient_ismi}%", klient_ismi)
+    """, uid, f"%{like_escape(klient_ismi)}%", klient_ismi)
     if kr:
         klient_id = kr["id"]
         # DB dagi to'liq ismni ishlatamiz
@@ -89,7 +90,7 @@ async def savat_och(conn, uid: int, klient_ismi: str) -> dict:
     # 4. Yangi savat yaratish
     new = await conn.fetchrow("""
         INSERT INTO ochiq_savatlar (user_id, klient_id, klient_ismi, holat)
-        VALUES ($1, $2, $3, 'ochiq') RETURNING *
+        VALUES ($1, $2, $3, 'ochiq') RETURNING id, user_id, klient_id, klient_ismi, holat, jami_summa, tovar_soni, izoh, ochilgan, yopilgan, sessiya_id
     """, uid, klient_id, klient_ismi)
 
     log.info("🛒 Yangi savat: %s (uid=%d)", klient_ismi, uid)
@@ -102,7 +103,7 @@ async def savat_ol(conn, uid: int, klient_ismi: str) -> Optional[dict]:
 
     # Aniq match
     row = await conn.fetchrow("""
-        SELECT * FROM ochiq_savatlar
+        SELECT id, user_id, klient_id, klient_ismi, holat, jami_summa, tovar_soni, izoh, ochilgan, yopilgan, sessiya_id FROM ochiq_savatlar
         WHERE user_id=$1 AND lower(klient_ismi)=lower($2) AND holat='ochiq'
         ORDER BY ochilgan DESC LIMIT 1
     """, uid, klient_ismi)
@@ -112,12 +113,12 @@ async def savat_ol(conn, uid: int, klient_ismi: str) -> Optional[dict]:
 
     # Fuzzy match
     row = await conn.fetchrow("""
-        SELECT * FROM ochiq_savatlar
+        SELECT id, user_id, klient_id, klient_ismi, holat, jami_summa, tovar_soni, izoh, ochilgan, yopilgan, sessiya_id FROM ochiq_savatlar
         WHERE user_id=$1 AND holat='ochiq'
           AND (lower(klient_ismi) LIKE lower($2)
                OR lower($3) LIKE '%' || lower(klient_ismi) || '%')
         ORDER BY ochilgan DESC LIMIT 1
-    """, uid, f"%{klient_ismi}%", klient_ismi)
+    """, uid, f"%{like_escape(klient_ismi)}%", klient_ismi)
 
     return dict(row) if row else None
 
@@ -190,7 +191,7 @@ async def savatga_qosh(conn, uid: int, klient_ismi: str,
             tr_row = await conn.fetchrow("""
                 SELECT id, nomi, sotish_narxi, birlik, kategoriya FROM tovarlar
                 WHERE user_id=$1 AND lower(nomi) LIKE lower($2) LIMIT 1
-            """, uid, f"%{nomi}%")
+            """, uid, f"%{like_escape(nomi)}%")
             if tr_row:
                 tr = dict(tr_row)
                 tovar_id = tr["id"]
@@ -299,7 +300,7 @@ async def savat_korish(conn, uid: int, klient_ismi: str) -> Optional[dict]:
         return None
 
     rows = await conn.fetch("""
-        SELECT * FROM savat_tovarlar
+        SELECT id, savat_id, user_id, tovar_nomi, tovar_id, miqdor, birlik, narx, jami, kategoriya, qo_shilgan FROM savat_tovarlar
         WHERE savat_id=$1 ORDER BY qo_shilgan
     """, savat["id"])
 
@@ -359,7 +360,7 @@ async def savat_yop(conn, uid: int, klient_ismi: str,
     savat_id = savat["id"]
 
     rows = await conn.fetch("""
-        SELECT * FROM savat_tovarlar WHERE savat_id=$1 ORDER BY qo_shilgan
+        SELECT id, savat_id, user_id, tovar_nomi, tovar_id, miqdor, birlik, narx, jami, kategoriya, qo_shilgan FROM savat_tovarlar WHERE savat_id=$1 ORDER BY qo_shilgan
     """, savat_id)
 
     if not rows:
@@ -492,7 +493,7 @@ async def savatdan_ochir(conn, uid: int, klient_ismi: str,
             WHERE savat_id=$1 AND lower(tovar_nomi) LIKE lower($2)
             ORDER BY qo_shilgan DESC LIMIT 1
         ) RETURNING tovar_nomi, miqdor
-    """, savat["id"], f"%{tovar_nomi}%")
+    """, savat["id"], f"%{like_escape(tovar_nomi)}%")
 
     if deleted:
         stats = await conn.fetchrow("""

@@ -238,7 +238,7 @@ async def _gemini_async(
 ) -> str:
     sem = _semaphore or asyncio.Semaphore(MAX_PARALLEL)
     async with sem:
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
         return await asyncio.wait_for(
             loop.run_in_executor(
                 None, _gemini_sync, audio_bytes, mime, system_instruction

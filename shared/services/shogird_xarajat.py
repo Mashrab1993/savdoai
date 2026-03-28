@@ -114,7 +114,7 @@ async def _default_kategoriyalar(conn, admin_uid: int):
 async def kategoriyalar_ol(conn, admin_uid: int) -> list:
     """Barcha kategoriyalar"""
     return await conn.fetch("""
-        SELECT * FROM xarajat_kategoriyalar 
+        SELECT id, admin_uid, nomi, emoji, faol FROM xarajat_kategoriyalar 
         WHERE admin_uid = $1 AND faol = TRUE
         ORDER BY nomi
     """, admin_uid)
@@ -323,7 +323,7 @@ async def shogird_hisobot(conn, admin_uid: int, shogird_id: int,
     kunlar = max(1, min(int(kunlar), 365))
     
     shogird = await conn.fetchrow("""
-        SELECT * FROM shogirdlar WHERE id = $1 AND admin_uid = $2
+        SELECT id, admin_uid, telegram_uid, ism, telefon, lavozim, kunlik_limit, oylik_limit, faol, yaratilgan FROM shogirdlar WHERE id = $1 AND admin_uid = $2
     """, shogird_id, admin_uid)
     if not shogird:
         return {}

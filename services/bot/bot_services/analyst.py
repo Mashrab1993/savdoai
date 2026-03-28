@@ -335,7 +335,7 @@ async def _user_tovar_kontekst(uid: int) -> str:
 
 
 async def _claude_chaqir(matn: str) -> str:
-    loop = asyncio.get_event_loop()
+    loop = asyncio.get_running_loop()
     try:
         _timeout  = int(__import__("os").getenv("AI_TIMEOUT", "90"))
         xabar = await asyncio.wait_for(

@@ -146,7 +146,7 @@ async def rls_conn(user_id: int) -> AsyncGenerator[asyncpg.Connection, None]:
 
     Ishlatish:
         async with rls_conn(uid) as c:
-            result = await c.fetch("SELECT * FROM klientlar")
+            result = await c.fetch("SELECT id, user_id, ism, telefon, manzil, eslatma, kredit_limit, jami_sotib, yaratilgan FROM klientlar")
             # Faqat uid=... klientlar qaytadi!
 
     Texnik:

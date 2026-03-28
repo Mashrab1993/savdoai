@@ -15,6 +15,7 @@
 ╚══════════════════════════════════════════════════════════════════════════╝
 """
 from __future__ import annotations
+from shared.utils import like_escape
 import asyncio
 import logging
 from datetime import datetime, timedelta
@@ -463,16 +464,16 @@ async def klient_qarz_tarix(conn, uid: int, klient_ism: str) -> dict | None:
 
     # 1. Klient topish — exact, keyin fuzzy
     klient = await conn.fetchrow("""
-        SELECT * FROM klientlar
+        SELECT id, user_id, ism, telefon, manzil, eslatma, kredit_limit, jami_sotib, yaratilgan FROM klientlar
         WHERE user_id=$1 AND lower(ism) = lower($2)
     """, uid, klient_ism.strip())
 
     if not klient:
         klient = await conn.fetchrow("""
-            SELECT * FROM klientlar
+            SELECT id, user_id, ism, telefon, manzil, eslatma, kredit_limit, jami_sotib, yaratilgan FROM klientlar
             WHERE user_id=$1 AND lower(ism) LIKE lower($2)
             ORDER BY jami_sotib DESC NULLS LAST LIMIT 1
-        """, uid, f"%{klient_ism.strip()}%")
+        """, uid, f"%{like_escape(klient_ism.strip())}%")
 
     if not klient:
         return None

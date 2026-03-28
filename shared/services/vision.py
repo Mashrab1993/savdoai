@@ -346,7 +346,7 @@ async def _rasm_versiyalar(image_bytes: bytes) -> list[bytes]:
         # Tozalash
         for p in [inp_path, out2, out3]:
             try: os.unlink(p)
-            except: pass
+            except Exception: pass
     except Exception as e:
         log.debug("Rasm versiya: %s", e)
     
@@ -383,7 +383,7 @@ def _sync_tahlil(image_bytes: bytes, mime: str, prompt: str) -> dict:
             model=_VISION_MODEL,
             contents=[types.Part.from_bytes(data=image_bytes, mime_type=mime), prompt],
             config=types.GenerateContentConfig(temperature=0.05, max_output_tokens=16384))
-    except:
+    except Exception: 
         response = _gemini_client.models.generate_content(
             model=_VISION_MODEL,
             contents=[types.Part.from_bytes(data=image_bytes, mime_type=mime), prompt])
@@ -637,7 +637,7 @@ async def kop_rasm_tahlil(rasmlar: list, mime: str = "image/jpeg") -> dict:
                 j0=m.find("{"); j1=m.rfind("}")+1
                 if j0>=0 and j1>j0: m=m[j0:j1]
                 return _validatsiya(json.loads(m))
-            except: return {"tur":"noaniq","ishonch":0.0,"izoh":m[:500]}
+            except Exception: return {"tur":"noaniq","ishonch":0.0,"izoh":m[:500]}
         return await asyncio.wait_for(loop.run_in_executor(None, _ms), timeout=90)
     except Exception as e:
         return {"tur":"xato","ishonch":0.0,"izoh":str(e)[:200]}
@@ -646,4 +646,4 @@ def ocr_matn(image_bytes: bytes) -> Optional[str]:
     try:
         import pytesseract; from PIL import Image
         return (pytesseract.image_to_string(Image.open(io.BytesIO(image_bytes)), lang="uzb+rus+eng") or "").strip() or None
-    except: return None
+    except Exception: return None

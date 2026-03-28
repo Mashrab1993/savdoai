@@ -37,6 +37,7 @@ export default function DebtsPage() {
   const [selectedDebt, setSelectedDebt] = useState<DebtVM | null>(null)
   const [paying, setPaying] = useState(false)
   const [payError, setPayError] = useState<string | null>(null)
+  const [payAmount, setPayAmount] = useState("")
 
   const debts: DebtVM[] = (rawDebts ?? []).map((d, i) => normalizeDebt(d, i))
 
@@ -51,13 +52,16 @@ export default function DebtsPage() {
   const overdueAmount = debts.filter(d => d.status === "overdue").reduce((s, d) => s + d.amount, 0)
   const overdueCount = debts.filter(d => d.status === "overdue").length
 
-  async function markAsPaid(debt: DebtVM) {
+  async function handlePayment(debt: DebtVM) {
     setPaying(true)
     setPayError(null)
+    const balance = debt.amount - debt.paid
+    const summa = payAmount ? Math.min(Number(payAmount), balance) : balance
+    if (summa <= 0) { setPaying(false); return }
     try {
-      // Backend expects {klient_ismi, summa} — pay full remaining amount
-      await debtService.pay(debt.clientName, debt.amount - debt.paid)
+      await debtService.pay(debt.clientName, summa)
       setSelectedDebt(null)
+      setPayAmount("")
       refetch()
     } catch (err) {
       const msg = err instanceof ApiResponseError ? err.detail : "To'lovda xato"
@@ -251,12 +255,28 @@ export default function DebtsPage() {
                   <p className="text-xs text-destructive bg-destructive/10 rounded px-3 py-2">{payError}</p>
                 )}
                 {selectedDebt.status !== "paid" && (
-                  <Button className="w-full" onClick={() => markAsPaid(selectedDebt)} disabled={paying}>
-                    <CheckCircle2 className="w-4 h-4 mr-2" />
-                    {paying
-                      ? (locale === "uz" ? "To'lanmoqda..." : "Оплата...")
-                      : L.markAsPaid[locale]}
-                  </Button>
+                  <div className="space-y-2">
+                    <div>
+                      <label className="text-xs text-muted-foreground mb-1 block">
+                        {locale === "uz" ? "To'lov summasi" : "Сумма оплаты"}
+                      </label>
+                      <Input
+                        type="number"
+                        placeholder={String(selectedDebt.amount - selectedDebt.paid)}
+                        value={payAmount}
+                        onChange={e => setPayAmount(e.target.value)}
+                        className="h-9"
+                      />
+                    </div>
+                    <Button className="w-full" onClick={() => handlePayment(selectedDebt)} disabled={paying}>
+                      <CheckCircle2 className="w-4 h-4 mr-2" />
+                      {paying
+                        ? (locale === "uz" ? "To'lanmoqda..." : "Оплата...")
+                        : payAmount && Number(payAmount) < (selectedDebt.amount - selectedDebt.paid)
+                          ? (locale === "uz" ? `${Number(payAmount).toLocaleString()} so'm to'lash` : `Оплатить ${Number(payAmount).toLocaleString()}`)
+                          : L.markAsPaid[locale]}
+                    </Button>
+                  </div>
                 )}
               </div>
             </>

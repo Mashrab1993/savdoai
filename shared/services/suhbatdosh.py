@@ -278,5 +278,5 @@ def _pul(v) -> str:
     try:
         from decimal import Decimal
         return f"{Decimal(str(v or 0)):,.0f}"
-    except:
+    except Exception: 
         return "0"

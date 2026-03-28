@@ -1,5 +1,24 @@
 # SAVDOAI — RUNBOOK
 
+## v25.3 O'zgarishlar
+
+**Yangi:**
+- 60+ API endpoint (14 ta yangi CRUD, notifications, excel, import, foyda)
+- Web panel: to'liq CRUD (tovar/klient qo'shish, tahrirlash, o'chirish)
+- Dashboard grafiklar (top tovar, top klient, 7 kunlik trend)
+- Savdolar sahifasi (real data, filtrlar, tafsilot modal)
+- Notification tizimi (qo'ng'iroq badge, real-time)
+- Excel export/import
+- Login rate limiting (5/min), endpoint rate limiting
+- GitHub Actions CI (pytest + ruff lint)
+- Sentry integratsiya (barcha 3 servis)
+- 1000+ test
+
+**Deploy:** `git push origin main` — Railway avtomatik. Yangi env kerak emas.
+`SENTRY_DSN` ixtiyoriy — qo'ysangiz ishlaydi.
+
+---
+
 ## Local Setup
 
 ### Prerequisites
@@ -18,6 +37,25 @@ PYTHONPATH=$(pwd)/../.. python -m uvicorn main:app --host 0.0.0.0 --port 8000
 ```
 
 Health check: `curl http://localhost:8000/health`
+
+### Tests
+
+```bash
+# To'liq test suite (800+ test)
+PYTHONPATH=. python3 -m pytest tests/ -v
+
+# Faqat TITAN testlar (yangi funksiyalar)
+PYTHONPATH=. python3 -m pytest tests/test_titan_v2.py -v
+
+# Inline testlar
+PYTHONPATH=. python3 -m shared.utils.hisob
+PYTHONPATH=. python3 -m shared.utils.uzb_nlp
+PYTHONPATH=. python3 -m services.cognitive.engine
+
+# Lint
+pip install ruff
+ruff check shared/ services/ --select=E9,F63,F7,F82
+```
 
 ### 2. Web Panel (Next.js)
 
