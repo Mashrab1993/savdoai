@@ -281,6 +281,40 @@ export const savdoService = {
   }) => api.post<{ sessiya_id: number; status: string }>("/api/v1/sotuv", data),
 }
 
+// ── Faktura (Hisob-faktura) ──────────────────────────────────────────────────
+export interface FakturaDto {
+  id: number
+  raqam: string
+  klient_ismi: string
+  jami_summa: number
+  tovarlar?: Array<Record<string, unknown>>
+  bank_rekvizit?: Record<string, unknown>
+  holat: string
+  yaratilgan: string
+}
+
+export const fakturaService = {
+  list: (params?: { limit?: number; offset?: number; holat?: string }) => {
+    const q = new URLSearchParams()
+    if (params?.limit) q.set("limit", String(params.limit))
+    if (params?.offset) q.set("offset", String(params.offset))
+    if (params?.holat) q.set("holat", params.holat)
+    const qs = q.toString()
+    return api.get<{ total: number; items: FakturaDto[] }>(`/api/v1/fakturalar${qs ? `?${qs}` : ""}`)
+  },
+  detail: (id: number) => api.get<FakturaDto>(`/api/v1/faktura/${id}`),
+  create: (data: {
+    klient_ismi: string
+    tovarlar: Array<Record<string, unknown>>
+    jami_summa: number
+    bank_rekvizit?: Record<string, unknown>
+  }) => api.post<FakturaDto>("/api/v1/faktura", data),
+  updateHolat: (id: number, holat: string) =>
+    api.put<{ id: number; holat: string }>(`/api/v1/faktura/${id}/holat`, { holat }),
+  remove: (id: number) =>
+    api.delete<{ id: number; status: string }>(`/api/v1/faktura/${id}`),
+}
+
 // ── Dashboard Top (charts) ────────────────────────────────────────────────────
 export interface DashboardTopResponse {
   top_tovar: Array<{ nomi: string; jami: number; miqdor: number; foyda: number }>

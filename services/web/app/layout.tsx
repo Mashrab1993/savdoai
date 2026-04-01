@@ -1,4 +1,4 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { Analytics } from '@vercel/analytics/next'
 import { ThemeProvider } from 'next-themes'
 import { LocaleProvider } from '@/lib/locale-context'
@@ -10,6 +10,20 @@ import './globals.css'
 export const metadata: Metadata = {
   title: 'SavdoAI — Biznes boshqaruv tizimi',
   description: 'Mijozlar, mahsulotlar, qarzdorliklar, hisob-fakturalar va hisobotlarni boshqarish uchun zamonaviy admin paneli.',
+  manifest: '/manifest.json',
+  themeColor: '#1a56db',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'SavdoAI',
+  },
+}
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
 }
 
 export default function RootLayout({

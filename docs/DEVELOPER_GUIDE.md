@@ -56,7 +56,12 @@ savdoai-main/
 │   │   └── routes/     ← WebSocket, kassa router
 │   │
 │   ├── bot/            ← Telegram bot
-│   │   ├── main.py     ← Handler registration (5000+ qator)
+│   │   ├── main.py     ← Handler registration (4400+ qator)
+│   │   ├── bot_helpers.py ← Umumiy yordamchi (kesh, faol_tekshir, xat)
+│   │   ├── handlers/   ← Modular handler fayllar
+│   │   │   ├── narx.py    ← Narx guruh buyruqlari
+│   │   │   ├── shogird.py ← Shogird xarajat buyruqlari
+│   │   │   └── jobs.py    ← Avtomatik joblar (kunlik, haftalik)
 │   │   ├── db.py       ← Bot database funksiyalari
 │   │   ├── config.py   ← Bot konfiguratsiyasi
 │   │   └── bot_services/ ← Yordamchi modullar
@@ -196,7 +201,7 @@ git push origin main  # Railway avtomatik deploy
 
 ---
 
-## API endpoint soni: 66+
+## API endpoint soni: 72+
 
 Barcha endpointlar Swagger bilan tag'langan — `/docs` da ko'ring.
 

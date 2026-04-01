@@ -468,7 +468,7 @@ class TestSuhbatBotIntegration:
         assert "hisobot_kirish" in src
 
     def test_kechki_in_auto(self):
-        src = open("services/bot/main.py").read()
+        src = open("services/bot/main.py", encoding="utf-8").read() + open("services/bot/handlers/jobs.py", encoding="utf-8").read()
         assert "kechki_xayrlashish" in src
 
 

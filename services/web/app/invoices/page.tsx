@@ -38,7 +38,10 @@ export default function InvoicesPage() {
   const [customTo, setCustomTo] = useState("")
   const [page, setPage] = useState(0)
   const [detailOpen, setDetailOpen] = useState(false)
-  const [detailData, setDetailData] = useState<any>(null)
+  const [detailData, setDetailData] = useState<{
+    id?: number; klient_ismi?: string; jami?: number; tolangan?: number; qarz?: number; sana?: string
+    tovarlar: Array<{ tovar_nomi?: string; miqdor?: number; birlik?: string; sotish_narxi?: number; jami?: number }>
+  } | null>(null)
   const [detailLoading, setDetailLoading] = useState(false)
   const LIMIT = 20
 
@@ -260,7 +263,7 @@ export default function InvoicesPage() {
                   <p className="text-muted-foreground text-xs">{locale === "uz" ? "To'langan / Qarz" : "Оплачено / Долг"}</p>
                   <p className="font-medium">
                     <span className="text-green-600">{fmt(detailData.tolangan ?? 0)}</span>
-                    {(detailData.qarz ?? 0) > 0 && <span className="text-destructive"> / {fmt(detailData.qarz)}</span>}
+                    {(detailData.qarz ?? 0) > 0 && <span className="text-destructive"> / {fmt(detailData.qarz ?? 0)}</span>}
                   </p>
                 </div>
               </div>
@@ -280,7 +283,7 @@ export default function InvoicesPage() {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {detailData.tovarlar.map((tv: any, i: number) => (
+                        {detailData.tovarlar.map((tv, i) => (
                           <TableRow key={i}>
                             <TableCell className="text-xs font-medium">{tv.tovar_nomi || "—"}</TableCell>
                             <TableCell className="text-xs text-right">{tv.miqdor} {tv.birlik}</TableCell>

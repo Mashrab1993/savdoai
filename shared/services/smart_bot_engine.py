@@ -225,6 +225,7 @@ async def inventarizatsiya(conn, uid: int, tovarlar: list[dict]) -> dict:
             SELECT id, nomi, qoldiq FROM tovarlar
             WHERE user_id=$1 AND lower(nomi) LIKE lower($2)
             LIMIT 1
+            FOR UPDATE
         """, uid, f"%{like_escape(nomi)}%")
 
         if not tovar:

@@ -697,15 +697,17 @@ class TestTurboOptimizations:
 
     def test_bot_has_user_cache(self):
         """Bot has _user_ol_kesh function for cached user lookups"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py')).read()
-        assert 'async def _user_ol_kesh' in src
-        assert '_KESH_USER_TTL' in src
+        # Funksiya bot_helpers.py ga ko'chirildi, main.py import qiladi
+        helpers = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'bot_helpers.py'), encoding='utf-8').read()
+        main_src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py'), encoding='utf-8').read()
+        assert 'async def _user_ol_kesh' in helpers
+        assert '_user_ol_kesh' in main_src
 
     def test_bot_uses_cached_user(self):
         """Bot uses _user_ol_kesh with db.user_ol fallback"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py')).read()
-        assert '_user_ol_kesh' in src, "Bot should use _user_ol_kesh cache wrapper"
-        assert 'async def _user_ol_kesh' in src, "Cache function should exist"
+        helpers = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'bot_helpers.py'), encoding='utf-8').read()
+        assert 'async def _user_ol_kesh' in helpers, "Cache function should exist"
+        assert 'db.user_ol' in helpers, "Should use db.user_ol as fallback"
 
     def test_pool_has_statement_cache(self):
         """DB pool has statement_cache_size configured"""

@@ -79,7 +79,7 @@ class TestQarzEslatma:
         assert t == ""
 
     def test_auto_qarz_upgraded(self):
-        src = open("services/bot/main.py").read()
+        src = open("services/bot/main.py", encoding="utf-8").read() + open("services/bot/handlers/jobs.py", encoding="utf-8").read()
         assert "qarz_eslatma_royxat" in src
         assert "MUDDATI O'TGAN" in src or "muddati_otgan" in src
 
@@ -234,7 +234,7 @@ class TestKunlikYakuniyPro:
         assert "KUNLIK YAKUNIY" in t
 
     def test_auto_upgraded(self):
-        src = open("services/bot/main.py").read()
+        src = open("services/bot/main.py", encoding="utf-8").read() + open("services/bot/handlers/jobs.py", encoding="utf-8").read()
         assert "kunlik_yakuniy_pro" in src
 
     def test_parallel_in_pro(self):

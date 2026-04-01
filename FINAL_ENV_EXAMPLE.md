@@ -7,6 +7,7 @@
 | DATABASE_URL | YES | postgresql://user:pass@host:5432/savdoai | SECRET |
 | REDIS_URL | YES | redis://default:pass@host:6379 | SECRET |
 | JWT_SECRET | YES (prod) | `openssl rand -hex 32` | SECRET — must match bot |
+| BOT_TOKEN | YES (Mini App) | 123456:ABC-DEF | SECRET — for /auth/webapp HMAC |
 | PORT | NO | 8000 | — |
 | SENTRY_DSN | NO | https://xxx@sentry.io/yyy | SECRET |
 | DB_MIN | NO | 2 | — |

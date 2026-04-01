@@ -1,0 +1,25 @@
+{
+  "name": "SavdoAI — Biznes boshqaruv",
+  "short_name": "SavdoAI",
+  "description": "Savdo boshqaruv tizimi — mijozlar, tovarlar, qarzlar, hisobotlar",
+  "start_url": "/dashboard",
+  "display": "standalone",
+  "background_color": "#0f0f23",
+  "theme_color": "#1a56db",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/apple-icon.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["business", "finance", "productivity"]
+}

@@ -1,62 +1,59 @@
 # SavdoAI v25.3 — 40 Taklif Holati
 
-## ✅ QILINDI (30 ta — 75%)
+## ✅ QILINDI (32 ta — 80%)
 
 | # | Taklif | Natija |
 |---|--------|--------|
 | 1 | smart_narx crash fix | `c.sotish_narxi AS narx` |
 | 2 | user_id filtr | 6+ endpoint himoyalandi |
-| 4 | bare except 27 ta | `except Exception:` ga o'zgartirildi |
-| 6 | Schema birlashtirish | _SCHEMA minimal fallback + WARNING |
-| 7 | asyncio deprecated | `get_running_loop` 9 ta joy |
-| 8 | Web xarajat qo'shish | API + Web tugma ishlaydi |
+| 4 | bare except 27 ta | `except Exception:` — butun loyihada 0 |
+| 5 | bot/main.py bo'laklash | 5001→4392 (-609), 4 handler modul |
+| 6 | Schema birlashtirish | _SCHEMA minimal fallback |
+| 7 | asyncio deprecated | `get_running_loop` 9 ta |
+| 8 | Web xarajat qo'shish | API + Web |
 | 9 | Tovar CRUD | 4 endpoint + modal + import |
 | 10 | Klient CRUD | 2 endpoint + edit/delete + tarix |
 | 11 | Web dan sotuv | Sales sahifasi — savat tizimi |
-| 12 | QR-kod | API endpoint tayyor |
+| 12 | QR-kod | API endpoint |
+| 13 | Telegram Mini App | /auth/webapp + /tg + /webapp cmd |
 | 14 | Hisobot export | PDF/Excel tugmalari |
 | 15 | Dashboard WebSocket | Hook + auto-refetch |
-| 16 | Notification | Live bell + auto-refresh |
+| 16 | Notification | Live bell |
 | 17 | Savdolar filtr | Real data + pagination + detail |
-| 18 | Dashboard grafiklar | Top tovar/klient + 7 kun trend |
-| 19 | Mobil responsive | Bottom navigation bar |
-| 22 | LIKE escape | API 7 + bot 6 = 13 ta |
+| 18 | Dashboard grafiklar | Top tovar/klient + trend + statistika |
+| 19 | Mobil responsive | Bottom nav + PWA manifest |
+| 22 | LIKE escape | API 7 + bot 6 + shared 21 = 0 qoldi |
 | 24 | Rate limiting | login/export/sotuv/import |
-| 25 | N+1 fix | zarar_sotuv → batch query |
-| 29 | Schema warning | Fallback da log.warning |
-| 30 | Sentry | 3 servis (bot, API, cognitive) |
-| 33 | Tovar import/export | Excel + CSV import |
+| 25 | N+1 fix | zarar_sotuv batch |
+| 29 | Schema warning | Fallback log.warning |
+| 30 | Sentry | 3 servis |
+| 33 | Tovar import/export | Excel + CSV |
 | 37 | Type hints | 24 Pydantic model |
-| 38 | Test qamrovi | 987 pytest (339 TITAN) |
-| 39 | CI/CD | GitHub Actions + ruff lint |
-| 40 | Documentation | API + Bot + Developer guide |
+| 38 | Test qamrovi | 1109 pytest + 155 inline |
+| 39 | CI/CD | GitHub Actions + ruff |
+| 40 | Documentation | 6 ta hujjat |
 
-### Qo'shimcha (40 ta taklifdan tashqari):
-- SELECT * tozalash (bot + api = 0)
-- RETURNING * tozalash (bot + api = 0)
-- Foyda tahlili endpoint
-- Statistika endpoint
-- Debts qisman to'lash
-- Profil tahrirlash + parol o'zgartirish
-- Klient sotuv tarixi drawer
-- Tovar sotuv tarixi drawer
-- Global search sahifasi
-- Swagger 64 ta tag
-- API landing yangilash
-- RUNBOOK yangilash
-- .env.example yangilash
-- Version sync (v25.3)
+### Qo'shimcha (40 dan tashqari):
+- SELECT * tozalash (bot + api + shared + worker = 0)
+- RETURNING * tozalash (0)
+- Foyda tahlili + Statistika endpoint
+- Profil tahrirlash + parol
+- Klient/tovar tarix drawer
+- Global search + 404 sahifa
+- Swagger 67 tag + OpenAPI
+- Health Redis ping
+- Skeleton loading komponentlar
+- README.md to'liq yangilandi
+- PWA manifest + viewport
 
-## ❌ QILINMAGAN (10 ta — tashqi/xavfli)
+## ❌ QILINMAGAN (8 ta — tashqi/xavfli)
 
 | # | Taklif | Sabab |
 |---|--------|-------|
-| 3 | float→Decimal | 10+ caller buziladi, staging kerak |
-| 5 | bot/main.py bo'laklash | 4972 qator, staging kerak |
-| 13 | Telegram Mini App | BotFather sozlash kerak |
-| 21 | PyJWT | Bot+API bir vaqtda o'zgartirish |
-| 23 | httpOnly cookie | Frontend+backend CORS kerak |
-| 26 | Materialized View | pg_cron extension kerak |
+| 3 | float→Decimal | 10+ caller buziladi |
+| 21 | PyJWT | Bot+API simultaneous |
+| 23 | httpOnly cookie | Frontend+backend CORS |
+| 26 | Materialized View | pg_cron extension |
 | 28 | Redis pub/sub | Redis server kerak |
 | 31 | UptimeRobot | Tashqi servis |
-| 32-36 | Multi-do'kon, SMS, Soliq, To'lov | Tashqi API/shartnoma |
+| 32-36 | Multi-do'kon, SMS, Soliq, To'lov | Tashqi shartnoma |

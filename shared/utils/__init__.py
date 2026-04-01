@@ -21,6 +21,8 @@ def like_escape(s: str) -> str:
     Ishlatish:
         f"%{like_escape(nomi.strip())}%"
     """
+    if not s:
+        return ""
     return (s
             .replace("\\", "\\\\")
             .replace("%", "\\%")

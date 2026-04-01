@@ -407,7 +407,7 @@ async def root():
             <span>API ishlayapti</span>
         </div>
         <div class="stats">
-            <div class="stat"><div class="stat-num">66+</div><div class="stat-label">API Endpoints</div></div>
+            <div class="stat"><div class="stat-num">72+</div><div class="stat-label">API Endpoints</div></div>
             <div class="stat"><div class="stat-num">19</div><div class="stat-label">DB Jadvallar</div></div>
             <div class="stat"><div class="stat-num">2</div><div class="stat-label">AI Modellar</div></div>
         </div>
@@ -429,6 +429,21 @@ async def health():
     import time as _t
     start = _t.monotonic()
     db = await pool_health()
+    # Redis ping
+    redis_ok = False
+    redis_ms = None
+    try:
+        redis_url = os.getenv("REDIS_URL", "")
+        if redis_url:
+            import redis.asyncio as _aioredis
+            r = _aioredis.from_url(redis_url, socket_connect_timeout=2)
+            rs = _t.monotonic()
+            await r.ping()
+            redis_ms = round((_t.monotonic() - rs) * 1000, 1)
+            redis_ok = True
+            await r.close()
+    except Exception:
+        pass
     latency_ms = round((_t.monotonic() - start) * 1000, 1)
     return {
         "status": "ok",
@@ -436,6 +451,8 @@ async def health():
         "service": "api",
         "db_ping_ms": db.get("ping_ms"),
         "db_pool": f"{db.get('used',0)}/{db.get('size',0)}",
+        "redis_ok": redis_ok,
+        "redis_ms": redis_ms,
         "latency_ms": latency_ms,
         **process_info(),
     }
@@ -490,6 +507,94 @@ async def auth_telegram(data: TelegramAuthSo_rov):
 
     token = jwt_yarat(uid)
     return {"token": token, "user_id": uid}
+
+
+# ════════════════════════════════════════════════════════════
+#  TELEGRAM MINI APP (WebApp) AUTH
+# ════════════════════════════════════════════════════════════
+
+
+@app.post("/auth/webapp", tags=["Auth"])
+async def auth_webapp(data: dict):
+    """
+    Telegram Mini App (WebApp) autentifikatsiya.
+    Client Telegram.WebApp.initData yuboradi → server tekshiradi → JWT qaytaradi.
+
+    Telegram WebApp initData validatsiya:
+    1. initData parse → hash ajratish
+    2. Qolgan fieldlarni alifbo tartibida saralash, \\n bilan birlashtirish
+    3. secret_key = HMAC-SHA256("WebAppData", BOT_TOKEN)
+    4. Tekshirish: HMAC-SHA256(secret_key, data_check_string) == hash
+    """
+    from urllib.parse import parse_qs
+
+    init_data = data.get("initData", "")
+    if not init_data:
+        raise HTTPException(400, "initData bo'sh")
+
+    bot_token = os.getenv("BOT_TOKEN", "")
+    if not bot_token:
+        raise HTTPException(503, "BOT_TOKEN o'rnatilmagan")
+
+    # 1. Parse initData
+    parsed = parse_qs(init_data, keep_blank_values=True)
+    received_hash = parsed.pop("hash", [""])[0]
+    if not received_hash:
+        raise HTTPException(400, "hash topilmadi")
+
+    # 2. data_check_string — alifbo tartibida saralangan key=value
+    data_check_parts = []
+    for key in sorted(parsed.keys()):
+        val = parsed[key][0]
+        data_check_parts.append(f"{key}={val}")
+    data_check_string = "\n".join(data_check_parts)
+
+    # 3. secret_key = HMAC-SHA256("WebAppData", BOT_TOKEN)
+    secret_key = hmac.new(
+        b"WebAppData", bot_token.encode(), "sha256"
+    ).digest()
+
+    # 4. Tekshirish
+    computed_hash = hmac.new(
+        secret_key, data_check_string.encode(), "sha256"
+    ).hexdigest()
+
+    if not hmac.compare_digest(computed_hash, received_hash):
+        raise HTTPException(403, "initData tekshiruvi muvaffaqiyatsiz")
+
+    # 5. auth_date tekshirish (24 soatdan eski bo'lmasligi kerak)
+    auth_date = int(parsed.get("auth_date", ["0"])[0])
+    if time.time() - auth_date > 86400:
+        raise HTTPException(403, "initData muddati o'tgan")
+
+    # 6. User ma'lumotlarini olish
+    user_json = parsed.get("user", ["{}"])[0]
+    try:
+        tg_user = json.loads(user_json)
+    except json.JSONDecodeError:
+        raise HTTPException(400, "user field noto'g'ri")
+
+    tg_id = tg_user.get("id")
+    if not tg_id:
+        raise HTTPException(400, "user.id topilmadi")
+
+    # 7. User yaratish/olish
+    ism = tg_user.get("first_name", "")
+    username = tg_user.get("username", "")
+
+    async with get_pool().acquire() as c:
+        u = await c.fetchrow(
+            "SELECT id, ism FROM users WHERE id=$1", int(tg_id)
+        )
+        if not u:
+            await c.execute(
+                "INSERT INTO users(id, ism, username) VALUES($1, $2, $3) ON CONFLICT DO NOTHING",
+                int(tg_id), ism, username
+            )
+
+    token = jwt_yarat(int(tg_id))
+    log.info("📱 Mini App auth: uid=%d ism=%s", tg_id, ism)
+    return {"token": token, "user_id": tg_id, "ism": ism}
 
 
 # ════════════════════════════════════════════════════════════
@@ -623,9 +728,10 @@ async def me(uid: int = Depends(get_uid)):
     """Joriy foydalanuvchi"""
     cached = await cache_ol(k_user(uid))
     if cached:
-        return cached
+        safe = {k: v for k, v in cached.items() if k != "parol_hash"}
+        return safe
     async with rls_conn(uid) as c:
-        u = await c.fetchrow("SELECT id, ism, to_liq_ism, username, telefon, inn, manzil, dokon_nomi, segment, faol, obuna_tugash, til, plan, login, parol_hash, yaratilgan FROM users WHERE id=$1", uid)
+        u = await c.fetchrow("SELECT id, ism, to_liq_ism, username, telefon, inn, manzil, dokon_nomi, segment, faol, obuna_tugash, til, plan, login, yaratilgan FROM users WHERE id=$1", uid)
         if not u:
             raise HTTPException(404, "Topilmadi")
         result = dict(u)
@@ -654,12 +760,39 @@ async def dashboard(uid: int = Depends(get_uid)):
             SELECT COALESCE(SUM(qolgan),0)
             FROM qarzlar WHERE yopildi=FALSE
         """)
-        klient_soni = await c.fetchval("SELECT COUNT(*) FROM klientlar")
-        tovar_soni  = await c.fetchval("SELECT COUNT(*) FROM tovarlar")
+        klient_soni = await c.fetchval("SELECT COUNT(*) FROM klientlar WHERE user_id=$1", uid)
+        tovar_soni  = await c.fetchval("SELECT COUNT(*) FROM tovarlar WHERE user_id=$1", uid)
         kam_qoldiq  = await c.fetchval("""
             SELECT COUNT(*) FROM tovarlar
-            WHERE min_qoldiq>0 AND qoldiq<=min_qoldiq
+            WHERE user_id=$1 AND min_qoldiq>0 AND qoldiq<=min_qoldiq
+        """, uid)
+
+        # Muddati o'tgan qarzlar
+        overdue = await c.fetchrow("""
+            SELECT COUNT(*) AS soni, COALESCE(SUM(qolgan), 0) AS jami
+            FROM qarzlar
+            WHERE yopildi=FALSE AND qolgan>0 AND muddat < CURRENT_DATE
         """)
+
+        # Kutilayotgan xarajatlar
+        pending_exp = 0
+        try:
+            pending_exp = await c.fetchval("""
+                SELECT COUNT(*) FROM xarajatlar
+                WHERE admin_uid=$1 AND NOT tasdiqlangan AND NOT bekor_qilingan
+            """, uid) or 0
+        except Exception:
+            pass
+
+        # Faol shogirdlar
+        active_app = 0
+        try:
+            active_app = await c.fetchval("""
+                SELECT COUNT(*) FROM shogirdlar
+                WHERE admin_uid=$1 AND faol=TRUE
+            """, uid) or 0
+        except Exception:
+            pass
 
     result = {
         "bugun_sotuv_soni":  int(bugun["sotuv_soni"]),
@@ -669,6 +802,10 @@ async def dashboard(uid: int = Depends(get_uid)):
         "klient_soni":       klient_soni,
         "tovar_soni":        tovar_soni,
         "kam_qoldiq_soni":   kam_qoldiq,
+        "overdue_count":     int(overdue["soni"]) if overdue else 0,
+        "overdue_amount":    float(overdue["jami"]) if overdue else 0,
+        "pending_expenses":  int(pending_exp),
+        "active_apprentices": int(active_app),
     }
     await cache_yoz(cache_k, result, TTL_HISOBOT)
     return result
@@ -695,8 +832,8 @@ async def klientlar(
             """, limit, offset, f"%{like_escape(qidiruv)}%")
             total = await c.fetchval("""
                 SELECT COUNT(*) FROM klientlar
-                WHERE lower(ism) LIKE lower($1) OR telefon LIKE $1
-            """, f"%{like_escape(qidiruv)}%")
+                WHERE user_id=$2 AND (lower(ism) LIKE lower($1) OR telefon LIKE $1)
+            """, f"%{like_escape(qidiruv)}%", uid)
         else:
             rows = await c.fetch("""
                 SELECT k.*,
@@ -706,7 +843,7 @@ async def klientlar(
                 GROUP BY k.id
                 ORDER BY k.jami_sotib DESC LIMIT $1 OFFSET $2
             """, limit, offset)
-            total = await c.fetchval("SELECT COUNT(*) FROM klientlar")
+            total = await c.fetchval("SELECT COUNT(*) FROM klientlar WHERE user_id=$1", uid)
 
     return {"total": total, "items": [dict(r) for r in rows]}
 
@@ -726,14 +863,14 @@ async def tovarlar(
                 ORDER BY nomi LIMIT $1 OFFSET $2
             """, limit, offset, kategoriya)
             total = await c.fetchval(
-                "SELECT COUNT(*) FROM tovarlar WHERE kategoriya=$1", kategoriya
+                "SELECT COUNT(*) FROM tovarlar WHERE user_id=$2 AND kategoriya=$1", kategoriya, uid
             )
         else:
             rows  = await c.fetch(
                 "SELECT id, user_id, nomi, kategoriya, birlik, olish_narxi, sotish_narxi, min_sotish_narxi, qoldiq, min_qoldiq, yaratilgan FROM tovarlar ORDER BY kategoriya,nomi LIMIT $1 OFFSET $2",
                 limit, offset
             )
-            total = await c.fetchval("SELECT COUNT(*) FROM tovarlar")
+            total = await c.fetchval("SELECT COUNT(*) FROM tovarlar WHERE user_id=$1", uid)
 
     return {"total": total, "items": [dict(r) for r in rows]}
 
@@ -834,7 +971,13 @@ async def tahlil(data: dict, uid: int = Depends(get_uid)):
 
 @app.post("/api/v1/sotuv", tags=["Sotuv"])
 async def sotuv_saqlash(data: SotuvSo_rov, request: Request, uid: int = Depends(get_uid)):
-    """Sotuv operatsiyasini saqlash. Rate limit: 30/daqiqa."""
+    """Sotuv operatsiyasini saqlash. Rate limit: 30/daqiqa.
+
+    1. Sessiya yaratish
+    2. Har bir tovar uchun chiqim yozuvi + qoldiq kamaytirish
+    3. Klient topish/yaratish
+    4. Qarz saqlash (agar bor bo'lsa)
+    """
     from services.api.deps import endpoint_rate_check
     await endpoint_rate_check(request, "sotuv")
     from shared.utils.hisob import sotuv_validatsiya, ai_hisob_tekshir
@@ -845,23 +988,86 @@ async def sotuv_saqlash(data: SotuvSo_rov, request: Request, uid: int = Depends(
         raise HTTPException(400, "So'rov ma'lumotlari noto'g'ri")
 
     data_d = ai_hisob_tekshir(data.model_dump())
-    data_d["user_id"] = uid
 
     async with rls_conn(uid) as c:
-        sess_id = await c.fetchval("""
-            INSERT INTO sotuv_sessiyalar
-                (user_id, klient_ismi, jami, tolangan, qarz, izoh)
-            VALUES ($1,$2,$3,$4,$5,$6) RETURNING id
-        """, uid,
-            data_d.get("klient"),
-            data_d.get("jami_summa", 0),
-            data_d.get("tolangan", 0),
-            data_d.get("qarz", 0),
-            data_d.get("izoh"),
-        )
+        async with c.transaction():
+            # 1. Klient topish/yaratish
+            klient_id = None
+            klient_ismi = (data_d.get("klient") or "").strip()
+            if klient_ismi:
+                kl = await c.fetchrow("""
+                    INSERT INTO klientlar (user_id, ism) VALUES ($1, $2)
+                    ON CONFLICT (user_id, lower(ism))
+                    DO UPDATE SET ism = klientlar.ism RETURNING id
+                """, uid, klient_ismi)
+                klient_id = kl["id"]
 
-    # Cache tozalash
+            jami = float(data_d.get("jami_summa", 0))
+            tolangan = float(data_d.get("tolangan", 0))
+            qarz_summa = float(data_d.get("qarz", 0))
+
+            # 2. Sessiya yaratish
+            sess_id = await c.fetchval("""
+                INSERT INTO sotuv_sessiyalar
+                    (user_id, klient_id, klient_ismi, jami, tolangan, qarz, izoh)
+                VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING id
+            """, uid, klient_id, klient_ismi or None,
+                jami, tolangan, qarz_summa,
+                data_d.get("izoh"),
+            )
+
+            # 3. Har bir tovar — chiqim + qoldiq
+            tovarlar = data_d.get("tovarlar", [])
+            for t in tovarlar:
+                nomi = t.get("nomi", "").strip()
+                miqdor = float(t.get("miqdor", 0))
+                narx = float(t.get("narx", 0))
+                t_jami = float(t.get("jami", 0)) or (miqdor * narx)
+                birlik = t.get("birlik", "dona")
+
+                # Tovar topish
+                tovar = await c.fetchrow("""
+                    SELECT id, nomi, olish_narxi, sotish_narxi FROM tovarlar
+                    WHERE user_id=$1 AND lower(nomi) LIKE lower($2) LIMIT 1
+                """, uid, f"%{like_escape(nomi)}%")
+
+                tovar_id = tovar["id"] if tovar else None
+                olish = float(tovar["olish_narxi"]) if tovar else 0
+
+                # Chiqim yozuvi
+                await c.execute("""
+                    INSERT INTO chiqimlar
+                        (user_id, sessiya_id, tovar_id, tovar_nomi, klient_ismi,
+                         miqdor, birlik, sotish_narxi, jami, olish_narxi, foyda)
+                    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
+                """, uid, sess_id, tovar_id, nomi, klient_ismi or None,
+                    miqdor, birlik, narx, t_jami, olish,
+                    t_jami - (olish * miqdor),
+                )
+
+                # Qoldiq kamaytirish
+                if tovar_id:
+                    await c.execute("""
+                        UPDATE tovarlar SET qoldiq = GREATEST(qoldiq - $2, 0)
+                        WHERE id = $1 AND user_id = $3
+                    """, tovar_id, miqdor, uid)
+
+            # 4. Qarz saqlash
+            if qarz_summa > 0 and klient_id:
+                await c.execute("""
+                    INSERT INTO qarzlar
+                        (user_id, klient_id, klient_ismi, sessiya_id, summa, qolgan)
+                    VALUES ($1,$2,$3,$4,$5,$5)
+                """, uid, klient_id, klient_ismi, sess_id, qarz_summa)
+
+                # Klient jami_sotib yangilash
+                await c.execute("""
+                    UPDATE klientlar SET jami_sotib = jami_sotib + $2 WHERE id=$1
+                """, klient_id, jami)
+
     await user_cache_tozala(uid)
+    log.info("📤 Web sotuv: sessiya=%d tovarlar=%d jami=%.0f uid=%d",
+             sess_id, len(tovarlar), jami, uid)
     return {"sessiya_id": sess_id, "status": "saqlandi"}
 
 
@@ -1744,7 +1950,7 @@ async def tovar_qoldiq_yangilash(tovar_id: int, data: QoldiqYangilaSorov,
     from shared.cache.redis_cache import user_cache_tozala
     async with rls_conn(uid) as c:
         old = await c.fetchrow(
-            "SELECT nomi, qoldiq FROM tovarlar WHERE id=$1 AND user_id=$2",
+            "SELECT nomi, qoldiq FROM tovarlar WHERE id=$1 AND user_id=$2 FOR UPDATE",
             tovar_id, uid
         )
         if not old:
@@ -1969,8 +2175,8 @@ async def tovar_excel_export(uid: int = Depends(get_uid)):
         rows = await c.fetch("""
             SELECT nomi, kategoriya, birlik,
                    olish_narxi, sotish_narxi, qoldiq, min_qoldiq
-            FROM tovarlar ORDER BY kategoriya, nomi
-        """)
+            FROM tovarlar WHERE user_id=$1 ORDER BY kategoriya, nomi
+        """, uid)
 
     wb = Workbook()
     ws = wb.active
@@ -2293,31 +2499,31 @@ async def tovar_import(data: TovarImportSorov, request: Request, uid: int = Depe
 async def admin_statistika(uid: int = Depends(get_uid)):
     """Tizim statistikasi — admin uchun umumiy ko'rsatkichlar"""
     async with rls_conn(uid) as c:
-        tovar_soni = await c.fetchval("SELECT COUNT(*) FROM tovarlar") or 0
-        klient_soni = await c.fetchval("SELECT COUNT(*) FROM klientlar") or 0
+        tovar_soni = await c.fetchval("SELECT COUNT(*) FROM tovarlar WHERE user_id=$1", uid) or 0
+        klient_soni = await c.fetchval("SELECT COUNT(*) FROM klientlar WHERE user_id=$1", uid) or 0
         faol_qarz = await c.fetchval(
-            "SELECT COALESCE(SUM(qolgan), 0) FROM qarzlar WHERE yopildi=FALSE AND qolgan>0"
+            "SELECT COALESCE(SUM(qolgan), 0) FROM qarzlar WHERE user_id=$1 AND yopildi=FALSE AND qolgan>0", uid
         ) or 0
         bugun_sotuv = await c.fetchrow("""
             SELECT COUNT(*) AS soni, COALESCE(SUM(jami), 0) AS jami
             FROM sotuv_sessiyalar
-            WHERE (sana AT TIME ZONE 'Asia/Tashkent')::date = CURRENT_DATE
-        """)
+            WHERE user_id=$1 AND (sana AT TIME ZONE 'Asia/Tashkent')::date = CURRENT_DATE
+        """, uid)
         hafta_sotuv = await c.fetchrow("""
             SELECT COUNT(*) AS soni, COALESCE(SUM(jami), 0) AS jami
             FROM sotuv_sessiyalar
-            WHERE sana >= NOW() - interval '7 days'
-        """)
+            WHERE user_id=$1 AND sana >= NOW() - interval '7 days'
+        """, uid)
         oy_sotuv = await c.fetchrow("""
             SELECT COUNT(*) AS soni, COALESCE(SUM(jami), 0) AS jami
             FROM sotuv_sessiyalar
-            WHERE sana >= NOW() - interval '30 days'
-        """)
+            WHERE user_id=$1 AND sana >= NOW() - interval '30 days'
+        """, uid)
         kam_qoldiq = await c.fetchval(
-            "SELECT COUNT(*) FROM tovarlar WHERE min_qoldiq > 0 AND qoldiq <= min_qoldiq"
+            "SELECT COUNT(*) FROM tovarlar WHERE user_id=$1 AND min_qoldiq > 0 AND qoldiq <= min_qoldiq", uid
         ) or 0
         muddat_otgan = await c.fetchval(
-            "SELECT COUNT(*) FROM qarzlar WHERE yopildi=FALSE AND qolgan>0 AND muddat IS NOT NULL AND muddat < NOW()"
+            "SELECT COUNT(*) FROM qarzlar WHERE user_id=$1 AND yopildi=FALSE AND qolgan>0 AND muddat IS NOT NULL AND muddat < NOW()", uid
         ) or 0
 
     return {
@@ -2614,6 +2820,129 @@ async def tovar_tarix(tovar_id: int, limit: int = 20, uid: int = Depends(get_uid
             "jami_tushum": float(stats["jami_tushum"]),
         },
     }
+
+
+# ════════════════════════════════════════════════════════════════
+#  FAKTURA (Hisob-faktura) CRUD
+# ════════════════════════════════════════════════════════════════
+
+
+class FakturaYaratSorov(BaseModel):
+    klient_ismi: str = Field(..., min_length=1, max_length=200)
+    tovarlar: list = Field(default_factory=list)
+    jami_summa: float = Field(0, ge=0)
+    bank_rekvizit: Optional[dict] = None
+    izoh: Optional[str] = None
+
+
+@app.get("/api/v1/fakturalar", tags=["Faktura"])
+async def fakturalar_list(
+    limit: int = 20, offset: int = 0,
+    holat: Optional[str] = None,
+    uid: int = Depends(get_uid),
+):
+    """Hisob-fakturalar ro'yxati"""
+    limit = min(limit, 100)
+    async with rls_conn(uid) as c:
+        if holat:
+            rows = await c.fetch("""
+                SELECT id, raqam, klient_ismi, jami_summa, holat, yaratilgan
+                FROM fakturalar
+                WHERE user_id=$3 AND holat=$4
+                ORDER BY yaratilgan DESC LIMIT $1 OFFSET $2
+            """, limit, offset, uid, holat)
+            total = await c.fetchval(
+                "SELECT COUNT(*) FROM fakturalar WHERE user_id=$1 AND holat=$2", uid, holat
+            )
+        else:
+            rows = await c.fetch("""
+                SELECT id, raqam, klient_ismi, jami_summa, holat, yaratilgan
+                FROM fakturalar
+                WHERE user_id=$3
+                ORDER BY yaratilgan DESC LIMIT $1 OFFSET $2
+            """, limit, offset, uid)
+            total = await c.fetchval(
+                "SELECT COUNT(*) FROM fakturalar WHERE user_id=$1", uid
+            )
+    return {"total": total, "items": [dict(r) for r in rows]}
+
+
+@app.get("/api/v1/faktura/{faktura_id}", tags=["Faktura"])
+async def faktura_detail(faktura_id: int, uid: int = Depends(get_uid)):
+    """Faktura batafsil"""
+    async with rls_conn(uid) as c:
+        f = await c.fetchrow("""
+            SELECT id, raqam, klient_ismi, jami_summa, tovarlar, bank_rekvizit, holat, yaratilgan
+            FROM fakturalar
+            WHERE id=$1 AND user_id=$2
+        """, faktura_id, uid)
+        if not f:
+            raise HTTPException(404, "Faktura topilmadi")
+    return dict(f)
+
+
+@app.post("/api/v1/faktura", tags=["Faktura"])
+async def faktura_yarat(data: FakturaYaratSorov, uid: int = Depends(get_uid)):
+    """Yangi hisob-faktura yaratish"""
+    async with rls_conn(uid) as c:
+        # Unikal raqam yaratish: F-YYYYMMDD-XXXX
+        import datetime as _dt
+        bugun = _dt.date.today().strftime("%Y%m%d")
+        soni = await c.fetchval(
+            "SELECT COUNT(*) FROM fakturalar WHERE user_id=$1 AND yaratilgan::date=CURRENT_DATE",
+            uid
+        )
+        raqam = f"F-{bugun}-{(soni or 0) + 1:04d}"
+
+        row = await c.fetchrow("""
+            INSERT INTO fakturalar (user_id, raqam, klient_ismi, jami_summa, tovarlar, bank_rekvizit)
+            VALUES ($1, $2, $3, $4, $5::jsonb, $6::jsonb)
+            RETURNING id, raqam, klient_ismi, jami_summa, holat, yaratilgan
+        """, uid, raqam, data.klient_ismi.strip(),
+            data.jami_summa, json.dumps(data.tovarlar), json.dumps(data.bank_rekvizit))
+    log.info("📄 Faktura yaratildi: %s uid=%d", raqam, uid)
+    return dict(row)
+
+
+@app.put("/api/v1/faktura/{faktura_id}/holat", tags=["Faktura"])
+async def faktura_holat(faktura_id: int, data: dict, uid: int = Depends(get_uid)):
+    """Faktura holatini yangilash (yaratilgan → yuborilgan → tolangan → bekor)"""
+    yangi_holat = data.get("holat", "")
+    HOLATLAR = {"yaratilgan", "yuborilgan", "tolangan", "bekor"}
+    if yangi_holat not in HOLATLAR:
+        raise HTTPException(400, f"Noto'g'ri holat. Mumkin: {', '.join(sorted(HOLATLAR))}")
+
+    async with rls_conn(uid) as c:
+        old = await c.fetchrow(
+            "SELECT id, holat FROM fakturalar WHERE id=$1 AND user_id=$2",
+            faktura_id, uid
+        )
+        if not old:
+            raise HTTPException(404, "Faktura topilmadi")
+        await c.execute(
+            "UPDATE fakturalar SET holat=$2 WHERE id=$1 AND user_id=$3",
+            faktura_id, yangi_holat, uid
+        )
+    log.info("📄 Faktura #%d holat: %s→%s (uid=%d)", faktura_id, old["holat"], yangi_holat, uid)
+    return {"id": faktura_id, "holat": yangi_holat}
+
+
+@app.delete("/api/v1/faktura/{faktura_id}", tags=["Faktura"])
+async def faktura_ochir(faktura_id: int, uid: int = Depends(get_uid)):
+    """Faktura o'chirish (faqat 'yaratilgan' holatdagi)"""
+    async with rls_conn(uid) as c:
+        old = await c.fetchrow(
+            "SELECT id, holat FROM fakturalar WHERE id=$1 AND user_id=$2",
+            faktura_id, uid
+        )
+        if not old:
+            raise HTTPException(404, "Faktura topilmadi")
+        if old["holat"] != "yaratilgan":
+            raise HTTPException(400, "Faqat 'yaratilgan' holatdagi fakturani o'chirish mumkin")
+        await c.execute(
+            "DELETE FROM fakturalar WHERE id=$1 AND user_id=$2", faktura_id, uid
+        )
+    return {"id": faktura_id, "status": "deleted"}
 
 
 # ════════════════════════════════════════════════════════════════

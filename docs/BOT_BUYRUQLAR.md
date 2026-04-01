@@ -75,6 +75,7 @@ Har bir klient uchun alohida savat:
 | `/foydalanuvchilar` | Barcha foydalanuvchilar |
 | `/parol <uid> <login> <parol>` | Web panel login berish |
 | `/token` | Web panel uchun JWT token |
+| `/webapp` | Telegram Mini App ochish (auto-login) |
 | `/ping` | Bot ishlayotganini tekshirish |
 
 ## Fayl yuborish

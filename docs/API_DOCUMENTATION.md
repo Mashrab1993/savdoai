@@ -1,6 +1,6 @@
 # SavdoAI API Documentation v25.3
 
-**66 endpoint** | 14 Swagger tag guruhi | 24 Pydantic model | Swagger: `/docs`
+**72 endpoint** | 14 Swagger tag guruhi | 24 Pydantic model | Swagger: `/docs`
 
 ## Autentifikatsiya
 
@@ -31,6 +31,16 @@ POST /auth/login
   "parol": "1234"
 }
 ```
+
+**4. Telegram Mini App (auto-login):**
+```
+POST /auth/webapp
+{
+  "initData": "Telegram.WebApp.initData string"
+}
+→ {"token": "eyJ...", "user_id": 123456, "ism": "Salimov"}
+```
+HMAC-SHA256 bilan initData tekshiriladi. Login/parol kerak emas.
 
 ### Token ishlatish:
 ```
@@ -434,3 +444,46 @@ GET /api/v1/qr/{sessiya_id}
     "qr_hash": "a1b2c3d4"
   }
 ```
+
+---
+
+## Faktura (Hisob-faktura)
+
+### GET /api/v1/fakturalar
+Ro'yxat (pagination + holat filtri).
+
+Parametrlar: `limit` (20), `offset` (0), `holat` (yaratilgan|yuborilgan|tolangan|bekor)
+
+```json
+{
+  "total": 15,
+  "items": [
+    {"id": 1, "raqam": "F-20260401-0001", "klient_ismi": "Salimov", "jami_summa": 5400000, "holat": "yaratilgan", "yaratilgan": "..."}
+  ]
+}
+```
+
+### GET /api/v1/faktura/{id}
+Batafsil (tovarlar + bank rekvizit).
+
+### POST /api/v1/faktura
+Yangi faktura yaratish. Raqam avtomatik: `F-YYYYMMDD-XXXX`
+
+```json
+{
+  "klient_ismi": "Salimov",
+  "tovarlar": [{"nomi": "Ariel", "miqdor": 10, "narx": 45000}],
+  "jami_summa": 450000,
+  "bank_rekvizit": {"bank": "NBU", "hisob": "20208000..."}
+}
+```
+
+### PUT /api/v1/faktura/{id}/holat
+Holat yangilash: `yaratilgan` → `yuborilgan` → `tolangan` | `bekor`
+
+```json
+{"holat": "yuborilgan"}
+```
+
+### DELETE /api/v1/faktura/{id}
+Faqat `yaratilgan` holatdagi fakturani o'chirish mumkin.

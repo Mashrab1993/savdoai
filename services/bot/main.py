@@ -66,6 +66,7 @@ from shared.utils import like_escape
 import services.bot.bot_services.voice      as ovoz_xizmat
 import services.bot.bot_services.analyst    as ai_xizmat
 from services.bot.bot_services.voice_pipeline import process_voice
+from services.bot.handlers.shogird import _shogird_xarajat_qabul
 import services.bot.bot_services.export_pdf   as pdf_xizmat
 import services.bot.bot_services.export_excel as excel_xizmat
 import services.bot.bot_services.nakladnoy    as nakl_xizmat
@@ -132,55 +133,14 @@ log = logging.getLogger("mm")
 
 # ── Turbo kesh (user = 120s, hisobot = 60s) ──────────────────────
 import time as _time
-_kesh: dict = {}
-_KESH_TTL       = 60   # umumiy kesh TTL
-_KESH_USER_TTL  = 120  # user kesh — 2 daqiqa (user har xabarda tekshiriladi)
-_KESH_MAX_SIZE  = 2000  # Xotira himoyasi — maksimal kesh yozuvlar soni
 
-def _kesh_ol(kalit: str):
-    e = _kesh.get(kalit)
-    if e and _time.time() - e["t"] < e.get("ttl", _KESH_TTL):
-        return e["v"]
-    # Expired — tozalash
-    if e:
-        _kesh.pop(kalit, None)
-    return None
-
-def _kesh_yoz(kalit: str, qiymat, ttl: int = _KESH_TTL) -> None:
-    # Bounded cleanup — xotira himoyasi
-    if len(_kesh) >= _KESH_MAX_SIZE:
-        now = _time.time()
-        expired = [k for k, v in _kesh.items() if now - v["t"] >= v.get("ttl", _KESH_TTL)]
-        for k in expired:
-            _kesh.pop(k, None)
-        # Agar hali ham ko'p — eng eskilarini o'chirish
-        if len(_kesh) >= _KESH_MAX_SIZE:
-            oldest = sorted(_kesh.items(), key=lambda x: x[1]["t"])[:_KESH_MAX_SIZE // 4]
-            for k, _ in oldest:
-                _kesh.pop(k, None)
-    _kesh[kalit] = {"v": qiymat, "t": _time.time(), "ttl": ttl}
-
-def _kesh_tozala(kalit: str) -> None:
-    _kesh.pop(kalit, None)
-
-def _kesh_tozala_prefix(prefix: str) -> None:
-    """Prefix bo'yicha barcha keshni tozalash (user:123:* kabi)"""
-    keys = [k for k in _kesh if k.startswith(prefix)]
-    for k in keys:
-        _kesh.pop(k, None)
-
-
-async def _user_ol_kesh(uid: int):
-    """user_ol + kesh — har xabarda DB ga bormaslik uchun"""
-    k = f"user:{uid}"
-    cached = _kesh_ol(k)
-    if cached is not None:
-        return cached
-    user = await db.user_ol(uid)
-    if user:
-        user = dict(user)  # asyncpg.Record → dict (.get() ishlashi uchun)
-        _kesh_yoz(k, user, _KESH_USER_TTL)
-    return user
+# Umumiy yordamchi funksiyalar — bot_helpers.py dan import
+from services.bot.bot_helpers import (
+    _kesh, _kesh_ol, _kesh_yoz, _kesh_tozala, _kesh_tozala_prefix,
+    _KESH_TTL, _KESH_USER_TTL, _KESH_MAX_SIZE,
+    _user_ol_kesh, faol_tekshir, _yuborish, _safe_reply, xat,
+    _md_safe, _truncate,
+)
 
 
 async def health_check(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
@@ -259,7 +219,7 @@ def tg(*qatorlar:tuple) -> InlineKeyboardMarkup:
 
 def asosiy_menyu() -> InlineKeyboardMarkup:
     from telegram import WebAppInfo
-    _dash_url = _os.getenv("WEB_URL", "https://savdoai-production.up.railway.app") + "/dashboard"
+    _dash_url = _os.getenv("WEB_URL", "https://savdoai-web-production.up.railway.app") + "/tg"
     buttons = [
         [InlineKeyboardButton("📥 Kirim", callback_data="m:kirim"),
          InlineKeyboardButton("📤 Sotuv", callback_data="m:chiqim")],
@@ -284,54 +244,6 @@ def asosiy_menyu() -> InlineKeyboardMarkup:
          InlineKeyboardButton("❓ Yordam", callback_data="m:yordam")],
     ]
     return InlineKeyboardMarkup(buttons)
-
-
-def _md_safe(text: str) -> str:
-    """MARKDOWN maxsus belgilarni escape qilish"""
-    for ch in ('_', '*', '`', '[', ']', '(', ')', '~', '>', '#', '+', '-', '=', '|', '{', '}', '.', '!'):
-        text = text.replace(ch, '\\' + ch)
-    return text
-
-
-def _truncate(text: str, limit: int = 4000) -> str:
-    """Telegram 4096 limit — xavfsiz qisqartirish"""
-    if len(text) <= limit:
-        return text
-    return text[:limit] + "\n\n... (qisqartirildi)"
-
-
-async def _safe_reply(update_or_msg, matn: str, **kw) -> None:
-    """Xavfsiz xabar yuborish — truncation + MARKDOWN fallback"""
-    matn = _truncate(matn)
-    msg = update_or_msg.message if hasattr(update_or_msg, 'message') else update_or_msg
-    try:
-        await msg.reply_text(matn, **kw)
-    except BadRequest as e:
-        if "parse" in str(e).lower() or "entities" in str(e).lower():
-            kw.pop("parse_mode", None)
-            clean = matn.replace("*","").replace("_","").replace("`","")
-            await msg.reply_text(_truncate(clean), **kw)
-        else:
-            log.warning("safe_reply: %s", e)
-
-
-async def xat(q, matn:str, **kw) -> None:
-    matn = _truncate(matn)
-    try:
-        await q.edit_message_text(matn, **kw)
-    except BadRequest as e:
-        err = str(e).lower()
-        if "not modified" in err:
-            return
-        if "parse" in err or "can't" in err or "entities" in err:
-            kw.pop("parse_mode", None)
-            try:
-                clean = matn.replace("*","").replace("_","").replace("`","")
-                await q.edit_message_text(clean, **kw)
-            except Exception:
-                pass
-        else:
-            log.warning("xat: %s", e)
 
 
 async def _chek_thermal_va_pdf_yuborish(
@@ -359,31 +271,6 @@ async def _chek_thermal_va_pdf_yuborish(
         caption="📎 PDF (arxiv)",
         parse_mode=ParseMode.MARKDOWN,
     )
-
-
-async def faol_tekshir(update:Update) -> bool:
-    import datetime
-    uid=update.effective_user.id
-    user=await _user_ol_kesh(uid)
-    if not user: msg="❌ Siz ro'yxatdan o'tmagansiz. /start bosing."
-    elif not user.get("faol", False): msg="⏳ Hisobingiz hali tasdiqlanmagan."
-    else:
-        if user.get("obuna_tugash"):
-            qoldi=(user["obuna_tugash"]-datetime.date.today()).days
-            if qoldi<0: msg="⛔ Obuna muddati tugagan!\nAdmin bilan bog'laning."
-            elif qoldi<=3:
-                await _yuborish(update,f"⚠️ Obuna {qoldi} kunda tugaydi!")
-                return True
-            else: return True
-        else: return True
-    if update.message: await update.message.reply_text(msg)
-    elif update.callback_query: await update.callback_query.answer(msg,show_alert=True)
-    return False
-
-
-async def _yuborish(update:Update, matn:str, **kw) -> None:
-    if update.message: await update.message.reply_text(matn,**kw)
-    elif update.callback_query: await xat(update.callback_query,matn,**kw)
 
 
 # ════════════ START + RO'YXAT ════════════
@@ -2576,13 +2463,13 @@ async def menyu_cb(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
                         COALESCE(SUM(CASE WHEN tur='kirim' THEN summa ELSE 0 END), 0) AS kirim,
                         COALESCE(SUM(CASE WHEN tur='chiqim' THEN summa ELSE 0 END), 0) AS chiqim
                     FROM kassa_operatsiyalar
-                    WHERE (yaratilgan AT TIME ZONE 'Asia/Tashkent')::date = CURRENT_DATE
-                """)
+                    WHERE user_id=$1 AND (yaratilgan AT TIME ZONE 'Asia/Tashkent')::date = CURRENT_DATE
+                """, uid)
                 usullar = await c.fetch("""
                     SELECT usul,
                         COALESCE(SUM(CASE WHEN tur='kirim' THEN summa ELSE -summa END), 0) AS balans
-                    FROM kassa_operatsiyalar GROUP BY usul
-                """)
+                    FROM kassa_operatsiyalar WHERE user_id=$1 GROUP BY usul
+                """, uid)
             bk = Decimal(str(bugun["kirim"])); bc = Decimal(str(bugun["chiqim"]))
             usul_map = {r["usul"]: Decimal(str(r["balans"])) for r in usullar}
             matn = (
@@ -2649,8 +2536,8 @@ async def menyu_cb(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
                 stats = await c.fetchrow("""
                     SELECT COUNT(*) AS soni,
                         COALESCE(SUM(qoldiq * COALESCE(sotish_narxi,0)), 0) AS qiymat
-                    FROM tovarlar WHERE qoldiq > 0
-                """)
+                    FROM tovarlar WHERE user_id=$1 AND qoldiq > 0
+                """, uid)
             await xat(q,
                 "🏭 *OMBOR HOLATI*\n\n"
                 f"📦 Tovarlar: *{stats['soni']}* ta\n"
@@ -2874,421 +2761,13 @@ async def faktura_cb(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
 
 
 # ════════════ NARX GURUHLARI ════════════
-
-async def cmd_narx_guruh(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
-    """Narx guruh yaratish/ko'rish. /narx_guruh [nom]"""
-    if not await faol_tekshir(update): return
-    uid = update.effective_user.id
-    matn = (update.message.text or "").strip()
-    qismlar = matn.split(maxsplit=1)
-    
-    try:
-        from shared.services.smart_narx import guruhlar_royxati, guruh_yaratish
-        async with db._P().acquire() as c:
-            if len(qismlar) > 1:
-                # Yangi guruh yaratish
-                nom = qismlar[1].strip()
-                gid = await guruh_yaratish(c, uid, nom)
-                await update.message.reply_text(
-                    f"✅ *Narx guruhi yaratildi!*\n\n"
-                    f"🏷 Nomi: *{nom}*\n"
-                    f"ID: #{gid}\n\n"
-                    f"Narx qo'yish: `/narx_qoy {nom} Ariel 45000`",
-                    parse_mode=ParseMode.MARKDOWN)
-            else:
-                # Ro'yxat
-                guruhlar = await guruhlar_royxati(c, uid)
-                if not guruhlar:
-                    await update.message.reply_text(
-                        "📋 Hali narx guruhi yo'q.\n\n"
-                        "Yaratish: `/narx_guruh Ulgurji`\n"
-                        "Masalan: Ulgurji, Chakana, VIP",
-                        parse_mode=ParseMode.MARKDOWN)
-                    return
-                matn = "🏷 *NARX GURUHLARI*\n━━━━━━━━━━━━━━━━━━\n\n"
-                for g in guruhlar:
-                    matn += (
-                        f"🏷 *{g['nomi']}*\n"
-                        f"   📦 {g['tovar_soni']} ta tovar narxi\n"
-                        f"   👥 {g['klient_soni']} ta klient\n\n"
-                    )
-                matn += "Yangi guruh: `/narx_guruh <nom>`\nNarx qo'yish: `/narx_qoy <guruh> <tovar> <narx>`"
-                await update.message.reply_text(matn, parse_mode=ParseMode.MARKDOWN)
-    except Exception as e:
-        log.error("cmd_narx_guruh: %s", e, exc_info=True)
-        await update.message.reply_text("❌ Xato yuz berdi.")
-
-
-async def cmd_narx_qoy(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
-    """Narx qo'yish. /narx_qoy <guruh> <tovar> <narx>"""
-    if not await faol_tekshir(update): return
-    uid = update.effective_user.id
-    matn = (update.message.text or "").strip()
-    qismlar = matn.split()
-    
-    if len(qismlar) < 4:
-        await update.message.reply_text(
-            "📝 *Narx qo'yish*\n\n"
-            "Format: `/narx_qoy <guruh> <tovar> <narx>`\n\n"
-            "Masalan:\n"
-            "`/narx_qoy Ulgurji Ariel 43000`\n"
-            "`/narx_qoy VIP Tide 38000`",
-            parse_mode=ParseMode.MARKDOWN)
-        return
-    
-    guruh_nom = qismlar[1]
-    tovar_nom = qismlar[2]
-    try:
-        narx = float(qismlar[3].replace(",",""))
-    except ValueError:
-        await update.message.reply_text("❌ Narx raqam bo'lishi kerak."); return
-    
-    try:
-        from shared.services.smart_narx import guruh_narx_qoyish
-        async with db._P().acquire() as c:
-            # Guruh topish
-            guruh = await c.fetchrow(
-                "SELECT id FROM narx_guruhlari WHERE user_id=$1 AND LOWER(nomi) LIKE LOWER($2)",
-                uid, f"%{like_escape(guruh_nom)}%")
-            if not guruh:
-                await update.message.reply_text(f"❌ *{guruh_nom}* guruhi topilmadi.\n/narx_guruh bilan yarating.", parse_mode=ParseMode.MARKDOWN)
-                return
-            # Tovar topish
-            tovar = await c.fetchrow(
-                "SELECT id, nomi FROM tovarlar WHERE user_id=$1 AND LOWER(nomi) LIKE LOWER($2)",
-                uid, f"%{like_escape(tovar_nom)}%")
-            if not tovar:
-                await update.message.reply_text(f"❌ *{tovar_nom}* tovari topilmadi.", parse_mode=ParseMode.MARKDOWN)
-                return
-            await guruh_narx_qoyish(c, uid, guruh["id"], tovar["id"], Decimal(str(narx)))
-        await update.message.reply_text(
-            f"✅ *Narx qo'yildi!*\n\n"
-            f"🏷 Guruh: *{guruh_nom}*\n"
-            f"📦 Tovar: *{tovar['nomi']}*\n"
-            f"💰 Narx: *{narx:,.0f} so'm*",
-            parse_mode=ParseMode.MARKDOWN)
-    except Exception as e:
-        log.error("cmd_narx_qoy: %s", e, exc_info=True)
-        await update.message.reply_text("❌ Xato yuz berdi.")
-
-
-async def cmd_klient_narx(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
-    """Klientga shaxsiy narx. /klient_narx <klient> <tovar> <narx>"""
-    if not await faol_tekshir(update): return
-    uid = update.effective_user.id
-    matn = (update.message.text or "").strip()
-    qismlar = matn.split()
-    
-    if len(qismlar) < 4:
-        await update.message.reply_text(
-            "📝 *Klient shaxsiy narx*\n\n"
-            "Format: `/klient_narx <klient> <tovar> <narx>`\n\n"
-            "Masalan:\n"
-            "`/klient_narx Salimov Ariel 43000`\n"
-            "`/klient_narx Karimov Tide 38000`",
-            parse_mode=ParseMode.MARKDOWN)
-        return
-    
-    klient_nom = qismlar[1]
-    tovar_nom = qismlar[2]
-    try:
-        narx = float(qismlar[3].replace(",",""))
-    except ValueError:
-        await update.message.reply_text("❌ Narx raqam bo'lishi kerak."); return
-    
-    try:
-        from shared.services.smart_narx import shaxsiy_narx_qoyish
-        async with db._P().acquire() as c:
-            klient = await c.fetchrow(
-                "SELECT id, ism FROM klientlar WHERE user_id=$1 AND LOWER(ism) LIKE LOWER($2)",
-                uid, f"%{like_escape(klient_nom)}%")
-            if not klient:
-                await update.message.reply_text(f"❌ *{klient_nom}* klienti topilmadi.", parse_mode=ParseMode.MARKDOWN)
-                return
-            tovar = await c.fetchrow(
-                "SELECT id, nomi FROM tovarlar WHERE user_id=$1 AND LOWER(nomi) LIKE LOWER($2)",
-                uid, f"%{like_escape(tovar_nom)}%")
-            if not tovar:
-                await update.message.reply_text(f"❌ *{tovar_nom}* tovari topilmadi.", parse_mode=ParseMode.MARKDOWN)
-                return
-            await shaxsiy_narx_qoyish(c, uid, klient["id"], tovar["id"], Decimal(str(narx)))
-        await update.message.reply_text(
-            f"✅ *Shaxsiy narx qo'yildi!*\n\n"
-            f"👤 Klient: *{klient['ism']}*\n"
-            f"📦 Tovar: *{tovar['nomi']}*\n"
-            f"💰 Narx: *{narx:,.0f} so'm*\n\n"
-            f"Endi \"{klient['ism']}ga {tovar['nomi']}\" desangiz, narx avtomatik qo'yiladi.",
-            parse_mode=ParseMode.MARKDOWN)
-    except Exception as e:
-        log.error("cmd_klient_narx: %s", e, exc_info=True)
-        await update.message.reply_text("❌ Xato yuz berdi.")
-
-
-async def cmd_klient_guruh(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
-    """Klientni guruhga biriktirish. /klient_guruh <klient> <guruh>"""
-    if not await faol_tekshir(update): return
-    uid = update.effective_user.id
-    matn = (update.message.text or "").strip()
-    qismlar = matn.split()
-    
-    if len(qismlar) < 3:
-        await update.message.reply_text(
-            "📝 *Klientni guruhga biriktirish*\n\n"
-            "Format: `/klient_guruh <klient> <guruh>`\n\n"
-            "Masalan:\n"
-            "`/klient_guruh Salimov Ulgurji`",
-            parse_mode=ParseMode.MARKDOWN)
-        return
-    
-    klient_nom = qismlar[1]
-    guruh_nom = qismlar[2]
-    
-    try:
-        from shared.services.smart_narx import klient_guruhga_qoyish
-        async with db._P().acquire() as c:
-            klient = await c.fetchrow(
-                "SELECT id, ism FROM klientlar WHERE user_id=$1 AND LOWER(ism) LIKE LOWER($2)",
-                uid, f"%{like_escape(klient_nom)}%")
-            if not klient:
-                await update.message.reply_text(f"❌ *{klient_nom}* topilmadi.", parse_mode=ParseMode.MARKDOWN); return
-            guruh = await c.fetchrow(
-                "SELECT id, nomi FROM narx_guruhlari WHERE user_id=$1 AND LOWER(nomi) LIKE LOWER($2)",
-                uid, f"%{like_escape(guruh_nom)}%")
-            if not guruh:
-                await update.message.reply_text(f"❌ *{guruh_nom}* guruhi topilmadi.", parse_mode=ParseMode.MARKDOWN); return
-            await klient_guruhga_qoyish(c, uid, klient["id"], guruh["id"])
-        await update.message.reply_text(
-            f"✅ *Biriktirildi!*\n\n"
-            f"👤 *{klient['ism']}* → 🏷 *{guruh['nomi']}*\n\n"
-            f"Endi {klient['ism']}ga sotuv qilsangiz, {guruh['nomi']} narxlari avtomatik qo'yiladi.",
-            parse_mode=ParseMode.MARKDOWN)
-    except Exception as e:
-        log.error("cmd_klient_guruh: %s", e, exc_info=True)
-        await update.message.reply_text("❌ Xato yuz berdi.")
-
-
-
+# Handlers ko'chirildi → services/bot/handlers/narx.py
+# register_narx_handlers() ilovani_qur() da chaqiriladi
 
 
 # ════════════ SHOGIRD XARAJAT NAZORATI ════════════
-
-async def cmd_shogird_qosh(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
-    """Admin: yangi shogird qo'shish. Format: /shogird_qosh <telegram_id> <ism>"""
-    if not await faol_tekshir(update): return
-    uid = update.effective_user.id
-    if not cfg().is_admin(uid):
-        await update.message.reply_text("🔒 Faqat admin uchun."); return
-    
-    matn = (update.message.text or "").strip()
-    qismlar = matn.split(maxsplit=2)
-    if len(qismlar) < 3:
-        await update.message.reply_text(
-            "📝 *Shogird qo'shish*\n\n"
-            "Format: `/shogird_qosh <telegram_id> <ism>`\n\n"
-            "Masalan:\n"
-            "`/shogird_qosh 123456789 Akbar haydovchi`\n\n"
-            "Telegram ID bilish: shogird @userinfobot ga /start yuborsin",
-            parse_mode=ParseMode.MARKDOWN)
-        return
-    
-    try:
-        tg_id = int(qismlar[1])
-        ism = qismlar[2]
-    except ValueError:
-        await update.message.reply_text("❌ Telegram ID raqam bo'lishi kerak."); return
-    
-    try:
-        from shared.services.shogird_xarajat import shogird_qoshish
-        async with db._P().acquire() as c:
-            result = await shogird_qoshish(c, uid, tg_id, ism)
-        await update.message.reply_text(
-            f"✅ *Shogird qo'shildi!*\n\n"
-            f"👤 Ism: *{ism}*\n"
-            f"📱 Telegram ID: `{tg_id}`\n"
-            f"💰 Kunlik limit: 500,000 so'm\n"
-            f"📊 Oylik limit: 10,000,000 so'm\n\n"
-            f"Endi {ism} botga ovoz/matn yuborib xarajat kiritadi.",
-            parse_mode=ParseMode.MARKDOWN)
-    except Exception as e:
-        log.error("shogird_qosh: %s", e, exc_info=True)
-        await update.message.reply_text("❌ Shogird qo'shishda xato yuz berdi.")
-
-
-async def cmd_shogirdlar(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
-    """Admin: shogirdlar ro'yxati"""
-    if not await faol_tekshir(update): return
-    uid = update.effective_user.id
-    if not cfg().is_admin(uid):
-        await update.message.reply_text("🔒 Faqat admin uchun."); return
-    
-    try:
-        from shared.services.shogird_xarajat import shogirdlar_royxati
-        async with db._P().acquire() as c:
-            shogirdlar = await shogirdlar_royxati(c, uid)
-        
-        if not shogirdlar:
-            await update.message.reply_text(
-                "📋 Hali shogird yo'q.\n\n"
-                "Qo'shish: `/shogird_qosh <telegram_id> <ism>`",
-                parse_mode=ParseMode.MARKDOWN)
-            return
-        
-        matn = "👥 *SHOGIRDLAR*\n━━━━━━━━━━━━━━━━━━\n\n"
-        jami_bugun = Decimal('0')
-        jami_oy = Decimal('0')
-        
-        for s in shogirdlar:
-            bugun = s['bugungi_xarajat']
-            oy = s['oylik_xarajat']
-            kutish = s['kutilmoqda']
-            jami_bugun += bugun
-            jami_oy += oy
-            
-            limit_pct = int((bugun / s['kunlik_limit']) * 100) if s['kunlik_limit'] > 0 else 0
-            bar = "🟢" if limit_pct < 70 else "🟡" if limit_pct < 100 else "🔴"
-            
-            matn += (
-                f"{bar} *{s['ism']}* ({s['lavozim']})\n"
-                f"   📱 `{s['telegram_uid']}`\n"
-                f"   Bugun: *{bugun:,.0f}* / {s['kunlik_limit']:,.0f}\n"
-                f"   Oy: *{oy:,.0f}* / {s['oylik_limit']:,.0f}\n"
-            )
-            if kutish > 0:
-                matn += f"   ⏳ Kutilmoqda: {kutish} ta\n"
-            matn += "\n"
-        
-        matn += f"━━━━━━━━━━━━━━━━━━\n💰 Bugun jami: *{jami_bugun:,.0f}*\n📊 Oy jami: *{jami_oy:,.0f}*"
-        
-        await update.message.reply_text(matn, parse_mode=ParseMode.MARKDOWN)
-    except Exception as e:
-        log.error("cmd_shogirdlar: %s", e, exc_info=True)
-        await update.message.reply_text("❌ Xato yuz berdi.")
-
-
-async def cmd_xarajatlar(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
-    """Admin: tasdiqlanmagan xarajatlar"""
-    if not await faol_tekshir(update): return
-    uid = update.effective_user.id
-    if not cfg().is_admin(uid):
-        await update.message.reply_text("🔒 Faqat admin uchun."); return
-    
-    try:
-        from shared.services.shogird_xarajat import kutilmoqda_royxati
-        async with db._P().acquire() as c:
-            kutilmoqda = await kutilmoqda_royxati(c, uid)
-        
-        if not kutilmoqda:
-            await update.message.reply_text("✅ Barcha xarajatlar tasdiqlangan!")
-            return
-        
-        matn = "⏳ *KUTILMOQDA*\n━━━━━━━━━━━━━━━━━━\n\n"
-        buttons = []
-        for x in kutilmoqda[:10]:
-            sana = str(x['sana'])[11:16]
-            matn += (
-                f"#{x['id']} {x['kategoriya_nomi']}\n"
-                f"👤 {x['shogird_ismi']} | 💰 *{x['summa']:,.0f}*\n"
-                f"📝 {x['izoh'] or '-'} | ⏰ {sana}\n\n"
-            )
-            buttons.append([
-                (f"✅ #{x['id']}", f"sx:tasdiq:{x['id']}"),
-                (f"❌ #{x['id']}", f"sx:bekor:{x['id']}"),
-            ])
-        
-        markup = tg(*buttons) if buttons else None
-        await update.message.reply_text(matn, parse_mode=ParseMode.MARKDOWN, reply_markup=markup)
-    except Exception as e:
-        log.error("cmd_xarajatlar: %s", e, exc_info=True)
-        await update.message.reply_text("❌ Xato yuz berdi.")
-
-
-async def shogird_xarajat_cb(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
-    """Admin: xarajatni tasdiqlash/bekor qilish"""
-    q = update.callback_query; await q.answer()
-    uid = update.effective_user.id
-    qismlar = q.data.split(":")
-    amal = qismlar[1]  # tasdiq yoki bekor
-    xarajat_id = int(qismlar[2])
-    
-    try:
-        from shared.services.shogird_xarajat import xarajat_tasdiqlash, xarajat_bekor
-        async with db._P().acquire() as c:
-            if amal == "tasdiq":
-                ok = await xarajat_tasdiqlash(c, xarajat_id, uid)
-                await q.message.reply_text(f"✅ Xarajat #{xarajat_id} tasdiqlandi!" if ok else "❌ Topilmadi.")
-            elif amal == "bekor":
-                ok = await xarajat_bekor(c, xarajat_id, uid)
-                await q.message.reply_text(f"❌ Xarajat #{xarajat_id} bekor qilindi!" if ok else "❌ Topilmadi.")
-    except Exception as e:
-        log.error("shogird_xarajat_cb: %s", e, exc_info=True)
-        await q.message.reply_text("❌ Xato yuz berdi.")
-
-
-async def _shogird_xarajat_qabul(update:Update, ctx:ContextTypes.DEFAULT_TYPE, 
-                                   matn:str, shogird:dict) -> bool:
-    """Shogird xarajat yubordi — qayta ishlash"""
-    from shared.services.shogird_xarajat import xarajat_saqlash, kategoriya_aniqla
-    
-    # Matndan summa va kategoriya ajratish
-    import re
-    raqamlar = re.findall(r'[\d,]+(?:\.\d+)?', matn.replace(" ", ""))
-    if not raqamlar:
-        return False
-    
-    # Eng katta raqamni summa deb olish
-    summa = max(float(r.replace(",", "")) for r in raqamlar)
-    if summa < 1000:  # 1000 dan kam — xarajat emas
-        return False
-    
-    kat_nomi, kat_emoji = kategoriya_aniqla(matn)
-    izoh = matn.strip()
-    
-    admin_uid = shogird["admin_uid"]
-    shogird_id = shogird["id"]
-    
-    try:
-        async with _rls_conn(admin_uid) as c:
-            result = await xarajat_saqlash(c, admin_uid, shogird_id, kat_nomi, summa, izoh)
-        
-        limit_info = result.get("limit_info", {})
-        ogohlantirish = limit_info.get("ogohlantirish", [])
-        
-        javob = (
-            f"✅ *Xarajat saqlandi!*\n\n"
-            f"{kat_emoji} Kategoriya: *{kat_nomi}*\n"
-            f"💰 Summa: *{summa:,.0f} so'm*\n"
-            f"📝 Izoh: _{izoh[:50]}_\n"
-            f"\n📊 Bugun jami: *{limit_info.get('bugungi', 0) + Decimal(str(summa)):,.0f}* / "
-            f"{limit_info.get('kunlik_limit', 0):,.0f}\n"
-        )
-        
-        if ogohlantirish:
-            javob += "\n" + "\n".join(ogohlantirish)
-        
-        if not limit_info.get("ruxsat", True):
-            javob += "\n\n🔴 *LIMIT OSHDI! Admin xabardor qilinadi.*"
-            # Admin ga xabar yuborish
-            try:
-                admin_msg = (
-                    f"🔴 *LIMIT OGOHLANTIRISH!*\n\n"
-                    f"👤 Shogird: *{shogird['ism']}*\n"
-                    f"{kat_emoji} {kat_nomi}: *{summa:,.0f} so'm*\n"
-                    f"📊 Bugun: *{limit_info.get('bugungi', 0) + Decimal(str(summa)):,.0f}* / "
-                    f"{limit_info.get('kunlik_limit', 0):,.0f}"
-                )
-                for aid in cfg().admin_ids:
-                    try:
-                        await ctx.bot.send_message(aid, admin_msg, parse_mode=ParseMode.MARKDOWN)
-                    except Exception: pass
-            except Exception as _ae:
-                log.warning("Admin xabar: %s", _ae)
-        
-        await update.message.reply_text(javob, parse_mode=ParseMode.MARKDOWN)
-        return True
-    except Exception as e:
-        log.error("shogird_xarajat: %s", e, exc_info=True)
-        return False
-
+# Handlers ko'chirildi → services/bot/handlers/shogird.py
+# register_shogird_handlers() ilovani_qur() da chaqiriladi
 
 # ════════════ ADMIN ════════════
 
@@ -3306,100 +2785,11 @@ async def admin_cb(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
 
 
 # ════════════ AVTOMATIK JOBLAR ════════════
-
-async def avto_kunlik_hisobot(ctx:ContextTypes.DEFAULT_TYPE) -> None:
-    log.info("⏰ Avtomatik kunlik hisobot PRO...")
-    try:
-        from shared.services.smart_bot_engine import kunlik_yakuniy_pro, kunlik_yakuniy_pro_matn
-        from shared.database.pool import get_pool
-        users=await db.faol_users(); yuborildi=0
-        for user in users:
-            try:
-                async with db._P().acquire() as c:
-                    d=await kunlik_yakuniy_pro(c, user["id"])
-                if d["sotuv_soni"]==0: continue
-                try:
-                    from shared.services.suhbatdosh import kechki_xayrlashish, hisobot_tavsiya
-                    _kech = kechki_xayrlashish()
-                    _tavs = hisobot_tavsiya(d) if isinstance(d, dict) else ""
-                    _msg = kunlik_yakuniy_pro_matn(d) + _tavs + "\n\n" + _kech
-                except Exception:
-                    _msg = kunlik_yakuniy_pro_matn(d)
-                await ctx.bot.send_message(
-                    user["id"], _msg,
-                    parse_mode=ParseMode.MARKDOWN)
-                yuborildi+=1
-            except Exception as e: log.warning("Avtohisobot %s: %s",user["id"],e)
-        log.info("✅ Kunlik hisobot PRO: %d foydalanuvchiga",yuborildi)
-    except Exception as e: log.error("avto_kunlik_hisobot: %s",e,exc_info=True)
-
-
-async def avto_haftalik_hisobot(ctx:ContextTypes.DEFAULT_TYPE) -> None:
-    """Har dushanba haftalik hisobot + trend"""
-    log.info("⏰ Haftalik hisobot + trend...")
-    try:
-        from shared.services.smart_bot_engine import haftalik_trend, haftalik_trend_matn
-        from shared.services.hisobot_engine import haftalik, hisobot_matn
-        from shared.database.pool import get_pool
-        users=await db.faol_users(); yuborildi=0
-        for user in users:
-            try:
-                async with db._P().acquire() as c:
-                    h_data = await haftalik(c, user["id"])
-                    t_data = await haftalik_trend(c, user["id"])
-                if h_data["sotuv_soni"]==0: continue
-                matn = hisobot_matn(h_data) + "\n\n" + haftalik_trend_matn(t_data)
-                await ctx.bot.send_message(user["id"],matn,parse_mode=ParseMode.MARKDOWN)
-                yuborildi+=1
-            except Exception as e: log.warning("Haftalik %s: %s",user["id"],e)
-        log.info("✅ Haftalik hisobot: %d foydalanuvchiga",yuborildi)
-    except Exception as e: log.error("avto_haftalik_hisobot: %s",e,exc_info=True)
-
-
-async def avto_qarz_eslatma(ctx:ContextTypes.DEFAULT_TYPE) -> None:
-    """Har kuni qarz eslatmasi — muddati o'tgan + yaqinlashayotgan"""
-    log.info("⏰ Qarz eslatmalari PRO...")
-    try:
-        from shared.services.smart_bot_engine import qarz_eslatma_royxat, qarz_eslatma_matn
-        from shared.database.pool import get_pool
-        users=await db.faol_users()
-        for user in users:
-            try:
-                async with db._P().acquire() as c:
-                    klientlar = await qarz_eslatma_royxat(c, user["id"])
-                if not klientlar: continue
-                muddati_otgan = [k for k in klientlar if k["muddati_otgan"]]
-                yaqin = [k for k in klientlar if k["yaqinlashmoqda"]]
-                jami = sum(k["jami_qarz"] for k in klientlar)
-                matn = f"💰 *QARZ ESLATMASI*\n\nJami qarz: *{pul(jami)}*\n"
-                matn += f"Klientlar: {len(klientlar)} ta\n"
-                if muddati_otgan:
-                    matn += f"\n🔴 *MUDDATI O'TGAN ({len(muddati_otgan)} ta):*\n"
-                    for k in muddati_otgan[:5]:
-                        matn += f"  • {k['ism']} — {pul(k['jami_qarz'])} (muddat: {k['muddat']})\n"
-                if yaqin:
-                    matn += f"\n🟡 *3 kun ichida ({len(yaqin)} ta):*\n"
-                    for k in yaqin[:5]:
-                        matn += f"  • {k['ism']} — {pul(k['jami_qarz'])} (muddat: {k['muddat']})\n"
-                await ctx.bot.send_message(user["id"],matn,parse_mode=ParseMode.MARKDOWN)
-            except Exception as e: log.warning("Qarz eslatma %s: %s",user["id"],e)
-    except Exception as e: log.error("avto_qarz_eslatma: %s",e,exc_info=True)
-
-
-async def obuna_eslatma(ctx:ContextTypes.DEFAULT_TYPE) -> None:
-    try:
-        for kun in [3,1]:
-            users=await db.obuna_tugayotganlar(kun)
-            for user in users:
-                try:
-                    await ctx.bot.send_message(
-                        user["id"],
-                        f"⚠️ *Obuna {kun} kunda tugaydi!*\n"
-                        "Uzaytirib olish uchun admin bilan bog'laning.",
-                        parse_mode=ParseMode.MARKDOWN)
-                except Exception: pass
-    except Exception as e: log.error("obuna_eslatma: %s",e,exc_info=True)
-
+# Handlers ko'chirildi → services/bot/handlers/jobs.py
+from services.bot.handlers.jobs import (
+    avto_kunlik_hisobot, avto_haftalik_hisobot,
+    avto_qarz_eslatma, obuna_eslatma,
+)
 
 # ════════════ KOMANDALAR ════════════
 
@@ -3643,24 +3033,26 @@ async def cmd_kassa(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
                     COALESCE(SUM(CASE WHEN tur='kirim' THEN summa ELSE 0 END), 0) AS kirim,
                     COALESCE(SUM(CASE WHEN tur='chiqim' THEN summa ELSE 0 END), 0) AS chiqim
                 FROM kassa_operatsiyalar
-                WHERE (yaratilgan AT TIME ZONE 'Asia/Tashkent')::date = CURRENT_DATE
-            """)
+                WHERE user_id=$1 AND (yaratilgan AT TIME ZONE 'Asia/Tashkent')::date = CURRENT_DATE
+            """, uid)
             jami = await c.fetchrow("""
                 SELECT
                     COALESCE(SUM(CASE WHEN tur='kirim' THEN summa ELSE 0 END), 0) AS kirim,
                     COALESCE(SUM(CASE WHEN tur='chiqim' THEN summa ELSE 0 END), 0) AS chiqim
                 FROM kassa_operatsiyalar
-            """)
+                WHERE user_id=$1
+            """, uid)
             usullar = await c.fetch("""
                 SELECT usul,
                     COALESCE(SUM(CASE WHEN tur='kirim' THEN summa ELSE -summa END), 0) AS balans
-                FROM kassa_operatsiyalar GROUP BY usul
-            """)
+                FROM kassa_operatsiyalar WHERE user_id=$1 GROUP BY usul
+            """, uid)
             oxirgi = await c.fetch("""
                 SELECT tur, summa, usul, tavsif, yaratilgan
                 FROM kassa_operatsiyalar
+                WHERE user_id=$1
                 ORDER BY yaratilgan DESC LIMIT 5
-            """)
+            """, uid)
         bk = Decimal(str(bugun["kirim"])); bc = Decimal(str(bugun["chiqim"]))
         jk = Decimal(str(jami["kirim"])); jc = Decimal(str(jami["chiqim"]))
         usul_map = {r["usul"]: Decimal(str(r["balans"])) for r in usullar}
@@ -3709,8 +3101,9 @@ async def cmd_faktura(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
             oxirgi = await c.fetchrow("""
                 SELECT id, klient_ismi, jami, tolangan, qarz, sana
                 FROM sotuv_sessiyalar
+                WHERE user_id=$1
                 ORDER BY sana DESC LIMIT 1
-            """)
+            """, uid)
         if oxirgi:
             markup = tg(
                 [(f"📋 Faktura #{oxirgi['id']}", f"fkt:sess:{oxirgi['id']}")],
@@ -3932,14 +3325,15 @@ async def cmd_balans(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
                     COALESCE(SUM(jami_credit), 0) AS tc,
                     COUNT(*) AS soni
                 FROM jurnal_yozuvlar
-            """)
+                WHERE user_id=$1
+            """, uid)
             td = Decimal(str(row["td"])); tc = Decimal(str(row["tc"]))
             farq = td - tc
             jurnal_soni = row["soni"]
 
             # Qarz balans
             qarz_jami = await c.fetchval(
-                "SELECT COALESCE(SUM(qolgan),0) FROM qarzlar WHERE yopildi=FALSE") or 0
+                "SELECT COALESCE(SUM(qolgan),0) FROM qarzlar WHERE user_id=$1 AND yopildi=FALSE", uid) or 0
 
             # Kassa balans
             kassa_row = await c.fetchrow("""
@@ -3947,12 +3341,13 @@ async def cmd_balans(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
                     COALESCE(SUM(CASE WHEN tur='kirim' THEN summa ELSE 0 END),0) AS k,
                     COALESCE(SUM(CASE WHEN tur='chiqim' THEN summa ELSE 0 END),0) AS ch
                 FROM kassa_operatsiyalar
-            """)
+                WHERE user_id=$1
+            """, uid)
             kassa_b = Decimal(str(kassa_row["k"])) - Decimal(str(kassa_row["ch"]))
 
             # Ombor qiymati
             ombor = await c.fetchval(
-                "SELECT COALESCE(SUM(qoldiq * COALESCE(sotish_narxi,0)),0) FROM tovarlar") or 0
+                "SELECT COALESCE(SUM(qoldiq * COALESCE(sotish_narxi,0)),0) FROM tovarlar WHERE user_id=$1", uid) or 0
 
         status = "✅ BALANS TO'G'RI" if farq == 0 else f"❌ FARQ: {farq}"
         await update.message.reply_text(
@@ -3984,8 +3379,9 @@ async def cmd_jurnal(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
             rows = await c.fetch("""
                 SELECT jurnal_id, tur, tavsif, jami_debit, sana
                 FROM jurnal_yozuvlar
+                WHERE user_id=$1
                 ORDER BY sana DESC LIMIT 10
-            """)
+            """, uid)
         if not rows:
             await update.message.reply_text("📒 Hali jurnal yozuvlar yo'q.")
             return
@@ -4235,6 +3631,9 @@ async def cmd_statistika(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
 
 async def boshlash(app:Application) -> None:
     global _CFG; _CFG=app.bot_data["cfg"]
+    # Handler modullari uchun config reference
+    from services.bot.bot_helpers import set_cfg
+    set_cfg(_CFG)
     # 1. DB pool — FATAL (pool_init siz bot ishlay olmaydi)
     try:
         await db.pool_init(_CFG.database_url, min_size=_CFG.db_min, max_size=_CFG.db_max)
@@ -4646,6 +4045,24 @@ def ilovani_qur(conf:Config) -> Application:
             parse_mode=ParseMode.MARKDOWN_V2)
     app.add_handler(CommandHandler("token", cmd_token))
 
+    # /webapp — Mini App ochish tugmasini yuborish
+    async def cmd_webapp(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+        from telegram import WebAppInfo
+        uid = update.effective_user.id
+        web_url = _os.getenv("WEB_URL", "https://savdoai-web-production.up.railway.app")
+        tg_url = f"{web_url}/tg"
+        kb = InlineKeyboardMarkup([
+            [InlineKeyboardButton("📱 SavdoAI ochish", web_app=WebAppInfo(url=tg_url))],
+        ])
+        await update.message.reply_text(
+            "📱 *SavdoAI Mini App*\n\n"
+            "Quyidagi tugmani bosing \\— to'g'ridan\\-to'g'ri Telegram ichida ochiladi\\.\n"
+            "Login/parol kerak emas\\!",
+            parse_mode=ParseMode.MARKDOWN_V2,
+            reply_markup=kb,
+        )
+    app.add_handler(CommandHandler("webapp", cmd_webapp))
+
     # /parol — Admin do'konchiga login/parol berish
     async def cmd_parol(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         uid = update.effective_user.id
@@ -4835,16 +4252,14 @@ def ilovani_qur(conf:Config) -> Application:
     app.add_handler(CommandHandler("statistika",       cmd_statistika))
     app.add_handler(CommandHandler("health", health_check))
     # Shogird xarajat
-    app.add_handler(CommandHandler("narx_guruh",       cmd_narx_guruh))
-    app.add_handler(CommandHandler("narx_qoy",         cmd_narx_qoy))
-    app.add_handler(CommandHandler("klient_narx",      cmd_klient_narx))
-    app.add_handler(CommandHandler("klient_guruh",     cmd_klient_guruh))
-    app.add_handler(CommandHandler("shogird_qosh",     cmd_shogird_qosh))
-    app.add_handler(CommandHandler("shogirdlar",       cmd_shogirdlar))
-    app.add_handler(CommandHandler("xarajatlar",       cmd_xarajatlar))
+    # Narx handlers — handlers/narx.py dan
+    from services.bot.handlers.narx import register_narx_handlers
+    register_narx_handlers(app)
+    # Shogird handlers — handlers/shogird.py dan
+    from services.bot.handlers.shogird import register_shogird_handlers
+    register_shogird_handlers(app)
     app.add_handler(CommandHandler("savatlar",         cmd_savatlar))
     app.add_handler(CommandHandler("savat",            cmd_savat))
-    app.add_handler(CallbackQueryHandler(shogird_xarajat_cb, pattern=r"^sx:"))
     app.add_error_handler(xato_handler)
     return app
 

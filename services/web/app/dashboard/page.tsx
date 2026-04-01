@@ -19,7 +19,7 @@ import { formatCurrency } from "@/lib/format"
 import { useEffect } from "react"
 import { useApi } from "@/hooks/use-api"
 import { useWebSocket } from "@/hooks/use-websocket"
-import { dashboardService, dashboardTopService } from "@/lib/api/services"
+import { dashboardService, dashboardTopService, statistikaService } from "@/lib/api/services"
 import { normalizeDashboard, type DashboardVM } from "@/lib/api/normalizers"
 import { PageLoading, PageError } from "@/components/shared/page-states"
 import type { ReportEntry } from "@/lib/api/types"
@@ -38,6 +38,7 @@ export default function DashboardPage() {
   const { data: rawStats, loading: statsLoading, error: statsError, refetch } = useApi(dashboardService.get)
   const { data: monthlyData } = useApi(dashboardService.monthly)
   const { data: topData } = useApi(dashboardTopService.get)
+  const { data: statsExtra } = useApi(statistikaService.get)
 
   // Real-time yangilanish — WebSocket orqali
   const { lastMessage } = useWebSocket()
@@ -82,6 +83,23 @@ export default function DashboardPage() {
                       : `${stats.overdueCount} долга просрочено`}
                   </p>
                   <p className="text-xs text-red-800 dark:text-red-400 mt-1">{formatCurrency(stats.overdueAmount)} so'm</p>
+                </div>
+              </div>
+            )}
+
+            {/* Kam qoldiq ogohlantirish */}
+            {statsExtra && statsExtra.kam_qoldiq_soni > 0 && (
+              <div className="bg-yellow-50 dark:bg-yellow-950/20 border-l-4 border-yellow-500 rounded-lg p-4 flex items-start gap-3">
+                <Package className="w-5 h-5 text-yellow-600 dark:text-yellow-400 shrink-0 mt-0.5" />
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-yellow-900 dark:text-yellow-300 text-sm">
+                    {locale === "uz"
+                      ? `${statsExtra.kam_qoldiq_soni} ta tovar qoldig'i kam`
+                      : `${statsExtra.kam_qoldiq_soni} товаров с низким остатком`}
+                  </p>
+                  <Link href="/products" className="text-xs text-yellow-700 dark:text-yellow-400 underline mt-1 inline-block">
+                    {locale === "uz" ? "Tovarlarni ko'rish →" : "Посмотреть товары →"}
+                  </Link>
                 </div>
               </div>
             )}
@@ -163,6 +181,28 @@ export default function DashboardPage() {
                 ))}
               </div>
             </div>
+
+            {/* Sotuv davrlar — statistikaService dan */}
+            {statsExtra && (
+              <div>
+                <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+                  {locale === "uz" ? "Sotuv davrlari" : "Периоды продаж"}
+                </p>
+                <div className="grid grid-cols-3 gap-4">
+                  {[
+                    { label: locale === "uz" ? "Bugun" : "Сегодня", soni: statsExtra.bugun.soni, jami: statsExtra.bugun.jami, color: "border-green-500" },
+                    { label: locale === "uz" ? "Hafta" : "Неделя", soni: statsExtra.hafta.soni, jami: statsExtra.hafta.jami, color: "border-blue-500" },
+                    { label: locale === "uz" ? "Oy" : "Месяц", soni: statsExtra.oy.soni, jami: statsExtra.oy.jami, color: "border-purple-500" },
+                  ].map(p => (
+                    <div key={p.label} className={`bg-card border-l-4 ${p.color} border border-border rounded-lg p-4`}>
+                      <p className="text-xs text-muted-foreground">{p.label}</p>
+                      <p className="text-xl font-bold text-foreground mt-1">{fmt(p.jami)} so'm</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">{p.soni} {locale === "uz" ? "ta sotuv" : "продаж"}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Revenue Chart */}
             <div className="bg-card border border-border rounded-xl p-5">

@@ -2276,7 +2276,7 @@ class TestRuffClean:
 
     def test_api_landing_66(self):
         src = (REPO / "services" / "api" / "main.py").read_text(encoding="utf-8")
-        assert "66+" in src
+        assert "72+" in src
 
 
 # ════════════════════════════════════════════════════════════════
@@ -2290,7 +2290,7 @@ class TestDeveloperGuideUpdated:
     _SRC = (REPO / "docs" / "DEVELOPER_GUIDE.md").read_text(encoding="utf-8")
 
     def test_endpoint_count_66(self):
-        assert "66+" in self._SRC
+        assert "72+" in self._SRC
 
     def test_test_count(self):
         assert "1000+" in self._SRC
@@ -2311,7 +2311,7 @@ class TestAPIDocsHeader:
     _SRC = (REPO / "docs" / "API_DOCUMENTATION.md").read_text(encoding="utf-8")
 
     def test_has_66(self):
-        assert "66" in self._SRC
+        assert "72" in self._SRC
 
     def test_has_swagger(self):
         assert "Swagger" in self._SRC or "swagger" in self._SRC
@@ -2395,3 +2395,1086 @@ class TestWorkerUserIdDefense:
 
     def test_chiqimlar_has_user_id(self):
         assert "chiqimlar WHERE sessiya_id=$1 AND user_id=$2" in self._SRC
+
+
+# ════════════════════════════════════════════════════════════════
+#  § 39. TELEGRAM MINI APP
+# ════════════════════════════════════════════════════════════════
+
+_API_MINIAPP = (REPO / "services" / "api" / "main.py").read_text(encoding="utf-8")
+_BOT_MINIAPP = (REPO / "services" / "bot" / "main.py").read_text(encoding="utf-8")
+
+
+class TestMiniAppAuthEndpoint:
+    """API /auth/webapp endpoint"""
+
+    def test_endpoint_exists(self):
+        assert '"/auth/webapp"' in _API_MINIAPP
+
+    def test_validates_initdata(self):
+        match = re.search(r'async def auth_webapp.*?(?=\n@app\.|\nclass\s|\Z)',
+                          _API_MINIAPP, re.DOTALL)
+        assert match
+        body = match.group()
+        assert "initData" in body
+
+    def test_hmac_validation(self):
+        match = re.search(r'async def auth_webapp.*?(?=\n@app\.|\nclass\s|\Z)',
+                          _API_MINIAPP, re.DOTALL)
+        assert match
+        body = match.group()
+        assert "WebAppData" in body
+        assert "hmac" in body.lower()
+
+    def test_returns_jwt(self):
+        match = re.search(r'async def auth_webapp.*?(?=\n@app\.|\nclass\s|\Z)',
+                          _API_MINIAPP, re.DOTALL)
+        assert match
+        assert "jwt_yarat" in match.group()
+
+    def test_auth_date_check(self):
+        """initData muddati tekshirilishi"""
+        match = re.search(r'async def auth_webapp.*?(?=\n@app\.|\nclass\s|\Z)',
+                          _API_MINIAPP, re.DOTALL)
+        assert match
+        assert "auth_date" in match.group()
+
+    def test_bot_token_required(self):
+        match = re.search(r'async def auth_webapp.*?(?=\n@app\.|\nclass\s|\Z)',
+                          _API_MINIAPP, re.DOTALL)
+        assert match
+        assert "BOT_TOKEN" in match.group()
+
+    def test_creates_user_if_not_exists(self):
+        match = re.search(r'async def auth_webapp.*?(?=\n@app\.|\nclass\s|\Z)',
+                          _API_MINIAPP, re.DOTALL)
+        assert match
+        assert "ON CONFLICT DO NOTHING" in match.group()
+
+
+class TestBotWebAppCommand:
+    """Bot /webapp buyrug'i"""
+
+    def test_webapp_command_registered(self):
+        assert '"webapp"' in _BOT_MINIAPP
+
+    def test_webapp_handler_exists(self):
+        assert "cmd_webapp" in _BOT_MINIAPP
+
+    def test_sends_webapp_button(self):
+        assert "WebAppInfo" in _BOT_MINIAPP
+
+    def test_webapp_url_uses_web_url(self):
+        assert "WEB_URL" in _BOT_MINIAPP
+
+    def test_correct_default_url(self):
+        assert "savdoai-web-production" in _BOT_MINIAPP
+
+
+class TestMiniAppPage:
+    """Web /tg sahifa"""
+
+    def test_page_exists(self):
+        assert (REPO / "services" / "web" / "app" / "tg" / "page.tsx").exists()
+
+    _SRC = (REPO / "services" / "web" / "app" / "tg" / "page.tsx").read_text(encoding="utf-8")
+
+    def test_loads_telegram_sdk(self):
+        assert "telegram-web-app.js" in self._SRC
+
+    def test_calls_auth_webapp(self):
+        assert "/auth/webapp" in self._SRC
+
+    def test_sends_initdata(self):
+        assert "initData" in self._SRC
+
+    def test_saves_token(self):
+        assert "auth_token" in self._SRC
+
+    def test_redirects_to_dashboard(self):
+        assert "/dashboard" in self._SRC
+
+    def test_handles_not_telegram(self):
+        assert "not-telegram" in self._SRC
+
+    def test_redirects_to_login_fallback(self):
+        assert "/login" in self._SRC
+
+    def test_tg_ready_called(self):
+        assert "tg.ready()" in self._SRC
+
+    def test_tg_expand_called(self):
+        assert "tg.expand()" in self._SRC
+
+
+class TestRailwayTomlFixed:
+    """railway.toml NEXT_PUBLIC_API_URL tuzatilgani"""
+
+    _TOML = (REPO / "railway.toml").read_text(encoding="utf-8")
+
+    def test_uses_web_url(self):
+        assert "${{web.URL}}" in self._TOML
+
+    def test_not_savdoai_url(self):
+        """savdoai.URL ishlatilmasligi (bu bot)"""
+        lines = self._TOML.split("\n")
+        for line in lines:
+            stripped = line.strip()
+            if stripped.startswith("NEXT_PUBLIC_API_URL"):
+                assert "savdoai.URL" not in stripped, \
+                    f"NEXT_PUBLIC_API_URL hali ham bot ga ishora qilyapti: {stripped}"
+
+
+# ════════════════════════════════════════════════════════════════
+#  § 40. BOT MODULAR REFACTORING
+# ════════════════════════════════════════════════════════════════
+
+
+class TestBotHelpers:
+    """bot_helpers.py mavjudligi va funksiyalari"""
+
+    def test_file_exists(self):
+        assert (REPO / "services" / "bot" / "bot_helpers.py").exists()
+
+    _SRC = (REPO / "services" / "bot" / "bot_helpers.py").read_text(encoding="utf-8")
+
+    def test_has_faol_tekshir(self):
+        assert "async def faol_tekshir" in self._SRC
+
+    def test_has_user_ol_kesh(self):
+        assert "async def _user_ol_kesh" in self._SRC
+
+    def test_has_safe_reply(self):
+        assert "async def _safe_reply" in self._SRC
+
+    def test_has_xat(self):
+        assert "async def xat" in self._SRC
+
+    def test_has_md_safe(self):
+        assert "def _md_safe" in self._SRC
+
+    def test_has_truncate(self):
+        assert "def _truncate" in self._SRC
+
+    def test_has_tg_keyboard(self):
+        assert "def tg(" in self._SRC
+
+    def test_has_cfg_reference(self):
+        assert "def cfg(" in self._SRC
+        assert "def set_cfg(" in self._SRC
+
+
+class TestHandlersNarx:
+    """handlers/narx.py moduli"""
+
+    def test_file_exists(self):
+        assert (REPO / "services" / "bot" / "handlers" / "narx.py").exists()
+
+    _SRC = (REPO / "services" / "bot" / "handlers" / "narx.py").read_text(encoding="utf-8")
+
+    def test_has_cmd_narx_guruh(self):
+        assert "async def cmd_narx_guruh" in self._SRC
+
+    def test_has_cmd_narx_qoy(self):
+        assert "async def cmd_narx_qoy" in self._SRC
+
+    def test_has_cmd_klient_narx(self):
+        assert "async def cmd_klient_narx" in self._SRC
+
+    def test_has_cmd_klient_guruh(self):
+        assert "async def cmd_klient_guruh" in self._SRC
+
+    def test_has_register_function(self):
+        assert "def register_narx_handlers" in self._SRC
+
+    def test_imports_faol_tekshir(self):
+        assert "from services.bot.bot_helpers import" in self._SRC
+
+    def test_uses_like_escape(self):
+        assert "like_escape" in self._SRC
+
+
+class TestHandlersShogird:
+    """handlers/shogird.py moduli"""
+
+    def test_file_exists(self):
+        assert (REPO / "services" / "bot" / "handlers" / "shogird.py").exists()
+
+    _SRC = (REPO / "services" / "bot" / "handlers" / "shogird.py").read_text(encoding="utf-8")
+
+    def test_has_cmd_shogird_qosh(self):
+        assert "async def cmd_shogird_qosh" in self._SRC
+
+    def test_has_cmd_shogirdlar(self):
+        assert "async def cmd_shogirdlar" in self._SRC
+
+    def test_has_cmd_xarajatlar(self):
+        assert "async def cmd_xarajatlar" in self._SRC
+
+    def test_has_callback_handler(self):
+        assert "async def shogird_xarajat_cb" in self._SRC
+
+    def test_has_register_function(self):
+        assert "def register_shogird_handlers" in self._SRC
+
+    def test_has_shogird_xarajat_qabul(self):
+        assert "async def _shogird_xarajat_qabul" in self._SRC
+
+
+class TestBotMainModular:
+    """bot/main.py modular tuzilishi"""
+
+    _SRC = (REPO / "services" / "bot" / "main.py").read_text(encoding="utf-8")
+
+    def test_imports_bot_helpers(self):
+        assert "from services.bot.bot_helpers import" in self._SRC
+
+    def test_imports_narx_handlers(self):
+        assert "register_narx_handlers" in self._SRC
+
+    def test_imports_shogird_handlers(self):
+        assert "register_shogird_handlers" in self._SRC
+
+    def test_no_duplicate_faol_tekshir(self):
+        """faol_tekshir faqat bot_helpers da — main da emas"""
+        count = self._SRC.count("async def faol_tekshir")
+        assert count == 0, f"main.py da {count} ta faol_tekshir — 0 bo'lishi kerak"
+
+    def test_no_duplicate_md_safe(self):
+        count = self._SRC.count("def _md_safe")
+        assert count == 0, f"main.py da {count} ta _md_safe — 0 bo'lishi kerak"
+
+    def test_no_duplicate_user_ol_kesh(self):
+        count = self._SRC.count("async def _user_ol_kesh")
+        assert count == 0
+
+    def test_line_count_reduced(self):
+        """main.py 4600 qatordan kam bo'lishi kerak"""
+        lines = len(self._SRC.split("\n"))
+        assert lines < 4600, f"main.py {lines} qator — 4600 dan kam kutilgan"
+
+    def test_set_cfg_called_in_boshlash(self):
+        assert "set_cfg" in self._SRC
+
+
+# ════════════════════════════════════════════════════════════════
+#  § 41. DASHBOARD STATISTIKA INTEGRATION
+# ════════════════════════════════════════════════════════════════
+
+
+class TestDashboardStatistika:
+    """Dashboard statistikaService ulangani"""
+
+    _SRC = (REPO / "services" / "web" / "app" / "dashboard" / "page.tsx").read_text(encoding="utf-8")
+
+    def test_imports_statistika_service(self):
+        assert "statistikaService" in self._SRC
+
+    def test_fetches_stats_extra(self):
+        assert "statsExtra" in self._SRC
+
+    def test_shows_kam_qoldiq_alert(self):
+        assert "kam_qoldiq" in self._SRC
+
+    def test_shows_bugun_hafta_oy(self):
+        assert "bugun" in self._SRC
+        assert "hafta" in self._SRC
+
+    def test_sotuv_davrlari_section(self):
+        assert "Sotuv davrlari" in self._SRC or "sotuv" in self._SRC.lower()
+
+
+# ════════════════════════════════════════════════════════════════
+#  § 42. TYPESCRIPT ANY CLEANUP, PWA, README
+# ════════════════════════════════════════════════════════════════
+
+
+class TestTypeScriptNoAny:
+    """Web sahifalarda 'any' type qolmagani"""
+
+    def test_no_any_in_products(self):
+        src = (REPO / "services" / "web" / "app" / "products" / "page.tsx").read_text(encoding="utf-8")
+        # ": any" pattern — callback parametrlarda bo'lmasligi kerak
+        lines = src.split("\n")
+        for i, line in enumerate(lines, 1):
+            if ": any" in line and "useState" not in line:
+                pytest.fail(f"products/page.tsx:{i} — ': any' topildi: {line.strip()[:60]}")
+
+    def test_no_any_in_clients(self):
+        src = (REPO / "services" / "web" / "app" / "clients" / "page.tsx").read_text(encoding="utf-8")
+        lines = src.split("\n")
+        for i, line in enumerate(lines, 1):
+            if ": any" in line and "useState" not in line:
+                pytest.fail(f"clients/page.tsx:{i} — ': any' topildi: {line.strip()[:60]}")
+
+    def test_no_any_in_invoices(self):
+        src = (REPO / "services" / "web" / "app" / "invoices" / "page.tsx").read_text(encoding="utf-8")
+        lines = src.split("\n")
+        for i, line in enumerate(lines, 1):
+            if ": any" in line and "useState" not in line:
+                pytest.fail(f"invoices/page.tsx:{i} — ': any' topildi: {line.strip()[:60]}")
+
+
+class TestPWAManifest:
+    """PWA manifest mavjudligi"""
+
+    def test_manifest_exists(self):
+        assert (REPO / "services" / "web" / "public" / "manifest.json").exists()
+
+    def test_manifest_valid_json(self):
+        import json
+        src = (REPO / "services" / "web" / "public" / "manifest.json").read_text(encoding="utf-8")
+        data = json.loads(src)
+        assert "name" in data
+        assert "start_url" in data
+        assert "icons" in data
+
+    def test_layout_has_manifest(self):
+        src = (REPO / "services" / "web" / "app" / "layout.tsx").read_text(encoding="utf-8")
+        assert "manifest" in src
+
+    def test_layout_has_viewport(self):
+        src = (REPO / "services" / "web" / "app" / "layout.tsx").read_text(encoding="utf-8")
+        assert "Viewport" in src
+
+
+class TestReadmeUpdated:
+    """README.md yangilangani"""
+
+    _SRC = (REPO / "README.md").read_text(encoding="utf-8")
+
+    def test_has_v253(self):
+        assert "v25.3" in self._SRC
+
+    def test_has_67_endpoints(self):
+        assert "72" in self._SRC
+
+    def test_has_1239_tests(self):
+        assert "1,239" in self._SRC or "1239" in self._SRC
+
+    def test_has_architecture(self):
+        assert "Railway" in self._SRC
+
+    def test_has_deploy_section(self):
+        assert "Deploy" in self._SRC or "deploy" in self._SRC
+
+
+# ════════════════════════════════════════════════════════════════
+#  § 42. HANDLERS/JOBS + README + PWA
+# ════════════════════════════════════════════════════════════════
+
+
+class TestHandlersJobs:
+    """handlers/jobs.py moduli"""
+
+    def test_file_exists(self):
+        assert (REPO / "services" / "bot" / "handlers" / "jobs.py").exists()
+
+    _SRC = (REPO / "services" / "bot" / "handlers" / "jobs.py").read_text(encoding="utf-8")
+
+    def test_has_kunlik(self):
+        assert "async def avto_kunlik_hisobot" in self._SRC
+
+    def test_has_haftalik(self):
+        assert "async def avto_haftalik_hisobot" in self._SRC
+
+    def test_has_qarz_eslatma(self):
+        assert "async def avto_qarz_eslatma" in self._SRC
+
+    def test_has_obuna(self):
+        assert "async def obuna_eslatma" in self._SRC
+
+
+class TestBotMainImportsJobs:
+    """main.py jobs ni import qilishi"""
+
+    _SRC = (REPO / "services" / "bot" / "main.py").read_text(encoding="utf-8")
+
+    def test_imports_jobs(self):
+        assert "from services.bot.handlers.jobs import" in self._SRC
+
+    def test_line_count_under_4400(self):
+        lines = len(self._SRC.split("\n"))
+        assert lines < 4400, f"main.py {lines} qator — 4400 dan kam kutilgan"
+
+
+class TestReadmeUpdated:
+    """README.md yangilangani"""
+
+    _SRC = (REPO / "README.md").read_text(encoding="utf-8")
+
+    def test_version_25_3(self):
+        assert "v25.3" in self._SRC
+
+    def test_endpoint_67(self):
+        assert "72" in self._SRC
+
+    def test_has_test_count(self):
+        assert "1,239" in self._SRC or "1239" in self._SRC or "1,084" in self._SRC
+
+    def test_has_architecture(self):
+        assert "Railway" in self._SRC
+
+
+class TestPWAManifest:
+    """PWA manifest mavjudligi"""
+
+    def test_manifest_exists(self):
+        assert (REPO / "services" / "web" / "public" / "manifest.json").exists()
+
+    def test_manifest_valid_json(self):
+        import json
+        content = (REPO / "services" / "web" / "public" / "manifest.json").read_text(encoding="utf-8")
+        data = json.loads(content)
+        assert data["short_name"] == "SavdoAI"
+        assert data["start_url"] == "/dashboard"
+        assert data["display"] == "standalone"
+
+    def test_layout_has_manifest(self):
+        src = (REPO / "services" / "web" / "app" / "layout.tsx").read_text(encoding="utf-8")
+        assert "manifest" in src
+
+    def test_layout_has_viewport(self):
+        src = (REPO / "services" / "web" / "app" / "layout.tsx").read_text(encoding="utf-8")
+        assert "Viewport" in src
+
+
+# ════════════════════════════════════════════════════════════════
+#  § 43. HEALTH REDIS + SKELETON COMPONENTS
+# ════════════════════════════════════════════════════════════════
+
+
+class TestHealthRedis:
+    """Health endpoint Redis ping"""
+
+    _SRC = (REPO / "services" / "api" / "main.py").read_text(encoding="utf-8")
+
+    def test_redis_ping_in_health(self):
+        match = re.search(r'async def health\(\).*?(?=\n@app\.|\nclass\s|\Z)',
+                          self._SRC, re.DOTALL)
+        assert match
+        body = match.group()
+        assert "redis_ok" in body
+        assert "redis_ms" in body
+
+    def test_redis_uses_correct_import(self):
+        match = re.search(r'async def health\(\).*?(?=\n@app\.|\nclass\s|\Z)',
+                          self._SRC, re.DOTALL)
+        assert match
+        assert "redis.asyncio" in match.group()
+
+
+class TestSkeletonComponents:
+    """Web skeleton loading komponentlar"""
+
+    _SRC = (REPO / "services" / "web" / "components" / "shared" / "page-states.tsx").read_text(encoding="utf-8")
+
+    def test_page_loading(self):
+        assert "PageLoading" in self._SRC
+
+    def test_table_skeleton(self):
+        assert "TableSkeleton" in self._SRC
+
+    def test_kpi_skeleton(self):
+        assert "KpiSkeleton" in self._SRC
+
+    def test_page_error(self):
+        assert "PageError" in self._SRC
+
+    def test_page_empty(self):
+        assert "PageEmpty" in self._SRC
+
+
+# ════════════════════════════════════════════════════════════════
+#  § 44. DOCS FINAL + CI ENHANCED
+# ════════════════════════════════════════════════════════════════
+
+
+class TestTakliflarFinal:
+    """Takliflar 32 ta qilindi"""
+
+    _SRC = (REPO / "docs" / "TAKLIFLAR_HOLAT.md").read_text(encoding="utf-8")
+
+    def test_has_32(self):
+        assert "32" in self._SRC
+
+    def test_mini_app_done(self):
+        assert "Mini App" in self._SRC
+
+    def test_modular_done(self):
+        assert "handler" in self._SRC.lower() or "modular" in self._SRC.lower() or "bo'laklash" in self._SRC
+
+
+class TestBotBuyruqlarDoc:
+    """Bot buyruqlar hujjati"""
+
+    _SRC = (REPO / "docs" / "BOT_BUYRUQLAR.md").read_text(encoding="utf-8")
+
+    def test_has_webapp_command(self):
+        assert "/webapp" in self._SRC
+
+    def test_has_token_command(self):
+        assert "/token" in self._SRC
+
+
+class TestDevGuideHandlers:
+    """Developer guide handlers papka"""
+
+    _SRC = (REPO / "docs" / "DEVELOPER_GUIDE.md").read_text(encoding="utf-8")
+
+    def test_has_handlers_dir(self):
+        assert "handlers/" in self._SRC
+
+    def test_has_bot_helpers(self):
+        assert "bot_helpers" in self._SRC
+
+    def test_has_narx(self):
+        assert "narx" in self._SRC
+
+    def test_has_shogird(self):
+        assert "shogird" in self._SRC
+
+    def test_has_jobs(self):
+        assert "jobs" in self._SRC
+
+
+class TestCIWorkflow:
+    """CI workflow yangilangani"""
+
+    _SRC = (REPO / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
+
+    def test_has_min_test_count(self):
+        assert "1000" in self._SRC
+
+    def test_has_select_star_check(self):
+        assert "SELECT" in self._SRC
+
+    def test_has_bare_except_check(self):
+        assert "bare except" in self._SRC.lower() or "except:" in self._SRC
+
+    def test_has_ruff(self):
+        assert "ruff" in self._SRC
+
+
+# ════════════════════════════════════════════════════════════════
+#  § 45. SECURITY + ERROR BOUNDARY
+# ════════════════════════════════════════════════════════════════
+
+
+class TestMeEndpointSecurity:
+    """/api/v1/me parol_hash qaytarmasligi"""
+
+    _SRC = (REPO / "services" / "api" / "main.py").read_text(encoding="utf-8")
+
+    def test_no_parol_hash_in_select(self):
+        match = re.search(r'async def me\(.*?(?=\n@app\.|\nclass\s|\Z)',
+                          self._SRC, re.DOTALL)
+        assert match
+        body = match.group()
+        assert "parol_hash" not in body.split("SELECT")[1].split("FROM")[0], \
+            "/api/v1/me SELECT da parol_hash bo'lmasligi kerak"
+
+    def test_cache_filters_parol(self):
+        match = re.search(r'async def me\(.*?(?=\n@app\.|\nclass\s|\Z)',
+                          self._SRC, re.DOTALL)
+        assert match
+        assert "parol_hash" in match.group(), \
+            "cached natijadan parol_hash filtrlash kodi bo'lishi kerak"
+
+
+class TestGlobalErrorBoundary:
+    """Web error boundary"""
+
+    def test_file_exists(self):
+        assert (REPO / "services" / "web" / "app" / "global-error.tsx").exists()
+
+    _SRC = (REPO / "services" / "web" / "app" / "global-error.tsx").read_text(encoding="utf-8")
+
+    def test_has_reset(self):
+        assert "reset" in self._SRC
+
+    def test_has_error_display(self):
+        assert "error" in self._SRC
+
+    def test_has_home_link(self):
+        assert "/dashboard" in self._SRC
+
+
+# ════════════════════════════════════════════════════════════════
+#  § 46. RACE CONDITION FIX + COUNT USER_ID
+# ════════════════════════════════════════════════════════════════
+
+
+class TestRaceConditionFix:
+    """Qoldiq race condition tuzatilgani"""
+
+    def test_advanced_features_relative_update(self):
+        src = (REPO / "shared" / "services" / "advanced_features.py").read_text(encoding="utf-8")
+        assert "GREATEST(qoldiq - $2, 0)" in src, \
+            "advanced_features.py da qoldiq GREATEST(qoldiq - $2, 0) bo'lishi kerak"
+
+    def test_smart_bot_for_update(self):
+        src = (REPO / "shared" / "services" / "smart_bot_engine.py").read_text(encoding="utf-8")
+        assert "FOR UPDATE" in src, \
+            "inventarizatsiya da FOR UPDATE lock bo'lishi kerak"
+
+    def test_api_inventarizatsiya_for_update(self):
+        src = (REPO / "services" / "api" / "main.py").read_text(encoding="utf-8")
+        assert "FOR UPDATE" in src, \
+            "API qoldiq yangilashda FOR UPDATE lock bo'lishi kerak"
+
+    def test_bot_sotuv_uses_transaction(self):
+        src = (REPO / "services" / "bot" / "db.py").read_text(encoding="utf-8")
+        assert "c.transaction()" in src, \
+            "sotuv_saqlash da transaction bo'lishi kerak"
+
+    def test_bot_sotuv_uses_relative(self):
+        src = (REPO / "services" / "bot" / "db.py").read_text(encoding="utf-8")
+        assert "GREATEST(qoldiq - $2, 0)" in src, \
+            "sotuv_saqlash da qoldiq relative kamaytirish bo'lishi kerak"
+
+
+class TestCountUserIdDefense:
+    """COUNT(*) larda user_id filtr"""
+
+    _SRC = (REPO / "services" / "api" / "main.py").read_text(encoding="utf-8")
+
+    def test_tovarlar_count_has_user_id(self):
+        # har bir COUNT(*) FROM tovarlar da user_id bo'lishi kerak
+        import re
+        counts = re.findall(r'COUNT\(\*\) FROM tovarlar\b[^"]*', self._SRC)
+        for c in counts:
+            assert "user_id" in c or "WHERE" not in c.split("FROM")[0], \
+                f"COUNT(*) FROM tovarlar da user_id yo'q: ...{c[:60]}"
+
+    def test_kam_qoldiq_has_user_id(self):
+        assert "user_id=$1 AND min_qoldiq>0" in self._SRC, \
+            "kam_qoldiq COUNT da user_id bo'lishi kerak"
+
+    def test_klientlar_search_has_user_id(self):
+        assert "user_id=$2 AND (lower(ism)" in self._SRC or \
+               "user_id=$1 AND (lower(ism)" in self._SRC, \
+            "klientlar qidiruv COUNT da user_id bo'lishi kerak"
+
+
+# ════════════════════════════════════════════════════════════════
+#  § 47. FAKTURA CRUD ENDPOINTS
+# ════════════════════════════════════════════════════════════════
+
+
+class TestFakturaEndpoints:
+    """Faktura CRUD API"""
+
+    _SRC = (REPO / "services" / "api" / "main.py").read_text(encoding="utf-8")
+
+    def test_list_endpoint(self):
+        assert '"/api/v1/fakturalar"' in self._SRC
+
+    def test_detail_endpoint(self):
+        assert '"/api/v1/faktura/{faktura_id}"' in self._SRC
+
+    def test_create_endpoint(self):
+        assert 'async def faktura_yarat' in self._SRC
+
+    def test_holat_update_endpoint(self):
+        assert '"/api/v1/faktura/{faktura_id}/holat"' in self._SRC
+
+    def test_delete_endpoint(self):
+        assert 'async def faktura_ochir' in self._SRC
+
+    def test_create_generates_raqam(self):
+        match = re.search(r'async def faktura_yarat.*?(?=\n@app\.|\nclass\s|\Z)',
+                          self._SRC, re.DOTALL)
+        assert match
+        assert "raqam" in match.group()
+        assert "F-" in match.group()
+
+    def test_delete_only_yaratilgan(self):
+        match = re.search(r'async def faktura_ochir.*?(?=\n@app\.|\nclass\s|\Z)',
+                          self._SRC, re.DOTALL)
+        assert match
+        assert "yaratilgan" in match.group()
+
+    def test_holat_whitelist(self):
+        match = re.search(r'async def faktura_holat.*?(?=\n@app\.|\nclass\s|\Z)',
+                          self._SRC, re.DOTALL)
+        assert match
+        body = match.group()
+        for h in ["yaratilgan", "yuborilgan", "tolangan", "bekor"]:
+            assert h in body
+
+    def test_pydantic_model(self):
+        assert "class FakturaYaratSorov" in self._SRC
+
+    def test_tagged_faktura(self):
+        assert 'tags=["Faktura"]' in self._SRC
+
+    def test_user_id_in_all_queries(self):
+        match = re.search(r'FAKTURA.*?KASSA',
+                          self._SRC, re.DOTALL)
+        assert match
+        section = match.group()
+        assert section.count("user_id") >= 8, \
+            f"Faktura section da kamida 8 ta user_id kerak, {section.count('user_id')} topildi"
+
+    def test_endpoint_count_72(self):
+        count = len(re.findall(r'@app\.(get|post|put|delete)\(', self._SRC))
+        assert count >= 72, f"72+ endpoint kutilgan, {count} topildi"
+
+
+# ════════════════════════════════════════════════════════════════
+#  § 48. BOT USER_ID DEFENSE-IN-DEPTH
+# ════════════════════════════════════════════════════════════════
+
+
+class TestBotUserIdDefense:
+    """Bot querylarida user_id filtr"""
+
+    _SRC = (REPO / "services" / "bot" / "main.py").read_text(encoding="utf-8")
+
+    def test_kassa_bugun_has_user_id(self):
+        # kassa_operatsiyalar bugun queryda user_id bo'lishi kerak
+        import re
+        matches = re.findall(r'FROM kassa_operatsiyalar.*?(?:WHERE|GROUP)', self._SRC, re.DOTALL)
+        for m in matches:
+            if "CURRENT_DATE" in m:
+                assert "user_id" in m, f"Kassa bugun queryda user_id yo'q"
+
+    def test_ombor_has_user_id(self):
+        assert "FROM tovarlar WHERE user_id=$1 AND qoldiq > 0" in self._SRC
+
+    def test_jurnal_has_user_id(self):
+        import re
+        matches = re.findall(r'FROM jurnal_yozuvlar\s+(?:WHERE|ORDER)', self._SRC)
+        for m in matches:
+            if "ORDER" in m:
+                assert False, "jurnal_yozuvlar da WHERE user_id bo'lmagan ORDER BY bor"
+
+    def test_faktura_sessiya_has_user_id(self):
+        import re
+        match = re.search(r'cmd_faktura.*?FROM sotuv_sessiyalar(.*?)ORDER', self._SRC, re.DOTALL)
+        if match:
+            assert "user_id" in match.group(1), "cmd_faktura da sotuv_sessiyalar queryda user_id yo'q"
+
+    def test_balans_jurnal_has_user_id(self):
+        import re
+        match = re.search(r'SAP-GRADE.*?FROM jurnal_yozuvlar(.*?)"""', self._SRC, re.DOTALL)
+        if match:
+            assert "user_id" in match.group(1)
+
+    def test_balans_kassa_has_user_id(self):
+        import re
+        match = re.search(r'Kassa balans.*?FROM kassa_operatsiyalar(.*?)"""', self._SRC, re.DOTALL)
+        if match:
+            assert "user_id" in match.group(1)
+
+    def test_balans_ombor_has_user_id(self):
+        import re
+        match = re.search(r'Ombor qiymati.*?FROM tovarlar(.*?)"""', self._SRC, re.DOTALL)
+        if match:
+            assert "user_id" in match.group(1)
+
+    def test_web_faktura_service_exists(self):
+        src = (REPO / "services" / "web" / "lib" / "api" / "services.ts").read_text(encoding="utf-8")
+        assert "fakturaService" in src
+        assert "/api/v1/fakturalar" in src
+        assert "/api/v1/faktura" in src
+
+
+# ════════════════════════════════════════════════════════════════
+#  § 49. ROUTE GUARD + ROOT REDIRECT
+# ════════════════════════════════════════════════════════════════
+
+
+class TestRouteGuardMiniApp:
+    """RouteGuard /tg sahifani public qilishi"""
+
+    _SRC = (REPO / "services" / "web" / "lib" / "auth" / "route-guard.tsx").read_text(encoding="utf-8")
+
+    def test_tg_is_public(self):
+        assert '"/tg"' in self._SRC, "/tg PUBLIC_ROUTES da bo'lishi kerak"
+
+    def test_login_is_public(self):
+        assert '"/login"' in self._SRC
+
+
+class TestRootRedirect:
+    """Root / → /dashboard redirect"""
+
+    _SRC = (REPO / "services" / "web" / "app" / "page.tsx").read_text(encoding="utf-8")
+
+    def test_redirects_to_dashboard(self):
+        assert "/dashboard" in self._SRC
+
+    def test_not_login_redirect(self):
+        # Root sahifa to'g'ridan-to'g'ri /login ga emas, /dashboard ga redirect qilishi kerak
+        # RouteGuard auth tekshiradi
+        assert 'redirect("/dashboard")' in self._SRC or "redirect('/dashboard')" in self._SRC
+
+
+# ════════════════════════════════════════════════════════════════
+#  § 50. EDGE CASES + PRODUCTION SAFETY
+# ════════════════════════════════════════════════════════════════
+
+
+class TestLikeEscapeEdgeCases:
+    """like_escape edge cases"""
+
+    def test_none_input(self):
+        from shared.utils import like_escape
+        assert like_escape(None) == ""
+
+    def test_empty_string(self):
+        from shared.utils import like_escape
+        assert like_escape("") == ""
+
+    def test_percent(self):
+        from shared.utils import like_escape
+        assert "\\%" in like_escape("test%drop")
+
+    def test_underscore(self):
+        from shared.utils import like_escape
+        assert "\\_" in like_escape("foo_bar")
+
+    def test_backslash(self):
+        from shared.utils import like_escape
+        assert "\\\\" in like_escape("a\\b")
+
+    def test_normal_string(self):
+        from shared.utils import like_escape
+        assert like_escape("Ariel") == "Ariel"
+
+
+class TestRouteGuardPublicRoutes:
+    """Public routes to'g'ri sozlangani"""
+
+    _SRC = (REPO / "services" / "web" / "lib" / "auth" / "route-guard.tsx").read_text(encoding="utf-8")
+
+    def test_tg_public(self):
+        assert '"/tg"' in self._SRC
+
+    def test_login_public(self):
+        assert '"/login"' in self._SRC
+
+    def test_p_public(self):
+        """QR /p/ route ham public bo'lishi kerak"""
+        assert "/p/" in self._SRC
+
+
+class TestDockerfiles:
+    """Dockerfile lar to'g'riligi"""
+
+    def test_api_has_pythonpath(self):
+        src = (REPO / "services" / "api" / "Dockerfile").read_text(encoding="utf-8")
+        assert "PYTHONPATH=/app" in src
+
+    def test_bot_has_pythonpath(self):
+        src = (REPO / "services" / "bot" / "Dockerfile").read_text(encoding="utf-8")
+        assert "PYTHONPATH=/app" in src
+
+    def test_web_has_standalone(self):
+        src = (REPO / "services" / "web" / "Dockerfile").read_text(encoding="utf-8")
+        assert "standalone" in src
+
+    def test_web_copies_public(self):
+        src = (REPO / "services" / "web" / "Dockerfile").read_text(encoding="utf-8")
+        assert "public" in src
+
+    def test_api_has_openpyxl(self):
+        reqs = (REPO / "services" / "api" / "requirements.txt").read_text(encoding="utf-8")
+        assert "openpyxl" in reqs
+
+    def test_api_has_reportlab(self):
+        reqs = (REPO / "services" / "api" / "requirements.txt").read_text(encoding="utf-8")
+        assert "reportlab" in reqs
+
+
+# ════════════════════════════════════════════════════════════════
+#  § 50. SOTUV ENDPOINT FIX + BOT_TOKEN
+# ════════════════════════════════════════════════════════════════
+
+
+class TestSotuvEndpointFull:
+    """POST /api/v1/sotuv to'liq ishlashi"""
+
+    _SRC = (REPO / "services" / "api" / "main.py").read_text(encoding="utf-8")
+
+    def test_creates_chiqimlar(self):
+        match = re.search(r'async def sotuv_saqlash.*?(?=\n@app\.|\nclass\s|\Z)',
+                          self._SRC, re.DOTALL)
+        assert match
+        body = match.group()
+        assert "INSERT INTO chiqimlar" in body, "Sotuv endpoint chiqimlar yaratishi kerak"
+
+    def test_reduces_stock(self):
+        match = re.search(r'async def sotuv_saqlash.*?(?=\n@app\.|\nclass\s|\Z)',
+                          self._SRC, re.DOTALL)
+        assert match
+        body = match.group()
+        assert "GREATEST(qoldiq" in body, "Sotuv endpoint qoldiq kamaytirishi kerak"
+
+    def test_creates_qarz(self):
+        match = re.search(r'async def sotuv_saqlash.*?(?=\n@app\.|\nclass\s|\Z)',
+                          self._SRC, re.DOTALL)
+        assert match
+        body = match.group()
+        assert "INSERT INTO qarzlar" in body, "Qarz bo'lsa qarz yozuvi kerak"
+
+    def test_uses_transaction(self):
+        match = re.search(r'async def sotuv_saqlash.*?(?=\n@app\.|\nclass\s|\Z)',
+                          self._SRC, re.DOTALL)
+        assert match
+        assert "transaction()" in match.group()
+
+    def test_creates_klient(self):
+        match = re.search(r'async def sotuv_saqlash.*?(?=\n@app\.|\nclass\s|\Z)',
+                          self._SRC, re.DOTALL)
+        assert match
+        assert "INSERT INTO klientlar" in match.group()
+
+    def test_like_escaped(self):
+        match = re.search(r'async def sotuv_saqlash.*?(?=\n@app\.|\nclass\s|\Z)',
+                          self._SRC, re.DOTALL)
+        assert match
+        assert "like_escape" in match.group()
+
+
+class TestBotTokenOnApi:
+    """API servisda BOT_TOKEN mavjudligi (Mini App uchun)"""
+
+    _TOML = (REPO / "railway.toml").read_text(encoding="utf-8")
+
+    def test_bot_token_in_api_service(self):
+        # Birinchi [[services]] blokida (API) BOT_TOKEN bo'lishi kerak
+        lines = self._TOML.split("\n")
+        in_first_service = False
+        found = False
+        service_count = 0
+        for line in lines:
+            if "[[services]]" in line:
+                service_count += 1
+                if service_count == 1:
+                    in_first_service = True
+                else:
+                    in_first_service = False
+            if in_first_service and "BOT_TOKEN" in line:
+                found = True
+                break
+        assert found, "API servisda BOT_TOKEN bo'lishi kerak (Mini App auth uchun)"
+
+
+# ════════════════════════════════════════════════════════════════
+#  § 51. DASHBOARD ENRICHED + DEPLOY CONFIG
+# ════════════════════════════════════════════════════════════════
+
+
+class TestDashboardEnriched:
+    """Dashboard API to'liq ma'lumot qaytarishi"""
+
+    _SRC = (REPO / "services" / "api" / "main.py").read_text(encoding="utf-8")
+
+    def test_has_overdue_count(self):
+        match = re.search(r'async def dashboard\(.*?(?=\n@app\.)',
+                          self._SRC, re.DOTALL)
+        assert match
+        assert "overdue_count" in match.group()
+
+    def test_has_overdue_amount(self):
+        match = re.search(r'async def dashboard\(.*?(?=\n@app\.)',
+                          self._SRC, re.DOTALL)
+        assert match
+        assert "overdue_amount" in match.group()
+
+    def test_has_pending_expenses(self):
+        match = re.search(r'async def dashboard\(.*?(?=\n@app\.)',
+                          self._SRC, re.DOTALL)
+        assert match
+        assert "pending_expenses" in match.group()
+
+    def test_has_active_apprentices(self):
+        match = re.search(r'async def dashboard\(.*?(?=\n@app\.)',
+                          self._SRC, re.DOTALL)
+        assert match
+        assert "active_apprentices" in match.group()
+
+
+class TestDeployConfig:
+    """railway.toml va deploy/railway.toml sinxronligi"""
+
+    _MAIN = (REPO / "railway.toml").read_text(encoding="utf-8")
+    _DEPLOY = (REPO / "deploy" / "railway.toml").read_text(encoding="utf-8")
+
+    def test_main_api_has_bot_token(self):
+        # Birinchi services blokida BOT_TOKEN bo'lishi kerak
+        assert "BOT_TOKEN" in self._MAIN.split("[[services]]")[1]
+
+    def test_deploy_api_has_bot_token(self):
+        assert "BOT_TOKEN" in self._DEPLOY.split("[[services]]")[1]
+
+    def test_deploy_bot_has_jwt_secret(self):
+        bot_section = self._DEPLOY.split("[[services]]")[2]
+        assert "JWT_SECRET" in bot_section
+
+
+# ════════════════════════════════════════════════════════════════
+#  § 51. STATISTIKA USER_ID + KONTRAKT TEKSHIRUV
+# ════════════════════════════════════════════════════════════════
+
+
+class TestStatistikaUserIdFinal:
+    """Statistika endpoint user_id defense"""
+
+    _SRC = (REPO / "services" / "api" / "main.py").read_text(encoding="utf-8")
+
+    def test_faol_qarz_has_user_id(self):
+        import re
+        match = re.search(r'async def admin_statistika.*?(?=\n@app\.|\nclass\s|\Z)',
+                          self._SRC, re.DOTALL)
+        assert match
+        body = match.group()
+        assert body.count("user_id=$1") >= 7, \
+            f"Statistika da kamida 7 ta user_id=$1 kerak, {body.count('user_id=$1')} topildi"
+
+    def test_bugun_sotuv_has_user_id(self):
+        import re
+        match = re.search(r'async def admin_statistika.*?(?=\n@app\.|\nclass\s|\Z)',
+                          self._SRC, re.DOTALL)
+        assert match
+        body = match.group()
+        assert "user_id=$1 AND (sana AT TIME ZONE" in body or \
+               "user_id=$1 AND sana" in body, \
+            "bugun_sotuv queryda user_id bo'lishi kerak"
+
+
+class TestSotuvKontrakt:
+    """Web→API sotuv kontrakt mosligi"""
+
+    def test_web_sends_correct_fields(self):
+        src = (REPO / "services" / "web" / "app" / "sales" / "page.tsx").read_text(encoding="utf-8")
+        for field in ["nomi", "miqdor", "birlik", "narx", "jami_summa", "tolangan", "qarz"]:
+            assert field in src, f"Sales page da '{field}' field bo'lishi kerak"
+
+    def test_api_accepts_correct_fields(self):
+        src = (REPO / "services" / "api" / "main.py").read_text(encoding="utf-8")
+        assert "class SotuvSo_rov" in src
+        assert "class TovarModel" in src
+        for field in ["nomi", "miqdor", "birlik", "narx", "jami_summa", "tolangan", "qarz"]:
+            assert field in src
+
+
+class TestNonRlsQueriesSafe:
+    """get_pool() querylar faqat auth/health/metrics"""
+
+    _SRC = (REPO / "services" / "api" / "main.py").read_text(encoding="utf-8")
+
+    def test_no_business_data_in_raw_pool(self):
+        """get_pool() tovarlar/klientlar/sotuv querylamaydi"""
+        import re
+        # Find all get_pool blocks
+        blocks = re.findall(r'get_pool\(\)\.acquire\(\).*?(?=async with|@app\.|class\s|\Z)',
+                           self._SRC, re.DOTALL)
+        dangerous_tables = ["tovarlar", "klientlar", "sotuv_sessiyalar", "chiqimlar", "qarzlar"]
+        for block in blocks:
+            for table in dangerous_tables:
+                assert f"FROM {table}" not in block, \
+                    f"get_pool() da '{table}' querylanmasligi kerak — rls_conn ishlatilsin"

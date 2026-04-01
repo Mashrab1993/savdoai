@@ -39,7 +39,14 @@ jobs:
         env:
           PYTHONPATH: ${{ github.workspace }}
         run: |
-          python -m pytest tests/ -q --tb=short
+          python -m pytest tests/ -q --tb=short 2>&1 | tee test_output.txt
+          # Minimum test count tekshirish
+          PASSED=$(grep -oP '\d+ passed' test_output.txt | grep -oP '\d+')
+          echo "✅ $PASSED test o'tdi"
+          if [ "$PASSED" -lt 1000 ]; then
+            echo "❌ Kamida 1000 test kutilgan, faqat $PASSED topildi"
+            exit 1
+          fi
 
       - name: Inline testlar tekshirish
         env:
@@ -48,3 +55,21 @@ jobs:
           python -m shared.utils.hisob
           python -m shared.utils.uzb_nlp
           python -m services.cognitive.engine
+
+      - name: Kod sifati tekshiruv
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: |
+          echo "=== SELECT * tekshiruv ==="
+          if grep -rn "SELECT \*" services/ shared/ --include="*.py" | grep -v __pycache__ | grep -v test | grep -q .; then
+            echo "❌ SELECT * topildi!"
+            grep -rn "SELECT \*" services/ shared/ --include="*.py" | grep -v __pycache__ | grep -v test
+            exit 1
+          fi
+          echo "✅ SELECT * = 0"
+          echo "=== bare except tekshiruv ==="
+          if grep -rn "except:$" services/ shared/ --include="*.py" | grep -v __pycache__ | grep -q .; then
+            echo "❌ bare except topildi!"
+            exit 1
+          fi
+          echo "✅ bare except = 0"

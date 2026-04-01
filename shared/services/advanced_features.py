@@ -436,13 +436,13 @@ async def qoldiq_tuzatish(conn, uid: int, nomi: str, miqdor: int, sabab: str) ->
         return {"ok": False, "xato": f"'{nomi}' topilmadi"}
 
     eski = int(tovar.get("qoldiq") or 0)
-    yangi = max(eski - miqdor, 0)
 
     await conn.execute("""
-        UPDATE tovarlar SET qoldiq = $2 WHERE id = $1
-    """, tovar["id"], yangi)
+        UPDATE tovarlar SET qoldiq = GREATEST(qoldiq - $2, 0) WHERE id = $1
+    """, tovar["id"], miqdor)
 
-    log.info("📦 Qoldiq tuzatish: %s %d → %d (%s)", tovar["nomi"], eski, yangi, sabab)
+    yangi = max(eski - miqdor, 0)
+    log.info("📦 Qoldiq tuzatish: %s %d → ~%d (%s)", tovar["nomi"], eski, yangi, sabab)
 
     return {
         "ok": True,

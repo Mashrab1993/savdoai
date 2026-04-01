@@ -49,7 +49,11 @@ export default function ClientsPage() {
   const [saveError, setSaveError] = useState<string | null>(null)
   const [editingClientId, setEditingClientId] = useState<number | null>(null)
   const [tarixOpen, setTarixOpen] = useState(false)
-  const [tarixData, setTarixData] = useState<any>(null)
+  const [tarixData, setTarixData] = useState<{
+    klient: { ism?: string; telefon?: string; kredit_limit?: number; jami_sotib?: number; [k: string]: unknown }
+    sotuvlar: Array<{ id?: number; jami?: number; qarz?: number; sana?: string; tovar_soni?: number }>
+    qarzlar: Array<{ id?: number; qolgan?: number; yaratilgan?: string; muddat?: string; yopildi?: boolean }>
+  } | null>(null)
   const [tarixLoading, setTarixLoading] = useState(false)
   const [form, setForm] = useState<Partial<ClientFormShape>>({})
   const [formErrors, setFormErrors] = useState<Record<string, string>>({})
@@ -361,7 +365,7 @@ export default function ClientsPage() {
                     {locale === "uz" ? "Oxirgi sotuvlar" : "Последние продажи"} ({tarixData.sotuvlar.length})
                   </p>
                   <div className="space-y-1.5">
-                    {tarixData.sotuvlar.map((s: any) => (
+                    {tarixData.sotuvlar.map((s) => (
                       <div key={s.id} className="flex justify-between items-center bg-card border border-border rounded-lg px-3 py-2">
                         <div>
                           <p className="text-sm font-medium">{fmt(s.jami ?? 0)}</p>
@@ -370,7 +374,7 @@ export default function ClientsPage() {
                           </p>
                         </div>
                         {(s.qarz ?? 0) > 0 && (
-                          <span className="text-xs text-destructive font-medium">{fmt(s.qarz)}</span>
+                          <span className="text-xs text-destructive font-medium">{fmt(s.qarz ?? 0)}</span>
                         )}
                       </div>
                     ))}
@@ -385,7 +389,7 @@ export default function ClientsPage() {
                     {locale === "uz" ? "Qarzlar" : "Долги"} ({tarixData.qarzlar.length})
                   </p>
                   <div className="space-y-1.5">
-                    {tarixData.qarzlar.map((q: any) => (
+                    {tarixData.qarzlar.map((q) => (
                       <div key={q.id} className="flex justify-between items-center bg-card border border-border rounded-lg px-3 py-2">
                         <div>
                           <p className="text-sm font-medium">{fmt(q.qolgan ?? 0)}</p>

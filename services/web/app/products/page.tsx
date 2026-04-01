@@ -52,7 +52,12 @@ export default function ProductsPage() {
   const [saving, setSaving] = useState(false)
   const [form, setForm] = useState({ nomi: "", kategoriya: "Boshqa", birlik: "dona", olish_narxi: "", sotish_narxi: "", qoldiq: "", min_qoldiq: "" })
   const [tarixOpen, setTarixOpen] = useState(false)
-  const [tarixData, setTarixData] = useState<any>(null)
+  const [tarixData, setTarixData] = useState<{
+    tovar: { nomi?: string; kategoriya?: string; birlik?: string; qoldiq?: number; sotish_narxi?: number; olish_narxi?: number; [k: string]: unknown }
+    sotuvlar: Array<{ klient_ismi?: string; sana?: string; miqdor?: number; jami?: number }>
+    kirimlar: Array<Record<string, unknown>>
+    statistika?: { sotuv_soni: number; jami_sotilgan: number; jami_tushum: number }
+  } | null>(null)
   const [tarixLoading, setTarixLoading] = useState(false)
 
   const products: ProductVM[] = (rawProducts ?? []).map(normalizeProduct)
@@ -413,7 +418,7 @@ export default function ProductsPage() {
                     {locale === "uz" ? "Oxirgi sotuvlar" : "Последние продажи"}
                   </p>
                   <div className="space-y-1.5">
-                    {tarixData.sotuvlar.map((s: any, i: number) => (
+                    {tarixData.sotuvlar.map((s, i) => (
                       <div key={i} className="flex justify-between items-center bg-card border rounded-lg px-3 py-2 text-sm">
                         <div>
                           <p className="font-medium">{s.klient_ismi || "—"}</p>

@@ -24,6 +24,7 @@ DATABASE_URL  = "${{Postgres.DATABASE_URL}}"
 REDIS_URL     = "${{Redis.REDIS_URL}}"
 JWT_SECRET    = "${{JWT_SECRET}}"
 PRINT_SECRET  = "${{PRINT_SECRET}}"
+BOT_TOKEN     = "${{BOT_TOKEN}}"
 WEB_URL       = "https://savdoai-web-production.up.railway.app"
 DB_MIN        = "2"
 DB_MAX        = "10"
@@ -65,6 +66,8 @@ healthCheckPath = "/"
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 3
 [services.variables]
-# Bakes into the Next.js client bundle at build time. Must be the FastAPI service — here `savdoai` is the API per this file. If your dashboard names the API `web` instead, set this manually to ${{web.URL}} or the API HTTPS origin (never the bot hostname).
-NEXT_PUBLIC_API_URL = "${{savdoai.URL}}"
+# IMPORTANT: Live Railway service names differ from IaC:
+#   "web" = FastAPI API, "savdoai" = bot, "savdoai-web" = Next.js
+# NEXT_PUBLIC_API_URL must point to FastAPI ("web"), not bot ("savdoai").
+NEXT_PUBLIC_API_URL = "${{web.URL}}"
 PORT                = "3000"
