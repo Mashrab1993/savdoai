@@ -1,320 +1,234 @@
-# ╔══════════════════════════════════════════════════════════════════════════╗
-# ║  SAVDOAI MASHRAB MOLIYA v25.3 — CURSOR AI PRODUCTION RULES             ║
-# ║  O'zbekiston #1 AI-powered savdo boshqaruv tizimi                      ║
-# ║                                                                         ║
-# ║  Stack: Python 3.12 | FastAPI | python-telegram-bot 21.3 | asyncpg     ║
-# ║         PostgreSQL (RLS) | Redis | Celery | Next.js 16 | Railway       ║
-# ║  AI:    Gemini 2.5 Pro (STT/Vision/TTS) | Claude Sonnet 4.6 (mantiq) |              ║
-# ║         Silero VAD (shovqin filtr)                                     ║
-# ╚══════════════════════════════════════════════════════════════════════════╝
-
-# ═══════════════════════════════════════════════════════════════
-#  1. ARXITEKTURA — HECH QACHON BUZMA
-# ═══════════════════════════════════════════════════════════════
-
-## Monorepo tuzilishi (O'ZGARTIRMA):
-# savdoai-main/
-# ├── services/
-# │   ├── api/         → FastAPI REST (JWT + RLS + Redis cache)
-# │   ├── bot/         → Telegram bot (python-telegram-bot)
-# │   ├── cognitive/   → AI Router (Gemini + Claude dual-brain)
-# │   ├── web/         → Next.js 16 dashboard (pnpm)
-# │   └── worker/      → Celery background tasks
-# ├── shared/          → Barcha servislar uchun umumiy kutubxona
-# │   ├── database/    → asyncpg pool + RLS + schema.sql
-# │   ├── cache/       → Redis cache
-# │   ├── services/    → Business logic (ledger, pipeline, guards,
-# │   │                   hisobot_engine, smart_bot_engine, advanced_features,
-# │   │                   mutaxassis, suhbatdosh, hujjat_oqish, vision)
-# │   ├── utils/       → hisob.py (Decimal), uzb_nlp.py, fmt.py
-# │   └── rag/         → Qdrant vector DB (ixtiyoriy)
-# └── tests/           → pytest (287+ test)
-
-## Import qoidalari:
-# - shared/ HAMMA servislardan import qilinadi
-# - services/ bir-birini IMPORT QILMAYDI (faqat HTTP/gRPC orqali)
-# - Bot → shared.database.pool, shared.utils.*, shared.services.*
-# - API → shared.database.pool, shared.cache.*, shared.services.*
-
-# ═══════════════════════════════════════════════════════════════
-#  2. PYTHON QOIDALARI — QONUN KUCHIDA
-# ═══════════════════════════════════════════════════════════════
-
-## Decimal — HECH QACHON float ishlatma:
-# PUL HISOBLASH FAQAT Decimal bilan. float TAQIQLANGAN.
-# from shared.utils.hisob import D, Y, narx_hisob, sotuv_hisob
-# D("45000") ✅ | float(45000) ❌ | 45000.0 ❌
-
-## asyncpg — FAQAT parametrized query:
-# await c.execute("SELECT * FROM t WHERE id=$1", uid)  ✅
-# await c.execute(f"SELECT * FROM t WHERE id={uid}")    ❌ SQL INJECTION!
-# user_yangilab — faqat _USER_YOZISH_MUMKIN fieldlar
-
-## RLS — har doim rls_conn(uid) ishlatiladi:
-# async with rls_conn(uid) as c:  ✅  (SET app.uid avtomatik)
-# async with pool.acquire() as c: ❌  (RLS bypass — faqat system ops)
-
-## Error handling:
-# except Exception as e: log.error("...: %s", e)  ✅
-# except:  ❌  (TAQIQLANGAN — bare except)
-# except Exception: pass  ⚠️ (faqat fallback da, log bilan)
-
-## async def — barcha DB/network operatsiyalar async:
-# async def sotuv_saqlash(uid, data):  ✅
-# def sotuv_saqlash(uid, data):        ❌ (bloklaydi!)
-
-# ═══════════════════════════════════════════════════════════════
-#  3. OVOZ PIPELINE — TEZLIK VA ANIQLIK
-# ═══════════════════════════════════════════════════════════════
-
-## 2-qatlamli AI stack:
-# 1. Gemini 2.5 Pro → STT, Vision, TTS, hujjat, excel
-# 2. Claude Sonnet 4.6 → analyst (matn → JSON, hisob-kitob, suhbat)
-# (Claude Haiku o'chirildi — FuzzyMatcher yetarli)
-
-## STT prompt — MUHIM:
-# - voice.py: _build_stt_extra_for_user() → DB dan 500 tovar, 200 klient
-# - Har bir user o'z tovarlarini ko'radi (RLS)
-# - Cache TTL = 60s (yangi tovar 1 daqiqada Gemini ga ko'rinadi)
-# - Sheva qoidalari, qarz so'zlari, pul formatlari prompt da bor
-
-## Performance:
-# - Qisqa audio (<30s): to'g'ridan-to'g'ri Gemini
-# - Uzun audio (>30s): FFmpeg → Silero VAD → Chunking → asyncio.gather (PARALLEL)
-# - Retry: 2 urinish, 1-8s kutish (sekin emas!)
-# - N+1 query → batch SELECT (sotuv_saqlash, savat_yop)
-
-## Auto-learning:
-# - Yangi tovar sotilsa → avtomatik tovarlar jadvaliga qo'shiladi
-# - STT + Fuzzy cache darhol tozalanadi
-# - Keyingi ovozda Gemini yangi tovarni biladi
-
-# ═══════════════════════════════════════════════════════════════
-#  4. DATABASE — BUZILMAS QOIDALAR
-# ═══════════════════════════════════════════════════════════════
-
-## PostgreSQL schema: shared/database/schema.sql
-## Migratsiyalar: shared/migrations/versions/
-
-## RLS (Row Level Security):
-# HAMMA jadvallar user_id bilan himoyalangan
-# SET LOCAL app.uid = '123';  → rls_conn() avtomatik qiladi
-# HECH QACHON qo'lda SET qilma
-
-## Tranzaksiya:
-# async with c.transaction():  → ACID kafolat
-# Sotuv = sessiya + chiqimlar + qoldiq + qarz → HAMMASI 1 tranzaksiyada
-
-## Index bo'lishi SHART:
-# tovarlar(user_id, lower(nomi)) — UNIQUE
-# klientlar(user_id, lower(ism)) — UNIQUE
-# qarzlar(user_id, yopildi) WHERE NOT yopildi
-# sotuv_sessiyalar(user_id, sana)
-
-## Segment CHECK (16 ta segment — schema.sql va db.py bir xil bo'lishi SHART):
-# CHECK(segment IN('optom','chakana','oshxona','xozmak','kiyim','gosht',
-#                  'meva','qurilish','avto','dorixona','texnika','mebel',
-#                  'mato','gul','kosmetika','universal'))
-
-# ═══════════════════════════════════════════════════════════════
-#  5. TELEGRAM BOT — UX QOIDALARI
-# ═══════════════════════════════════════════════════════════════
-
-## Ovoz qabul qilish:
-# 1. ⏳ darhol ko'rsatiladi (foydalanuvchi kutayotganini biladi)
-# 2. Uzun audio → progress callback (30%, 65%, 90%, 95%)
-# 3. Low confidence → Claude ga yuboradi (rad QILMAYDI!)
-# 4. Faqat "none" confidence → "qayta yuboring" deydi
-
-## Savat tizimi (OPTOM uchun):
-# - Har ovoz → savatga qo'shiladi (klient bo'yicha)
-# - "Salimov bo'ldi" yoki "Salimov nakladnoy" → savat yopiladi → PDF
-# - 100+ klient PARALLEL ishlaydi
-
-## MarkdownV2 — esc() funksiyasi DOIM ishlatiladi:
-# await msg.reply_text(f"Jami: {esc(pul(jami))}", parse_mode="MarkdownV2")
-# Yoki _safe_reply() ishlatilsin — fallback bor
-
-## Telegram limits:
-# - Xabar: 4096 belgi max → _truncate() ishlatiladi
-# - File: 50MB (Bot API), 2GB (Local Bot API)
-
-# ═══════════════════════════════════════════════════════════════
-#  6. API — XAVFSIZLIK
-# ═══════════════════════════════════════════════════════════════
-
-## JWT: deps.py → get_uid() — barcha endpointlar shu dependency dan
-## CORS: allow_origin_regex — wildcard "*" TAQIQLANGAN
-## Rate limit: Redis (deps.py) + in-memory GC (middleware)
-## Export: user_id tekshiruvi — boshqa user faylini yuklab olish MUMKIN EMAS
-
-## Pydantic v2:
-# .model_dump() ishlatiladi (eski .dict() TAQIQLANGAN)
-
-# ═══════════════════════════════════════════════════════════════
-#  7. DEPLOY — RAILWAY + GITHUB
-# ═══════════════════════════════════════════════════════════════
-
-## GitHub → Railway auto-deploy:
-# main branch push → Railway 4 servis avtomatik rebuild
-# HECH QACHON force push qilma!
-
-## Deploy checklist:
-# 1. pytest tests/ -q  → 287+ PASSED
-# 2. .env.example to'liq
-# 3. railway.toml servislar to'g'ri
-# 4. Dockerfile lar ishga tushadi
-# 5. schema.sql + migratsiyalar yangilangan
-
-## Docker images:
-# Bot: python:3.12-slim + ffmpeg + torch(CPU) + onnxruntime
-# API: python:3.12-slim
-# Web: node:20-alpine + pnpm
-# Worker: python:3.12-slim + postgresql-client
-
-## Muhit o'zgaruvchilari (ZARUR):
-# BOT_TOKEN, DATABASE_URL, REDIS_URL
-# ANTHROPIC_API_KEY, GEMINI_API_KEY
-# JWT_SECRET, PRINT_SECRET, ADMIN_IDS
-# GEMINI_MODEL=gemini-2.5-pro
-# PRINT_SECRET — API va Bot da BIR XIL qiymat bo'lishi SHART!
-
-# ═══════════════════════════════════════════════════════════════
-#  8. TEST — 287+ TEST DOIM O'TISHI SHART
-# ═══════════════════════════════════════════════════════════════
-
-## Test ishlatish:
-# python -m pytest tests/ -q          → tez
-# python -m pytest tests/ -v --tb=short → batafsil
-# python -m shared.utils.hisob        → 36 hisob test
-# python -m shared.utils.uzb_nlp      → 94 NLP test
-
-## Yangi kod yozganda:
-# 1. Avval mavjud test ishlatib ko'r
-# 2. Yangi funksiyaga test yoz
-# 3. smoke test qo'sh (tests/test_smoke.py)
-# 4. HAMMA test o'tguncha PUSH QILMA
-
-# ═══════════════════════════════════════════════════════════════
-#  9. KODLASH USLUBI
-# ═══════════════════════════════════════════════════════════════
-
-## Til: Kodda o'zbek nomlari (sotuv_saqlash, qarz_hisob, tovarlar)
-## Izohlar: O'zbek + ingliz aralash
-## Loglar: Emoji + kontekst: log.info("📤 Sotuv: sess=%d jami=%s", id, jami)
-## Versiya: __version__ = "25.3" — HAMMA servisda bir xil
-
-## TAQIQLANGAN:
-# - print() production kodda (faqat _test() da)
-# - time.sleep() async kodda (asyncio.sleep ishlatilsin)
-# - requests kutubxonasi (httpx ishlatilsin)
-# - float pul hisoblashda (Decimal!)
-# - SELECT * production query da (ustunlarni aniq yoz)
-# - Bare except: (except Exception as e: ishlatilsin)
-
-## MAJBURIY:
-# - Type hints: async def sotuv(uid: int, data: dict) -> dict:
-# - Docstring: """Sotuv saqlash. ACID tranzaksiya."""
-# - try/except: barcha tashqi chaqiruvlar (DB, API, AI)
-# - finally: temp file o'chirish, connection yopish
-# - log.info/warning/error: har bir muhim qadam
-
-# ═══════════════════════════════════════════════════════════════
-#  10. REGEX — EHTIYOT BO'L
-# ═══════════════════════════════════════════════════════════════
-
-## PUL_NORM backreference:
-# r"\g<1>000"  ✅ (named backreference)
-# r"\1000"     ❌ (Python \100 = '@' octal deb o'qiydi!)
-
-## Sheva pattern:
-# r"\b" + word + r"\b"  → so'z chegarasi
-# re.IGNORECASE | re.UNICODE  → doim
-
-# ═══════════════════════════════════════════════════════════════
-#  11. GIT WORKFLOW
-# ═══════════════════════════════════════════════════════════════
-
-## Branch: main (production) — DOIM ISHLAYDIGAN HOLDA
-## Commit: O'zbek + Emoji
-#   ✅ "✅ STT prompt 500 tovar, VAD routing, parallel chunks"
-#   ❌ "fix stuff" | "update" | "asdf"
-## Push: FAQAT test o'tgandan keyin
-## Pull: har doim pull --rebase (merge commit yo'q)
-
-# ═══════════════════════════════════════════════════════════════
-#  12. FAYL O'ZGARTIRGANDA QOIDALAR
-# ═══════════════════════════════════════════════════════════════
-
-## shared/utils/hisob.py → python -m shared.utils.hisob (36 test)
-## shared/utils/uzb_nlp.py → python -m shared.utils.uzb_nlp (94 test)
-## services/bot/main.py → pytest tests/test_smoke.py -v
-## services/bot/db.py → pytest tests/test_smoke.py tests/test_runtime.py -v
-## services/api/main.py → pytest tests/test_smoke.py -v
-## shared/database/schema.sql → migratsiya yoz!
-## Dockerfile → Railway da test deploy qil
-## requirements.txt → pip install va test
-
-# ═══════════════════════════════════════════════════════════════
-#  YAKUNIY SO'Z
-# ═══════════════════════════════════════════════════════════════
-
-# Bu tizim O'ZBEKISTON SAVDOGARLARI uchun yaratilgan.
-# Har bir qator kod — PULSIZ sotuvchining vaqtini tejashi kerak.
-# Tezlik, aniqlik, xavfsizlik — BU UCHTA NARSA HECH QACHON BUZILMASIN.
-#
-# 720+ test. 70+ fayl. 0 xato. SOATDAY ISHLAYDI. 🕐
-
-# ═══════════════════════════════════════════════════════════════
-#  13. v25.3 PATCH QOIDALARI (2026-03-26)
-# ═══════════════════════════════════════════════════════════════
-
-## ⚠️ RLS setting nomi: FAQAT app.uid
-# pool.py → SET app.uid
-# schema.sql → current_setting('app.uid', true)::BIGINT
-# app.user_id TAQIQLANGAN — HECH QACHON ishlatma!
-# app.current_uid TAQIQLANGAN — HECH QACHON ishlatma!
-
-## ⚠️ Tranzaksiya qoidasi kuchaytirildi:
-# Kirim = tovar yaratish + qoldiq oshirish + kirim insert → 1 tranzaksiyada
-# Sotuv = sessiya + chiqimlar + qoldiq + qarz → 1 tranzaksiyada
-# Qaytarish = chiqim yangilash + qoldiq qaytarish + record → 1 tranzaksiyada
-# XATO: transaction() ichida 1 query, qolganlari tashqarida — BU BUZILGAN!
-
-## ⚠️ Funksiya dublikatlari TAQIQLANGAN:
-# Tekshirish: grep "^async def cmd_" main.py | sort | uniq -d
-# Natija BO'SH bo'lishi SHART. 2 ta bir xil nom → Python oxirgisini oladi!
-
-## ⚠️ Handler registrations — 1 MARTA:
-# app.add_handler(CommandHandler("narx_guruh", cmd_narx_guruh)) — FAQAT 1 MARTA
-# Tekshirish: grep 'CommandHandler("narx_guruh"' main.py | wc -l → 1
-
-## ⚠️ Variable aniqlanganmi tekshir:
-# XATO namuna: _gem_key ishlatilgan, lekin _anth_key aniqlangan
-# QOIDA: variable ishlatishdan oldin aniqlangan bo'lishi SHART
-
-## CHEK CHIQAR tizimi (YANGI):
-# - Har operatsiya oxirida ctx.user_data["_oxirgi_chek_data"] saqlash SHART
-# - "chek chiqar" desa → print_intent.py ushlaydi → bot_print_handler.py chek yaratadi
-# - Saqlash formati:
-#   ctx.user_data["_oxirgi_chek_data"] = {
-#       "amal": "kirim"|"chiqim"|"qaytarish"|"qarz_tolash",
-#       "tovarlar": [...], "klient": "...", "jami_summa": 0,
-#   }
-# - QOIDA: yangi operatsiya qo'shsang → oxirida _oxirgi_chek_data SAQLASHNI UNUTMA!
-
-## Migratsiyalar:
-# 001 — kassa, vision, faktura
-# 002 — SAP-grade ledger
-# 003 — smart narx
-# 004 — shogird xarajat
-# 005 — kiyim segment
-# 006 — RLS fix (app.uid)
-# YANGI migratsiya qo'shsang → 007_xxx.sql
-
-## Repo va Deploy:
+# SavdoAI Mashrab Moliya — Cursor AI Rules
+# O'zbek savdogarlari uchun AI-powered savdo boshqaruv tizimi
 # GitHub: https://github.com/Mashrab1993/savdoai
 # Railway: https://railway.com/project/f9933a08-1054-4778-b969-e6a1e7e17b14
-# main branch push → Railway 4 servis avtomatik rebuild
-#
-# 157 fayl. 40,364 qator. 287+ test. TITAN TEST 139/139. 🏆
+
+## LOYIHA HAQIDA
+
+SavdoAI — O'zbekiston savdogarlari uchun Telegram bot + Web panel + REST API.
+Ovoz bilan sotuv kiritish, AI tahlil, SAP-grade double-entry buxgalteriya.
+Til: O'zbek (Lotin). Barcha o'zgaruvchilar, funksiya nomlari, jadval ustunlari — O'zbekcha.
+Masalan: `tovarlar` (products), `klientlar` (clients), `qarzlar` (debts), `sotuv` (sale), `kirim` (income), `chiqim` (expense), `foyda` (profit), `ombor` (warehouse).
+
+## ARXITEKTURA
+
+```text
+savdoai/
+├── services/
+│   ├── api/main.py          ← FastAPI REST API (2950 qator, 72 endpoint)
+│   ├── bot/main.py          ← Telegram bot (4400 qator, 36 buyruq)
+│   ├── bot/bot_helpers.py   ← Umumiy helpers (kesh, faol_tekshir, xat, tg)
+│   ├── bot/handlers/        ← Modular handlers (narx, shogird, jobs)
+│   ├── bot/db.py            ← Bot DB funksiyalari (1266 qator)
+│   ├── bot/config.py        ← Bot konfiguratsiya
+│   ├── bot/bot_services/    ← voice, pdf, excel, nakladnoy, rasm
+│   ├── web/                 ← Next.js 16 (15 sahifa, TypeScript strict)
+│   ├── cognitive/           ← AI router (Gemini + Claude MoE)
+│   └── worker/              ← Celery (export tasks)
+├── shared/
+│   ├── database/pool.py     ← asyncpg pool + RLS
+│   ├── database/schema.sql  ← 27 jadval, 24 RLS policy
+│   ├── services/            ← 28 shared service modul
+│   ├── utils/               ← hisob, fmt, like_escape, uzb_nlp
+│   ├── cache/redis_cache.py ← Redis cache
+│   └── middleware/          ← request_id
+├── tests/                   ← 1195 pytest + 155 inline = 1350 test
+├── railway.toml             ← Railway IaC (3 servis)
+└── .github/workflows/ci.yml ← GitHub Actions CI
+```
+
+## TECH STACK
+
+- **Backend**: Python 3.12, FastAPI, asyncpg, Celery
+- **Frontend**: Next.js 16, TypeScript (strict), Tailwind CSS, shadcn/ui (59 component)
+- **Bot**: python-telegram-bot 21.3
+- **DB**: PostgreSQL (27 jadval, Row-Level Security)
+- **Cache**: Redis
+- **AI**: Gemini 2.5 Pro (ovoz + tahlil), Claude Sonnet 4.6 (murakkab savol)
+- **Deploy**: Railway (auto-deploy from GitHub main branch)
+
+## ⚠️ RAILWAY TOPOLOGY — KRITIK!
+
+Railway dashboard nomlari IaC dan FARQ QILADI:
+
+| Railway Dashboard | Vazifa | URL |
+|---|---|---|
+| **web** | FastAPI API | `web-production-30ebb.up.railway.app` |
+| **savdoai** | Telegram bot | `savdoai-production.up.railway.app` |
+| **savdoai-web** | Next.js frontend | `savdoai-web-production.up.railway.app` |
+
+**DIQQAT**: `NEXT_PUBLIC_API_URL` = `${{web.URL}}` (API servis), EMAS `${{savdoai.URL}}` (bu bot!).
+
+## 🔴 KOD QOIDALARI — QATTIQ AMAL QILINISHI SHART
+
+### SQL Xavfsizlik
+
+```python
+# ✅ TO'G'RI
+await c.fetch("""
+    SELECT id, nomi, narx FROM tovarlar
+    WHERE user_id=$1 AND LOWER(nomi) LIKE LOWER($2)
+""", uid, f"%{like_escape(qidiruv)}%")
+
+# ❌ NOTO'G'RI
+await c.fetch("SELECT * FROM tovarlar WHERE nomi LIKE $1", f"%{qidiruv}%")
+```
+
+QOIDALAR:
+- `SELECT *` — HECH QACHON. Har doim explicit columns
+- `RETURNING *` — HECH QACHON. Explicit: `RETURNING id, nomi`
+- `user_id` — BARCHA querylarda `WHERE user_id=$N` (defense-in-depth)
+- `like_escape()` — BARCHA LIKE querylarda (`from shared.utils import like_escape`)
+- `except:` (bare) — HECH QACHON. `except Exception:` yoki aniq exception
+- Transaction — Multi-step operatsiyalarda `async with c.transaction():`
+- Qoldiq kamaytirish — `GREATEST(qoldiq - $2, 0)` (relativ), EMAS `SET qoldiq = $2`
+- Inventarizatsiya — absolyut SET faqat `FOR UPDATE` lock bilan
+
+### API Endpoint Pattern
+
+```python
+@app.post("/api/v1/tovar", tags=["Tovarlar"])
+async def tovar_yarat(data: TovarYaratSorov, uid: int = Depends(get_uid)):
+    """Yangi tovar yaratish"""
+    async with rls_conn(uid) as c:
+        row = await c.fetchrow("""
+            INSERT INTO tovarlar (user_id, nomi, kategoriya, birlik, sotish_narxi)
+            VALUES ($1, $2, $3, $4, $5)
+            RETURNING id, nomi, kategoriya
+        """, uid, data.nomi, data.kategoriya, data.birlik, data.sotish_narxi)
+    return dict(row)
+```
+
+QOIDALAR:
+- `tags=["GuruhNomi"]` — Swagger uchun
+- `uid: int = Depends(get_uid)` — JWT tekshiruv
+- `rls_conn(uid)` — biznes querylar uchun
+- `get_pool().acquire()` — FAQAT auth/health/metrics uchun
+- Pydantic BaseModel — input validatsiya
+- `raise HTTPException(400/401/403/404, "O'zbekcha xabar")`
+
+### Web Frontend Pattern
+
+```tsx
+"use client"
+import { useApi } from "@/hooks/use-api"
+import { productService } from "@/lib/api/services"
+import { normalizeProduct } from "@/lib/api/normalizers"
+import { AdminLayout } from "@/components/layout/admin-layout"
+import { PageLoading, PageError } from "@/components/shared/page-states"
+
+export default function ProductsPage() {
+  const { data, loading, error, refetch } = useApi(productService.list)
+  const products = (data ?? []).map(normalizeProduct)
+  return (
+    <AdminLayout title="Tovarlar">
+      {loading && <PageLoading />}
+      {error && <PageError message={error} onRetry={refetch} />}
+      {/* ... */}
+    </AdminLayout>
+  )
+}
+```
+
+QOIDALAR:
+- `AdminLayout` — barcha sahifalar wrapper
+- `useApi` hook — data fetching
+- `normalizers.ts` — API response → View Model
+- `services.ts` — barcha API chaqiruvlar markazlashtirilgan
+- `useLocale()` + `translations` — O'zbek/Rus til
+- shadcn/ui — UI komponentlar
+- `tsc --noEmit` — 0 xato SHART
+
+### Bot Pattern
+
+```python
+async def cmd_tovar(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    if not await faol_tekshir(update):
+        return
+    uid = update.effective_user.id
+    try:
+        async with db._P().acquire() as c:
+            rows = await c.fetch(
+                "SELECT id, nomi, qoldiq FROM tovarlar WHERE user_id=$1 ORDER BY nomi", uid
+            )
+        # ...
+    except Exception as e:
+        log.error("cmd_tovar: %s", e, exc_info=True)
+        await update.message.reply_text("❌ Xato yuz berdi.")
+```
+
+QOIDALAR:
+- `faol_tekshir(update)` — har command boshida
+- `db._P().acquire()` — bot connection
+- `ParseMode.MARKDOWN` — xabar formatlash
+- `try/except Exception` — xato tutish + logging
+
+### Yangi Handler Modul
+
+```python
+# services/bot/handlers/yangi_modul.py
+from __future__ import annotations
+import logging
+from telegram import Update
+from telegram.constants import ParseMode
+from telegram.ext import ContextTypes, CommandHandler
+import services.bot.db as db
+from services.bot.bot_helpers import faol_tekshir, cfg, tg
+log = logging.getLogger("savdoai.bot.yangi_modul")
+
+async def cmd_yangi(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    if not await faol_tekshir(update):
+        return
+    uid = update.effective_user.id
+    # ...
+
+def register_yangi_handlers(app):
+    app.add_handler(CommandHandler("yangi", cmd_yangi))
+```
+
+`main.py` → `ilovani_qur()` ichida:
+
+```python
+from services.bot.handlers.yangi_modul import register_yangi_handlers
+
+register_yangi_handlers(app)
+```
+
+## TEST QOIDALARI
+
+```bash
+PYTHONPATH=. python3 -m pytest tests/ -q
+PYTHONPATH=. python3 -m pytest tests/test_titan_v2.py -q
+cd services/web && npx tsc --noEmit
+ruff check shared/ services/ --select=E9,F63,F7,F82
+PYTHONPATH=. bash verify_deploy.sh
+```
+
+- Minimum 1000 test saqlanishi SHART
+- Yangi endpoint = yangi test
+- Web o'zgarish = `tsc --noEmit` 0 xato
+
+## 🔒 XAVFSIZLIK HOLATI (0 DA SAQLASH SHART!)
+
+| SELECT * | RETURNING * | bare except | LIKE injection | user_id siz | Race condition | parol_hash leak |
+|---|---|---|---|---|---|---|
+| **0** | **0** | **0** | **0** | **0** | **0** | **0** |
+
+## MA'LUMOTLAR BAZASI
+
+O'zbekcha jadvallar: `users`, `tovarlar`, `klientlar`, `sotuv_sessiyalar`, `chiqimlar`, `kirimlar`, `qarzlar`, `kassa_operatsiyalar`, `jurnal_yozuvlar`, `jurnal_qatorlar`, `narx_guruhlari`, `guruh_narxlari`, `shogirdlar`, `xarajatlar`, `fakturalar`, `bildirishnomalar`.
+
+RLS: `current_uid()` — har jadvalda `user_id` ustuni + RLS policy.
+
+## 🚫 TAQIQLANGAN
+
+1. `SELECT *` yozma
+2. `RETURNING *` yozma
+3. `except:` (bare) yozma
+4. `f"%{term}%"` (LIKE escape siz) yozma
+5. `SET qoldiq = $2` (absolyut, sotuv/kirim da) yozma
+6. `get_pool()` biznes query uchun ishlatma
+7. `parol_hash` ni response da qaytarma
+8. `${{savdoai.URL}}` ni `NEXT_PUBLIC_API_URL` ga qo'yma
+9. Test soni 1000 dan kamaytirma
+10. TypeScript xato qoldirma
