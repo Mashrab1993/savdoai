@@ -5,6 +5,19 @@
 ╚══════════════════════════════════════════════════════════════════════╝
 """
 import sys, os, ast
+
+# ═══ HELPER: bot kodi modullashtirish uchun ═══
+def _read_bot_all():
+    """main.py + handlers/ — barcha bot kodi."""
+    import glob
+    parts = []
+    for pat in ['services/bot/main.py', 'services/bot/bot_helpers.py',
+                'services/bot/handlers/*.py']:
+        for fp in sorted(glob.glob(pat)):
+            parts.append(open(fp).read())
+    return '\n'.join(parts)
+
+
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 
@@ -271,29 +284,29 @@ class TestBotIntegration:
     """Bot main.py integratsiya testlari."""
 
     def test_pre_ai_shortcut_exists(self):
-        src = open("services/bot/main.py").read()
+        src = _read_bot_all()
         assert "bugungi sotuv" in src
         assert "haftalik hisobot" in src
         assert "hisobot_turini_aniqla" in src
 
     def test_hisobot_engine_in_qayta_ishlash(self):
-        src = open("services/bot/main.py").read()
+        src = _read_bot_all()
         assert "hisobot_engine" in src
         assert "hisobot_matn" in src
 
     def test_report_callback_upgraded(self):
-        src = open("services/bot/main.py").read()
+        src = _read_bot_all()
         # Eski db.kunlik_hisobot fallback bo'lib qolgan bo'lishi kerak
         assert "kunlik" in src
         assert "haftalik" in src
 
     def test_hisobot_russian_keywords(self):
-        src = open("services/bot/main.py").read()
+        src = _read_bot_all()
         assert "отчет" in src
 
     def test_fallback_exists(self):
         """Hisobot engine xato bersa, eski tizim ishlasin."""
-        src = open("services/bot/main.py").read()
+        src = _read_bot_all()
         assert "fallback" in src.lower() or "davom etadi" in src
 
 
@@ -485,18 +498,18 @@ class TestBotKlientIntegration:
     """Bot integratsiya — klient qarz shortcut testlari."""
 
     def test_shortcut_in_main(self):
-        src = open("services/bot/main.py").read()
+        src = _read_bot_all()
         assert "klient_qarz_sorovi" in src
         assert "klient_nomini_ajrat" in src
         assert "klient_qarz_tarix" in src
 
     def test_pdf_excel_buttons(self):
-        src = open("services/bot/main.py").read()
+        src = _read_bot_all()
         assert "PDF hisobi" in src
         assert "Excel hisobi" in src
 
     def test_not_found_message(self):
-        src = open("services/bot/main.py").read()
+        src = _read_bot_all()
         assert "topilmadi" in src
 
 
@@ -517,12 +530,12 @@ class TestExcelExport:
         assert "top5_klient" in src
 
     def test_excel_callback_registered(self):
-        src = open("services/bot/main.py").read()
+        src = _read_bot_all()
         assert "hisob_excel:" in src
         assert "_hisobot_excel_cb" in src
 
     def test_excel_shortcut_keyword(self):
-        src = open("services/bot/main.py").read()
+        src = _read_bot_all()
         assert "hisobot excel" in src or "excel hisobot" in src
 
 
@@ -530,11 +543,11 @@ class TestQoldiqOgohlantirish:
     """Sotuv dan keyin kam qoldiq ogohlantirish."""
 
     def test_auto_warning_after_sale(self):
-        src = open("services/bot/main.py").read()
+        src = _read_bot_all()
         assert "KAM QOLDIQ OGOHLANTIRISH" in src
 
     def test_kam_qoldiq_called_after_sotuv(self):
-        src = open("services/bot/main.py").read()
+        src = _read_bot_all()
         # kam_qoldiq_tovarlar sotuv saqlangandan keyin chaqirilishi kerak
         idx_sotuv = src.find("Sotuv saqlandi")
         idx_kam = src.find("kam_qoldiq_tovarlar", idx_sotuv if idx_sotuv > 0 else 0)
@@ -545,11 +558,11 @@ class TestHisobotButtons:
     """Inline tugma testlari."""
 
     def test_excel_button_in_hisobot(self):
-        src = open("services/bot/main.py").read()
+        src = _read_bot_all()
         assert "hisob_excel:" in src
 
     def test_pdf_excel_in_klient(self):
-        src = open("services/bot/main.py").read()
+        src = _read_bot_all()
         assert "PDF hisobi" in src
         assert "Excel hisobi" in src
 
@@ -562,7 +575,7 @@ class TestSmartNarx:
         assert "narx_aniqla" in src
 
     def test_smart_narx_in_bot(self):
-        src = open("services/bot/main.py").read()
+        src = _read_bot_all()
         assert "smart_narx" in src or "narx_aniqla" in src
 
 
@@ -625,7 +638,7 @@ class TestRasmNakladnoy:
         assert "rasm_nakladnoy_cb" in src
 
     def test_rasm_callback_registered(self):
-        src = open("services/bot/main.py").read()
+        src = _read_bot_all()
         assert "rasm:nakl" in src
         assert "rasm_nakladnoy_cb" in src
 
@@ -657,11 +670,11 @@ class TestTTS:
         assert "def hisobot_xulosa" in src
 
     def test_tts_init_in_bot(self):
-        src = open("services/bot/main.py").read()
+        src = _read_bot_all()
         assert "tts_init" in src
 
     def test_tts_in_hisobot(self):
-        src = open("services/bot/main.py").read()
+        src = _read_bot_all()
         assert "Ovozli xulosa" in src
 
     def test_hisobot_xulosa_format(self):
@@ -714,7 +727,7 @@ class TestOfflineQueue:
         assert "MAX_RETRIES" in src
 
     def test_queue_in_bot(self):
-        src = open("services/bot/main.py").read()
+        src = _read_bot_all()
         assert "offline_queue" in src
         assert "navbatga_qosh" in src
 
@@ -738,6 +751,6 @@ class TestOfflineQueue:
         assert navbat_soni(999999) == 0
 
     def test_user_sees_queue_message(self):
-        src = open("services/bot/main.py").read()
+        src = _read_bot_all()
         assert "Navbatda" in src or "navbat" in src
         assert "qayta uriniladi" in src

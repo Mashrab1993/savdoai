@@ -1,5 +1,18 @@
 """TITAN TEST — HUJJAT O'QISH (PDF + Word + Excel)"""
 import sys, os, ast
+
+# ═══ HELPER: bot kodi modullashtirish uchun ═══
+def _read_bot_all():
+    """main.py + handlers/ — barcha bot kodi."""
+    import glob
+    parts = []
+    for pat in ['services/bot/main.py', 'services/bot/bot_helpers.py',
+                'services/bot/handlers/*.py']:
+        for fp in sorted(glob.glob(pat)):
+            parts.append(open(fp).read())
+    return '\n'.join(parts)
+
+
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 
@@ -149,24 +162,24 @@ class TestHujjatOqi:
 
 class TestBotIntegration:
     def test_hujjat_handler_upgraded(self):
-        src = open("services/bot/main.py").read()
+        src = _read_bot_all()
         assert "hujjat_oqish" in src
         assert ".pdf" in src
         assert ".docx" in src
 
     def test_hujjat_callback(self):
-        src = open("services/bot/main.py").read()
+        src = _read_bot_all()
         assert "_hujjat_cb" in src
         assert "huj:bet" in src
         assert "huj:jadval" in src
 
     def test_hujjat_savol_in_main(self):
-        src = open("services/bot/main.py").read()
+        src = _read_bot_all()
         assert "hujjat_sorov_bormi" in src
         assert "hujjatdan_izlash" in src
 
     def test_navigation_buttons(self):
-        src = open("services/bot/main.py").read()
+        src = _read_bot_all()
         assert "huj:bet:1" in src
 
 
@@ -195,7 +208,7 @@ class TestAISavolJavob:
         assert hujjat_sorov_bormi("bob haqida") is True
 
     def test_ai_in_bot(self):
-        src = open("services/bot/main.py").read()
+        src = _read_bot_all()
         assert "ai_hujjat_savol" in src
         assert "ai_savol_kerakmi" in src
 
@@ -281,21 +294,21 @@ class TestSahifalash:
 
 class TestBotFormatlar:
     def test_bot_accepts_epub(self):
-        src = open("services/bot/main.py").read()
+        src = _read_bot_all()
         assert ".epub" in src
 
     def test_bot_accepts_pptx(self):
-        src = open("services/bot/main.py").read()
+        src = _read_bot_all()
         assert ".pptx" in src
 
     def test_bot_accepts_fb2(self):
-        src = open("services/bot/main.py").read()
+        src = _read_bot_all()
         assert ".fb2" in src
 
     def test_bot_accepts_md(self):
-        src = open("services/bot/main.py").read()
+        src = _read_bot_all()
         assert ".md" in src
 
     def test_bot_accepts_python(self):
-        src = open("services/bot/main.py").read()
+        src = _read_bot_all()
         assert ".py" in src

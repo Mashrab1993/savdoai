@@ -107,6 +107,18 @@ def _P() -> asyncpg.Pool:
 
 async def pool_init(dsn: str, min_size: int = 2, max_size: int = 20) -> None:
     global _pool
+    # Idempotent — mavjud pool sog'lom bo'lsa qayta yaratmaslik
+    if _pool is not None:
+        try:
+            async with _pool.acquire() as _tc:
+                await _tc.fetchval("SELECT 1")
+            log.debug("DB pool allaqachon mavjud — skip")
+            return
+        except Exception:
+            log.warning("DB pool buzilgan — qayta yaratilmoqda")
+            try: await _pool.close()
+            except Exception as _e: log.debug("Pool close: %s", _e)
+            _pool = None
     dsn = dsn.replace("postgresql+asyncpg://", "postgresql://")
     dsn = dsn.replace("postgres+asyncpg://",   "postgresql://")
     dsn = dsn.replace("postgres://",            "postgresql://")
@@ -656,8 +668,8 @@ async def kirim_saqlash(uid: int, t: dict) -> dict:
         from services.bot.bot_services.fuzzy_matcher import fuzzy_matcher
         stt_cache_tozala(uid)
         fuzzy_matcher.cache_tozala(uid)
-    except Exception:
-        pass
+    except Exception as _e:
+        log.debug("cache tozalash: %s", _e)
 
     return dict(kirim)
 
@@ -838,7 +850,7 @@ async def sessiya_ol(uid: int, sess_id: int) -> Optional[dict]:
             "klient":     sess_d.get("klient_ismi"),
             "tovarlar":   tovarlar,
             "jami_summa": float(sess_d.get("jami", 0) or 0),
-            "tolandan":   float(sess_d.get("tolangan", 0) or 0),
+            "tolangan":   float(sess_d.get("tolangan", 0) or 0),
             "qarz":       float(sess_d.get("qarz", 0) or 0),
         }
 

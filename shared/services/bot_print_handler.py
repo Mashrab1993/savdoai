@@ -30,8 +30,6 @@ def _telegram_print_landing_url(job_id: str, token: str, width: int) -> str:
 
 def _normalize_sale_dict(d: dict) -> dict:
     out = dict(d)
-    if "tolangan" not in out and "tolandan" in out:
-        out["tolangan"] = float(out.get("tolandan") or 0)
     out.setdefault("amal", "chiqim")
     return out
 

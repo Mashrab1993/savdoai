@@ -9,6 +9,30 @@ import pytest
 import ast
 
 
+# ═══ HELPER: bot manba fayllarini o'qish ═══
+# Modullashtirish tufayli funksiyalar main.py dan handlers/ ga ko'chirilgan.
+# Testlar BOT_SRC da (barcha bot fayllari birga) qidiradi.
+_BOT_DIR = os.path.join(os.path.dirname(__file__), '..', 'services', 'bot')
+
+def _read_bot_main():
+    """Faqat main.py manbasini o'qish."""
+    return open(os.path.join(_BOT_DIR, 'main.py')).read()
+
+def _read_bot_all():
+    """main.py + handlers/ + bot_helpers.py — barcha bot kodi."""
+    parts = []
+    for fname in ['main.py', 'bot_helpers.py']:
+        fpath = os.path.join(_BOT_DIR, fname)
+        if os.path.exists(fpath):
+            parts.append(open(fpath).read())
+    handlers_dir = os.path.join(_BOT_DIR, 'handlers')
+    if os.path.isdir(handlers_dir):
+        for fname in sorted(os.listdir(handlers_dir)):
+            if fname.endswith('.py'):
+                parts.append(open(os.path.join(handlers_dir, fname)).read())
+    return '\n'.join(parts)
+
+
 class TestBotImports:
     """Verify bot can be imported without errors."""
 
@@ -27,19 +51,19 @@ class TestBotImports:
 
     def test_bot_main_syntax(self):
         """bot/main.py has no syntax errors"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py')).read()
+        src = _read_bot_all()
         ast.parse(src)
 
     def test_bot_no_stale_imports(self):
         """bot/main.py has no stale utils.hisob imports"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py')).read()
+        src = _read_bot_all()
         assert 'from utils.hisob import' not in src
         assert 'import core.database' not in src
         assert 'from config import load_config' not in src
 
     def test_bot_datetime_pytz_imported(self):
         """bot/main.py imports datetime and pytz at module level"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py')).read()
+        src = _read_bot_all()
         top = src[:3000]  # top of file before first def
         assert 'import datetime' in top or 'from datetime import' in top
         assert 'import pytz' in top
@@ -254,13 +278,13 @@ class TestBotConfig:
 
     def test_scheduler_uses_config_fields(self):
         """Bot scheduler uses _CFG.kunlik_soat etc, not hardcoded hours"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py')).read()
+        src = _read_bot_all()
         assert '_CFG.kunlik_soat' in src, "Scheduler should use _CFG.kunlik_soat"
         assert '_CFG.haftalik_soat' in src
 
     def test_no_bot_raw_error_to_user(self):
         """Bot does not leak raw xato to users via f-string"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py')).read()
+        src = _read_bot_all()
         import re
         leaks = re.findall(r'f"[^"]*\{xato[^"]*\}"', src)
         assert not leaks, f"Raw error leaks: {leaks[:3]}"
@@ -344,16 +368,16 @@ class TestHealthCommand:
 
     def test_health_uses_datetime_datetime(self):
         """health_check uses datetime.datetime.now(), not datetime.now()"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py')).read()
+        src = _read_bot_all()
         idx = src.find('async def health_check')
-        fn  = src[idx:idx+800]
+        fn  = src[idx:idx+1200]
         # Must not call datetime.now() — should call datetime.datetime.now()
         assert 'datetime.datetime.now(' in fn, \
             "health_check uses bare datetime.now() — will fail at runtime"
 
     def test_bot_version_is_current(self):
         """bot __version__ is 23.0"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py')).read()
+        src = _read_bot_all()
         assert '__version__ = "25.3"' in src, "bot __version__ not updated to 23.0"
 
 
@@ -394,7 +418,7 @@ class TestStartupSafety:
 
     def test_boshlash_has_error_handling(self):
         """Bot boshlash() wraps DB init in try/except"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py')).read()
+        src = _read_bot_all()
         idx = src.find('async def boshlash(')
         fn  = src[idx:idx+1000]
         assert 'try:' in fn, "boshlash() has no try/except around DB init"
@@ -495,7 +519,7 @@ class TestPass3Fixes:
 
     def test_boshlash_passes_model_to_voice(self):
         """boshlash() passes gemini_model from config to voice service"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py')).read()
+        src = _read_bot_all()
         idx = src.find('ovoz_xizmat.ishga_tushir')
         call = src[idx:idx+100]
         assert 'gemini_model' in call, \
@@ -503,7 +527,7 @@ class TestPass3Fixes:
 
     def test_bot_banner_model_matches_config(self):
         """Bot banner Gemini version matches config default"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py')).read()
+        src = _read_bot_all()
         banner = src[:600]
         cfg_src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'config.py')).read()
         import re
@@ -516,7 +540,7 @@ class TestPass3Fixes:
 
     def test_tasdiq_cb_error_inside_except(self):
         """tasdiq_cb error message is inside except block, not after it"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py')).read()
+        src = _read_bot_all()
         idx = src.find('async def tasdiq_cb')
         fn = src[idx:]
         # Find the except block
@@ -536,7 +560,7 @@ class TestPass3Fixes:
 
     def test_ovoz_qabul_uses_tempfile(self):
         """ovoz_qabul writes audio to tempfile before STT"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py')).read()
+        src = _read_bot_all()
         idx = src.find('async def ovoz_qabul')
         fn = src[idx:idx+900]
         assert 'tempfile' in fn, "ovoz_qabul does not use tempfile"
@@ -646,7 +670,7 @@ class TestV21_3MergedModules:
 
     def test_bot_registers_photo_handler(self):
         """Bot main.py registers PHOTO handler"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py')).read()
+        src = _read_bot_all()
         assert 'filters.PHOTO' in src, "PHOTO handler not registered"
         assert 'rasm_xizmat' in src or 'rasm_handler' in src
 
@@ -680,7 +704,7 @@ class TestV21_3MergedModules:
 
     def test_bot_vision_init(self):
         """Bot initializes Vision AI in boshlash()"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py')).read()
+        src = _read_bot_all()
         assert 'vision_init' in src or 'vision.ishga_tushir' in src
 
     def test_kassa_no_float_in_db(self):
@@ -699,7 +723,7 @@ class TestTurboOptimizations:
         """Bot has _user_ol_kesh function for cached user lookups"""
         # Funksiya bot_helpers.py ga ko'chirildi, main.py import qiladi
         helpers = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'bot_helpers.py'), encoding='utf-8').read()
-        main_src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py'), encoding='utf-8').read()
+        main_src = _read_bot_all()
         assert 'async def _user_ol_kesh' in helpers
         assert '_user_ol_kesh' in main_src
 
@@ -727,7 +751,7 @@ class TestTurboOptimizations:
 
     def test_health_shows_pool_stats(self):
         """Bot health command shows DB pool metrics"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py')).read()
+        src = _read_bot_all()
         idx = src.find('async def health_check')
         fn = src[idx:idx+800]
         assert 'pool_health' in fn, "health_check doesn't show pool stats"
@@ -741,23 +765,23 @@ class TestTurboOptimizations:
 
     def test_cache_invalidation_on_user_change(self):
         """Bot invalidates cache when user data changes"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py')).read()
+        src = _read_bot_all()
         assert '_kesh_tozala(f"user:{uid}")' in src, \
             "No cache invalidation when user data changes"
 
     def test_bot_menu_has_kassa(self):
         """Bot main menu has kassa button"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py')).read()
+        src = _read_bot_all()
         assert 'm:kassa' in src, "Main menu missing kassa button"
 
     def test_bot_menu_has_rasm(self):
         """Bot main menu has rasm OCR button"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py')).read()
+        src = _read_bot_all()
         assert 'm:rasm' in src, "Main menu missing rasm button"
 
     def test_kassa_handler_in_menyu(self):
         """menyu_cb handles kassa action"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py')).read()
+        src = _read_bot_all()
         idx = src.find('async def menyu_cb')
         fn_end = src.find("\nasync def ", idx + 10)
         fn = src[idx:fn_end] if fn_end > idx else src[idx:]
@@ -872,7 +896,7 @@ class TestDualBrainRouter:
 
     def test_bot_wires_router_in_boshlash(self):
         """Bot boshlash() initializes Dual-Brain router"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py')).read()
+        src = _read_bot_all()
         assert 'router_init' in src
         assert 'Dual-Brain' in src or 'MoE' in src
 
@@ -995,7 +1019,7 @@ class TestBotNewCommands:
 
     def test_cmd_kassa_exists(self):
         """cmd_kassa function exists with faol_tekshir"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py')).read()
+        src = _read_bot_all()
         assert 'async def cmd_kassa' in src
         idx = src.find('async def cmd_kassa')
         fn = src[idx:idx+600]
@@ -1004,7 +1028,7 @@ class TestBotNewCommands:
 
     def test_cmd_faktura_exists(self):
         """cmd_faktura function exists with faol_tekshir"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py')).read()
+        src = _read_bot_all()
         assert 'async def cmd_faktura' in src
         idx = src.find('async def cmd_faktura')
         fn = src[idx:idx+400]
@@ -1012,23 +1036,23 @@ class TestBotNewCommands:
 
     def test_cmd_kassa_registered(self):
         """cmd_kassa is registered as CommandHandler"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py')).read()
+        src = _read_bot_all()
         assert 'CommandHandler("kassa"' in src, "cmd_kassa not registered"
 
     def test_cmd_faktura_registered(self):
         """cmd_faktura is registered as CommandHandler"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py')).read()
+        src = _read_bot_all()
         assert 'CommandHandler("faktura"' in src, "cmd_faktura not registered"
 
     def test_faktura_cb_registered(self):
         """faktura callback handler registered"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py')).read()
+        src = _read_bot_all()
         assert 'faktura_cb' in src
         assert 'pattern=r"^fkt:"' in src, "faktura callback pattern missing"
 
     def test_bot_command_list_has_kassa_and_faktura(self):
         """BotCommand list includes kassa and faktura"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py')).read()
+        src = _read_bot_all()
         assert 'BotCommand("kassa"' in src, "kassa missing from command list"
         assert 'BotCommand("faktura"' in src, "faktura missing from command list"
 
@@ -1196,12 +1220,12 @@ class TestSafetyGuards:
 
     def test_bot_uses_duplicate_guard(self):
         """Bot matn_qabul uses duplicate protection"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py')).read()
+        src = _read_bot_all()
         assert 'is_duplicate_message' in src
 
     def test_bot_uses_pipeline(self):
         """Bot _qayta_ishlash uses pipeline.create_draft"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py')).read()
+        src = _read_bot_all()
         assert 'from shared.services.pipeline import create_draft' in src
         assert 'draft = create_draft(' in src or 'create_draft(' in src
 
@@ -1216,28 +1240,28 @@ class TestAuditWiring:
 
     def test_sotuv_has_audit(self):
         """sotuv save triggers audit_yoz"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py')).read()
+        src = _read_bot_all()
         idx = src.find('sotuv=await db.sotuv_saqlash')
         block = src[idx:idx+500]
         assert '_audit_sotuv' in block or 'audit_yoz' in block, "Sotuv save missing audit trail"
 
     def test_kirim_has_audit(self):
         """kirim save triggers audit_yoz"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py')).read()
+        src = _read_bot_all()
         idx = src.find('await db.kirim_saqlash')
         block = src[idx:idx+500]
         assert '_audit_kirim' in block or 'audit_yoz' in block, "Kirim save missing audit trail"
 
     def test_qaytarish_has_audit(self):
         """qaytarish save triggers audit_yoz"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py')).read()
+        src = _read_bot_all()
         idx = src.find('qaytarish_saqlash')
         block = src[idx:idx+500]
         assert '_audit_qaytarish' in block or 'audit_yoz' in block, "Qaytarish missing audit trail"
 
     def test_qarz_tolash_has_audit(self):
         """qarz_tolash triggers audit_yoz"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py')).read()
+        src = _read_bot_all()
         idx = src.find('await db.qarz_tolash')
         block = src[idx:idx+500]
         assert '_audit_qarz_tolash' in block or 'audit_yoz' in block, "Qarz tolash missing audit trail"
@@ -1248,7 +1272,7 @@ class TestDebtLimitWiring:
 
     def test_sotuv_checks_debt_limit(self):
         """Sotuv flow checks debt limit before save"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py')).read()
+        src = _read_bot_all()
         idx = src.find('elif amal=="chiqim"')
         end = src.find('elif amal=="qaytarish"', idx)
         flow = src[idx:end]
@@ -1256,7 +1280,7 @@ class TestDebtLimitWiring:
 
     def test_voice_has_duplicate_guard(self):
         """Voice handler has duplicate guard"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py')).read()
+        src = _read_bot_all()
         idx = src.find('async def ovoz_qabul')
         fn = src[idx:idx+400]
         assert 'is_duplicate_message' in fn, "Voice missing duplicate guard"
@@ -1301,7 +1325,7 @@ class TestVoiceCommands:
             assert word in src, f"Missing pattern: {word}"
 
     def test_bot_uses_voice_commands(self):
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py')).read()
+        src = _read_bot_all()
         assert 'detect_voice_command' in src
         assert 'is_quick_command' in src
         assert '_ovoz_buyruq_bajar' in src
@@ -1335,7 +1359,7 @@ class TestPrintStatus:
         assert 'original_job_id' in src
 
     def test_bot_print_commands(self):
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py')).read()
+        src = _read_bot_all()
         assert 'format_receipt_58mm' in src or 'format_receipt_80mm' in src
         assert 'create_print_job' in src
         assert 'request_reprint' in src
@@ -1360,7 +1384,7 @@ class TestV214Upgrades:
 
     def test_corrected_data_saved_not_raw_ai(self):
         """Pipeline saves corrected draft, not raw AI data"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py')).read()
+        src = _read_bot_all()
         assert 'corrected_natija' in src, "Missing corrected_natija variable"
         assert 'draft.corrected' in src, "Not using draft.corrected"
         assert 'kutilayotgan"] = corrected_natija' in src, "Not saving corrected data"
@@ -1377,25 +1401,25 @@ class TestV214Upgrades:
 
     def test_hujjat_handler_exists(self):
         """Bot has document/Excel handler"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py')).read()
+        src = _read_bot_all()
         assert 'async def hujjat_qabul' in src
         assert 'Document.ALL' in src or 'hujjat_qabul' in src
 
     def test_cmd_chiqim_exists(self):
         """cmd_chiqim (expense) command exists"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py')).read()
+        src = _read_bot_all()
         assert 'async def cmd_chiqim' in src
         assert 'CommandHandler("chiqim"' in src
 
     def test_cmd_tovar_exists(self):
         """cmd_tovar (single product) command exists"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py')).read()
+        src = _read_bot_all()
         assert 'async def cmd_tovar' in src
         assert 'CommandHandler("tovar"' in src
 
     def test_no_float_in_qoldiq_check(self):
         """Stock check uses Decimal, not float"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py')).read()
+        src = _read_bot_all()
         idx = src.find('qolgan_q is not None')
         if idx >= 0:
             line = src[idx:idx+200]
@@ -1449,14 +1473,14 @@ class TestSAPGradeLedger:
         assert 'hujjat_versiyalar' in src
 
     def test_bot_uses_ledger(self):
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py')).read()
+        src = _read_bot_all()
         assert 'jurnal_saqlash' in src
         assert 'sotuv_jurnali' in src
         assert 'kirim_jurnali' in src
         assert 'qarz_tolash_jurnali' in src
 
     def test_version_21_5(self):
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py')).read()
+        src = _read_bot_all()
         assert '__version__ = "25.3"' in src
 
 
@@ -1489,12 +1513,12 @@ class TestV215Upgrades:
         assert '/api/v1/ledger/hisob/' in src
 
     def test_inline_query(self):
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py')).read()
+        src = _read_bot_all()
         assert 'InlineQueryHandler' in src
         assert 'inline_qidirish' in src
 
     def test_audit_helpers(self):
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py')).read()
+        src = _read_bot_all()
         for fn in ['_audit_sotuv', '_audit_kirim', '_audit_qaytarish', '_audit_qarz_tolash']:
             assert f'async def {fn}' in src, f"Missing helper: {fn}"
 
@@ -1596,7 +1620,7 @@ class TestV253SecurityFixes:
 
     def test_ovoz_qabul_routes_long_audio(self):
         """ovoz_qabul routes 30s+ audio to VAD+chunking pipeline."""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py')).read()
+        src = _read_bot_all()
         idx = src.find('async def ovoz_qabul')
         fn = src[idx:src.find('\nasync def ', idx + 10)]
         assert 'voice.duration' in fn or 'voice_dur' in fn, \
@@ -1637,7 +1661,7 @@ class TestV253SecurityFixes:
 
     def test_seed_called_on_registration(self):
         """Bot registration (h_telefon) calls seed_tovarlar."""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py')).read()
+        src = _read_bot_all()
         idx = src.find('async def h_telefon')
         fn = src[idx:src.find('\nasync def ', idx + 10)]
         assert 'seed_tovarlar' in fn, "h_telefon does not call seed_tovarlar"
@@ -1649,7 +1673,7 @@ class TestV253SecurityFixes:
 
     def test_low_confidence_not_rejected(self):
         """Low confidence STT results are passed to Claude, not rejected."""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'main.py')).read()
+        src = _read_bot_all()
         idx = src.find('async def ovoz_qabul')
         fn = src[idx:src.find('\nasync def ', idx + 10)]
         assert '"low"' not in fn or 'return' not in fn[fn.find('"low"'):fn.find('"low"')+100], \

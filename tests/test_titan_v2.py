@@ -3130,7 +3130,20 @@ class TestFakturaEndpoints:
 class TestBotUserIdDefense:
     """Bot querylarida user_id filtr"""
 
-    _SRC = (REPO / "services" / "bot" / "main.py").read_text(encoding="utf-8")
+    @staticmethod
+    def _all_bot_src():
+        import glob
+        parts = []
+        for pat in ['services/bot/main.py', 'services/bot/handlers/*.py']:
+            for fp in sorted(glob.glob(str(REPO / pat))):
+                parts.append(Path(fp).read_text(encoding="utf-8"))
+        return '\n'.join(parts)
+
+    _SRC = None
+
+    @classmethod
+    def setup_class(cls):
+        cls._SRC = cls._all_bot_src()
 
     def test_kassa_bugun_has_user_id(self):
         # kassa_operatsiyalar bugun queryda user_id bo'lishi kerak

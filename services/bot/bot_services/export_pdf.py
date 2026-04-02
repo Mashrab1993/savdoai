@@ -119,7 +119,7 @@ def sotuv_pdf(data: dict, dokon_nomi: str) -> bytes:
 
     j  = float(data.get("jami_summa", 0))
     q  = float(data.get("qarz", 0))
-    tl = float(data.get("tolandan") or data.get("tolangan") or j)
+    tl = float(data.get("tolangan") or j)
 
     yig_im = [[Paragraph("<b>JAMI:</b>", s["Qalin"]),
                Paragraph(f"<b>{j:,.0f} so'm</b>", s["Qalin"])]]

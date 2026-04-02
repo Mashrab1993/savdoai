@@ -29,6 +29,7 @@ _semaphore = None
 # STT uchun foydalanuvchi bo'yicha prompt keshi (RLS bilan); global pool ishlatilmaydi.
 _STT_USER_PROMPT_CACHE: dict[int, tuple[float, str]] = {}
 _PROMPT_CACHE_TTL_S = 60  # 1 daqiqa — yangi tovar tez ko'rinadi
+_PROMPT_CACHE_MAX = 5000  # xotira himoyasi
 
 
 def stt_cache_tozala(uid: int) -> None:
@@ -155,6 +156,12 @@ async def resolve_system_prompt_for_user(uid: int) -> str:
         full = STT_SYSTEM_PROMPT + "\n" + extra if extra else STT_SYSTEM_PROMPT
         # Faqat muvaffaqiyatli natijani cache la (bo'sh = DB xato, qayta urinish kerak)
         if extra:
+            # Xotira tozalash — ko'p yozuv bo'lsa eskilarini o'chirish
+            if len(_STT_USER_PROMPT_CACHE) > _PROMPT_CACHE_MAX:
+                expired = [k for k, (t, _) in _STT_USER_PROMPT_CACHE.items()
+                           if now - t > _PROMPT_CACHE_TTL_S]
+                for k in expired:
+                    _STT_USER_PROMPT_CACHE.pop(k, None)
             _STT_USER_PROMPT_CACHE[uid] = (now, full)
             log.debug("STT system prompt uid=%s yangilandi (%d belgi)", uid, len(extra))
         return full

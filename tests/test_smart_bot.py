@@ -5,6 +5,19 @@
 ╚══════════════════════════════════════════════════════════════╝
 """
 import sys, os, ast
+
+# ═══ HELPER: bot kodi modullashtirish uchun ═══
+def _read_bot_all():
+    """main.py + handlers/ — barcha bot kodi."""
+    import glob
+    parts = []
+    for pat in ['services/bot/main.py', 'services/bot/bot_helpers.py',
+                'services/bot/handlers/*.py']:
+        for fp in sorted(glob.glob(pat)):
+            parts.append(open(fp).read())
+    return '\n'.join(parts)
+
+
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 
@@ -79,7 +92,7 @@ class TestQarzEslatma:
         assert t == ""
 
     def test_auto_qarz_upgraded(self):
-        src = open("services/bot/main.py", encoding="utf-8").read() + open("services/bot/handlers/jobs.py", encoding="utf-8").read()
+        src = _read_bot_all() + open("services/bot/handlers/jobs.py", encoding="utf-8").read()
         assert "qarz_eslatma_royxat" in src
         assert "MUDDATI O'TGAN" in src or "muddati_otgan" in src
 
@@ -124,7 +137,7 @@ class TestNarxTavsiya:
         assert smart_buyruq_aniqla("Arielni qanchadan sotay") == "narx_tavsiya"
 
     def test_narx_in_bot(self):
-        src = open("services/bot/main.py").read()
+        src = _read_bot_all()
         assert "narx_tavsiya" in src
 
 
@@ -197,7 +210,7 @@ class TestKlientReyting:
         assert smart_buyruq_aniqla("klient reyting ko'rsat") == "klient_reyting"
 
     def test_reyting_in_bot(self):
-        src = open("services/bot/main.py").read()
+        src = _read_bot_all()
         assert "klient_reyting" in src
 
 
@@ -234,7 +247,7 @@ class TestKunlikYakuniyPro:
         assert "KUNLIK YAKUNIY" in t
 
     def test_auto_upgraded(self):
-        src = open("services/bot/main.py", encoding="utf-8").read() + open("services/bot/handlers/jobs.py", encoding="utf-8").read()
+        src = _read_bot_all() + open("services/bot/handlers/jobs.py", encoding="utf-8").read()
         assert "kunlik_yakuniy_pro" in src
 
     def test_parallel_in_pro(self):
@@ -287,7 +300,7 @@ class TestHaftalikTrend:
         assert smart_buyruq_aniqla("qaysi tovar o'sgan") == "haftalik_trend"
 
     def test_auto_haftalik_upgraded(self):
-        src = open("services/bot/main.py").read()
+        src = _read_bot_all()
         assert "haftalik_trend" in src
 
 

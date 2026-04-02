@@ -39,7 +39,14 @@ def excel_toliq_oqi(data: bytes) -> dict:
 
         for sn in wb.sheetnames:
             ws = wb[sn]
-            rows = list(ws.iter_rows(values_only=True))
+            # Xotira himoyasi — 100K qatordan ortiq bo'lsa cheklash
+            MAX_ROWS = 100_000
+            rows = []
+            for i, row in enumerate(ws.iter_rows(values_only=True)):
+                if i >= MAX_ROWS:
+                    log.warning("Excel sheet '%s' %d+ qator — %d da to'xtatildi", sn, ws.max_row, MAX_ROWS)
+                    break
+                rows.append(row)
             if len(rows) < 3:
                 continue
 
@@ -81,7 +88,7 @@ def excel_toliq_oqi(data: bytes) -> dict:
                             # Telefon raqamlarni filtrlash (9+ raqamli)
                             if v != 0 and abs(v) < 100_000_000_000 and len(str(cell).replace(' ','').replace(',','').replace('.','')) < 12:
                                 sheet_raqamlar.append(v)
-                        except Exception: pass
+                        except Exception as _e: log.debug("silent: %s", _e)
 
                 sheet_data = {
                     "nom": sn, "qator_soni": len(rows),

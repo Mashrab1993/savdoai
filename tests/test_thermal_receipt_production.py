@@ -134,7 +134,12 @@ class TestMiniPrinterPathUsesThermalModule:
         assert "chek_pdf" not in src
 
     def test_main_chek_flow_source(self):
-        src = (ROOT / "services" / "bot" / "main.py").read_text(encoding="utf-8")
+        import glob
+        parts = []
+        for pat in ['services/bot/main.py', 'services/bot/handlers/*.py']:
+            for fp in sorted(glob.glob(str(ROOT / pat))):
+                parts.append(Path(fp).read_text(encoding="utf-8"))
+        src = '\n'.join(parts)
         assert "thermal_txt_and_payload" in src
         assert "pdf_xizmat.chek_pdf" in src
 

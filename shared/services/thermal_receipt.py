@@ -211,7 +211,7 @@ def _format_thermal_receipt_lines(
 
     qarz = float(data.get("qarz") or 0)
     jami_s_calc = float(data.get("jami_summa") or 0)
-    tol = float(data.get("tolangan") or data.get("tolandan") or 0)
+    tol = float(data.get("tolangan") or 0)
     if tol <= 0 and qarz > 0:
         tol = max(jami_s_calc - qarz, 0)
     elif tol <= 0:

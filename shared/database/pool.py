@@ -66,6 +66,23 @@ async def pool_init(dsn: str,
     """
     global _pool
 
+    # Idempotent — agar pool allaqachon bor va ishlaganda, qayta yaratmaslik
+    if _pool is not None:
+        try:
+            # Qisqa health check
+            async with _pool.acquire() as _tc:
+                await _tc.fetchval("SELECT 1")
+            log.debug("DB pool allaqachon mavjud va sog'lom — skip")
+            return
+        except Exception:
+            # Pool buzilgan — yopib qayta yaratish
+            log.warning("DB pool buzilgan — qayta yaratilmoqda")
+            try:
+                await _pool.close()
+            except Exception:
+                pass
+            _pool = None
+
     # DSN normalizatsiya
     for prefix in ("postgresql+asyncpg://", "postgres+asyncpg://", "postgres://"):
         if dsn.startswith(prefix):

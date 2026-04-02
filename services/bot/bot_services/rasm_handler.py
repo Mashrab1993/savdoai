@@ -13,6 +13,26 @@ log = logging.getLogger(__name__)
 # Ko'p rasm uchun — 15 soniya ichida kelgan rasmlar 1 guruhga
 _MULTI_RASM: dict[int, dict] = {}
 _MULTI_TIMEOUT = 15  # sekund
+_MULTI_MAX_USERS = 500  # xotira himoyasi
+_MULTI_EXPIRE = 120  # 2 daqiqadan eski yozuvlarni o'chirish
+
+
+def _multi_rasm_tozala():
+    """Eski va ko'p yozuvlarni tozalash — rasm bytes xotirada qolmasin."""
+    if len(_MULTI_RASM) <= _MULTI_MAX_USERS:
+        return
+    import time
+    now = time.time()
+    expired = [uid for uid, v in _MULTI_RASM.items()
+               if now - v.get("vaqt", 0) > _MULTI_EXPIRE]
+    for uid in expired:
+        _MULTI_RASM.pop(uid, None)
+    # Hali ham ko'p bo'lsa — eng eskilarini o'chirish
+    if len(_MULTI_RASM) > _MULTI_MAX_USERS:
+        sorted_keys = sorted(_MULTI_RASM.keys(),
+                             key=lambda k: _MULTI_RASM[k].get("vaqt", 0))
+        for k in sorted_keys[:len(_MULTI_RASM) - _MULTI_MAX_USERS]:
+            _MULTI_RASM.pop(k, None)
 
 
 def _tur_aniqla_captiondan(caption: str) -> str:
@@ -75,6 +95,7 @@ async def rasm_qabul(update, ctx) -> None:
         rasm_bytes = bytes(await fayl.download_as_bytearray())
 
         # Multi-rasm navbatga qo'yish
+        _multi_rasm_tozala()
         _MULTI_RASM[uid] = {"rasmlar": [rasm_bytes], "vaqt": now, "tur": tur_hint}
 
         # Vision AI PRO

@@ -409,7 +409,7 @@ def uchala_format(data: dict) -> dict[str, bytes]:
             "tovarlar":   data.get("tovarlar", []),
             "jami_summa": data.get("jami_summa", 0),
             "qarz":       data.get("qarz", 0),
-            "tolandan":   data.get("tolangan", 0),
+            "tolangan":   data.get("tolangan", 0),
             "manba":      None,
         }
         natija["pdf"] = sotuv_pdf(pdf_data, data.get("dokon_nomi", "Mashrab Moliya"))

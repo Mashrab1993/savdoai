@@ -5,6 +5,19 @@
 ╚══════════════════════════════════════════════════════════════╝
 """
 import sys, os, ast
+
+# ═══ HELPER: bot kodi modullashtirish uchun ═══
+def _read_bot_all():
+    """main.py + handlers/ — barcha bot kodi."""
+    import glob
+    parts = []
+    for pat in ['services/bot/main.py', 'services/bot/bot_helpers.py',
+                'services/bot/handlers/*.py']:
+        for fp in sorted(glob.glob(pat)):
+            parts.append(open(fp).read())
+    return '\n'.join(parts)
+
+
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 
@@ -281,25 +294,25 @@ class TestAdvancedBuyruq:
 # ═══════ BOT INTEGRATSIYA ═══════
 class TestAdvancedBotIntegration:
     def test_advanced_in_main(self):
-        src = open("services/bot/main.py").read()
+        src = _read_bot_all()
         assert "advanced_features" in src
         assert "advanced_buyruq_aniqla" in src
 
     def test_abc_in_main(self):
-        src = open("services/bot/main.py").read()
+        src = _read_bot_all()
         assert "abc_tahlil" in src
         assert "tovar_abc" in src
 
     def test_shablon_in_main(self):
-        src = open("services/bot/main.py").read()
+        src = _read_bot_all()
         assert "shablon_olish" in src
 
     def test_qoldiq_in_main(self):
-        src = open("services/bot/main.py").read()
+        src = _read_bot_all()
         assert "qoldiq_tuzatish" in src and "qoldiq_tuzatish_ajrat" in src
 
     def test_tabiiy_savol_in_main(self):
-        src = open("services/bot/main.py").read()
+        src = _read_bot_all()
         assert "tabiiy_savol_javob" in src
 
 
@@ -454,21 +467,21 @@ class TestIliqJavoblar:
 
 class TestSuhbatBotIntegration:
     def test_suhbat_in_main(self):
-        src = open("services/bot/main.py").read()
+        src = _read_bot_all()
         assert "suhbat_turini_aniqla" in src
         assert "suhbat_javob" in src
 
     def test_iliq_tushunilmadi(self):
-        src = open("services/bot/main.py").read()
+        src = _read_bot_all()
         # Eski robot xabar yo'q bo'lishi kerak
         assert "❓ *Tushunilmadi.* Qaytadan yuboring" not in src
 
     def test_hisobot_kirish_in_main(self):
-        src = open("services/bot/main.py").read()
+        src = _read_bot_all()
         assert "hisobot_kirish" in src
 
     def test_kechki_in_auto(self):
-        src = open("services/bot/main.py", encoding="utf-8").read() + open("services/bot/handlers/jobs.py", encoding="utf-8").read()
+        src = _read_bot_all() + open("services/bot/handlers/jobs.py", encoding="utf-8").read()
         assert "kechki_xayrlashish" in src
 
 
@@ -602,7 +615,7 @@ class TestEkspertSorov:
 
 class TestMutaxassisBotIntegration:
     def test_in_main(self):
-        src = open("services/bot/main.py").read()
+        src = _read_bot_all()
         assert "mutaxassis" in src
         assert "tovar_ekspert_tahlil" in src
         assert "klient_ekspert_tahlil" in src
@@ -782,12 +795,12 @@ class TestRasmHandlerPro:
 
 class TestRasmBotIntegration:
     def test_tahlil_cmd_registered(self):
-        src = open("services/bot/main.py").read()
+        src = _read_bot_all()
         assert "tahlil" in src
         assert "kop_rasm_tahlil_cmd" in src
 
     def test_rasm_amal_cb_registered(self):
-        src = open("services/bot/main.py").read()
+        src = _read_bot_all()
         assert "rasm_amal_cb" in src
         assert "rasm:(kirim|sotuv)" in src
 
@@ -803,18 +816,18 @@ class TestRasmBotIntegration:
 
 class TestKontekstIntegration:
     def test_kontekst_in_bot(self):
-        src = open("services/bot/main.py").read()
+        src = _read_bot_all()
         assert "kontekst_bormi" in src
         assert "kontekst_tozala" in src
 
     def test_oxirgi_klient_saved(self):
-        src = open("services/bot/main.py").read()
+        src = _read_bot_all()
         assert "_oxirgi_klient" in src
 
 
 class TestTuzatishIntegration:
     def test_tuzatish_in_bot(self):
-        src = open("services/bot/main.py").read()
+        src = _read_bot_all()
         assert "tuzatish_bormi" in src
         assert "tuzatish_ajrat" in src
         assert "TUZATILDI" in src
@@ -828,29 +841,29 @@ class TestTuzatishIntegration:
 
 class TestZararRealtimeIntegration:
     def test_zarar_in_draft(self):
-        src = open("services/bot/main.py").read()
+        src = _read_bot_all()
         assert "zarar_tekshir" in src
         assert "zarar_ogohlantirish_matn" in src
 
 
 class TestTezkorTugmalarIntegration:
     def test_cmd_tez(self):
-        src = open("services/bot/main.py").read()
+        src = _read_bot_all()
         assert "cmd_tez" in src
         assert "tezkor_tugmalar" in src
 
     def test_tez_registered(self):
-        src = open("services/bot/main.py").read()
+        src = _read_bot_all()
         assert '"tez"' in src
 
     def test_tezkor_cb(self):
-        src = open("services/bot/main.py").read()
+        src = _read_bot_all()
         assert "_tezkor_cb" in src
         assert "tez:" in src
 
 
 class TestGuruhliIntegration:
     def test_cmd_guruh(self):
-        src = open("services/bot/main.py").read()
+        src = _read_bot_all()
         assert "cmd_guruh" in src
         assert '"guruh"' in src

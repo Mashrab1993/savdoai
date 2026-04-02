@@ -411,7 +411,7 @@ def _parse(xom: str) -> dict:
 
     qarz     = data.get("qarz",     0) or 0
     tolangan = (
-        data.get("tolandan") or data.get("tolangan") or
+        data.get("tolangan") or
         max(data["jami_summa"] - qarz, 0)
     )
     data["qarz"]     = max(qarz,     0)

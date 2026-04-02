@@ -28,19 +28,9 @@ class Config:
 
     # ── Railway / Webhook ─────────────────────────────────────────────
     # Bot long-polling rejimida ishlaydi (DROP_PENDING env bilan boshqarish).
-    # Webhook uchun qo'shimcha kod kerak (hozircha ISHLATILMAYDI).
-    webhook_url:   str = ""    # UNUSED: bot polling uses run_polling()
-    webhook_port:  int = 8443  # UNUSED
-    port:          int = 8080  # UNUSED: Railway $PORT bilan boshqaradi
-
     # ── DB pool ───────────────────────────────────────────
     db_min:        int = 2
     db_max:        int = 20
-    db_timeout:    int = 60   # UNUSED: asyncpg uses default timeouts
-
-    # ── AI ─────────────────────────────────────────────────────────────
-    ai_retries:    int = 3   # UNUSED: bot_services/analyst reads AI_RETRIES env
-    ai_timeout:    int = 30  # UNUSED: bot_services/analyst reads AI_TIMEOUT env
 
     # ── Avtomatik hisobot (soat, O'zbekiston vaqti) ───────
     kunlik_soat:   int = 22
@@ -50,7 +40,6 @@ class Config:
 
     # ── Boshqa ────────────────────────────────────────────
     timezone:      str = "Asia/Tashkent"
-    max_retries:   int = 3    # UNUSED: retry logic uses task-specific values
 
     def is_admin(self, uid: int) -> bool:
         return uid in self.admin_ids
@@ -97,14 +86,8 @@ def config_init() -> Config:
         gemini_key    = gemini_key,
         jwt_secret    = os.getenv("JWT_SECRET", ""),
         admin_ids     = admin_ids,
-        webhook_url   = os.getenv("WEBHOOK_URL", ""),
-        webhook_port  = int(os.getenv("WEBHOOK_PORT", "8443")),
-        port          = int(os.getenv("PORT", "8080")),
         db_min        = int(os.getenv("DB_MIN", "2")),
         db_max        = int(os.getenv("DB_MAX", "20")),
-        db_timeout    = int(os.getenv("DB_TIMEOUT", "60")),
-        ai_retries    = int(os.getenv("AI_RETRIES", "3")),
-        ai_timeout    = int(os.getenv("AI_TIMEOUT", "30")),
         kunlik_soat   = int(os.getenv("KUNLIK_SOAT",  "22")),
         haftalik_soat = int(os.getenv("HAFTALIK_SOAT","8")),
         qarz_soat     = int(os.getenv("QARZ_SOAT",    "10")),

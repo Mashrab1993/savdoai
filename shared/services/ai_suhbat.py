@@ -18,6 +18,19 @@ import pytz
 log = logging.getLogger(__name__)
 TZ = pytz.timezone("Asia/Tashkent")
 
+# ═══ SINGLETON CLIENT — har safar yangi yaratmaslik ═══
+_suhbat_client = None
+
+def _get_suhbat_client():
+    global _suhbat_client
+    if _suhbat_client is None:
+        import anthropic
+        api_key = os.getenv("ANTHROPIC_API_KEY", "")
+        if not api_key:
+            return None
+        _suhbat_client = anthropic.AsyncAnthropic(api_key=api_key)
+    return _suhbat_client
+
 _TIZIM_PROMPT = """Sen MASHRAB MOLIYA savdo botining AI yordamchisisan.
 Sening isming Mashrab Moliya. Sen O'zbekistondagi ulgurji/chakana savdo sohasida mutaxassissan.
 
@@ -46,14 +59,11 @@ Sen do'konchining YORDAMCHISI va MASLAHATCHISISSAN."""
 
 async def ai_suhbat(matn: str, uid: int, ism: str = "", db_kontekst: str = "") -> str:
     """Claude Sonnet bilan INSON kabi suhbat."""
-    import anthropic
-    
-    api_key = os.getenv("ANTHROPIC_API_KEY", "")
-    if not api_key:
+    client = _get_suhbat_client()
+    if not client:
         return _oddiy_javob(matn, ism)
     
     try:
-        client = anthropic.AsyncAnthropic(api_key=api_key)
         
         # Vaqtga qarab kontekst
         soat = datetime.now(TZ).hour

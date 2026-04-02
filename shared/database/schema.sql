@@ -81,7 +81,7 @@ CREATE TABLE IF NOT EXISTS klientlar (
     jami_sotib      DECIMAL(18,2) NOT NULL DEFAULT 0,
     yaratilgan      TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
-CREATE INDEX IF NOT EXISTS idx_kl_uid_ism ON klientlar(user_id, lower(ism));
+CREATE UNIQUE INDEX IF NOT EXISTS idx_kl_uid_ism ON klientlar(user_id, lower(ism));
 CREATE INDEX IF NOT EXISTS idx_kl_uid_tel ON klientlar(user_id, telefon) WHERE telefon IS NOT NULL;
 SELECT enable_rls('klientlar');
 
@@ -226,6 +226,7 @@ CREATE TABLE IF NOT EXISTS audit_log (
     sana        TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 CREATE INDEX IF NOT EXISTS idx_audit_uid_sana ON audit_log(user_id, sana DESC);
+SELECT enable_rls('audit_log');
 
 -- ────────────────────────────────────────────────────────────────────
 -- 13. COGNITIVE TASKS (Worker queue)
@@ -388,6 +389,7 @@ CREATE INDEX IF NOT EXISTS idx_kassa_user   ON kassa_operatsiyalar(user_id);
 CREATE INDEX IF NOT EXISTS idx_kassa_tur    ON kassa_operatsiyalar(tur);
 CREATE INDEX IF NOT EXISTS idx_kassa_usul   ON kassa_operatsiyalar(usul);
 CREATE INDEX IF NOT EXISTS idx_kassa_sana   ON kassa_operatsiyalar(yaratilgan DESC);
+SELECT enable_rls('kassa_operatsiyalar');
 
 ALTER TABLE kassa_operatsiyalar ENABLE ROW LEVEL SECURITY;
 CREATE POLICY kassa_isolation ON kassa_operatsiyalar
@@ -423,6 +425,7 @@ CREATE INDEX IF NOT EXISTS idx_faktura_user ON fakturalar(user_id);
 ALTER TABLE fakturalar ENABLE ROW LEVEL SECURITY;
 CREATE POLICY faktura_isolation ON fakturalar
     USING (user_id = current_uid());
+SELECT enable_rls('fakturalar');
 
 -- ════════════════════════════════════════════════════════════════
 --  v21.5 SAP-GRADE: DOUBLE-ENTRY LEDGER + IDEMPOTENCY
@@ -453,6 +456,7 @@ DO $$ BEGIN
     CREATE POLICY jurnal_isolation ON jurnal_yozuvlar USING (user_id = current_uid());
 EXCEPTION WHEN duplicate_object THEN NULL;
 END $$;
+SELECT enable_rls('jurnal_yozuvlar');
 
 -- Jurnal qatorlar (debit/credit)
 CREATE TABLE IF NOT EXISTS jurnal_qatorlar (
@@ -500,6 +504,7 @@ CREATE TABLE IF NOT EXISTS narx_guruhlari (
     yaratilgan  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     UNIQUE(user_id, nomi)
 );
+SELECT enable_rls('narx_guruhlari');
 
 -- 2. Guruh narxlari (har guruh uchun har tovarning narxi)
 CREATE TABLE IF NOT EXISTS guruh_narxlar (
@@ -511,6 +516,7 @@ CREATE TABLE IF NOT EXISTS guruh_narxlar (
     yangilangan TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     UNIQUE(guruh_id, tovar_id)
 );
+SELECT enable_rls('guruh_narxlar');
 
 -- 3. Klient shaxsiy narxlari (eng yuqori prioritet)
 CREATE TABLE IF NOT EXISTS klient_narxlar (
@@ -522,6 +528,7 @@ CREATE TABLE IF NOT EXISTS klient_narxlar (
     yangilangan TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     UNIQUE(klient_id, tovar_id)
 );
+SELECT enable_rls('klient_narxlar');
 
 -- 4. Klientlar jadvaliga guruh qo'shish
 ALTER TABLE klientlar ADD COLUMN IF NOT EXISTS narx_guruh_id BIGINT REFERENCES narx_guruhlari(id);
@@ -567,6 +574,7 @@ CREATE TABLE IF NOT EXISTS shogirdlar (
     yaratilgan      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     UNIQUE(admin_uid, telegram_uid)
 );
+SELECT enable_rls('shogirdlar');
 
 -- 2. Xarajat kategoriyalari
 CREATE TABLE IF NOT EXISTS xarajat_kategoriyalar (
@@ -668,3 +676,9 @@ CREATE TABLE IF NOT EXISTS savat_tovarlar (
 CREATE INDEX IF NOT EXISTS idx_st_savat ON savat_tovarlar(savat_id);
 CREATE INDEX IF NOT EXISTS idx_st_uid ON savat_tovarlar(user_id);
 SELECT enable_rls('savat_tovarlar');
+
+-- v25.3.1 qo'shimcha RLS
+SELECT enable_rls('vision_log');
+SELECT enable_rls('cognitive_tasks');
+SELECT enable_rls('hujjat_versiyalar');
+SELECT enable_rls('xarajatlar');

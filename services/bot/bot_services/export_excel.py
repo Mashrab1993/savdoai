@@ -129,7 +129,7 @@ def sotuv_excel(data: dict, dokon_nomi: str) -> bytes:
 
     q = float(data.get("qarz", 0))
     if q > 0:
-        tl = float(data.get("tolandan") or data.get("tolangan") or 0)
+        tl = float(data.get("tolangan") or 0)
         ws.cell(oxirgi + 3, 1).value = "To'landi:"
         ws.cell(oxirgi + 3, 6).value = tl
         ws.cell(oxirgi + 4, 1).value = "QARZ:"
