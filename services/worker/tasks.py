@@ -332,7 +332,7 @@ def katta_export(user_id: int, export_turi: str,
             content_b64 = base64.b64encode(f.read()).decode("ascii")
         # Vaqtinchalik faylni o'chirish
         try: _os.unlink(natija)
-        except Exception: pass
+        except Exception as _e: log.debug("silent: %s", _e)
         return {
             "status":      "tayyor",
             "format":      format_,
@@ -579,7 +579,7 @@ def nakladnoy_yaratish(user_id: int, sessiya_id: int,
             with open(fayl, "rb") as f:
                 content_b64 = base64.b64encode(f.read()).decode("ascii")
             try: _os2.unlink(fayl)
-            except Exception: pass
+            except Exception as _e: log.debug("silent: %s", _e)
         if not content_b64:
             log.error("Nakladnoy: content_b64 bo'sh — fayl yaratilmadi uid=%d sess=%d",
                       user_id, sessiya_id)

@@ -131,7 +131,7 @@ class DiskCache:
     
     def __del__(self):
         try: self.conn.close()
-        except Exception: pass
+        except Exception as _e: log.debug("silent: %s", _e)
 
 
 def _fayl_id(data: bytes) -> str:
@@ -198,7 +198,7 @@ def pdf_oqi(data: bytes) -> dict:
                             if table and len(table) > 1:
                                 result["jadvallar"].append({"sahifa": i, "jadval_raqam": t_idx+1,
                                     "sarlavha": table[0], "qatorlar": table[1:6], "qator_soni": len(table)})
-                    except Exception: pass
+                    except Exception as _e: log.debug("silent: %s", _e)
                 
                 # Umumiy — birinchi 5 + oxirgi 3
                 if i <= 5 or i > jami - 3:
@@ -240,7 +240,7 @@ def docx_oqi(data: bytes) -> dict:
             if "Heading" in stil:
                 daraja = 1
                 try: daraja = int(re.search(r'\d', stil).group())
-                except Exception: pass
+                except Exception as _e: log.debug("silent: %s", _e)
                 result["sarlavhalar"].append({"daraja": daraja, "matn": matn})
                 result["mundarija"].append({"sahifa": sahifa_num, "sarlavha": matn[:80]})
             buf.append(matn); buf_len += len(matn)
@@ -499,7 +499,7 @@ def hujjat_oqi(data: bytes, fayl_nomi: str) -> dict:
         if matn.strip():
             r = _matn_cache(matn, "txt", data)
             r["tur"] = "txt"; return r
-    except Exception: pass
+    except Exception as _e: log.debug("silent: %s", _e)
     return {"tur": "noaniq", "xato": f"'{fayl_nomi}' qo'llab-quvvatlanmaydi.\nFormatlar: PDF, Word, Excel, EPUB, PowerPoint, FB2, RTF, HTML, JSON, MD, kod fayllar"}
 
 

@@ -346,7 +346,7 @@ async def _rasm_versiyalar(image_bytes: bytes) -> list[bytes]:
         # Tozalash
         for p in [inp_path, out2, out3]:
             try: os.unlink(p)
-            except Exception: pass
+            except Exception as _e: log.debug("silent: %s", _e)
     except Exception as e:
         log.debug("Rasm versiya: %s", e)
     

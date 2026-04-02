@@ -50,7 +50,7 @@ async def lifespan(app: FastAPI):
     try:
         from engine import dvigatel_init
         dvigatel_init(claude_key, os.getenv("CLAUDE_MODEL", "claude-sonnet-4-6"))
-    except Exception: pass
+    except Exception as _e: log.debug("silent: %s", _e)
     log.info("🧠 Cognitive API v%s — Dual-Brain MoE tayyor", __version__)
     yield
 

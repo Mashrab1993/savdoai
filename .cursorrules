@@ -16,15 +16,17 @@ Masalan: `tovarlar` (products), `klientlar` (clients), `qarzlar` (debts), `sotuv
 savdoai/
 ├── services/
 │   ├── api/main.py          ← FastAPI REST API (2950 qator, 72 endpoint)
-│   ├── bot/main.py          ← Telegram bot (~900 qator: ilovani_qur, shared yordamchilar)
+│   ├── bot/main.py          ← Telegram bot CORE (907 qator — startup, ovoz, config)
 │   ├── bot/bot_helpers.py   ← Umumiy helpers (kesh, faol_tekshir, xat, tg)
-│   ├── bot/handlers/        ← Bot handler modullari (v25.3.1+)
-│   │     savdo.py           ← tasdiq_cb, savat, chek, audit
-│   │     commands.py        ← cmd_* buyruqlar, inline_qidirish
-│   │     callbacks.py       ← menyu, eksport, hisobot, faktura, admin
-│   │     matn.py            ← matn_qabul (matn dispatch)
-│   │     hujjat.py          ← hujjat_qabul (PDF/Word/Excel)
-│   │     narx.py, shogird.py, jobs.py
+│   ├── bot/handlers/        ← 8 ta MODULAR handler:
+│   │   ├── savdo.py         ←   savdo pipeline: tasdiq→audit→nakladnoy (1162 qator)
+│   │   ├── commands.py      ←   31 ta /cmd handler + ovoz dispatcher (1126 qator)
+│   │   ├── matn.py          ←   matn xabar 13-bosqich dispatch (723 qator)
+│   │   ├── callbacks.py     ←   11 ta menyu/hisobot callback (574 qator)
+│   │   ├── hujjat.py        ←   PDF/Word/Excel handler (215 qator)
+│   │   ├── shogird.py       ←   shogird xarajat nazorati (247 qator)
+│   │   ├── narx.py          ←   narx guruhlari (228 qator)
+│   │   └── jobs.py          ←   cron: kunlik, haftalik, qarz eslatma (120 qator)
 │   ├── bot/db.py            ← Bot DB funksiyalari (1266 qator)
 │   ├── bot/config.py        ← Bot konfiguratsiya
 │   ├── bot/bot_services/    ← voice, pdf, excel, nakladnoy, rasm
@@ -32,13 +34,14 @@ savdoai/
 │   ├── cognitive/           ← AI router (Gemini + Claude MoE)
 │   └── worker/              ← Celery (export tasks)
 ├── shared/
-│   ├── database/pool.py     ← asyncpg pool + RLS
-│   ├── database/schema.sql  ← 27 jadval, RLS (+ migratsiya 008 qo‘shimcha jadvallar)
+│   ├── database/pool.py     ← asyncpg pool + RLS (idempotent init)
+│   ├── database/schema.sql  ← 27 jadval, 20 RLS policy (enable_rls)
+│   ├── migrations/          ← 008_v25_3_rls_himoya.sql (12 jadval RLS)
 │   ├── services/            ← 28 shared service modul
 │   ├── utils/               ← hisob, fmt, like_escape, uzb_nlp
 │   ├── cache/redis_cache.py ← Redis cache
 │   └── middleware/          ← request_id
-├── tests/                   ← 1200+ pytest (handler manbasi: main.py + handlers/*.py)
+├── tests/                   ← 1222 pytest (test_handler_modules.py — 27 modul test)
 ├── railway.toml             ← Railway IaC (3 servis)
 └── .github/workflows/ci.yml ← GitHub Actions CI
 ```
@@ -182,6 +185,11 @@ import services.bot.db as db
 from services.bot.bot_helpers import faol_tekshir, cfg, tg
 log = logging.getLogger("savdoai.bot.yangi_modul")
 
+# Circular import → LAZY IMPORT (main.py dan kerak bo'lsa)
+def _get_asosiy_menyu():
+    from services.bot.main import asosiy_menyu
+    return asosiy_menyu
+
 async def cmd_yangi(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     if not await faol_tekshir(update):
         return
@@ -196,15 +204,10 @@ def register_yangi_handlers(app):
 
 ```python
 from services.bot.handlers.yangi_modul import register_yangi_handlers
-
 register_yangi_handlers(app)
 ```
 
-### Modullashtirish — circular import
-
-- `handlers/*` dan `main.py` dagi `asosiy_menyu`, `__version__`, `SEGMENT_NOMI` kerak bo‘lsa — **lazy import** (`def _get_asosiy_menyu(): from services.bot.main import ...`).
-- Yangi buyruq/callback — tegishli modulga qo‘shing; `ilovani_qur()` da handler ro‘yxatini yangilang.
-- Smoke testlar bot kodini `main.py` + `handlers/*.py` dan o‘qishi mumkin (`_read_bot_all()`).
+**MUHIM:** Handler modullar `main.py` dan import qilganda lazy import ishlatish MAJBURIY (circular dependency).
 
 ## TEST QOIDALARI
 
