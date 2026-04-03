@@ -4,7 +4,7 @@ import { AdminLayout } from "@/components/layout/admin-layout"
 import { KpiCard } from "@/components/ui/kpi-card"
 import { Package, TrendingUp, Users, Award, Target, Zap } from "lucide-react"
 import {
-  AreaChart, Area, BarChart, Bar,
+  AreaChart, Area,
   XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
 } from "recharts"
 import { formatCurrency } from "@/lib/format"
@@ -54,14 +54,16 @@ export default function KpiPage() {
 
         {/* Stats Grid */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <KpiCard title="Sotuvlar" value={kpi.sotuv_soni} subtitle="ta"
-            icon={<Package className="h-4 w-4" />} />
-          <KpiCard title="Tushum" value={formatCurrency(kpi.sotuv_jami)} subtitle="so'm"
-            icon={<TrendingUp className="h-4 w-4" />} />
-          <KpiCard title="Klientlar" value={kpi.klient_soni} subtitle={`+${kpi.yangi_klientlar} yangi`}
-            icon={<Users className="h-4 w-4" />} />
-          <KpiCard title="Foyda" value={formatCurrency(kpi.foyda)} subtitle={`${kpi.margin_foiz}%`}
-            icon={<Award className="h-4 w-4" />} />
+          <KpiCard title="Sotuvlar" value={`${kpi.sotuv_soni} ta`}
+            icon={Package} />
+          <KpiCard title="Tushum" value={formatCurrency(kpi.sotuv_jami)}
+            icon={TrendingUp} />
+          <KpiCard title="Klientlar" value={`${kpi.klient_soni}`}
+            changeLabel={`+${kpi.yangi_klientlar} yangi`}
+            icon={Users} />
+          <KpiCard title="Foyda" value={formatCurrency(kpi.foyda)}
+            changeLabel={`${kpi.margin_foiz}%`}
+            icon={Award} />
         </div>
 
         {/* Trend */}
@@ -80,7 +82,7 @@ export default function KpiPage() {
                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb22" />
                 <XAxis dataKey="kun" tick={{ fontSize: 12 }} />
                 <YAxis hide />
-                <Tooltip formatter={(v: number) => [formatCurrency(v), "Sotuv"]} />
+                <Tooltip formatter={(v: any) => [formatCurrency(Number(v)), "Sotuv"]} />
                 <Area type="monotone" dataKey="jami" stroke="#10b981" fill="#10b98122" strokeWidth={2} />
               </AreaChart>
             </ResponsiveContainer>
@@ -90,9 +92,9 @@ export default function KpiPage() {
         {/* Qo'shimcha stats */}
         <div className="grid grid-cols-2 gap-4">
           <KpiCard title="O'rtacha chek" value={formatCurrency(kpi.ortacha_chek)}
-            icon={<Target className="h-4 w-4" />} />
+            icon={Target} />
           <KpiCard title="Kunlik o'rtacha" value={formatCurrency(kpi.kunlik_ortacha)}
-            icon={<Zap className="h-4 w-4" />} />
+            icon={Zap} />
         </div>
       </div>
     </AdminLayout>

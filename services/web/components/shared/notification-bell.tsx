@@ -15,13 +15,15 @@ import { notificationService } from "@/lib/api/services"
 import { useWebSocket } from "@/hooks/use-websocket"
 import { useLocale } from "@/lib/locale-context"
 
-interface NotificationItem {
-  id: number
+interface BellItem {
+  id?: number
   matn: string
   turi?: string
+  tur?: string
   oqilgan?: boolean
   vaqt?: string
   yaratilgan?: string
+  darajasi?: string
 }
 
 /**
@@ -34,14 +36,13 @@ export function NotificationBell() {
   const { lastMessage } = useWebSocket()
   const [open, setOpen] = useState(false)
 
-  // WebSocket — yangi xabar kelganda refetch
   useEffect(() => {
     if (lastMessage?.type === "sync" || lastMessage?.type === "bildirishnoma") {
       refetch()
     }
   }, [lastMessage, refetch])
 
-  const items: NotificationItem[] = data?.items ?? []
+  const items: BellItem[] = (data as any)?.items ?? []
   const unread = items.filter((n) => !n.oqilgan).length
 
   const formatTime = (vaqt?: string) => {
@@ -108,16 +109,16 @@ export function NotificationBell() {
               </p>
             </div>
           ) : (
-            items.map((n) => (
+            items.map((n, idx) => (
               <div
-                key={n.id}
+                key={n.id ?? idx}
                 className={cn(
                   "px-4 py-3 border-b last:border-0 hover:bg-muted/50 cursor-pointer transition-colors",
                   !n.oqilgan && "bg-primary/5"
                 )}
               >
                 <div className="flex gap-2">
-                  <span className="text-base shrink-0">{icon(n.turi)}</span>
+                  <span className="text-base shrink-0">{icon(n.turi || n.tur)}</span>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm leading-snug">{n.matn}</p>
                     <p className="text-xs text-muted-foreground mt-1">
