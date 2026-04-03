@@ -38,9 +38,6 @@ export function KpiCard({ title, value, change, changeLabel, icon: Icon, iconCol
             {changeLabel && <span className="text-xs text-muted-foreground">{changeLabel}</span>}
           </div>
         )}
-        {change === undefined && changeLabel && (
-          <p className="text-xs text-muted-foreground mt-1.5">{changeLabel}</p>
-        )}
       </div>
     </div>
   )

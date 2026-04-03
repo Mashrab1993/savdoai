@@ -41,10 +41,10 @@ function MobileBottomNav() {
 
 interface AdminLayoutProps {
   children: React.ReactNode
-  title?: string
+  title: string
 }
 
-export function AdminLayout({ children, title = "SavdoAI" }: AdminLayoutProps) {
+export function AdminLayout({ children, title }: AdminLayoutProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   return (
