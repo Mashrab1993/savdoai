@@ -252,7 +252,6 @@ QOIDALAR:
 
         xulosa = hujjat_xulosa_matn(h, fname)
 
-        from telegram import InlineKeyboardButton, InlineKeyboardMarkup
         tugmalar = []
 
         if h.get("tur") == "pdf":
