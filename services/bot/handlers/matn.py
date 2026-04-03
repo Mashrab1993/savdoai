@@ -57,6 +57,227 @@ def _get_shogird_xarajat_qabul():
     return _shogird_xarajat_qabul
 
 
+def _nakladnoy_savol_javob(h: dict, savol: str) -> str | None:
+    """Nakladnoy/Reestr ma'lumotidan savollarga javob berish."""
+    s = savol.lower().strip()
+    
+    def sf(v):
+        try: return float(str(v).replace(",","").replace(" ",""))
+        except: return 0
+    
+    naklarlar = h.get("nakladnoylar", [])
+    if not naklarlar:
+        return None
+    
+    # Klient ma'lumotlari yig'ish
+    kl_data = {}
+    for n in naklarlar:
+        k = n.get("klient", "?")
+        if k not in kl_data:
+            kl_data[k] = {"jami": 0, "soni": 0, "balans": sf(n.get("balans", 0)), "tp": n.get("tp", "")}
+        kl_data[k]["jami"] += n.get("jami", 0)
+        kl_data[k]["soni"] += 1
+    
+    # Qarzli klientlar
+    qarzli = [(k, d) for k, d in kl_data.items() if d["balans"] < 0]
+    qarzli.sort(key=lambda x: x[1]["balans"])
+    
+    if any(w in s for w in ["qarz", "qarzdor", "долг", "nasiya", "qarzli", "qarzdorlik"]):
+        if not qarzli:
+            return "✅ Qarzli klient yo'q!"
+        m = f"⚠️ *QARZLI KLIENTLAR ({len(qarzli)} ta)*\n━━━━━━━━━━━━━━━━━━━━━\n"
+        jami_qarz = 0
+        for i, (k, d) in enumerate(qarzli, 1):
+            m += f"{i}. {k[:35]}: *{d['balans']:,.0f}*\n"
+            jami_qarz += d["balans"]
+        m += f"\n💰 *JAMI QARZ: {jami_qarz:,.0f}* so'm"
+        if len(m) > 4000: m = m[:3950] + "\n_...qisqartirildi_"
+        return m
+    
+    # Top klientlar
+    if any(w in s for w in ["top klient", "eng katta", "katta klient", "top mijoz", "лучшие"]):
+        top = sorted(kl_data.items(), key=lambda x: -x[1]["jami"])[:15]
+        m = f"👑 *TOP {len(top)} KLIENTLAR*\n━━━━━━━━━━━━━━━━━━━━━\n"
+        for i, (k, d) in enumerate(top, 1):
+            q = "⚠️" if d["balans"] < 0 else ""
+            m += f"{i}. {q}{k[:35]}: *{d['jami']:,.0f}*\n"
+        return m
+    
+    # Top tovarlar
+    if any(w in s for w in ["top tovar", "eng ko'p", "sotilgan", "tovar", "mahsulot", "товар"]):
+        tv = h.get("tovarlar", {})
+        if isinstance(tv, dict):
+            top = sorted(tv.items(), key=lambda x: -x[1][1] if isinstance(x[1], list) else 0)[:15]
+            m = f"🏆 *TOP {len(top)} TOVARLAR*\n━━━━━━━━━━━━━━━━━━━━━\n"
+            for i, (nomi, vals) in enumerate(top, 1):
+                if isinstance(vals, list) and len(vals) >= 2:
+                    m += f"{i}. {nomi[:35]}: {vals[0]:,.0f} — *{vals[1]:,.0f}*\n"
+            return m
+        return None
+    
+    # TP reyting
+    if any(w in s for w in ["tp", "reyting", "vakil", "sotuvchi", "представител", "agent"]):
+        tp_data = {}
+        for n in naklarlar:
+            tp = n.get("tp", "?")
+            if tp not in tp_data: tp_data[tp] = {"soni": 0, "jami": 0, "kl": set()}
+            tp_data[tp]["soni"] += 1
+            tp_data[tp]["jami"] += n.get("jami", 0)
+            tp_data[tp]["kl"].add(n.get("klient", ""))
+        medals = ["🥇", "🥈", "🥉"]
+        m = "👤 *TP REYTING*\n━━━━━━━━━━━━━━━━━━━━━\n"
+        for i, (tp, d) in enumerate(sorted(tp_data.items(), key=lambda x: -x[1]["jami"]), 1):
+            medal = medals[i-1] if i <= 3 else f"{i}."
+            m += f"{medal} {tp}\n   {len(d['kl'])} klient | *{d['jami']:,.0f}*\n"
+        return m
+    
+    # Jami
+    if any(w in s for w in ["jami", "umumiy", "total", "итого", "summa"]):
+        m = f"📊 *UMUMIY*\n━━━━━━━━━━━━━━━━━━━━━\n"
+        m += f"📋 Nakladnoylar: *{len(naklarlar)}*\n"
+        m += f"👥 Klientlar: *{len(kl_data)}*\n"
+        m += f"💰 Jami: *{h.get('jami_summa', 0):,.0f}* so'm\n"
+        m += f"⚠️ Qarzli: *{len(qarzli)}* klient\n"
+        return m
+    
+    # Klient qidirish (ism bo'yicha)
+    for k, d in kl_data.items():
+        if s.replace("?","").strip().lower() in k.lower():
+            m = f"👤 *{k}*\n━━━━━━━━━━━━━━━━━━━━━\n"
+            m += f"💰 Sotuv: *{d['jami']:,.0f}* so'm\n"
+            m += f"📋 Nakladnoylar: {d['soni']}\n"
+            m += f"👤 TP: {d['tp']}\n"
+            if d['balans'] < 0:
+                m += f"⚠️ Qarz: *{d['balans']:,.0f}* so'm\n"
+            else:
+                m += f"✅ Balans: {d['balans']:,.0f}\n"
+            return m
+    
+    return None
+
+
+async def _nakladnoy_ai_savol(h: dict, savol: str) -> str | None:
+    """Nakladnoy/Reestr ma'lumotidan AI (Claude) bilan har qanday savolga javob."""
+    import os
+    
+    _key = os.environ.get("ANTHROPIC_API_KEY", "")
+    if not _key:
+        return None
+    
+    def sf(v):
+        try: return float(str(v).replace(",","").replace(" ",""))
+        except: return 0
+    
+    naklarlar = h.get("nakladnoylar", [])
+    if not naklarlar:
+        return None
+    
+    # Ma'lumot xulosa tayyorlash (AI uchun kontekst)
+    kl_data = {}
+    for n in naklarlar:
+        k = n.get("klient", "?")
+        if k not in kl_data:
+            kl_data[k] = {"jami": 0, "soni": 0, "balans": sf(n.get("balans", 0)), "tp": n.get("tp", "")}
+        kl_data[k]["jami"] += n.get("jami", 0)
+        kl_data[k]["soni"] += 1
+    
+    # TP ma'lumotlari
+    tp_data = {}
+    for n in naklarlar:
+        tp = n.get("tp", "?")
+        if tp not in tp_data: tp_data[tp] = {"soni": 0, "jami": 0, "kl": 0}
+        tp_data[tp]["soni"] += 1
+        tp_data[tp]["jami"] += n.get("jami", 0)
+    for tp in tp_data:
+        tp_data[tp]["kl"] = len([k for k,d in kl_data.items() if d["tp"]==tp])
+    
+    # Qarzli
+    qarzli = [(k, d) for k, d in kl_data.items() if d["balans"] < 0]
+    qarzli.sort(key=lambda x: x[1]["balans"])
+    
+    # Tovarlar
+    tv = h.get("tovarlar", {})
+    top_tovar = ""
+    if isinstance(tv, dict):
+        for nomi, vals in sorted(tv.items(), key=lambda x: -x[1][1] if isinstance(x[1], list) else 0)[:20]:
+            if isinstance(vals, list) and len(vals) >= 2:
+                top_tovar += f"  {nomi}: {vals[0]:.0f} dona, {vals[1]:,.0f} so'm\n"
+    
+    # AI uchun kontekst
+    kontekst = f"""NAKLADNOY MA'LUMOTLARI:
+Firma: {h.get('firma', '?')}
+Sana: {h.get('sana', '?')}
+Hududlar: {h.get('hududlar', '')}
+Jami nakladnoylar: {len(naklarlar)}
+Jami summa: {h.get('jami_summa', 0):,.0f} so'm
+Tovar xillari: {h.get('tovar_xillari', 0)}
+
+TP REYTING:
+"""
+    for tp, d in sorted(tp_data.items(), key=lambda x: -x[1]["jami"]):
+        kontekst += f"  {tp}: {d['soni']} nak, {d['kl']} klient, {d['jami']:,.0f} so'm\n"
+    
+    kontekst += f"\nTOP 20 TOVARLAR:\n{top_tovar}"
+    
+    kontekst += f"\nTOP 20 KLIENTLAR:\n"
+    for k, d in sorted(kl_data.items(), key=lambda x: -x[1]["jami"])[:20]:
+        q = f" (QARZ: {d['balans']:,.0f})" if d["balans"] < 0 else ""
+        kontekst += f"  {k}: {d['jami']:,.0f} so'm, TP: {d['tp']}{q}\n"
+    
+    kontekst += f"\nQARZLI KLIENTLAR ({len(qarzli)} ta):\n"
+    for k, d in qarzli[:15]:
+        kontekst += f"  {k}: {d['balans']:,.0f} so'm\n"
+    jami_qarz = sum(d["balans"] for _, d in qarzli)
+    kontekst += f"JAMI QARZ: {jami_qarz:,.0f} so'm\n"
+    
+    kontekst += f"\nBARCHA KLIENTLAR ({len(kl_data)} ta):\n"
+    for k, d in sorted(kl_data.items(), key=lambda x: x[0]):
+        q = f" QARZ:{d['balans']:,.0f}" if d["balans"] < 0 else ""
+        kontekst += f"  {k}: {d['jami']:,.0f}, TP:{d['tp']}{q}\n"
+    
+    # Kontekstni qisqartirish (token tejash)
+    if len(kontekst) > 25000:
+        kontekst = kontekst[:25000] + "\n...(qisqartirildi)"
+    
+    prompt = f"""Sen SavdoAI — O'zbek savdogarlari uchun AI yordamchi.
+Foydalanuvchi nakladnoy Excel faylini yukladi. Quyida ma'lumotlar. 
+Foydalanuvchining SAVOLIGA to'liq, aniq, foydali javob ber.
+
+{kontekst}
+
+QOIDALAR:
+1. O'ZBEK tilida javob ber
+2. Raqamlarni 1,234,567 formatda yoz
+3. Jadval va emoji ishlat — lekin ortiqcha emas
+4. Aniq, foydali javob ber — umumiy gap emas
+5. Agar savol aniq klientga tegishli — shu klient haqida to'liq ma'lumot ber
+6. Agar savol tahlil so'rasa — professional AUDITOR darajasida tahlil qil
+7. Har doim KONKRET raqamlar bilan javob ber
+8. Telegram Markdown format: *qalin*, _kursiv_
+9. Maxsus belgilar (., -, (, )) ni escape qilma
+
+SAVOL: {savol}"""
+
+    try:
+        from shared.services.ai_suhbat import _get_suhbat_client
+        client = _get_suhbat_client()
+        if not client:
+            return None
+        
+        resp = await client.messages.create(
+            model=os.environ.get("CLAUDE_MODEL", "claude-sonnet-4-6"),
+            max_tokens=3000,
+            messages=[{"role": "user", "content": prompt}],
+        )
+        javob = (resp.content[0].text or "").strip()
+        if javob and len(javob) > 20:
+            return javob
+    except Exception as e:
+        log.warning("Nakladnoy AI: %s", e)
+    
+    return None
+
+
 async def matn_qabul(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
     uid=update.effective_user.id
     from services.bot.main import _flood_ok
@@ -336,6 +557,52 @@ async def matn_qabul(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
     # ═══ 4.3 HUJJAT SAVOL-JAVOB ═══
     if ctx.user_data.get("hujjat"):
         _h = ctx.user_data["hujjat"]
+        
+        # ═══ NAKLADNOY / REESTR — savol-javob (v25.3.2) ═══
+        if _h.get("tur") in ("nakladnoy", "reestr"):
+            log.info("📋 Nakladnoy/Reestr savol: '%s'", matn[:50])
+            
+            # 1. Tezkor javob (kalit so'z bo'yicha — bepul, tez)
+            try:
+                _javob = _nakladnoy_savol_javob(_h, matn)
+                if _javob:
+                    try:
+                        await update.message.reply_text(_javob, parse_mode=ParseMode.MARKDOWN)
+                    except Exception:
+                        await update.message.reply_text(_javob.replace("*","").replace("_",""))
+                    return
+            except Exception as _nse:
+                log.warning("Nakladnoy tezkor savol xato: %s", _nse)
+            
+            # 2. AI javob — har qanday savol (Claude bilan)
+            try:
+                await update.message.chat.send_action(ChatAction.TYPING)
+                _ai_javob = await _nakladnoy_ai_savol(_h, matn)
+                if _ai_javob:
+                    # Telegram 4096 limit
+                    if len(_ai_javob) > 4000:
+                        qismlar = []
+                        joriy = ""
+                        for qator in _ai_javob.split("\n"):
+                            if len(joriy) + len(qator) > 3900:
+                                qismlar.append(joriy)
+                                joriy = qator + "\n"
+                            else:
+                                joriy += qator + "\n"
+                        if joriy.strip(): qismlar.append(joriy)
+                        for q in qismlar:
+                            try:
+                                await update.message.reply_text(q.strip(), parse_mode=ParseMode.MARKDOWN)
+                            except Exception:
+                                await update.message.reply_text(q.strip().replace("*","").replace("_",""))
+                    else:
+                        try:
+                            await update.message.reply_text(_ai_javob, parse_mode=ParseMode.MARKDOWN)
+                        except Exception:
+                            await update.message.reply_text(_ai_javob.replace("*","").replace("_",""))
+                    return
+            except Exception as _ai_e:
+                log.warning("Nakladnoy AI savol xato: %s", _ai_e)
         
         # EXCEL PRO — HAR QANDAY savol AI ga yuboriladi, HECH QACHON o'tkazib yuborilmaydi
         if _h.get("tur") == "xlsx_pro":

@@ -65,10 +65,10 @@ async def hujjat_qabul(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
         if fn_lower.endswith(('.xlsx', '.xls')):
             # ═══ NAKLADNOY TEKSHIRISH (v25.3.2) ═══
             try:
-                log.info("Nakladnoy tekshirish: %s (%dKB)", fname, len(data)//1024)
+                log.info("📋 Nakladnoy tekshirish boshlandi: %s (%dKB)", fname, len(data)//1024)
                 from shared.services.nakladnoy_parser import nakladnoy_ekanligini_tekshir, nakladnoy_tahlil, nakladnoy_xulosa_matn
                 nak_bool = nakladnoy_ekanligini_tekshir(data)
-                log.info("Nakladnoy natija: %s", nak_bool)
+                log.info("📋 Nakladnoy tekshirish natija: %s", nak_bool)
                 if nak_bool:
                     log.info("📋 Nakladnoy Excel aniqlandi: %s (%dKB)", fname, len(data)//1024)
 
@@ -83,6 +83,7 @@ async def hujjat_qabul(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
                             pass
 
                     h = nakladnoy_tahlil(data)
+                    h["tur"] = "nakladnoy"
                     ctx.user_data["hujjat"] = h
                     ctx.user_data["hujjat_nomi"] = fname
                     ctx.user_data["_nakladnoy_data"] = h  # Import uchun saqlash
@@ -118,6 +119,7 @@ async def hujjat_qabul(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
                         except Exception:
                             pass
                     h = reestr_tahlil(data)
+                    h["tur"] = "reestr"
                     ctx.user_data["hujjat"] = h
                     ctx.user_data["hujjat_nomi"] = fname
                     ctx.user_data["_reestr_data"] = h
@@ -252,6 +254,7 @@ QOIDALAR:
 
         xulosa = hujjat_xulosa_matn(h, fname)
 
+        from telegram import InlineKeyboardButton, InlineKeyboardMarkup
         tugmalar = []
 
         if h.get("tur") == "pdf":
