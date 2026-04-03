@@ -65,8 +65,11 @@ async def hujjat_qabul(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
         if fn_lower.endswith(('.xlsx', '.xls')):
             # ═══ NAKLADNOY TEKSHIRISH (v25.3.2) ═══
             try:
+                log.info("Nakladnoy tekshirish: %s (%dKB)", fname, len(data)//1024)
                 from shared.services.nakladnoy_parser import nakladnoy_ekanligini_tekshir, nakladnoy_tahlil, nakladnoy_xulosa_matn
-                if nakladnoy_ekanligini_tekshir(data):
+                nak_bool = nakladnoy_ekanligini_tekshir(data)
+                log.info("Nakladnoy natija: %s", nak_bool)
+                if nak_bool:
                     log.info("📋 Nakladnoy Excel aniqlandi: %s (%dKB)", fname, len(data)//1024)
 
                     # Katta fayl uchun progress
@@ -102,7 +105,7 @@ async def hujjat_qabul(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
                                               reply_markup=markup)
                     return
             except Exception as _nak_e:
-                log.debug("Nakladnoy check: %s", _nak_e)
+                log.warning("Nakladnoy check xato: %s", _nak_e, exc_info=True)
 
             # ═══ REESTR TEKSHIRISH (v25.3.2) ═══
             try:
@@ -132,7 +135,7 @@ async def hujjat_qabul(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
                                               reply_markup=markup)
                     return
             except Exception as _ree_e:
-                log.debug("Reestr check: %s", _ree_e)
+                log.warning("Reestr check xato: %s", _ree_e, exc_info=True)
 
             # ═══ ODDIY EXCEL (kassa hisobot) ═══
             from shared.services.excel_reader import excel_toliq_oqi, excel_xulosa_matn
