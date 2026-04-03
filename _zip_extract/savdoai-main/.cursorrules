@@ -1,0 +1,249 @@
+# SavdoAI Mashrab Moliya — Cursor AI Rules
+# O'zbek savdogarlari uchun AI-powered savdo boshqaruv tizimi
+# GitHub: https://github.com/Mashrab1993/savdoai
+# Railway: https://railway.com/project/f9933a08-1054-4778-b969-e6a1e7e17b14
+
+## LOYIHA HAQIDA
+
+SavdoAI — O'zbekiston savdogarlari uchun Telegram bot + Web panel + REST API.
+Ovoz bilan sotuv kiritish, AI tahlil, SAP-grade double-entry buxgalteriya.
+Til: O'zbek (Lotin). Barcha o'zgaruvchilar, funksiya nomlari, jadval ustunlari — O'zbekcha.
+Masalan: `tovarlar` (products), `klientlar` (clients), `qarzlar` (debts), `sotuv` (sale), `kirim` (income), `chiqim` (expense), `foyda` (profit), `ombor` (warehouse).
+
+## ARXITEKTURA
+
+```text
+savdoai/
+├── services/
+│   ├── api/main.py          ← FastAPI REST API (2950 qator, 72 endpoint)
+│   ├── bot/main.py          ← Telegram bot CORE (907 qator — startup, ovoz, config)
+│   ├── bot/bot_helpers.py   ← Umumiy helpers (kesh, faol_tekshir, xat, tg)
+│   ├── bot/handlers/        ← 8 ta MODULAR handler:
+│   │   ├── savdo.py         ←   savdo pipeline: tasdiq→audit→nakladnoy (1162 qator)
+│   │   ├── commands.py      ←   31 ta /cmd handler + ovoz dispatcher (1126 qator)
+│   │   ├── matn.py          ←   matn xabar 13-bosqich dispatch (723 qator)
+│   │   ├── callbacks.py     ←   11 ta menyu/hisobot callback (574 qator)
+│   │   ├── hujjat.py        ←   PDF/Word/Excel handler (215 qator)
+│   │   ├── shogird.py       ←   shogird xarajat nazorati (247 qator)
+│   │   ├── narx.py          ←   narx guruhlari (228 qator)
+│   │   └── jobs.py          ←   cron: kunlik, haftalik, qarz eslatma (120 qator)
+│   ├── bot/db.py            ← Bot DB funksiyalari (1266 qator)
+│   ├── bot/config.py        ← Bot konfiguratsiya
+│   ├── bot/bot_services/    ← voice, pdf, excel, nakladnoy, rasm
+│   ├── web/                 ← Next.js 16 (15 sahifa, TypeScript strict)
+│   ├── cognitive/           ← AI router (Gemini + Claude MoE)
+│   └── worker/              ← Celery (export tasks)
+├── shared/
+│   ├── database/pool.py     ← asyncpg pool + RLS (idempotent init)
+│   ├── database/schema.sql  ← 27 jadval, 20 RLS policy (enable_rls)
+│   ├── migrations/          ← 008_v25_3_rls_himoya.sql (12 jadval RLS)
+│   ├── services/            ← 28 shared service modul
+│   ├── utils/               ← hisob, fmt, like_escape, uzb_nlp
+│   ├── cache/redis_cache.py ← Redis cache
+│   └── middleware/          ← request_id
+├── tests/                   ← 1222 pytest (test_handler_modules.py — 27 modul test)
+├── railway.toml             ← Railway IaC (3 servis)
+└── .github/workflows/ci.yml ← GitHub Actions CI
+```
+
+## TECH STACK
+
+- **Backend**: Python 3.12, FastAPI, asyncpg, Celery
+- **Frontend**: Next.js 16, TypeScript (strict), Tailwind CSS, shadcn/ui (59 component)
+- **Bot**: python-telegram-bot 21.3
+- **DB**: PostgreSQL (27 jadval, Row-Level Security)
+- **Cache**: Redis
+- **AI**: Gemini 2.5 Pro (ovoz + tahlil), Claude Sonnet 4.6 (murakkab savol)
+- **Deploy**: Railway (auto-deploy from GitHub main branch)
+
+## ⚠️ RAILWAY TOPOLOGY — KRITIK!
+
+Railway dashboard nomlari IaC dan FARQ QILADI:
+
+| Railway Dashboard | Vazifa | URL |
+|---|---|---|
+| **web** | FastAPI API | `web-production-30ebb.up.railway.app` |
+| **savdoai** | Telegram bot | `savdoai-production.up.railway.app` |
+| **savdoai-web** | Next.js frontend | `savdoai-web-production.up.railway.app` |
+
+**DIQQAT**: `NEXT_PUBLIC_API_URL` = `${{web.URL}}` (API servis), EMAS `${{savdoai.URL}}` (bu bot!).
+
+## 🔴 KOD QOIDALARI — QATTIQ AMAL QILINISHI SHART
+
+### SQL Xavfsizlik
+
+```python
+# ✅ TO'G'RI
+await c.fetch("""
+    SELECT id, nomi, narx FROM tovarlar
+    WHERE user_id=$1 AND LOWER(nomi) LIKE LOWER($2)
+""", uid, f"%{like_escape(qidiruv)}%")
+
+# ❌ NOTO'G'RI
+await c.fetch("SELECT * FROM tovarlar WHERE nomi LIKE $1", f"%{qidiruv}%")
+```
+
+QOIDALAR:
+- `SELECT *` — HECH QACHON. Har doim explicit columns
+- `RETURNING *` — HECH QACHON. Explicit: `RETURNING id, nomi`
+- `user_id` — BARCHA querylarda `WHERE user_id=$N` (defense-in-depth)
+- `like_escape()` — BARCHA LIKE querylarda (`from shared.utils import like_escape`)
+- `except:` (bare) — HECH QACHON. `except Exception:` yoki aniq exception
+- Transaction — Multi-step operatsiyalarda `async with c.transaction():`
+- Qoldiq kamaytirish — `GREATEST(qoldiq - $2, 0)` (relativ), EMAS `SET qoldiq = $2`
+- Inventarizatsiya — absolyut SET faqat `FOR UPDATE` lock bilan
+
+### API Endpoint Pattern
+
+```python
+@app.post("/api/v1/tovar", tags=["Tovarlar"])
+async def tovar_yarat(data: TovarYaratSorov, uid: int = Depends(get_uid)):
+    """Yangi tovar yaratish"""
+    async with rls_conn(uid) as c:
+        row = await c.fetchrow("""
+            INSERT INTO tovarlar (user_id, nomi, kategoriya, birlik, sotish_narxi)
+            VALUES ($1, $2, $3, $4, $5)
+            RETURNING id, nomi, kategoriya
+        """, uid, data.nomi, data.kategoriya, data.birlik, data.sotish_narxi)
+    return dict(row)
+```
+
+QOIDALAR:
+- `tags=["GuruhNomi"]` — Swagger uchun
+- `uid: int = Depends(get_uid)` — JWT tekshiruv
+- `rls_conn(uid)` — biznes querylar uchun
+- `get_pool().acquire()` — FAQAT auth/health/metrics uchun
+- Pydantic BaseModel — input validatsiya
+- `raise HTTPException(400/401/403/404, "O'zbekcha xabar")`
+
+### Web Frontend Pattern
+
+```tsx
+"use client"
+import { useApi } from "@/hooks/use-api"
+import { productService } from "@/lib/api/services"
+import { normalizeProduct } from "@/lib/api/normalizers"
+import { AdminLayout } from "@/components/layout/admin-layout"
+import { PageLoading, PageError } from "@/components/shared/page-states"
+
+export default function ProductsPage() {
+  const { data, loading, error, refetch } = useApi(productService.list)
+  const products = (data ?? []).map(normalizeProduct)
+  return (
+    <AdminLayout title="Tovarlar">
+      {loading && <PageLoading />}
+      {error && <PageError message={error} onRetry={refetch} />}
+      {/* ... */}
+    </AdminLayout>
+  )
+}
+```
+
+QOIDALAR:
+- `AdminLayout` — barcha sahifalar wrapper
+- `useApi` hook — data fetching
+- `normalizers.ts` — API response → View Model
+- `services.ts` — barcha API chaqiruvlar markazlashtirilgan
+- `useLocale()` + `translations` — O'zbek/Rus til
+- shadcn/ui — UI komponentlar
+- `tsc --noEmit` — 0 xato SHART
+
+### Bot Pattern
+
+```python
+async def cmd_tovar(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    if not await faol_tekshir(update):
+        return
+    uid = update.effective_user.id
+    try:
+        async with db._P().acquire() as c:
+            rows = await c.fetch(
+                "SELECT id, nomi, qoldiq FROM tovarlar WHERE user_id=$1 ORDER BY nomi", uid
+            )
+        # ...
+    except Exception as e:
+        log.error("cmd_tovar: %s", e, exc_info=True)
+        await update.message.reply_text("❌ Xato yuz berdi.")
+```
+
+QOIDALAR:
+- `faol_tekshir(update)` — har command boshida
+- `db._P().acquire()` — bot connection
+- `ParseMode.MARKDOWN` — xabar formatlash
+- `try/except Exception` — xato tutish + logging
+
+### Yangi Handler Modul
+
+```python
+# services/bot/handlers/yangi_modul.py
+from __future__ import annotations
+import logging
+from telegram import Update
+from telegram.constants import ParseMode
+from telegram.ext import ContextTypes, CommandHandler
+import services.bot.db as db
+from services.bot.bot_helpers import faol_tekshir, cfg, tg
+log = logging.getLogger("savdoai.bot.yangi_modul")
+
+# Circular import → LAZY IMPORT (main.py dan kerak bo'lsa)
+def _get_asosiy_menyu():
+    from services.bot.main import asosiy_menyu
+    return asosiy_menyu
+
+async def cmd_yangi(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    if not await faol_tekshir(update):
+        return
+    uid = update.effective_user.id
+    # ...
+
+def register_yangi_handlers(app):
+    app.add_handler(CommandHandler("yangi", cmd_yangi))
+```
+
+`main.py` → `ilovani_qur()` ichida:
+
+```python
+from services.bot.handlers.yangi_modul import register_yangi_handlers
+register_yangi_handlers(app)
+```
+
+**MUHIM:** Handler modullar `main.py` dan import qilganda lazy import ishlatish MAJBURIY (circular dependency).
+
+## TEST QOIDALARI
+
+```bash
+PYTHONPATH=. python3 -m pytest tests/ -q
+PYTHONPATH=. python3 -m pytest tests/test_titan_v2.py -q
+cd services/web && npx tsc --noEmit
+ruff check shared/ services/ --select=E9,F63,F7,F82
+PYTHONPATH=. bash verify_deploy.sh
+```
+
+- Minimum 1000 test saqlanishi SHART
+- Yangi endpoint = yangi test
+- Web o'zgarish = `tsc --noEmit` 0 xato
+
+## 🔒 XAVFSIZLIK HOLATI (0 DA SAQLASH SHART!)
+
+| SELECT * | RETURNING * | bare except | LIKE injection | user_id siz | Race condition | parol_hash leak |
+|---|---|---|---|---|---|---|
+| **0** | **0** | **0** | **0** | **0** | **0** | **0** |
+
+## MA'LUMOTLAR BAZASI
+
+O'zbekcha jadvallar: `users`, `tovarlar`, `klientlar`, `sotuv_sessiyalar`, `chiqimlar`, `kirimlar`, `qarzlar`, `kassa_operatsiyalar`, `jurnal_yozuvlar`, `jurnal_qatorlar`, `narx_guruhlari`, `guruh_narxlari`, `shogirdlar`, `xarajatlar`, `fakturalar`, `bildirishnomalar`.
+
+RLS: `current_uid()` — har jadvalda `user_id` ustuni + RLS policy.
+
+## 🚫 TAQIQLANGAN
+
+1. `SELECT *` yozma
+2. `RETURNING *` yozma
+3. `except:` (bare) yozma
+4. `f"%{term}%"` (LIKE escape siz) yozma
+5. `SET qoldiq = $2` (absolyut, sotuv/kirim da) yozma
+6. `get_pool()` biznes query uchun ishlatma
+7. `parol_hash` ni response da qaytarma
+8. `${{savdoai.URL}}` ni `NEXT_PUBLIC_API_URL` ga qo'yma
+9. Test soni 1000 dan kamaytirma
+10. TypeScript xato qoldirma

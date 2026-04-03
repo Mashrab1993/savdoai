@@ -1,0 +1,15 @@
+/.gradle/
+/build/
+**/build/
+local.properties
+*.iml
+.idea/
+.cxx/
+*.apk
+*.aab
+captures/
+
+# Signing keys — HECH QACHON GitHub ga push qilma!
+*.keystore
+*.jks
+signing.properties

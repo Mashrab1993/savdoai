@@ -1,0 +1,19 @@
+App Link (https://print.savdoai.uz/p/...) uchun:
+
+1. SHA-256 fingerprint
+   Release APK yoki App Bundle uchun signing key dan oling:
+   keytool -list -v -keystore your.keystore -alias your_alias
+   "SHA256:" qatoridagi nuqtasiz hex ni assetlinks.json ga yozing.
+
+2. Hosting
+   https://print.savdoai.uz/.well-known/assetlinks.json
+   Content-Type: application/json
+   Fayl: assetlinks.json (namuna — bu papkada)
+
+3. Android Studio
+   android/ loyihasini oching, Gradle sync, Build > Build Bundle(s) / APK(s) > Build APK(s).
+
+4. Tekshiruv
+   https://developers.google.com/digital-asset-links/tools/generator
+
+Primary: HTTPS App Link. Fallback: savdoai://print/... (custom scheme).

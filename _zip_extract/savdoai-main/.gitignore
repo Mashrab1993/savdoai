@@ -1,0 +1,32 @@
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+*.egg-info/
+dist/
+build/
+.env
+.env.local
+.env.production
+node_modules/
+.next/
+.vercel/
+*.log
+.DS_Store
+Thumbs.db
+*.zip
+# Claude / local patch extract (do not commit)
+_patch_extract/
+_SAVDOAI_FULL_ARCHIVE/
+*.swp
+*.swo
+.vscode/
+.idea/
+torch_cache/
+.cache/
+tsconfig.tsbuildinfo
+*.tsbuildinfo
+
+# Android signing keys
+*.keystore
+*.jks

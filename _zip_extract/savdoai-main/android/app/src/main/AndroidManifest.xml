@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+    <uses-permission android:name="android.permission.BLUETOOTH_SCAN" />
+    <uses-permission android:name="android.permission.BLUETOOTH" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE" />
+
+    <application android:name=".SavdoAIApp" android:label="@string/app_name"
+        android:icon="@drawable/ic_launcher_legacy"
+        android:roundIcon="@drawable/ic_launcher_legacy"
+        android:theme="@style/AppTheme" android:allowBackup="false">
+
+        <activity android:name=".DeepLinkActivity" android:exported="true"
+            android:theme="@style/Transparent" android:launchMode="singleTask">
+
+            <!-- PRIMARY: Verified HTTPS App Link (chooser chiqmaydi!) -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" android:host="print.savdoai.uz" android:pathPrefix="/p/" />
+            </intent-filter>
+
+            <!-- FALLBACK: Custom URI (app o'rnatilganda ishlaydi) -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="savdoai" android:host="print" />
+            </intent-filter>
+
+            <!-- .bin fayl handler (RawBT o'rniga) -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:scheme="content" android:mimeType="application/octet-stream" />
+            </intent-filter>
+        </activity>
+
+        <activity android:name=".SetupActivity" android:label="Printer sozlash" android:exported="false" />
+        <activity android:name=".MainActivity" android:label="SavdoAI Print" android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <service android:name=".PrintService" android:foregroundServiceType="connectedDevice" android:exported="false" />
+    </application>
+</manifest>
