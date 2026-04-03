@@ -539,7 +539,6 @@ async def matn_qabul(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
                     
                     if _ozgardi:
                         _draft["jami_summa"] = sum(float(t.get("jami",0)) for t in _tovarlar)
-                        from telegram import InlineKeyboardButton, InlineKeyboardMarkup
                         _preview = "✏️ *TUZATILDI:*\n\n"
                         for _i, _tv in enumerate(_tovarlar, 1):
                             _preview += f"  {_i}. {_tv.get('nomi','?')} — {_tv.get('miqdor',0)} × {pul(_tv.get('narx',0))} = {pul(_tv.get('jami',0))}\n"
@@ -940,7 +939,6 @@ async def matn_qabul(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
                                 "jami_summa": sum(t["miqdor"] * t["narx"] for t in _sh["tovarlar"]),
                                 "izoh": "shablon buyurtma",
                             }
-                            from telegram import InlineKeyboardButton, InlineKeyboardMarkup
                             await update.message.reply_text(
                                 shablon_matn(_sh) + "\n\n⬇️ Tasdiqlaysizmi?",
                                 parse_mode=ParseMode.MARKDOWN,

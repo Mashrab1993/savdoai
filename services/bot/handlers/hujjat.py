@@ -18,6 +18,127 @@ from services.bot.bot_helpers import faol_tekshir
 log = logging.getLogger("mm")
 
 
+def _nakladnoy_pdf(h: dict, fname: str) -> bytes | None:
+    """Nakladnoy uchun professional PDF audit hisobot."""
+    try:
+        from reportlab.lib.pagesizes import A4
+        from reportlab.lib.units import mm
+        from reportlab.pdfgen import canvas as canv
+    except ImportError:
+        log.debug("reportlab yo'q — PDF yaratilmaydi")
+        return None
+
+    def sf(v):
+        try: return float(str(v).replace(",","").replace(" ",""))
+        except: return 0
+
+    naklarlar = h.get("nakladnoylar", [])
+    if not naklarlar:
+        return None
+
+    buf = io.BytesIO()
+    c = canv.Canvas(buf, pagesize=A4)
+    w, page_h = A4
+    y = page_h - 30*mm
+
+    def yoz(text, size=10, bold=False, indent=15):
+        nonlocal y
+        if y < 25*mm:
+            c.showPage()
+            y = page_h - 20*mm
+        font = "Helvetica-Bold" if bold else "Helvetica"
+        c.setFont(font, size)
+        c.drawString(indent*mm, y, text)
+        y -= (size + 4)
+
+    def chiziq():
+        nonlocal y
+        c.setStrokeColorRGB(0.3, 0.3, 0.3)
+        c.line(15*mm, y, w - 15*mm, y)
+        y -= 6
+
+    # Sarlavha
+    yoz("MASHRAB MOLIYA — NAKLADNOY AUDIT HISOBOTI", 14, True)
+    yoz(f"Fayl: {fname}", 9)
+    yoz(f"Sana: {h.get('sana','?')} | Firma: {h.get('firma','?')}", 9)
+    chiziq()
+
+    # Umumiy
+    yoz("UMUMIY KO'RSATKICHLAR", 12, True)
+    yoz(f"Nakladnoylar: {len(naklarlar)}")
+    yoz(f"Tovar xillari: {h.get('tovar_xillari', 0)}")
+    yoz(f"Jami summa: {h.get('jami_summa',0):,.0f} so'm")
+    yoz(f"Qatorlar: {h.get('qator_soni', 0)}")
+    chiziq()
+
+    # TP reyting
+    tp_data = {}
+    for n in naklarlar:
+        tp = n.get("tp","?")
+        if tp not in tp_data: tp_data[tp] = {"soni":0,"jami":0,"kl":set()}
+        tp_data[tp]["soni"] += 1
+        tp_data[tp]["jami"] += n.get("jami",0)
+        tp_data[tp]["kl"].add(n.get("klient",""))
+
+    yoz("TP SAMARADORLIK REYTINGI", 12, True)
+    for i,(tp,d) in enumerate(sorted(tp_data.items(), key=lambda x:-x[1]["jami"]),1):
+        ort = d["jami"]/len(d["kl"]) if d["kl"] else 0
+        yoz(f"  {i}. {tp}: {len(d['kl'])} klient, {d['jami']:,.0f} so'm, o'rt: {ort:,.0f}")
+    chiziq()
+
+    # Klient ma'lumotlari
+    kl_data = {}
+    for n in naklarlar:
+        k = n.get("klient","?")
+        if k not in kl_data: kl_data[k] = {"jami":0,"soni":0,"balans":sf(n.get("balans",0)),"tp":n.get("tp","")}
+        kl_data[k]["jami"] += n.get("jami",0)
+        kl_data[k]["soni"] += 1
+
+    # Top klientlar
+    yoz("TOP 15 KLIENTLAR", 12, True)
+    for i,(k,d) in enumerate(sorted(kl_data.items(), key=lambda x:-x[1]["jami"])[:15],1):
+        q = " [QARZ]" if d["balans"] < 0 else ""
+        yoz(f"  {i}. {k[:40]}: {d['jami']:,.0f}{q}")
+    chiziq()
+
+    # Top tovarlar
+    tv = h.get("tovarlar", {})
+    if isinstance(tv, dict) and tv:
+        yoz("TOP 15 TOVARLAR", 12, True)
+        for i,(nomi,vals) in enumerate(sorted(tv.items(), key=lambda x:-x[1][1] if isinstance(x[1],list) else 0)[:15],1):
+            if isinstance(vals, list) and len(vals) >= 2:
+                yoz(f"  {i}. {nomi[:40]}: {vals[0]:.0f} dona, {vals[1]:,.0f} so'm")
+        chiziq()
+
+    # Qarzli klientlar
+    qarzli = [(k,d) for k,d in kl_data.items() if d["balans"] < 0]
+    qarzli.sort(key=lambda x: x[1]["balans"])
+    if qarzli:
+        yoz(f"QARZLI KLIENTLAR ({len(qarzli)} ta)", 12, True)
+        jami_qarz = 0
+        for i,(k,d) in enumerate(qarzli,1):
+            yoz(f"  {i}. {k[:40]}: {d['balans']:,.0f} so'm")
+            jami_qarz += d["balans"]
+        yoz(f"  JAMI QARZ: {jami_qarz:,.0f} so'm", 10, True)
+        chiziq()
+
+    # Statistika
+    jami_kl = len(kl_data)
+    ort = h.get("jami_summa",0) / jami_kl if jami_kl else 0
+    yoz("STATISTIKA", 12, True)
+    yoz(f"  Klientlar: {jami_kl}")
+    yoz(f"  O'rtacha chek: {ort:,.0f} so'm")
+    yoz(f"  Eng katta: {max(d['jami'] for d in kl_data.values()):,.0f} so'm")
+    yoz(f"  Qarzli: {len(qarzli)}/{jami_kl} ({len(qarzli)*100//jami_kl if jami_kl else 0}%)")
+    chiziq()
+
+    # Footer
+    yoz(f"Mashrab Moliya Audit Tizimi | {h.get('sana','?')} | Avtomatik yaratilgan", 8)
+
+    c.save()
+    return buf.getvalue()
+
+
 # Lazy import — circular dependency oldini olish
 def _get_cfg():
     from services.bot.main import cfg
@@ -104,6 +225,18 @@ async def hujjat_qabul(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
                     except Exception:
                         await holat.edit_text(xulosa.replace("*", "").replace("_", ""),
                                               reply_markup=markup)
+                    
+                    # ═══ PDF AUDIT HISOBOT (v25.3.2) ═══
+                    try:
+                        pdf_bytes = _nakladnoy_pdf(h, fname)
+                        if pdf_bytes:
+                            pdf_nom = fname.replace(".xlsx","").replace(".xls","") + "_AUDIT.pdf"
+                            await update.message.reply_document(
+                                document=InputFile(io.BytesIO(pdf_bytes), filename=pdf_nom),
+                                caption="📋 Nakladnoy Audit Hisoboti — Mashrab Moliya")
+                    except Exception as _pe:
+                        log.warning("Nakladnoy PDF: %s", _pe)
+                    
                     return
             except Exception as _nak_e:
                 log.warning("Nakladnoy check xato: %s", _nak_e, exc_info=True)
@@ -157,7 +290,6 @@ async def hujjat_qabul(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
                 pdf_bytes = excel_pdf_hisobot(h, fname)
                 if pdf_bytes:
                     pdf_nom = fname.replace(".xlsx","").replace(".xls","") + "_HISOBOT.pdf"
-                    from telegram import InputFile
                     await update.message.reply_document(
                         document=InputFile(io.BytesIO(pdf_bytes), filename=pdf_nom),
                         caption="📊 Mashrab Moliya — Auditor Hisoboti")
@@ -254,7 +386,6 @@ QOIDALAR:
 
         xulosa = hujjat_xulosa_matn(h, fname)
 
-        from telegram import InlineKeyboardButton, InlineKeyboardMarkup
         tugmalar = []
 
         if h.get("tur") == "pdf":
