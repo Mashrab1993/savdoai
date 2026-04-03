@@ -2949,3 +2949,156 @@ async def faktura_ochir(faktura_id: int, uid: int = Depends(get_uid)):
 #  KASSA — tags qo'shilgan endpointlar
 # ════════════════════════════════════════════════════════════════
 # (Kassa endpointlar routes/kassa.py da — tags app.include_router da qo'shilishi kerak)
+
+
+# ════════════════════════════════════════════════════════════════
+#  MINI-DO'KON — Klient buyurtma (auth kerak emas)
+# ════════════════════════════════════════════════════════════════
+
+@app.get("/api/v1/dokon/{dokon_id}/tovarlar", tags=["Mini-Do'kon"])
+async def dokon_tovarlar(dokon_id: int, q: str = ""):
+    """Ommaviy tovar katalog — auth kerak emas."""
+    from shared.utils import like_escape
+    async with get_pool().acquire() as c:
+        if q:
+            rows = await c.fetch(
+                "SELECT id, nomi, kategoriya, sotish_narxi, birlik, qoldiq "
+                "FROM tovarlar WHERE user_id=$1 AND qoldiq > 0 "
+                "AND LOWER(nomi) LIKE LOWER($2) ORDER BY nomi LIMIT 100",
+                dokon_id, f"%{like_escape(q)}%",
+            )
+        else:
+            rows = await c.fetch(
+                "SELECT id, nomi, kategoriya, sotish_narxi, birlik, qoldiq "
+                "FROM tovarlar WHERE user_id=$1 AND qoldiq > 0 "
+                "ORDER BY nomi LIMIT 100",
+                dokon_id,
+            )
+    return [dict(r) for r in rows]
+
+
+@app.post("/api/v1/dokon/{dokon_id}/buyurtma", tags=["Mini-Do'kon"])
+async def dokon_buyurtma(dokon_id: int, data: dict):
+    """Klient buyurtma yaratish — auth kerak emas."""
+    tovarlar = data.get("tovarlar", [])
+    if not tovarlar:
+        raise HTTPException(400, "Tovarlar ro'yxati bo'sh")
+
+    async with get_pool().acquire() as c:
+        async with c.transaction():
+            row = await c.fetchrow(
+                "INSERT INTO buyurtmalar (user_id, klient_ismi, telefon, izoh) "
+                "VALUES ($1, $2, $3, $4) RETURNING id",
+                dokon_id,
+                data.get("klient_ismi", ""),
+                data.get("telefon", ""),
+                data.get("izoh", ""),
+            )
+            buyurtma_id = row["id"]
+
+            for t in tovarlar:
+                tovar = await c.fetchrow(
+                    "SELECT id, nomi, sotish_narxi FROM tovarlar "
+                    "WHERE id=$1 AND user_id=$2",
+                    t.get("id"), dokon_id,
+                )
+                if tovar:
+                    await c.execute(
+                        "INSERT INTO buyurtma_tovarlar "
+                        "(buyurtma_id, tovar_id, nomi, miqdor, narx) "
+                        "VALUES ($1, $2, $3, $4, $5)",
+                        buyurtma_id,
+                        tovar["id"],
+                        tovar["nomi"],
+                        t.get("miqdor", 1),
+                        tovar["sotish_narxi"],
+                    )
+
+    # Do'konchiga Telegram xabar
+    try:
+        import httpx
+        bot_token = os.getenv("BOT_TOKEN", "")
+        if bot_token:
+            matn = (
+                f"🛒 *Yangi buyurtma!*\n\n"
+                f"👤 {data.get('klient_ismi', 'Noma')}\n"
+                f"📞 {data.get('telefon', '-')}\n"
+                f"📦 {len(tovarlar)} ta tovar\n"
+                f"📝 {data.get('izoh', '-')}"
+            )
+            async with httpx.AsyncClient() as client:
+                await client.post(
+                    f"https://api.telegram.org/bot{bot_token}/sendMessage",
+                    json={"chat_id": dokon_id, "text": matn, "parse_mode": "Markdown"},
+                    timeout=10,
+                )
+    except Exception as e:
+        log.debug("Buyurtma telegram: %s", e)
+
+    return {"buyurtma_id": buyurtma_id, "status": "yangi"}
+
+
+# ════════════════════════════════════════════════════════════════
+#  AI NARX TAVSIYA
+# ════════════════════════════════════════════════════════════════
+
+@app.get("/api/v1/narx/tavsiya", tags=["Narxlar"])
+async def narx_tavsiya(uid: int = Depends(get_uid)):
+    """AI narx tavsiyasi — foyda optimizatsiya."""
+    from shared.services.ai_narx_tavsiya import narx_tavsiyalar
+    async with rls_conn(uid) as c:
+        return await narx_tavsiyalar(c, uid, limit=20)
+
+
+# ════════════════════════════════════════════════════════════════
+#  MOLIYAVIY PROGNOZ
+# ════════════════════════════════════════════════════════════════
+
+@app.get("/api/v1/prognoz", tags=["Hisobotlar"])
+async def prognoz(uid: int = Depends(get_uid)):
+    """Kelasi oy moliyaviy bashorat."""
+    from shared.services.moliyaviy_prognoz import moliyaviy_prognoz
+    async with rls_conn(uid) as c:
+        return await moliyaviy_prognoz(c, uid)
+
+
+# ════════════════════════════════════════════════════════════════
+#  KLIENT CRM
+# ════════════════════════════════════════════════════════════════
+
+@app.get("/api/v1/klient/{klient_id}/profil", tags=["Klientlar"])
+async def klient_profil_api(klient_id: int, uid: int = Depends(get_uid)):
+    """Klient CRM profili."""
+    from shared.services.klient_crm import klient_profil
+    async with rls_conn(uid) as c:
+        data = await klient_profil(c, uid, klient_id)
+    if not data:
+        raise HTTPException(404, "Klient topilmadi")
+    return data
+
+
+# ════════════════════════════════════════════════════════════════
+#  CHEGIRMA
+# ════════════════════════════════════════════════════════════════
+
+@app.get("/api/v1/chegirma/qoidalar", tags=["Chegirma"])
+async def chegirma_list(uid: int = Depends(get_uid)):
+    """Chegirma qoidalari ro'yxati."""
+    from shared.services.chegirma import chegirma_qoidalar_olish
+    async with rls_conn(uid) as c:
+        return await chegirma_qoidalar_olish(c, uid)
+
+
+# ════════════════════════════════════════════════════════════════
+#  RAQOBAT MONITORING
+# ════════════════════════════════════════════════════════════════
+
+@app.get("/api/v1/raqobat/tahlil", tags=["Raqobat"])
+async def raqobat_tahlil_api(uid: int = Depends(get_uid)):
+    """Raqobat narx tahlili."""
+    from shared.services.raqobat_monitoring import raqobat_tahlil, raqobat_xulosa
+    async with rls_conn(uid) as c:
+        return {
+            "tahlil": await raqobat_tahlil(c, uid),
+            "xulosa": await raqobat_xulosa(c, uid),
+        }

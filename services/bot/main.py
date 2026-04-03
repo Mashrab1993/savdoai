@@ -503,6 +503,7 @@ async def cmd_nakladnoy(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
 from services.bot.handlers.jobs import (
     avto_kunlik_hisobot, avto_haftalik_hisobot,
     avto_qarz_eslatma, obuna_eslatma,
+    avto_ertalab_hisobot,
 )
 
 # ═══ MODULAR HANDLER IMPORTS ═══
@@ -513,6 +514,8 @@ from services.bot.handlers.commands import (
     cmd_imkoniyatlar, cmd_yordam, cmd_ogoh, cmd_hafta,
     cmd_foydalanuvchilar, cmd_faollashtir, cmd_statistika,
     cmd_savatlar, cmd_savat, _ovoz_buyruq_bajar,
+    cmd_narx_tavsiya, cmd_dokon,
+    cmd_crm, cmd_chegirma, cmd_prognoz, cmd_raqobat,
 )
 from services.bot.handlers.callbacks import (
     eksport_cb, nakladnoy_sessiya_cb, menyu_cb, paginatsiya_cb,
@@ -520,6 +523,7 @@ from services.bot.handlers.callbacks import (
     faktura_cb, admin_cb, _tezkor_cb,
 )
 from services.bot.handlers.hujjat import hujjat_qabul
+from services.bot.handlers.barcode import cmd_barcode, barcode_cb
 from services.bot.handlers.savdo import (
     tasdiq_cb, _qayta_ishlash, _nakladnoy_yuborish,
     _chek_thermal_va_pdf_yuborish,
@@ -682,7 +686,13 @@ async def boshlash(app:Application) -> None:
                 time=datetime.time(hour=_CFG.obuna_soat, minute=0, tzinfo=tz),
                 name="obuna_eslatma",
             )
-            log.info("✅ Standalone: kunlik/haftalik/qarz/obuna joblar yoqildi")
+            # Ertalab hisobot — 09:00 Toshkent
+            job_queue.run_daily(
+                avto_ertalab_hisobot,
+                time=datetime.time(hour=9, minute=0, tzinfo=tz),
+                name="ertalab_hisobot",
+            )
+            log.info("✅ Standalone: kunlik/haftalik/qarz/obuna/ertalab joblar yoqildi")
         else:
             log.info("✅ Worker rejim: scheduling Worker/Beat tomonida boshqariladi")
 # ════════════ OCHIQ SAVAT (Multi-Klient) ════════════
@@ -769,6 +779,15 @@ def ilovani_qur(conf:Config) -> Application:
     register_shogird_handlers(app)
     app.add_handler(CommandHandler("savatlar",         cmd_savatlar))
     app.add_handler(CommandHandler("savat",            cmd_savat))
+    # ═══ YANGI v25.3.2 HANDLERLAR ═══
+    app.add_handler(CommandHandler("barcode",          cmd_barcode))
+    app.add_handler(CommandHandler("narx_tavsiya",     cmd_narx_tavsiya))
+    app.add_handler(CommandHandler("dokon",            cmd_dokon))
+    app.add_handler(CommandHandler("crm",              cmd_crm))
+    app.add_handler(CommandHandler("chegirma",         cmd_chegirma))
+    app.add_handler(CommandHandler("prognoz",          cmd_prognoz))
+    app.add_handler(CommandHandler("raqobat",          cmd_raqobat))
+    app.add_handler(CallbackQueryHandler(barcode_cb,   pattern=r"^bc:"))
     app.add_error_handler(xato_handler)
     return app
 

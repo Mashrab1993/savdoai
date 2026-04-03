@@ -1124,3 +1124,367 @@ async def inline_qidirish(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
     await update.inline_query.answer(results[:10], cache_time=10)
 
 
+
+# ═══ YANGI BUYRUQLAR v25.3.2 ═══
+
+async def cmd_narx_tavsiya(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    """AI narx tavsiyasi — foyda optimizatsiya."""
+    if not await faol_tekshir(update):
+        return
+    uid = update.effective_user.id
+    msg = await update.message.reply_text("🧠 AI narx tahlil qilmoqda...")
+
+    try:
+        from shared.services.ai_narx_tavsiya import narx_tavsiyalar
+        async with db._P().acquire() as c:
+            tavsiyalar = await narx_tavsiyalar(c, uid, limit=10)
+
+        if not tavsiyalar:
+            await msg.edit_text(
+                "✅ Barcha narxlar optimal!\n"
+                "Hozircha o'zgartirish kerak emas."
+            )
+            return
+
+        jami_foyda = sum(t["kutilgan_foyda_oshishi"] for t in tavsiyalar)
+
+        parts = [
+            f"🧠 *AI NARX TAVSIYASI*\n"
+            f"📊 {len(tavsiyalar)} ta tovar uchun tavsiya:\n"
+            f"💰 Kutilgan qo'shimcha foyda: *{pul(jami_foyda)}* so'm/oy\n"
+        ]
+
+        for i, t in enumerate(tavsiyalar[:7], 1):
+            parts.append(
+                f"\n*{i}. {t['nomi']}*\n"
+                f"  Hozir: {pul(t['joriy_narx'])} → Tavsiya: *{pul(t['tavsiya_narx'])}*\n"
+                f"  {t['sabab']}"
+            )
+
+        if len(tavsiyalar) > 7:
+            parts.append(f"\n... va {len(tavsiyalar) - 7} ta boshqa")
+
+        parts.append(f"\n\n💡 Narxni o'zgartirish: /narx")
+
+        await msg.edit_text("\n".join(parts), parse_mode=ParseMode.MARKDOWN)
+
+    except Exception as e:
+        log.error("narx_tavsiya: %s", e, exc_info=True)
+        await msg.edit_text("❌ Tahlil xatosi.")
+
+
+async def cmd_dokon(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    """Mini-do'kon havolasini olish."""
+    if not await faol_tekshir(update):
+        return
+    uid = update.effective_user.id
+    import os as _dos
+    web_url = _dos.getenv("WEB_URL", "https://savdoai-web-production.up.railway.app")
+    link = f"{web_url}/shop/{uid}"
+    await update.message.reply_text(
+        f"🏪 *Sizning mini\\-do'koningiz:*\n\n"
+        f"`{link}`\n\n"
+        f"Bu havolani klientlaringizga yuboring\\.\n"
+        f"Ular tovar ko'rib, buyurtma bera oladi\\.\n"
+        f"Buyurtma kelganda sizga xabar keladi\\.",
+        parse_mode=ParseMode.MARKDOWN_V2,
+    )
+
+
+# ═══ v25.3.3 — CRM + CHEGIRMA + PROGNOZ + RAQOBAT ═══
+
+async def cmd_crm(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    """Klient CRM — profil va tarix."""
+    if not await faol_tekshir(update):
+        return
+    uid = update.effective_user.id
+    matn = (update.message.text or "").strip()
+    qismlar = matn.split(maxsplit=1)
+
+    if len(qismlar) < 2:
+        await update.message.reply_text(
+            "👤 *Klient CRM*\n\n"
+            "Klient haqida to'liq ma'lumot:\n"
+            "`/crm Anvar aka`\n\n"
+            "Izoh qo'shish:\n"
+            "`/crm Anvar aka | Meva savdosi, bozor 3-qator`\n\n"
+            "Tug'ilgan kun:\n"
+            "`/crm Anvar aka | tug: 1990-05-15`",
+            parse_mode=ParseMode.MARKDOWN,
+        )
+        return
+
+    klient_ism = qismlar[1].split("|")[0].strip()
+
+    try:
+        from shared.utils import like_escape
+        async with db._P().acquire() as c:
+            klient = await c.fetchrow(
+                "SELECT id, ism, telefon FROM klientlar "
+                "WHERE user_id=$1 AND LOWER(ism) LIKE LOWER($2) LIMIT 1",
+                uid, f"%{like_escape(klient_ism)}%",
+            )
+            if not klient:
+                await update.message.reply_text(f"❌ '{klient_ism}' topilmadi.")
+                return
+
+            # Izoh yoki tug'ilgan kun yangilash
+            if "|" in qismlar[1]:
+                izoh_qism = qismlar[1].split("|", 1)[1].strip()
+                from shared.services.klient_crm import klient_izoh_yangilash
+                from datetime import date as _date
+                if izoh_qism.startswith("tug:"):
+                    try:
+                        tug = _date.fromisoformat(izoh_qism[4:].strip())
+                        await klient_izoh_yangilash(c, uid, klient["id"], tugilgan_kun=tug)
+                        await update.message.reply_text(f"✅ {klient['ism']} tug'ilgan kun: {tug}")
+                    except ValueError:
+                        await update.message.reply_text("❌ Sana formati: YYYY-MM-DD")
+                    return
+                else:
+                    await klient_izoh_yangilash(c, uid, klient["id"], izoh=izoh_qism)
+                    await update.message.reply_text(f"✅ {klient['ism']} izoh yangilandi")
+                    return
+
+            # Profil ko'rsatish
+            from shared.services.klient_crm import klient_profil, klient_tarix
+            profil = await klient_profil(c, uid, klient["id"])
+            if not profil:
+                await update.message.reply_text("❌ Profil topilmadi")
+                return
+
+            tarix = await klient_tarix(c, uid, klient["id"], limit=5)
+
+        parts = [
+            f"👤 *{profil['ism']}*",
+            f"📞 {profil.get('telefon', '-')}",
+        ]
+        if profil.get("tugilgan_kun"):
+            parts.append(f"🎂 {profil['tugilgan_kun']}")
+        if profil.get("izoh"):
+            parts.append(f"📝 {profil['izoh']}")
+        parts.append(f"🏷 Kategoriya: {profil.get('kategoriya', 'oddiy')}")
+        parts.append(f"💰 Jami xarid: {pul(profil.get('jami_xaridlar', 0))} so'm")
+        parts.append(f"🛒 Xarid soni: {profil.get('xarid_soni', 0)}")
+        if profil.get("joriy_qarz", 0) > 0:
+            parts.append(f"💸 Joriy qarz: {pul(profil['joriy_qarz'])} so'm")
+        if profil.get("oxirgi_sotuv"):
+            parts.append(f"📅 Oxirgi: {str(profil['oxirgi_sotuv'])[:10]}")
+
+        if tarix:
+            parts.append(f"\n📋 *Oxirgi {len(tarix)} ta sotuv:*")
+            for t in tarix:
+                parts.append(f"  • {str(t['sana'])[:10]} — {pul(t.get('jami_summa', 0))}")
+
+        await update.message.reply_text("\n".join(parts), parse_mode=ParseMode.MARKDOWN)
+
+    except Exception as e:
+        log.error("crm: %s", e, exc_info=True)
+        await update.message.reply_text("❌ CRM xatosi.")
+
+
+async def cmd_chegirma(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    """Chegirma qoidalarini boshqarish."""
+    if not await faol_tekshir(update):
+        return
+    uid = update.effective_user.id
+    matn = (update.message.text or "").strip()
+
+    if matn == "/chegirma":
+        # Mavjud qoidalar
+        try:
+            from shared.services.chegirma import chegirma_qoidalar_olish
+            async with db._P().acquire() as c:
+                qoidalar = await chegirma_qoidalar_olish(c, uid)
+
+            if not qoidalar:
+                await update.message.reply_text(
+                    "📋 Chegirma qoidalari yo'q.\n\n"
+                    "Qo'shish: `/chegirma VIP 10% min:5000000`\n"
+                    "_(nomi foiz/summa min_xarid)_",
+                    parse_mode=ParseMode.MARKDOWN,
+                )
+                return
+
+            parts = ["📋 *Chegirma qoidalari:*\n"]
+            for q in qoidalar:
+                status = "✅" if q["faol"] else "❌"
+                if q["turi"] == "foiz":
+                    qiymat = f"{q['qiymat']}%"
+                else:
+                    qiymat = f"{pul(q['qiymat'])} so'm"
+                parts.append(f"{status} *{q['nomi']}* — {qiymat}")
+                if q.get("min_xarid", 0) > 0:
+                    parts.append(f"    Min xarid: {pul(q['min_xarid'])}")
+            await update.message.reply_text("\n".join(parts), parse_mode=ParseMode.MARKDOWN)
+
+        except Exception as e:
+            log.error("chegirma: %s", e, exc_info=True)
+            await update.message.reply_text("❌ Xato.")
+        return
+
+    # Yangi qoida: /chegirma VIP 10% min:5000000
+    try:
+        parts = matn.replace("/chegirma", "").strip().split()
+        if len(parts) < 2:
+            await update.message.reply_text("Format: `/chegirma NOM 10%` yoki `/chegirma NOM 50000`",
+                                           parse_mode=ParseMode.MARKDOWN)
+            return
+
+        nomi = parts[0]
+        qiymat_str = parts[1]
+        if qiymat_str.endswith("%"):
+            turi = "foiz"
+            qiymat = float(qiymat_str.rstrip("%"))
+        else:
+            turi = "summa"
+            qiymat = float(qiymat_str)
+
+        min_xarid = 0
+        for p in parts[2:]:
+            if p.startswith("min:"):
+                min_xarid = float(p[4:])
+
+        from shared.services.chegirma import chegirma_qoida_yaratish
+        async with db._P().acquire() as c:
+            qid = await chegirma_qoida_yaratish(c, uid, nomi, turi, qiymat, min_xarid)
+
+        chegirma_text = f"{qiymat}%" if turi == "foiz" else f"{pul(qiymat)} so'm"
+        await update.message.reply_text(
+            f"✅ Chegirma qoidasi yaratildi!\n\n"
+            f"📋 {nomi} — {chegirma_text}\n"
+            f"🆔 ID: {qid}",
+        )
+
+    except Exception as e:
+        log.error("chegirma yaratish: %s", e, exc_info=True)
+        await update.message.reply_text("❌ Format xato. `/chegirma VIP 10%`", parse_mode=ParseMode.MARKDOWN)
+
+
+async def cmd_prognoz(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    """Moliyaviy prognoz — kelasi oy bashorat."""
+    if not await faol_tekshir(update):
+        return
+    uid = update.effective_user.id
+    msg = await update.message.reply_text("📊 Prognoz hisoblanmoqda...")
+
+    try:
+        from shared.services.moliyaviy_prognoz import moliyaviy_prognoz
+        async with db._P().acquire() as c:
+            data = await moliyaviy_prognoz(c, uid)
+
+        prognoz = data.get("prognoz", {})
+        oylar = data.get("oylar", [])
+        tavsiyalar = data.get("tavsiyalar", [])
+
+        if not oylar:
+            await msg.edit_text("📊 Prognoz uchun kamida 2 oy ma'lumot kerak.")
+            return
+
+        parts = ["📊 *MOLIYAVIY PROGNOZ*\n"]
+
+        # Oxirgi oylar
+        parts.append("*Oxirgi oylar:*")
+        for o in oylar[-3:]:
+            parts.append(f"  {o['oy']}: sotuv {pul(o['sotuv'])} | foyda {pul(o['foyda'])}")
+        parts.append("")
+
+        # Prognoz
+        osish = prognoz.get("osish_foiz", 0)
+        trend = "📈" if osish > 0 else "📉" if osish < 0 else "➡️"
+        parts.append("*Kelasi oy prognoz:*")
+        parts.append(f"  {trend} Sotuv: ~{pul(prognoz.get('sotuv', 0))} ({osish:+.1f}%)")
+        parts.append(f"  💰 Foyda: ~{pul(prognoz.get('foyda', 0))}")
+        parts.append(f"  💸 Xarajat: ~{pul(prognoz.get('xarajat', 0))}")
+        parts.append("")
+
+        # Tavsiyalar
+        if tavsiyalar:
+            parts.append("*Tavsiyalar:*")
+            for t in tavsiyalar:
+                parts.append(f"  {t}")
+
+        await msg.edit_text("\n".join(parts), parse_mode=ParseMode.MARKDOWN)
+
+    except Exception as e:
+        log.error("prognoz: %s", e, exc_info=True)
+        await msg.edit_text("❌ Prognoz xatosi.")
+
+
+async def cmd_raqobat(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    """Raqobatchi narx monitoring."""
+    if not await faol_tekshir(update):
+        return
+    uid = update.effective_user.id
+    matn = (update.message.text or "").strip()
+
+    # /raqobat qo'shish: /raqobat Krossovka Bozor1 280000
+    parts = matn.split()
+    if len(parts) >= 4:
+        tovar_nomi = parts[1]
+        raqobatchi = parts[2]
+        try:
+            narx = float(parts[3])
+        except ValueError:
+            await update.message.reply_text("❌ Narx raqam bo'lishi kerak")
+            return
+
+        try:
+            from shared.utils import like_escape
+            from shared.services.raqobat_monitoring import raqobat_narx_qoshish
+            async with db._P().acquire() as c:
+                tovar = await c.fetchrow(
+                    "SELECT id, nomi FROM tovarlar WHERE user_id=$1 AND LOWER(nomi) LIKE LOWER($2) LIMIT 1",
+                    uid, f"%{like_escape(tovar_nomi)}%",
+                )
+                if not tovar:
+                    await update.message.reply_text(f"❌ '{tovar_nomi}' topilmadi")
+                    return
+                await raqobat_narx_qoshish(c, uid, tovar["id"], raqobatchi, narx)
+            await update.message.reply_text(
+                f"✅ Raqobat narxi saqlandi!\n"
+                f"📦 {tovar['nomi']} — {raqobatchi}: {pul(narx)}"
+            )
+        except Exception as e:
+            log.error("raqobat qo'shish: %s", e, exc_info=True)
+            await update.message.reply_text("❌ Xato.")
+        return
+
+    # /raqobat — tahlil
+    try:
+        from shared.services.raqobat_monitoring import raqobat_tahlil, raqobat_xulosa
+        async with db._P().acquire() as c:
+            tahlil = await raqobat_tahlil(c, uid, limit=10)
+            xulosa = await raqobat_xulosa(c, uid)
+
+        if not tahlil:
+            await update.message.reply_text(
+                "📊 *Raqobat narx monitoring*\n\n"
+                "Hali ma'lumot yo'q. Qo'shish:\n"
+                "`/raqobat TovarNomi RaqobatchiNomi Narx`\n\n"
+                "Masalan:\n"
+                "`/raqobat Krossovka Bozor1 280000`",
+                parse_mode=ParseMode.MARKDOWN,
+            )
+            return
+
+        lines = ["📊 *RAQOBAT NARX TAHLILI*\n"]
+        if xulosa:
+            lines.append(f"Jami: {xulosa.get('jami_tovar', 0)} tovar kuzatilmoqda")
+            lines.append(f"✅ Biz arzon: {xulosa.get('biz_arzon', 0)} ta")
+            lines.append(f"🔴 Biz qimmat: {xulosa.get('biz_qimmat', 0)} ta")
+            lines.append(f"📊 O'rtacha farq: {xulosa.get('ortacha_farq', 0)}%\n")
+
+        for t in tahlil[:8]:
+            farq = t.get("farq_foiz", 0)
+            icon = "🟢" if farq < 0 else "🔴" if farq > 5 else "🟡"
+            lines.append(
+                f"{icon} *{t['tovar_nomi']}*\n"
+                f"  Biz: {pul(t['bizning_narx'])} | {t['raqobatchi']}: {pul(t['raqobat_narx'])} ({farq:+.1f}%)"
+            )
+
+        await update.message.reply_text("\n".join(lines), parse_mode=ParseMode.MARKDOWN)
+
+    except Exception as e:
+        log.error("raqobat: %s", e, exc_info=True)
+        await update.message.reply_text("❌ Xato.")

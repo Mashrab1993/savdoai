@@ -4,7 +4,7 @@ import { useEffect } from "react"
 import { useRouter, usePathname } from "next/navigation"
 import { useAuth } from "./auth-context"
 
-const PUBLIC_ROUTES = ["/login", "/tg"]
+const PUBLIC_ROUTES = ["/login", "/tg", "/shop"]
 
 export function RouteGuard({ children }: { children: React.ReactNode }) {
   const { token, loading } = useAuth()
@@ -12,7 +12,7 @@ export function RouteGuard({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
 
   const isPublic =
-    PUBLIC_ROUTES.includes(pathname) || pathname.startsWith("/p/")
+    PUBLIC_ROUTES.some(r => pathname.startsWith(r)) || pathname.startsWith("/p/")
 
   useEffect(() => {
     if (loading) return
