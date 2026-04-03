@@ -37,4 +37,4 @@ HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
 
 # ── Default: API server ──
 EXPOSE ${PORT:-8000}
-CMD ["sh", "-c", "cd /app && python -m uvicorn services.api.main:app --host 0.0.0.0 --port ${PORT:-8000} --workers 1 --log-level info"]
+CMD ["sh", "-c", "python -m uvicorn services.api.main:app --host 0.0.0.0 --port ${PORT:-8000} --workers 1 --log-level info"]

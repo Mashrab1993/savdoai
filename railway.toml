@@ -13,7 +13,7 @@ name = "savdoai"
 [services.build]
 dockerfilePath = "services/api/Dockerfile"
 [services.deploy]
-startCommand = "cd /app/services/api && python -m uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000} --workers 1"
+startCommand = "python -m uvicorn services.api.main:app --host 0.0.0.0 --port ${PORT:-8000} --workers 1"
 # Lightweight probe (no DB) — avoids edge marking the service unhealthy if /health is slow
 # PRINT_SECRET: same value on API + bot (print HMAC). IAC names this API block "savdoai"; if the dashboard names the API "web", set PRINT_SECRET on that API service too — see docs/RAILWAY_TOPOLOGY.md
 healthCheckPath = "/healthz"
@@ -35,7 +35,7 @@ name = "savdoai-bot"
 [services.build]
 dockerfilePath = "services/bot/Dockerfile"
 [services.deploy]
-startCommand = "cd /app/services/bot && python main.py"
+startCommand = "python -m services.bot.main"
 # Polling bot should run as a single consumer per BOT_TOKEN.
 # If live conflict "terminated by other getUpdates" appears, verify only one Railway service/replica is running this token.
 restartPolicyType = "ON_FAILURE"
