@@ -825,9 +825,9 @@ CREATE TABLE IF NOT EXISTS filiallar (
                     CHECK(turi IN('dokon','ombor','sklad','filial')),
     faol            BOOLEAN         NOT NULL DEFAULT TRUE,
     asosiy          BOOLEAN         NOT NULL DEFAULT FALSE,
-    yaratilgan      TIMESTAMPTZ     NOT NULL DEFAULT NOW(),
-    UNIQUE(user_id, lower(nomi))
+    yaratilgan      TIMESTAMPTZ     NOT NULL DEFAULT NOW()
 );
+CREATE UNIQUE INDEX IF NOT EXISTS idx_filiallar_nomi ON filiallar(user_id, lower(nomi));
 SELECT enable_rls('filiallar');
 
 CREATE TABLE IF NOT EXISTS filial_qoldiqlar (
@@ -866,9 +866,9 @@ CREATE TABLE IF NOT EXISTS yetkazib_beruvchilar (
     telegram_id     BIGINT,
     kategoriyalar   TEXT[]          DEFAULT '{}',
     faol            BOOLEAN         NOT NULL DEFAULT TRUE,
-    yaratilgan      TIMESTAMPTZ     NOT NULL DEFAULT NOW(),
-    UNIQUE(user_id, lower(nomi))
+    yaratilgan      TIMESTAMPTZ     NOT NULL DEFAULT NOW()
 );
+CREATE UNIQUE INDEX IF NOT EXISTS idx_yetkazib_nomi ON yetkazib_beruvchilar(user_id, lower(nomi));
 SELECT enable_rls('yetkazib_beruvchilar');
 
 CREATE TABLE IF NOT EXISTS supplier_buyurtmalar (
