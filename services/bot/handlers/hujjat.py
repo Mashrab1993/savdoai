@@ -24,9 +24,36 @@ def _nakladnoy_pdf(h: dict, fname: str) -> bytes | None:
         from reportlab.lib.pagesizes import A4
         from reportlab.lib.units import mm
         from reportlab.pdfgen import canvas as canv
+        from reportlab.pdfbase import pdfmetrics
+        from reportlab.pdfbase.ttfonts import TTFont
     except ImportError:
         log.debug("reportlab yo'q — PDF yaratilmaydi")
         return None
+
+    # Cyrillic shrift
+    import os
+    _font_paths = [
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+    ]
+    _font_ok = False
+    for _fp in _font_paths:
+        if os.path.exists(_fp):
+            _font_ok = True
+            break
+    
+    if _font_ok:
+        try:
+            pdfmetrics.registerFont(TTFont("DV", "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"))
+            pdfmetrics.registerFont(TTFont("DVB", "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"))
+            FONT = "DV"
+            FONTB = "DVB"
+        except Exception:
+            FONT = "Helvetica"
+            FONTB = "Helvetica-Bold"
+    else:
+        FONT = "Helvetica"
+        FONTB = "Helvetica-Bold"
 
     def sf(v):
         try: return float(str(v).replace(",","").replace(" ",""))
@@ -46,7 +73,7 @@ def _nakladnoy_pdf(h: dict, fname: str) -> bytes | None:
         if y < 25*mm:
             c.showPage()
             y = page_h - 20*mm
-        font = "Helvetica-Bold" if bold else "Helvetica"
+        font = FONTB if bold else FONT
         c.setFont(font, size)
         c.drawString(indent*mm, y, text)
         y -= (size + 4)
