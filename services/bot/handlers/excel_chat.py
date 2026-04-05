@@ -486,6 +486,28 @@ def _pro_table(rows: list) -> Table:
     return t
 
 
+async def excel_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Excel inline button callback"""
+    q = update.callback_query
+    await q.answer()
+    data = q.data
+
+    if data == "excel_clear":
+        _clear(context)
+        await q.edit_message_text("✅ Excel chat tozalandi.")
+
+    elif data == "excel_info":
+        parsed = context.user_data.get(_KEY_EXCEL)
+        if not parsed:
+            await q.edit_message_text("❌ Excel fayl yuklanmagan.")
+            return
+        info_lines = [f"📄 *{parsed['filename']}*\n"]
+        for s in parsed["sheets"]:
+            info_lines.append(f"  📋 `{s['name']}` — {s['rows']} qator")
+        info_lines.append(f"\n📊 Jami: {parsed['sheets_count']} sheet, {parsed['total_cells']:,} katak")
+        await q.edit_message_text("\n".join(info_lines), parse_mode=ParseMode.MARKDOWN)
+
+
 def _safe(text: str) -> str:
     """XML uchun xavfsiz"""
     return text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
