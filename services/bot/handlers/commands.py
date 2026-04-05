@@ -69,8 +69,32 @@ async def cmd_menyu(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
 
 async def cmd_hisobot(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
     if not await faol_tekshir(update): return
-    d=await db.kunlik_hisobot(update.effective_user.id)
+    uid = update.effective_user.id
+    d=await db.kunlik_hisobot(uid)
     await update.message.reply_text(kunlik_matn(d),parse_mode=ParseMode.MARKDOWN)
+
+    # PDF hisobot
+    try:
+        from services.bot.handlers.jobs import _muddati_otgan_qarzlar, _kam_qoldiq_tovarlar, _bugungi_tugilgan_kun
+        from shared.services.auto_report_pdf import kunlik_pdf
+        import io as _io
+        import datetime as _dt
+        from telegram import InputFile
+
+        qarzlar = await _muddati_otgan_qarzlar(uid)
+        kam = await _kam_qoldiq_tovarlar(uid)
+        tugilgan = await _bugungi_tugilgan_kun(uid)
+        ism = update.effective_user.first_name or ""
+
+        pdf_bytes = kunlik_pdf(d, qarzlar, kam, ism, tugilgan)
+        if pdf_bytes:
+            sana = _dt.datetime.now().strftime("%d_%m_%Y")
+            await update.message.reply_document(
+                document=InputFile(_io.BytesIO(pdf_bytes), filename=f"SavdoAI_Hisobot_{sana}.pdf"),
+                caption=f"📊 Kunlik hisobot — {_dt.datetime.now().strftime('%d.%m.%Y')}"
+            )
+    except Exception as e:
+        log.debug("cmd_hisobot PDF: %s", e)
 
 
 async def cmd_tez(update: Update, ctx: ContextTypes.DEFAULT_TYPE):

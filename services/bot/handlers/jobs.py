@@ -123,13 +123,14 @@ async def obuna_eslatma(ctx: ContextTypes.DEFAULT_TYPE) -> None:
 # ═══ ERTALAB HISOBOT — HAR KUNI 09:00 TOSHKENT ═══
 
 async def avto_ertalab_hisobot(ctx: ContextTypes.DEFAULT_TYPE) -> None:
-    """Har kuni 09:00 Toshkent — ertalab kunlik xulosa.
+    """Har kuni 09:00 Toshkent — ertalab kunlik xulosa + PDF.
 
     Tarkib:
     - Kechagi sotuv/kirim/foyda
     - Muddati o'tgan qarzlar
     - Kam qoldiq tovarlar
     - Motivatsion xabar
+    - PDF hisobot (professional)
     """
     log.info("☀️ Ertalab hisobot boshlandi...")
     try:
@@ -143,8 +144,8 @@ async def avto_ertalab_hisobot(ctx: ContextTypes.DEFAULT_TYPE) -> None:
                 d = await db.kunlik_hisobot(uid)
 
                 # Kecha hech narsa bo'lmagan — o'tkazish
-                sotuv_soni = d.get("sotuv_soni", 0) if isinstance(d, dict) else 0
-                kirim_soni = d.get("kirim_soni", 0) if isinstance(d, dict) else 0
+                sotuv_soni = d.get("sotuv_soni", d.get("ch_n", 0)) if isinstance(d, dict) else 0
+                kirim_soni = d.get("kirim_soni", d.get("kr_n", 0)) if isinstance(d, dict) else 0
                 if sotuv_soni == 0 and kirim_soni == 0:
                     continue
 
@@ -162,6 +163,28 @@ async def avto_ertalab_hisobot(ctx: ContextTypes.DEFAULT_TYPE) -> None:
                 matn = _ertalab_matn(d, qarzlar, kam, ism, tugilgan)
 
                 await ctx.bot.send_message(uid, matn, parse_mode=ParseMode.MARKDOWN)
+
+                # PDF hisobot yuborish
+                try:
+                    from shared.services.auto_report_pdf import kunlik_pdf
+                    import io as _io
+                    from telegram import InputFile
+                    import datetime as _dt
+
+                    pdf_bytes = kunlik_pdf(d, qarzlar, kam, ism, tugilgan)
+                    if pdf_bytes:
+                        sana = _dt.datetime.now().strftime("%d_%m_%Y")
+                        await ctx.bot.send_document(
+                            uid,
+                            document=InputFile(
+                                _io.BytesIO(pdf_bytes),
+                                filename=f"SavdoAI_Hisobot_{sana}.pdf"
+                            ),
+                            caption=f"📊 Kunlik hisobot — {_dt.datetime.now().strftime('%d.%m.%Y')}"
+                        )
+                except Exception as pdf_e:
+                    log.debug("Ertalab PDF: %s", pdf_e)
+
                 yuborildi += 1
 
             except Exception as e:

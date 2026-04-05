@@ -29,11 +29,10 @@ _KEY_ACTIVE = "excel_chat_active"   # rejim faolmi
 _KEY_ANALYSIS = "excel_chat_analysis"  # analyzer natijasi
 _KEY_BYTES = "excel_chat_bytes"     # fayl bytes (analyzer uchun)
 
-# PDF: kirill va o‘zbek matni uchun DejaVu (Helveticada belgilar yo‘qolishi mumkin)
+# ═══ CYRILLIC SHRIFT ═══
 _FONT = "Helvetica"
 _FONT_B = "Helvetica-Bold"
 _FONT_INIT = False
-
 
 def _init_fonts():
     global _FONT, _FONT_B, _FONT_INIT
@@ -61,6 +60,7 @@ def _init_fonts():
             pass
     except Exception:
         pass
+
 
 
 def excel_chat_active(context: ContextTypes.DEFAULT_TYPE) -> bool:

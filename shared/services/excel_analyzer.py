@@ -198,11 +198,17 @@ def analyze_trade_excel(file_bytes: bytes, filename: str = "") -> dict:
             kun_data["savdo"] = itogo_nakd
             kun_data["dollar"] = itogo_dollar
             kun_data["rasxod"] = itogo_rasxod
+            kun_data["has_itogo"] = True
+        else:
+            kun_data["has_itogo"] = False
 
         result["kunlar"].append(kun_data)
-        result["jami"]["savdo"] += kun_data["savdo"]
-        result["jami"]["dollar"] += kun_data["dollar"]
-        result["jami"]["rasxod"] += itogo_rasxod
+        # Faqat итого bor sheetlarni jami savdoga qo'shish
+        # (итого yo'q sheetlar — sub-sheet, allaqachon asosiy sheetda hisoblangan)
+        if kun_data["has_itogo"]:
+            result["jami"]["savdo"] += kun_data["savdo"]
+            result["jami"]["dollar"] += kun_data["dollar"]
+            result["jami"]["rasxod"] += itogo_rasxod
 
     # Nakd pul jami
     result["jami"]["nakd"] = result["jami"]["savdo"] - result["jami"]["rasxod"]

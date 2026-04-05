@@ -878,6 +878,35 @@ def ilovani_qur(conf:Config) -> Application:
     # ═══ EXCEL CHAT — AI savol-javob ═══
     from services.bot.handlers.excel_chat import register_excel_chat_handlers
     register_excel_chat_handlers(app)
+    # ═══ SMART AI — har qanday savolga javob ═══
+    async def cmd_savol(update, ctx):
+        """Biznes haqida har qanday savol — AI bazadan javob beradi"""
+        from services.bot.bot_helpers import faol_tekshir
+        if not await faol_tekshir(update): return
+        matn = " ".join(ctx.args) if ctx.args else ""
+        if not matn:
+            await update.message.reply_text(
+                "🤖 *Smart AI — Har qanday savol bering!*\n\n"
+                "Masalan:\n"
+                "• `/savol Salimovning qarzi qancha?`\n"
+                "• `/savol omborda Ariel bormi?`\n"
+                "• `/savol bu hafta eng ko'p sotilgan tovar`\n"
+                "• `/savol qancha klientim bor?`\n"
+                "• `/savol shu oy foydam qancha?`\n\n"
+                "Yoki shunchaki savol yozing — bot tushunadi!",
+                parse_mode=ParseMode.MARKDOWN)
+            return
+        wait = await update.message.reply_text("🤔 Bazani tekshiryapman...")
+        try:
+            from shared.services.smart_ai import smart_javob
+            javob = await smart_javob(update.effective_user.id, matn)
+            try:
+                await wait.edit_text(javob, parse_mode=ParseMode.MARKDOWN)
+            except Exception:
+                await wait.edit_text(javob.replace("*","").replace("_","").replace("`",""))
+        except Exception as e:
+            await wait.edit_text(f"❌ Xato: {e}")
+    app.add_handler(CommandHandler("savol", cmd_savol))
     app.add_error_handler(xato_handler)
     return app
 

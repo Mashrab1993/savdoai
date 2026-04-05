@@ -1,44 +1,96 @@
 # ═══════════════════════════════════════════════════════════
 #  SAVDOAI v25.3.2a — CURSOR AI KONTEKST
 #  Oxirgi yangilanish: 2026-04-05
-#  Testlar: 1564+ | Endpointlar: 109 | Fayllar: 152 Python
+#  Testlar: 1564+ | Endpointlar: 114 | Buyruqlar: 60+
+#  GitHub: https://github.com/Mashrab1993/savdoai
+#  Railway: f9933a08 (web=API, savdoai=bot, savdoai-web=Next.js)
 # ═══════════════════════════════════════════════════════════
 
 ## LOYIHA
 
 SavdoAI — O'zbekiston savdogarlari uchun AI-powered savdo boshqaruv tizimi.
-Telegram bot + FastAPI REST API + Next.js web + Android printer app.
-20,000+ foydalanuvchi, PostgreSQL RLS izolyatsiya.
-GitHub: https://github.com/Mashrab1993/savdoai
-Railway: f9933a08 (web=API, savdoai=bot, savdoai-web=Next.js)
+Telegram bot + FastAPI REST API + Next.js web panel + Android printer app.
+PostgreSQL RLS izolyatsiya. Claude + Gemini AI. 155 Python fayl, 58 servis.
 
 ## ARXITEKTURA
 
 services/api/main.py — 54 endpoint (2489 qator)
-services/api/routes/ — 11 modul, 60 endpoint (tovarlar, klientlar, hisobotlar, kassa, faktura, monitoring, printer, filial, yangi, websocket)
-services/bot/main.py — 55+ buyruq (1014 qator)
-services/bot/handlers/ — 13 modul (commands, savdo, matn, callbacks, hujjat, excel_chat, narx, shogird, barcode, jobs, yangi, yordam)
-services/bot/db.py — DB operatsiyalar (1346 qator)
-services/web/ — Next.js 15, 21 sahifa, React + Tailwind + shadcn/ui
+services/api/routes/ — 11 modul, 60 endpoint
+  tovarlar.py (9), klientlar.py (6), hisobotlar.py (4), kassa.py (4),
+  faktura.py (5), monitoring.py (7), printer.py (4), filial.py (4),
+  yangi.py (16), websocket.py (1)
+services/bot/main.py — 60+ buyruq (1017 qator)
+services/bot/handlers/ — 13 modul:
+  commands.py (1485q), savdo.py (1165q), matn.py (1010q),
+  callbacks.py, hujjat.py (466q), excel_chat.py (528q),
+  narx.py, shogird.py, barcode.py, jobs.py, yangi.py, yordam.py
+services/bot/db.py — 1347 qator
+services/web/ — Next.js 15, 21 sahifa
 services/worker/tasks.py — 8 Celery task
 services/cognitive/ — Claude + Gemini AI engine
-shared/services/ — 55 biznes modul (ledger, loyalty, kpi, ai_advisor, excel_chat, demand_forecast...)
-shared/database/schema.sql — 40 jadval, 54 index, 35+ RLS
-android/ — Kotlin ESC/POS Bluetooth printer app
+shared/services/ — 58 biznes modul:
+  smart_ai.py — har qanday savolga bazadan javob
+  excel_chat.py — Excel AI tahlil
+  excel_analyzer.py — Excel programmatik tahlil (342q)
+  auto_report_pdf.py — kunlik PDF hisobot
+  ledger.py, loyalty.py, kpi_engine.py, ai_advisor.py,
+  demand_forecast.py, nakladnoy_parser.py, reestr_parser.py...
+shared/database/schema.sql — 40+ jadval, 54 index, 35+ RLS
 tests/ — 1564+ test, 21 fayl
 
-## RAILWAY TOPOLOGIYA (KRITIK!)
+## RAILWAY TOPOLOGIYA (⚠️ KRITIK!)
 
-web = FastAPI API (NEXT_PUBLIC_API_URL shu yerga!)
-savdoai = Telegram Bot (API EMAS!)
-savdoai-web = Next.js Frontend
+web = FastAPI API       (NEXT_PUBLIC_API_URL shu yerga!)
+savdoai = Telegram Bot  (API EMAS!)
+savdoai-web = Next.js   (Frontend)
+HECH QACHON bot URL ni NEXT_PUBLIC_API_URL ga qo'yma!
+
+## BOT BUYRUQLARI (60+)
+
+/start /yordam /menyu /hisobot /hafta /statistika /foyda
+/tovar /ombor /klient /qarz /chiqim /balans /jurnal /kassa
+/nakladnoy /faktura /xarajatlar /parol /token /faollashtir
+/savat /savatlar /guruh /barcode /narx_qoy /narx_guruh /narx_tavsiya
+/klient_narx /klient_guruh /shogirdlar /shogird_qosh
+/kpi /tahlil /eslatma /loyalty /buyurtma /prognoz /raqobat
+/segment /clv /crm /dokon /chegirma /marshrut /tariflar
+/tez /top /imkoniyatlar /yangilik /ogoh /status /ping /health
+/webapp /foydalanuvchilar
+/excel /excel_stop — Excel AI Chat
+/savol — Smart AI (bazadan javob)
+
+## YANGI FUNKSIYALAR (v25.3.2a)
+
+### 1. Excel Chat (/excel)
+/excel → Excel yuborish → har qanday savol → AI javob + PDF
+Fayllar: shared/services/excel_chat.py, excel_analyzer.py
+         services/bot/handlers/excel_chat.py
+MUHIM: /excel bosilmasa nakladnoy/reestr avvalgidek ishlaydi!
+Hujjat oqimi: Excel Chat → Nakladnoy → Reestr → Oddiy
+
+### 2. Smart AI (/savol)
+/savol Salimovning qarzi qancha? → bazadan tekshirib javob
+Yoki shunchaki yozish: "omborda Ariel bormi?" → avtomatik aniqlaydi
+Fayl: shared/services/smart_ai.py
+Xavfsizlik: SQL injection yo'q — faqat SELECT, faqat user_id filtrlangan
+Sotuv oqimi bilan adashmaydi (_is_biznes_savol detektori)
+
+### 3. Avtomatik kunlik PDF hisobot
+Har kuni 09:00 Toshkent — matn + PDF avtomatik yuboriladi
+/hisobot — istalgan vaqtda PDF olish
+Fayl: shared/services/auto_report_pdf.py
+PDF: DejaVuSans Cyrillic, ko'k header, qizil qarz jadval, MAXFIY tamg'a
+
+### 4. 35 bug fix (audit)
+33 duplikat endpoint, HMAC auth, MD5→SHA256, RLS fix,
+Worker crash, WebSocket token, main.py -28%
 
 ## ENDPOINT PATTERN
 
 @router.post("/endpoint", tags=["Guruh"])
 async def endpoint(data: Sorov, uid: int = Depends(get_uid)):
     async with rls_conn(uid) as c:
-        row = await c.fetchrow("INSERT INTO ... VALUES ($1,$2) RETURNING id, nomi", uid, data.nomi)
+        row = await c.fetchrow("INSERT INTO ... RETURNING id", uid, data.nomi)
     return dict(row)
 
 ## BOT HANDLER PATTERN
@@ -46,44 +98,53 @@ async def endpoint(data: Sorov, uid: int = Depends(get_uid)):
 async def cmd_x(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     if not await faol_tekshir(update): return
     uid = update.effective_user.id
-    # ... logika
 
-## EXCEL CHAT (v25.3.2a YANGI)
+main.py → ilovani_qur() → register_handlers(app)
+Circular import → lazy import (funksiya ichida!)
 
-/excel → rejim yoqiladi → Excel yuborish → AI savol-javob
-/excel_stop → qaytadan nakladnoy/reestr ishlaydi
-Fayllar: shared/services/excel_chat.py, services/bot/handlers/excel_chat.py
-MUHIM: /excel bosilmasa nakladnoy/reestr avvalgidek ishlaydi!
+## PDF PATTERN (Cyrillic)
+
+from shared/services/auto_report_pdf.py yoki excel_chat.py
+_init_fonts() → DejaVuSans (Linux) yoki Helvetica (fallback)
+_FONT / _FONT_B module-level o'zgaruvchilar
 
 ## TEST
 
 pytest tests/ -q → 1564+ test
-Minimum 1564 test SHART
-_API_SRC = main.py + routes/*.py (modularizatsiya!)
-
-## 🔒 XAVFSIZLIK (0 DA SAQLASH!)
-
-SELECT * = 0 | RETURNING * = 0 | bare except = 0 | __import__ = 0
-MD5 tizim = 0 | LIKE inject = 0 | user_id siz = 0 | parol_hash leak = 0
+test_titan_v2.py → 547 xavfsizlik test
+Minimum 1564 dan kamaytirma!
 
 ## DB
 
-40 jadval, RLS: current_uid() → user_id policy
-Istisnolar: shogirdlar/xarajatlar/xarajat_kategoriyalar → admin_uid
+40+ jadval, RLS: current_uid()
+Asosiy: users, tovarlar, klientlar, sotuv_sessiyalar, chiqimlar,
+kirimlar, qarzlar, kassa_operatsiyalar, fakturalar, nakladnoy_counter
+Istisnolar RLS: shogirdlar/xarajatlar/xarajat_kategoriyalar → admin_uid
 
 ## 🚫 TAQIQLANGAN (14 qoida)
 
-1. SELECT * yozma
+1. SELECT * yozma — faqat kerakli ustunlar
 2. RETURNING * yozma
-3. except: (bare) yozma — except Exception: ishlat
-4. f"%{term}%" yozma — like_escape() ishlat
-5. SET qoldiq = $2 (absolyut) yozma
-6. get_pool() biznes queryda ishlatma — rls_conn(uid) ishlat
-7. parol_hash ni response da qaytarma
-8. bot URL ni NEXT_PUBLIC_API_URL ga qo'yma
-9. Test sonini 1564 dan kamaytirma
+3. except: (bare) yozma — except Exception:
+4. f"%{term}%" yozma — like_escape()
+5. SET qoldiq = $2 absolyut yozma — GREATEST
+6. get_pool() biznes queryda — rls_conn(uid)
+7. parol_hash response da qaytarma
+8. bot URL → NEXT_PUBLIC_API_URL qo'yma
+9. Test < 1564 qilma
 10. TypeScript xato qoldirma
-11. __import__("os") ishlatma — import os yoz
-12. hashlib.md5() tizim hashda ishlatma — sha256 ishlat
-13. asyncio.get_event_loop() ishlatma — asyncio.run() ishlat
+11. __import__() ishlatma — import yoz
+12. hashlib.md5() tizimda — sha256 (Click.uz tashqari)
+13. asyncio.get_event_loop() — asyncio.run()
 14. Duplikat endpoint yaratma (main.py + routes/)
+
+## XAVFSIZLIK (hammasi 0 bo'lishi SHART)
+
+bare except=0 | __import__=0 | MD5 tizim=0 | SELECT *=0
+eval/exec=0 | parol_hash leak=0 | user_id siz query=0
+
+## ENV
+
+DATABASE_URL, REDIS_URL, JWT_SECRET, BOT_TOKEN,
+ANTHROPIC_API_KEY, GEMINI_API_KEY, ADMIN_IDS,
+NEXT_PUBLIC_API_URL, PRINT_SECRET, SENTRY_DSN

@@ -278,6 +278,40 @@ SAVOL: {savol}"""
     return None
 
 
+def _is_biznes_savol(matn: str) -> bool:
+    """Matn biznes savoli ekanini aniqlash.
+    Savdo oqimlari bilan adashmaslik uchun ehtiyotkor tekshirish.
+    """
+    m = matn.lower().strip()
+    # Juda qisqa matn — savol emas
+    if len(m) < 8:
+        return False
+    # Savol belgisi bor
+    has_question = "?" in m
+    # Biznes kalit so'zlar
+    biz_words = [
+        "qancha", "bormi", "qarz", "ombor", "tovar", "klient",
+        "foyda", "sotuv", "sotilgan", "qoldiq", "narx", "hafta",
+        "oy ", "oylik", "bugun", "kecha", "eng ko'p", "eng kam",
+        "top ", "statistika", "hisobot", "nechta", "kimga",
+        "kimda", "kimdan", "nechi", "сколько", "долг", "склад",
+        "остаток", "клиент", "товар",
+    ]
+    has_biz = any(w in m for w in biz_words)
+    # Sotuv oqimi so'zlari (bu sotuv, savol emas)
+    sale_words = ["ketti", "berdi", "sotdi", "keldi", "oldi", "yubor",
+                  "qarzga", "naqd", "dona", "kg", "litr"]
+    has_sale = any(w in m for w in sale_words)
+
+    # Savol belgisi + biznes so'z = savol
+    if has_question and has_biz:
+        return True
+    # Biznes so'z bor, sotuv emas, va uzunroq
+    if has_biz and not has_sale and len(m) > 15:
+        return True
+    return False
+
+
 async def matn_qabul(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
     uid=update.effective_user.id
     from services.bot.main import _flood_ok
@@ -991,6 +1025,22 @@ async def matn_qabul(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
     if cmd and is_quick_command(matn):
         await _get_ovoz_buyruq_bajar()(update, ctx, cmd)
         return
+
+    # ═══ SMART AI — biznes savollari ═══
+    try:
+        if _is_biznes_savol(matn):
+            from telegram.constants import ChatAction as _CA2
+            await update.message.chat.send_action(_CA2.TYPING)
+            from shared.services.smart_ai import smart_javob
+            javob = await smart_javob(uid, matn)
+            if javob and "ma'lumot topilmadi" not in javob.lower():
+                try:
+                    await update.message.reply_text(javob, parse_mode=ParseMode.MARKDOWN)
+                except Exception:
+                    await update.message.reply_text(javob.replace("*","").replace("_","").replace("`",""))
+                return
+    except Exception as _sai_e:
+        log.debug("Smart AI: %s", _sai_e)
 
     # Agar buyruq emas — AI ga yuborish
     from telegram.constants import ChatAction as _CA
