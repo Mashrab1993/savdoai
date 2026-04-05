@@ -154,6 +154,8 @@ CREATE TABLE IF NOT EXISTS chiqimlar (
 );
 CREATE INDEX IF NOT EXISTS idx_ch_uid_sana  ON chiqimlar(user_id, sana DESC);
 CREATE INDEX IF NOT EXISTS idx_ch_sessiya   ON chiqimlar(sessiya_id);
+CREATE INDEX IF NOT EXISTS idx_ch_tovar_id  ON chiqimlar(tovar_id) WHERE tovar_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_ch_tovar_nom ON chiqimlar(user_id, tovar_nomi);
 SELECT enable_rls('chiqimlar');
 
 CREATE TABLE IF NOT EXISTS qaytarishlar (
@@ -574,7 +576,11 @@ CREATE TABLE IF NOT EXISTS shogirdlar (
     yaratilgan      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     UNIQUE(admin_uid, telegram_uid)
 );
-SELECT enable_rls('shogirdlar');
+-- shogirdlar: admin_uid ishlatadi, user_id emas
+ALTER TABLE shogirdlar ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS shogirdlar_iso ON shogirdlar;
+CREATE POLICY shogirdlar_iso ON shogirdlar
+    USING (admin_uid = current_uid());
 
 -- 2. Xarajat kategoriyalari
 CREATE TABLE IF NOT EXISTS xarajat_kategoriyalar (
@@ -585,6 +591,11 @@ CREATE TABLE IF NOT EXISTS xarajat_kategoriyalar (
     faol        BOOLEAN     NOT NULL DEFAULT TRUE,
     UNIQUE(admin_uid, nomi)
 );
+-- xarajat_kategoriyalar: admin_uid ishlatadi
+ALTER TABLE xarajat_kategoriyalar ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS xarajat_kat_iso ON xarajat_kategoriyalar;
+CREATE POLICY xarajat_kat_iso ON xarajat_kategoriyalar
+    USING (admin_uid = current_uid());
 
 -- 3. Xarajatlar jadvali (asosiy)
 CREATE TABLE IF NOT EXISTS xarajatlar (
@@ -681,7 +692,11 @@ SELECT enable_rls('savat_tovarlar');
 SELECT enable_rls('vision_log');
 SELECT enable_rls('cognitive_tasks');
 SELECT enable_rls('hujjat_versiyalar');
-SELECT enable_rls('xarajatlar');
+-- xarajatlar: admin_uid ishlatadi, user_id emas
+ALTER TABLE xarajatlar ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS xarajatlar_iso ON xarajatlar;
+CREATE POLICY xarajatlar_iso ON xarajatlar
+    USING (admin_uid = current_uid());
 
 -- ────────────────────────────────────────────────────────────────────
 -- v25.3.2 YETISHMAGAN JADVALLAR

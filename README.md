@@ -1,11 +1,12 @@
-# 🤖 SavdoAI v25.3.2
+# 🤖 SavdoAI v25.3.2a
 
 **O'zbekiston savdogarlari uchun AI-powered savdo boshqaruv tizimi**
 
 Telegram bot + Web panel + FastAPI backend + PostgreSQL + Redis
 
-[![Tests](https://img.shields.io/badge/tests-1356%20passed-brightgreen)]()
-[![Version](https://img.shields.io/badge/version-25.3.2-blue)]()
+[![Tests](https://img.shields.io/badge/tests-1564%20passed-brightgreen)]()
+[![Endpoints](https://img.shields.io/badge/API-107%20endpoints-blue)]()
+[![Version](https://img.shields.io/badge/version-25.3.2a-blue)]()
 [![License](https://img.shields.io/badge/license-proprietary-red)]()
 
 ---
@@ -17,6 +18,8 @@ Telegram bot + Web panel + FastAPI backend + PostgreSQL + Redis
 | 🎤 Ovoz bilan sotuv | ✅ O'zbek 8 sheva + Tojik | ❌ |
 | 🤖 AI hisob-kitob | ✅ Dual-Brain (Gemini + Claude) | ❌ |
 | 📱 Telegram-native | ✅ App o'rnatish shart emas | ❌ |
+| 📊 SAP-grade buxgalteriya | ✅ Double-entry ledger | ❌ |
+| 🔒 20,000+ user izolyatsiya | ✅ PostgreSQL RLS | ❌ |
 | ⚡ Boshlash vaqti | 5 daqiqa | 3-7 kun |
 | 💰 Narx | Bepul* | Qimmat |
 
@@ -32,10 +35,10 @@ git clone https://github.com/Mashrab1993/savdoai.git
 cd savdoai
 
 # 2. Environment
-cp .env.example .env
-# BOT_TOKEN, GOOGLE_API_KEY, ANTHROPIC_API_KEY ni to'ldiring
+cp FINAL_ENV_EXAMPLE.md .env  # kerakli env variable larni to'ldiring
+# Majburiy: DATABASE_URL, JWT_SECRET, BOT_TOKEN
 
-# 3. Docker bilan ishga tushirish
+# 3. Docker bilan
 docker-compose up -d
 
 # 4. Yoki qo'lda
@@ -49,40 +52,62 @@ python -m services.bot.main
 ## 📋 Arxitektura
 
 ```
-┌─────────────────────────────────────────────┐
-│                 TELEGRAM                      │
-│         (Ovoz / Matn / Rasm / GPS)           │
-└──────────────────┬──────────────────────────┘
-                   │
-┌──────────────────▼──────────────────────────┐
-│            TELEGRAM BOT                       │
-│     services/bot/main.py (933 qator)         │
-│     handlers/ (12 modul)                     │
-└──────────┬───────────────────┬──────────────┘
-           │                   │
-┌──────────▼───────┐ ┌────────▼──────────────┐
-│  COGNITIVE AI     │ │    FastAPI SERVER      │
-│  Gemini 2.5 Pro   │ │  services/api/main.py  │
-│  (STT/OCR/NLP)    │ │  routes/ (11 modul)    │
-│  Claude Sonnet    │ │  deps.py (auth)        │
-│  (mantiq/hisob)   │ └────────┬──────────────┘
-└──────────────────┘          │
-                    ┌─────────▼──────────────┐
-                    │     SHARED SERVICES     │
-                    │  15 servis moduli       │
-                    │  (AI Advisor, KPI,      │
-                    │   Loyalty, GPS, ...)    │
-                    └─────────┬──────────────┘
-                              │
-              ┌───────────────┼───────────────┐
-              │               │               │
-    ┌─────────▼───┐  ┌───────▼────┐  ┌───────▼────┐
-    │ PostgreSQL   │  │   Redis    │  │   Web UI   │
-    │ 42 jadval    │  │  Cache     │  │  Next.js   │
-    │ 57 index     │  │  Rate lim  │  │  React     │
-    │ RLS himoya   │  │  Sessions  │  │  Tailwind  │
-    └──────────────┘  └────────────┘  └────────────┘
+┌──────────────────────────────────────────────────┐
+│                    KLIENT                          │
+│  Telegram (Ovoz/Matn/Rasm) │ Web Panel │ Android  │
+└─────────────┬────────────────┬─────────┬─────────┘
+              │                │         │
+┌─────────────▼────────┐  ┌───▼─────────▼──────────┐
+│    TELEGRAM BOT       │  │      FastAPI API        │
+│  services/bot/        │  │   services/api/         │
+│  main.py + 12 handler │  │   main.py (50 endpoint) │
+│  Gemini STT + Claude  │  │   routes/ (57 endpoint) │
+└──────────┬───────────┘  └──────────┬──────────────┘
+           │                         │
+           └────────────┬────────────┘
+                        │
+           ┌────────────▼────────────┐
+           │     SHARED SERVICES     │
+           │   28 modul (AI, KPI,    │
+           │   Loyalty, Ledger, ...) │
+           └────────────┬────────────┘
+                        │
+        ┌───────────────┼───────────────┐
+   ┌────▼─────┐   ┌────▼─────┐   ┌────▼──────┐
+   │PostgreSQL │   │  Redis   │   │ Next.js   │
+   │ 40 jadval │   │  Cache   │   │ 21 sahifa │
+   │ 52 index  │   │  Rate    │   │ React     │
+   │ 35 RLS    │   │  Lock    │   │ Tailwind  │
+   └──────────┘   └──────────┘   └───────────┘
 ```
+
+### Railway Deploy Topologiya
+
+```
+Railway Project (f9933a08)
+├── web          → FastAPI API  (⚠️ nomga aldanmang!)
+├── savdoai      → Telegram Bot
+├── savdoai-web  → Next.js Frontend
+├── Postgres     → Ma'lumotlar bazasi
+└── Redis        → Cache + Rate limiting
+```
+
+⚠️ **MUHIM:** `NEXT_PUBLIC_API_URL` doim FastAPI servisiga yo'naltirilishi kerak (bot emas!)
+
+---
+
+## 📊 Tizim ko'rsatkichlari
+
+| Ko'rsatkich | Qiymat |
+|---|---|
+| API endpointlar | 107 ta |
+| DB jadvallar | 40 ta |
+| DB indekslar | 52 ta |
+| RLS policylar | 35 ta |
+| Testlar | 1564 ta (100% pass) |
+| Python modullari | 87 ta |
+| Bot buyruqlari | 31+ ta |
+| Web sahifalar | 21 ta |
 
 ---
 
@@ -113,39 +138,24 @@ python -m services.bot.main
 # Barcha testlar
 pytest tests/ -q
 
-# Faqat yangi tizimlar
-pytest tests/test_v25_3_2_systems.py -v
-
-# Integratsiya testlar
-pytest tests/test_v25_3_2_integration.py -v
-
-# NLP testlar
-python shared/utils/uzb_nlp.py
-
-# Hisob-kitob testlar
-python -c "from shared.utils.hisob import _test; _test()"
+# Natija: 1564 passed, 0 failed
 ```
-
-**1356 test | 0 failed | 138 Python fayl**
 
 ---
 
-## 💎 Tarif planlari
+## 🔒 Xavfsizlik
 
-| | Boshlang'ich | O'rta | Biznes |
-|---|---|---|---|
-| Narx | **BEPUL** | 49,000/oy | 149,000/oy |
-| Tovarlar | 50 | 500 | Cheksiz |
-| Sotuvlar | 100/oy | 2000/oy | Cheksiz |
-| KPI | ❌ | ✅ | ✅ |
-| Loyalty | ❌ | ✅ | ✅ |
-| GPS | ❌ | ❌ | ✅ |
-
-14 kun bepul sinov — barcha funksiyalar ochiq!
+- **RLS (Row Level Security)** — Har so'rovda `SET app.uid` — 20,000+ user izolyatsiyasi
+- **HMAC-SHA256** — JWT va Telegram auth
+- **PBKDF2** — Parol hash (100K iterations, salt)
+- **Rate limiting** — IP, login, endpoint-spesifik
+- **Field whitelisting** — Dynamic UPDATE larda ruxsat etilgan maydonlar
+- **like_escape()** — LIKE querylar uchun injection himoyasi
+- **Decimal(28)** — Moliyaviy hisob-kitobda float xatosi 0%
 
 ---
 
 ## 📞 Aloqa
 
-- Telegram: @savdoai_bot
-- GitHub: github.com/Mashrab1993/savdoai
+- Telegram: [@savdoai_mashrab_bot](https://t.me/savdoai_mashrab_bot)
+- GitHub: [github.com/Mashrab1993/savdoai](https://github.com/Mashrab1993/savdoai)

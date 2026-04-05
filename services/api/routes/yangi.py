@@ -167,10 +167,10 @@ async def klient_segmentatsiya_api(uid: int = Depends(get_uid)):
         return await klientlar_segmentatsiya(c, uid)
 
 
-@router.get("/hisobot/oylik", tags=["Hisobot"])
+@router.get("/hisobot/oylik/batafsil", tags=["Hisobot"])
 async def oylik_hisobot_api(yil: int = 2026, oy: int = 3,
                              uid: int = Depends(get_uid)):
-    """Oylik to'liq hisobot — top tovar, klient, trend."""
+    """Oylik batafsil hisobot — yil/oy bo'yicha top tovar, klient, trend."""
     from shared.services.oylik_hisobot import oylik_hisobot_data
     async with rls_conn(uid) as c:
         return await oylik_hisobot_data(c, uid, yil, oy)

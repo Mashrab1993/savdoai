@@ -1,6 +1,6 @@
 # SavdoAI API Documentation v25.3
 
-**72 endpoint** | 14 Swagger tag guruhi | 24 Pydantic model | Swagger: `/docs`
+**107 endpoint** | 14 Swagger tag guruhi | 24 Pydantic model | Swagger: `/docs`
 
 ## Autentifikatsiya
 

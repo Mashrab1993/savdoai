@@ -261,7 +261,7 @@ class QdrantRAG:
         """Matn uchun embedding olish (sodda hash-based)"""
         # Haqiqiy implementation: Gemini embedding API
         import hashlib
-        h = hashlib.md5(matn.encode()).digest()
+        h = hashlib.sha256(matn.encode()).digest()
         return [b / 255.0 for b in h] * 4  # 64-dim
 
 

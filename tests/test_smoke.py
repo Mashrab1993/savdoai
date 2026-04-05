@@ -235,7 +235,11 @@ class TestAPIFixes:
 
     def test_readyz_has_strict_mode(self):
         """readyz has REDIS_REQUIRED env support"""
-        src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'api', 'main.py')).read()
+        base = os.path.join(os.path.dirname(__file__), '..', 'services', 'api')
+        src = open(os.path.join(base, 'main.py')).read()
+        for rf in os.listdir(os.path.join(base, 'routes')):
+            if rf.endswith('.py'):
+                src += open(os.path.join(base, 'routes', rf)).read()
         assert 'REDIS_REQUIRED' in src
 
     def test_export_passes_format_to_worker(self):

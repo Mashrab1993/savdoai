@@ -31,7 +31,7 @@ def is_duplicate_message(user_id: int, content: str) -> bool:
     Bir xil xabar 5 sekund ichida takroriy yuborilganini aniqlash.
     Voice retry, network glitch, yoki ikki marta bosish holatlarini to'xtatadi.
     """
-    h = hashlib.md5(f"{user_id}:{content[:200]}".encode()).hexdigest()
+    h = hashlib.sha256(f"{user_id}:{content[:200]}".encode()).hexdigest()
     now = time.monotonic()
     
     # Eski yozuvlarni tozalash (60s dan eski)

@@ -135,7 +135,7 @@ class DiskCache:
 
 
 def _fayl_id(data: bytes) -> str:
-    return hashlib.md5(data[:10000]).hexdigest()[:16]
+    return hashlib.sha256(data[:10000]).hexdigest()[:16]
 
 def _kalit_sozlar(matn: str, limit: int = 20) -> list:
     if not matn: return []

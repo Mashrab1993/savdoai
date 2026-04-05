@@ -21,6 +21,7 @@ export default function SearchPage() {
   const { locale } = useLocale()
   const [query, setQuery] = useState("")
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState("")
   const [results, setResults] = useState<{
     tovarlar: Array<{ id: number; nomi: string; kategoriya: string; qoldiq: number; sotish_narxi: number }>
     klientlar: Array<{ id: number; ism: string; telefon: string; jami_sotib: number }>
@@ -42,10 +43,14 @@ export default function SearchPage() {
   const doSearch = useCallback(async (q: string) => {
     if (q.trim().length < 2) { setResults(null); return }
     setLoading(true)
+    setError("")
     try {
       const data = await searchService.search(q.trim())
       setResults(data)
-    } catch { setResults(null) }
+    } catch (err) {
+      setResults(null)
+      setError(err instanceof Error ? err.message : "Qidiruv xatosi")
+    }
     finally { setLoading(false) }
   }, [])
 
@@ -64,6 +69,13 @@ export default function SearchPage() {
           />
           {loading && <Loader2 className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-muted-foreground" />}
         </div>
+
+        {/* Error */}
+        {error && (
+          <div className="text-sm text-destructive bg-destructive/10 rounded-lg px-4 py-3">
+            {error}
+          </div>
+        )}
 
         {/* Results */}
         {results && (

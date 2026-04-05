@@ -78,21 +78,24 @@ async def faktura_yarat(data: FakturaYaratSorov, uid: int = Depends(get_uid)):
     import datetime as _dt
     async with rls_conn(uid) as c:
         bugun = _dt.date.today().strftime("%Y%m%d")
-        soni = await c.fetchval(
-            "SELECT COUNT(*) FROM fakturalar WHERE user_id=$1 AND yaratilgan::date=CURRENT_DATE",
-            uid
-        )
-        raqam = f"F-{bugun}-{(soni or 0) + 1:04d}"
 
+        # Race-condition safe: avval INSERT, keyin id asosida raqam yangilash
         row = await c.fetchrow("""
             INSERT INTO fakturalar (user_id, raqam, klient_ismi, jami_summa, tovarlar, bank_rekvizit)
-            VALUES ($1, $2, $3, $4, $5::jsonb, $6::jsonb)
-            RETURNING id, raqam, klient_ismi, jami_summa, holat, yaratilgan
-        """, uid, raqam, data.klient_ismi.strip(),
+            VALUES ($1, 'TEMP', $2, $3, $4::jsonb, $5::jsonb)
+            RETURNING id, klient_ismi, jami_summa, holat, yaratilgan
+        """, uid, data.klient_ismi.strip(),
             data.jami_summa, json.dumps(data.tovarlar),
             json.dumps(data.bank_rekvizit))
+
+        raqam = f"F-{bugun}-{row['id']:04d}"
+        await c.execute(
+            "UPDATE fakturalar SET raqam=$2 WHERE id=$1", row["id"], raqam
+        )
     log.info("📄 Faktura yaratildi: %s uid=%d", raqam, uid)
-    return dict(row)
+    result = dict(row)
+    result["raqam"] = raqam
+    return result
 
 
 @router.put("/faktura/{faktura_id}/holat")

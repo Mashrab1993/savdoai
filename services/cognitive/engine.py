@@ -560,7 +560,7 @@ class CognitiveDvigatel:
                         messages=[{"role": "user", "content": boyitilgan}],
                     )
                 ),
-                timeout=float(__import__("os").getenv("AI_TIMEOUT", "30")),
+                timeout=float(os.getenv("AI_TIMEOUT", "30")),
             )
         except asyncio.TimeoutError:
             log.error("Claude timeout (30s) — fallback NLP ishlatilmoqda")

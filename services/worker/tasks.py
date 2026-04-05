@@ -399,7 +399,7 @@ async def _export_async(user_id: int, export_turi: str,
     ws["A1"] = f"{dokon} — Sotuv hisoboti"
     ws["A1"].font = Font(bold=True, size=14)
     ws["A2"] = f"Davr: {sana_dan or 'boshi'} → {sana_gacha or 'bugun'}"
-    ws["A3"] = f"Yaratildi: {__import__('datetime').datetime.now().strftime('%Y-%m-%d %H:%M')}"
+    ws["A3"] = f"Yaratildi: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M')}"
 
     # Ustun sarlavhalari
     headers = ["#", "Sana", "Klient", "Jami (so'm)", "To'langan", "Qarz", "Izoh"]
@@ -450,7 +450,7 @@ async def _export_async(user_id: int, export_turi: str,
         wb.save(fayl)  # fallback to excel
 
     log.info("✅ Export: %d qator, format=%s, fayl=%s (%.1fKB)",
-             len(rows), format_, fayl, __import__("os").path.getsize(fayl)/1024)
+             len(rows), format_, fayl, os.path.getsize(fayl)/1024)
     return fayl
 
 
@@ -815,13 +815,14 @@ def _nakl_pdf(data: dict, fayl: str) -> None:
 def ledger_reconciliation():
     """Har kuni balans tekshiruvi — DEBIT = CREDIT"""
     import asyncio
-    asyncio.get_event_loop().run_until_complete(_ledger_recon_async())
+    asyncio.run(_ledger_recon_async())
 
 
 async def _ledger_recon_async():
     from shared.database.pool import pool_init, pool_close, rls_conn
     from shared.services.ledger import balans_tekshir
-    await pool_init()
+    dsn = os.environ["DATABASE_URL"]
+    await pool_init(dsn, min_size=1, max_size=3)
     try:
         users = await _all_faol_users()
         xatolar = []
@@ -864,6 +865,6 @@ async def _ledger_recon_async():
 
 
 async def _all_faol_users():
-    from shared.database.pool import _pool
-    async with _pool().acquire() as c:
+    from shared.database.pool import get_pool
+    async with get_pool().acquire() as c:
         return await c.fetch("SELECT id FROM users WHERE faol=TRUE")

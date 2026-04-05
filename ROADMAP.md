@@ -1,9 +1,16 @@
 # 🗺 SavdoAI ROADMAP
 
-## v25.3.2 (HOZIRGI) — ✅ TUGALLANDI
+## v25.3.2a (HOZIRGI) — ✅ TUGALLANDI
+- 34 ta bug tuzatildi (xavfsizlik, performance, kod sifati)
+- 1564 test — 100% PASSED
+- 33 ta duplikat endpoint o'chirildi, main.py -29%
+- RLS, HMAC, MD5→SHA256, worker crash tuzatishlar
+- Production ready
+
+## v25.3.2 — ✅ TUGALLANDI
 - 14 yangi tizim
 - 1356 test
-- Production ready
+- Production deploy
 
 ---
 

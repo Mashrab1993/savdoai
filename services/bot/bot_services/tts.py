@@ -46,7 +46,7 @@ def tts_tayyor() -> bool:
 
 
 def _cache_key(matn: str) -> str:
-    return hashlib.md5(matn.encode()).hexdigest()[:12]
+    return hashlib.sha256(matn.encode()).hexdigest()[:12]
 
 
 async def matn_ovozga(matn: str) -> Optional[bytes]:

@@ -17,3 +17,5 @@ thefuzz>=0.22.1
 python-Levenshtein>=0.25.1
 torch>=2.1.0
 onnxruntime>=1.16.0
+thefuzz[speedup]>=0.20.0
+sentry-sdk

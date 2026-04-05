@@ -38,7 +38,7 @@ async def klientlar(
     async with rls_conn(uid) as c:
         if qidiruv:
             rows = await c.fetch("""
-                SELECT k.*,
+                SELECT k.id, k.user_id, k.ism, k.telefon, k.manzil, k.kredit_limit, k.jami_sotib, k.eslatma, k.yaratilgan,
                        COALESCE(SUM(q.qolgan) FILTER(WHERE q.yopildi=FALSE),0) aktiv_qarz
                 FROM klientlar k
                 LEFT JOIN qarzlar q ON q.klient_id=k.id
@@ -52,7 +52,7 @@ async def klientlar(
             """, f"%{like_escape(qidiruv)}%", uid)
         else:
             rows = await c.fetch("""
-                SELECT k.*,
+                SELECT k.id, k.user_id, k.ism, k.telefon, k.manzil, k.kredit_limit, k.jami_sotib, k.eslatma, k.yaratilgan,
                        COALESCE(SUM(q.qolgan) FILTER(WHERE q.yopildi=FALSE),0) aktiv_qarz
                 FROM klientlar k
                 LEFT JOIN qarzlar q ON q.klient_id=k.id

@@ -182,8 +182,8 @@ async def kassa_operatsiya_ochir(op_id: int, uid: int = Depends(get_uid)):
     """Kassa operatsiyasini o'chirish"""
     async with rls_conn(uid) as c:
         deleted = await c.fetchval(
-            "DELETE FROM kassa_operatsiyalar WHERE id=$1 RETURNING id",
-            op_id
+            "DELETE FROM kassa_operatsiyalar WHERE id=$1 AND user_id=$2 RETURNING id",
+            op_id, uid
         )
     if not deleted:
         raise HTTPException(404, "Operatsiya topilmadi")

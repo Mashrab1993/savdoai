@@ -201,7 +201,7 @@ git push origin main  # Railway avtomatik deploy
 
 ---
 
-## API endpoint soni: 72+
+## API endpoint soni: 107
 
 Barcha endpointlar Swagger bilan tag'langan — `/docs` da ko'ring.
 

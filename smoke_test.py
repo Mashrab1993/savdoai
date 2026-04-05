@@ -36,7 +36,7 @@ def test(name, url, method="GET", expected_status=None, check_json=None, auth=Fa
             body = resp.read().decode()
             try:
                 data = json.loads(body)
-            except:
+            except Exception:
                 data = None
             
             ok = True
@@ -98,7 +98,7 @@ try:
         else: FAIL += 1; print("  ❌ X-Version header yo'q")
         if has_time: OK += 1; print("  ✅ X-Response-Time header")
         else: FAIL += 1; print("  ❌ X-Response-Time header yo'q")
-except:
+except Exception:
     FAIL += 2; print("  ❌ Header tekshirishda xato")
 
 # ═══ AUTH ENDPOINTS (agar token berilgan bo'lsa) ═══

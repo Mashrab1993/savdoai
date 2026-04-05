@@ -63,7 +63,7 @@ def _nakladnoy_savol_javob(h: dict, savol: str) -> str | None:
     
     def sf(v):
         try: return float(str(v).replace(",","").replace(" ",""))
-        except: return 0
+        except Exception: return 0
     
     naklarlar = h.get("nakladnoylar", [])
     if not naklarlar:
@@ -166,7 +166,7 @@ async def _nakladnoy_ai_savol(h: dict, savol: str) -> str | None:
     
     def sf(v):
         try: return float(str(v).replace(",","").replace(" ",""))
-        except: return 0
+        except Exception: return 0
     
     naklarlar = h.get("nakladnoylar", [])
     if not naklarlar:
@@ -288,6 +288,16 @@ async def matn_qabul(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
     # Duplicate guard
     from shared.services.guards import is_duplicate_message
     if is_duplicate_message(uid, matn): return
+
+    # ═══ EXCEL CHAT — AI savol-javob rejimi ═══
+    try:
+        from services.bot.handlers.excel_chat import excel_savol_javob, excel_chat_active
+        if excel_chat_active(ctx):
+            handled = await excel_savol_javob(update, ctx)
+            if handled:
+                return
+    except Exception as _ec_e:
+        log.debug("Excel chat matn hook: %s", _ec_e)
 
     # ═══ TAHRIRLASH REJIMI (BIRINCHI tekshiriladi!) ═══
     tahr_rejim = ctx.user_data.get("_tahr_rejim")

@@ -29,7 +29,7 @@ def nakladnoy_hash(data: dict) -> str:
         "jami": data.get("jami", 0),
         "soni": data.get("soni", 0),
     }, sort_keys=True, ensure_ascii=False)
-    return hashlib.md5(key.encode()).hexdigest()[:12]
+    return hashlib.sha256(key.encode()).hexdigest()[:12]
 
 
 async def nakladnoy_import(conn, uid: int, parsed: dict,

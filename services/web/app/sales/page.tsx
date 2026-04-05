@@ -15,7 +15,6 @@ import {
 import { useApi } from "@/hooks/use-api"
 import { productService, clientService, savdoService } from "@/lib/api/services"
 import { normalizeProduct } from "@/lib/api/normalizers"
-import { PageLoading, PageError } from "@/components/shared/page-states"
 import { cn } from "@/lib/utils"
 
 function fmt(n: number) {

@@ -502,7 +502,7 @@ async def ovoz_qabul(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
             except Exception as _e: log.debug("silent: %s", _e)
     finally:
         if tmp_path:
-            try: __import__("os").unlink(tmp_path)
+            try: _os.unlink(tmp_path)
             except Exception as _e: log.debug("silent: %s", _e)
 
 
@@ -875,6 +875,9 @@ def ilovani_qur(conf:Config) -> Application:
     # ═══ v25.3.2 KUCHLI HANDLERLAR — Qarz eslatma, KPI, Loyalty ═══
     from services.bot.handlers.yangi import register_yangi_handlers
     register_yangi_handlers(app)
+    # ═══ EXCEL CHAT — AI savol-javob ═══
+    from services.bot.handlers.excel_chat import register_excel_chat_handlers
+    register_excel_chat_handlers(app)
     app.add_error_handler(xato_handler)
     return app
 

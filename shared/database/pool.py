@@ -10,6 +10,7 @@
 ╚══════════════════════════════════════════════════════════════╝
 """
 from __future__ import annotations
+import time
 import asyncio
 import logging
 from contextlib import asynccontextmanager
@@ -126,10 +127,10 @@ async def pool_health() -> dict:
     if not _pool:
         return {"status": "closed", "size": 0}
     try:
-        start = __import__("time").monotonic()
+        start = time.monotonic()
         async with _pool.acquire() as c:
             await c.fetchval("SELECT 1")
-        ping_ms = round((__import__("time").monotonic() - start) * 1000, 1)
+        ping_ms = round((time.monotonic() - start) * 1000, 1)
         return {
             "status": "ok",
             "ping_ms": ping_ms,
@@ -219,7 +220,8 @@ async def schema_init() -> None:
         log.error("schema.sql topilmadi: %s", schema_file)
         return
 
-    sql = open(schema_file, encoding="utf-8").read()
+    with open(schema_file, encoding="utf-8") as _sf:
+        sql = _sf.read()
 
     # Smart split: DO $$ ... $$; bloklarni to'g'ri ajratish
     statements = []
@@ -317,7 +319,8 @@ async def _run_migrations() -> None:
         if fname in applied:
             continue
 
-        sql = open(fpath, encoding="utf-8").read()
+        with open(fpath, encoding="utf-8") as _mf:
+            sql = _mf.read()
         # Statement-by-statement (schema_init bilan bir xil logika)
         statements = []
         current = []

@@ -216,7 +216,7 @@ export function normalizeDashboard(d: DashboardResponse): DashboardVM {
     // Map Uzbek → English, fall back to English keys if present
     totalClients: d.klient_soni ?? d.total_clients ?? 0,
     activeClients: d.active_clients ?? d.klient_soni ?? 0,
-    totalRevenue: d.bugun_sotuv_jami ?? d.total_revenue ?? 0,
+    totalRevenue: d.total_revenue ?? d.bugun_sotuv_jami ?? 0,
     todayCashIncome: d.bugun_sotuv_jami ?? d.today_income ?? 0,
     totalDebt: d.jami_qarz ?? d.total_debt ?? 0,
     overdueCount: d.overdue_count ?? 0,

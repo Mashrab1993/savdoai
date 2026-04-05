@@ -30,3 +30,6 @@ tsconfig.tsbuildinfo
 # Android signing keys
 *.keystore
 *.jks
+
+# Keraksiz arxiv
+_zip_extract/

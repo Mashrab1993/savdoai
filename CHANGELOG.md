@@ -1,5 +1,39 @@
 # CHANGELOG — SavdoAI v25.3
 
+## v25.3.2-audit (2026-04-04)
+
+### 🔴 Kritik tuzatishlar
+- **33 ta duplikat endpoint o'chirildi** — main.py va routes/ modullarda bir xil endpointlar ikki marta ro'yxatdan o'tgan edi. Swagger da ikkilanish va xavfsizlik farqlari xavfi bartaraf etildi (main.py: 3469→2467 qator)
+- **Loyalty ball yopilgan DB connection** — `klient_ball_qoshish(c, ...)` yopilgan connectionga murojaat qilardi → yangi `rls_conn(uid)` ochiladi
+- **CORS regex juda keng** — `https://.*\.up\.railway\.app` barcha Railway ilovalariga ruxsat berar edi → `https://savdoai[-\w]*\.up\.railway\.app`
+- **Health endpoint Redis leak** — Har `/health` da yangi Redis connection → `redis_health()` shared function
+
+### 🟡 Xavfsizlik
+- `SELECT k.*` → explicit ustunlar (4 joyda) — maxfiy maydonlar API response ga tushishi oldini olindi
+- `auth_telegram` hash SHA256[:16] → HMAC-SHA256[:32] + `hmac.compare_digest`
+- `auth_telegram` SELECT dan `parol_hash` ustuni olib tashlandi
+- Kassa DELETE ga explicit `AND user_id=$2` filtr qo'shildi (defense-in-depth)
+- `dokon_tovarlar` ga `faol=TRUE` user tekshiruvi qo'shildi
+- MD5 → SHA256 (redis cache, QR hash — 3 joyda)
+- Dead `token` query param `export_file_yuklab` dan olib tashlandi
+
+### 🟢 Bug tuzatishlar
+- `jami_sotib` endi naqd to'lovda ham yangilanadi (oldin faqat qarz bo'lganda)
+- `dastlabki_summa` qarz yaratishda to'ldiriladi (oldin NULL edi)
+- Faktura raqam race condition: `COUNT(*)` → `INSERT RETURNING id` asosida
+- 5 ta bare `except:` → `except Exception:` (hujjat.py, matn.py, smoke_test.py)
+- Duplikat `from typing import Optional` import o'chirildi
+- `lifespan()` duplikat JWT_SECRET tekshiruvi birlashtirildi
+- Celery Lazy singleton (3 joyda har safar yangi app yaratilmasdi)
+- **WebSocket token key bug** — `"token"` → `"auth_token"` (WebSocket hech qachon ulanmas edi!)
+- Dashboard `totalRevenue` mapping tuzatildi (frontend)
+- Landing page va FastAPI description endpoint soni 72+ → 110+
+
+### 📦 Kod sifati
+- `_zip_extract/` `.gitignore` ga qo'shildi
+- Rate limiter multi-worker warning hujjatlandi
+- Endpoint soni: main.py(50) + routes(60) = 110 ta
+
 ## v25.3 (2026-03-28 → 2026-04-01)
 
 ### 🔴 Kritik tuzatishlar

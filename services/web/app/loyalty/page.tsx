@@ -5,7 +5,6 @@ import { KpiCard } from "@/components/ui/kpi-card"
 import { Star, Gift, Crown, Users } from "lucide-react"
 import { formatCurrency } from "@/lib/format"
 import { useApi } from "@/hooks/use-api"
-import { PageLoading, PageError } from "@/components/shared/page-states"
 import { useState } from "react"
 
 const DARAJALAR = [

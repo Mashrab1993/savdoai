@@ -119,14 +119,14 @@ def k_qarzlar(uid: int) -> str:
 async def kognitiv_cache_ol(matn: str) -> Optional[dict]:
     """Kognitiv natijani keshdan olish"""
     import hashlib
-    h = hashlib.md5(matn.encode()).hexdigest()
+    h = hashlib.sha256(matn.encode()).hexdigest()[:32]
     return await cache_ol(k_kognitiv(h))
 
 
 async def kognitiv_cache_yoz(matn: str, natija: dict) -> None:
     """Kognitiv natijani keshga yozish"""
     import hashlib
-    h = hashlib.md5(matn.encode()).hexdigest()
+    h = hashlib.sha256(matn.encode()).hexdigest()[:32]
     await cache_yoz(k_kognitiv(h), natija, TTL_KOGNITIV)
 
 

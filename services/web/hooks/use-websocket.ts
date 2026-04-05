@@ -61,7 +61,7 @@ export function useWebSocket(options?: UseWebSocketOptions): UseWebSocketReturn 
 
   const getToken = useCallback(() => {
     if (typeof window === "undefined") return null
-    return localStorage.getItem("token") || sessionStorage.getItem("token")
+    return localStorage.getItem("auth_token")
   }, [])
 
   const connect = useCallback(() => {

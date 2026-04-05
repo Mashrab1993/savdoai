@@ -1,7 +1,7 @@
 # SAVDOAI — 4 TA YANGI BOT FEATURE
 
 > **Repo:** https://github.com/Mashrab1993/savdoai
-> **Mavjud:** 907 qator main.py, 8 handler modul, 1222 test, 72 API endpoint
+> **Mavjud:** 907 qator main.py, 8 handler modul, 1222 test, 107 API endpoint
 > **Qoida:** Har bir feature = alohida handler modul + test + API endpoint
 
 ---

@@ -57,7 +57,7 @@ def _nakladnoy_pdf(h: dict, fname: str) -> bytes | None:
 
     def sf(v):
         try: return float(str(v).replace(",","").replace(" ",""))
-        except: return 0
+        except Exception: return 0
 
     naklarlar = h.get("nakladnoylar", [])
     if not naklarlar:
@@ -211,6 +211,21 @@ async def hujjat_qabul(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
 
         # EXCEL — maxsus super reader
         if fn_lower.endswith(('.xlsx', '.xls')):
+            # ═══ EXCEL CHAT — faqat /excel rejimi yoqilganda ═══
+            try:
+                from services.bot.handlers.excel_chat import excel_chat_active
+                if excel_chat_active(ctx) or ctx.user_data.get("excel_chat_active"):
+                    from services.bot.handlers.excel_chat import excel_file_qabul
+                    excel_handled = await excel_file_qabul(update, ctx)
+                    if excel_handled:
+                        try:
+                            await holat.delete()
+                        except Exception:
+                            pass
+                        return
+            except Exception as _ec_e:
+                log.debug("Excel chat hook: %s", _ec_e)
+
             # ═══ NAKLADNOY TEKSHIRISH (v25.3.2) ═══
             try:
                 log.info("📋 Nakladnoy tekshirish boshlandi: %s (%dKB)", fname, len(data)//1024)
