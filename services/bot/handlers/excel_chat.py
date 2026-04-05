@@ -29,6 +29,39 @@ _KEY_ACTIVE = "excel_chat_active"   # rejim faolmi
 _KEY_ANALYSIS = "excel_chat_analysis"  # analyzer natijasi
 _KEY_BYTES = "excel_chat_bytes"     # fayl bytes (analyzer uchun)
 
+# PDF: kirill va o‘zbek matni uchun DejaVu (Helveticada belgilar yo‘qolishi mumkin)
+_FONT = "Helvetica"
+_FONT_B = "Helvetica-Bold"
+_FONT_INIT = False
+
+
+def _init_fonts():
+    global _FONT, _FONT_B, _FONT_INIT
+    if _FONT_INIT:
+        return
+    _FONT_INIT = True
+    try:
+        from reportlab.pdfbase import pdfmetrics
+        from reportlab.pdfbase.ttfonts import TTFont
+        import os
+        for fp, fn in [
+            ("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", "DejaVuSans"),
+            ("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", "DejaVuSans-Bold"),
+        ]:
+            if os.path.exists(fp):
+                try:
+                    pdfmetrics.registerFont(TTFont(fn, fp))
+                except Exception:
+                    pass
+        try:
+            pdfmetrics.getFont("DejaVuSans")
+            _FONT = "DejaVuSans"
+            _FONT_B = "DejaVuSans-Bold"
+        except Exception:
+            pass
+    except Exception:
+        pass
+
 
 def excel_chat_active(context: ContextTypes.DEFAULT_TYPE) -> bool:
     """Excel chat rejimi faolmi?"""
@@ -274,6 +307,8 @@ def _javob_to_pdf(savol: str, javob: str, filename: str = "Excel") -> bytes | No
         log.debug("reportlab yo'q — PDF yaratilmaydi")
         return None
 
+    _init_fonts()
+
     W, H = A4
     BLUE = colors.HexColor('#1a365d')
     ACCENT = colors.HexColor('#3182ce')
@@ -298,23 +333,23 @@ def _javob_to_pdf(savol: str, javob: str, filename: str = "Excel") -> bytes | No
         canvas.rect(0, H-2.92*cm, W, 0.5*mm, fill=1, stroke=0)
         # Logo
         canvas.setFillColor(WHITE)
-        canvas.setFont('Helvetica-Bold', 18)
+        canvas.setFont(_FONT_B, 18)
         canvas.drawString(2*cm, H-1.4*cm, "SavdoAI")
-        canvas.setFont('Helvetica', 9)
+        canvas.setFont(_FONT, 9)
         canvas.setFillColor(colors.HexColor('#bee3f8'))
         canvas.drawString(2*cm, H-2*cm, "Professional Excel Analytics")
         # Date
         canvas.setFillColor(colors.HexColor('#e2e8f0'))
-        canvas.setFont('Helvetica', 8)
+        canvas.setFont(_FONT, 8)
         canvas.drawRightString(W-2*cm, H-1.3*cm, sana)
-        canvas.setFont('Helvetica', 7)
+        canvas.setFont(_FONT, 7)
         canvas.drawRightString(W-2*cm, H-1.8*cm, filename[:40])
         # Footer
         canvas.setStrokeColor(BORDER)
         canvas.setLineWidth(0.5)
         canvas.line(2*cm, 1.8*cm, W-2*cm, 1.8*cm)
         canvas.setFillColor(GRAY)
-        canvas.setFont('Helvetica', 7)
+        canvas.setFont(_FONT, 7)
         canvas.drawString(2*cm, 1.2*cm, "SavdoAI — AI-powered savdo boshqaruv tizimi")
         canvas.drawCentredString(W/2, 1.2*cm, f"— {doc.page} —")
         canvas.drawRightString(W-2*cm, 1.2*cm, "savdoai.uz")
@@ -322,7 +357,7 @@ def _javob_to_pdf(savol: str, javob: str, filename: str = "Excel") -> bytes | No
         canvas.setFillColor(colors.HexColor('#fed7d7'))
         canvas.roundRect(W-5*cm, 0.5*cm, 3*cm, 0.5*cm, 2*mm, fill=1, stroke=0)
         canvas.setFillColor(colors.HexColor('#c53030'))
-        canvas.setFont('Helvetica-Bold', 5)
+        canvas.setFont(_FONT_B, 5)
         canvas.drawCentredString(W-3.5*cm, 0.62*cm, "MAXFIY / CONFIDENTIAL")
         canvas.restoreState()
 
@@ -331,20 +366,20 @@ def _javob_to_pdf(savol: str, javob: str, filename: str = "Excel") -> bytes | No
         leftMargin=2*cm, rightMargin=2*cm)
 
     # Styles
-    title_s = ParagraphStyle('T', fontName='Helvetica-Bold',
+    title_s = ParagraphStyle('T', fontName=_FONT_B,
         fontSize=14, leading=18, textColor=BLUE, spaceAfter=4)
-    sub_s = ParagraphStyle('Sub', fontName='Helvetica',
+    sub_s = ParagraphStyle('Sub', fontName=_FONT,
         fontSize=9, textColor=GRAY, spaceAfter=10)
-    q_s = ParagraphStyle('Q', fontName='Helvetica-Bold',
+    q_s = ParagraphStyle('Q', fontName=_FONT_B,
         fontSize=11, leading=15, textColor=BLUE,
         backColor=BG_BLUE, borderWidth=1.5,
         borderColor=ACCENT, borderPadding=(12, 8, 12, 8),
         spaceAfter=16, spaceBefore=4)
-    body_s = ParagraphStyle('B', fontName='Helvetica',
+    body_s = ParagraphStyle('B', fontName=_FONT,
         fontSize=9.5, leading=13, textColor=DARK, spaceAfter=6)
-    bold_s = ParagraphStyle('Bld', parent=body_s, fontName='Helvetica-Bold', fontSize=10)
+    bold_s = ParagraphStyle('Bld', parent=body_s, fontName=_FONT_B, fontSize=10)
     bullet_s = ParagraphStyle('Bul', parent=body_s, leftIndent=15, bulletIndent=5)
-    section_s = ParagraphStyle('Sec', fontName='Helvetica-Bold',
+    section_s = ParagraphStyle('Sec', fontName=_FONT_B,
         fontSize=11, leading=15, textColor=BLUE, spaceBefore=14, spaceAfter=6)
 
     story = []
@@ -435,10 +470,10 @@ def _pro_table(rows: list) -> Table:
     DARK = colors.HexColor('#1a202c')
 
     max_cols = max(len(r) for r in rows)
-    h_s = ParagraphStyle('TH', fontName='Helvetica-Bold', fontSize=8, leading=11, textColor=WHITE, alignment=TA_CENTER)
-    c_s = ParagraphStyle('TC', fontName='Helvetica', fontSize=8, leading=11, textColor=DARK)
+    h_s = ParagraphStyle('TH', fontName=_FONT_B, fontSize=8, leading=11, textColor=WHITE, alignment=TA_CENTER)
+    c_s = ParagraphStyle('TC', fontName=_FONT, fontSize=8, leading=11, textColor=DARK)
     c_r = ParagraphStyle('TCR', parent=c_s, alignment=TA_RIGHT)
-    c_b = ParagraphStyle('TCB', parent=c_s, fontName='Helvetica-Bold')
+    c_b = ParagraphStyle('TCB', parent=c_s, fontName=_FONT_B)
     c_br = ParagraphStyle('TCBR', parent=c_b, alignment=TA_RIGHT)
 
     bold_kw = {'jami', 'итого', 'total', 'жами', 'hammasi'}
