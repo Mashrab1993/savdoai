@@ -1,1 +1,0 @@
-"""Shared Starlette/FastAPI middleware."""

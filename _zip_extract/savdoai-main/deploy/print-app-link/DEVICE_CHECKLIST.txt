@@ -1,8 +1,0 @@
-Real device acceptance (XP-P503A 58mm, XP-P810 80mm)
-- Bluetooth o'chiq/yoniq — chek chiqishi
-- Printer o'chiq/yoniq — qayta ulanish
-- Qog'oz tugagan — xabar (Uzbek) chiqishi
-- Bir xil tugmaga ikki marta — 409 yoki bitta chop
-- Matn: "printer chek", "qayta chek" — sessiya ochilishi
-- HTTPS link — ilova ochilishi (assetlinks.json domainda)
-- Zaxira: .bin fayl ochilishi (fallback)
