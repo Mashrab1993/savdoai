@@ -1,15 +1,15 @@
 "use client";
 import { useState, useEffect } from "react";
 
-function Card({ children, className = "" }) {
+function Card({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return <div className={`bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 ${className}`}>{children}</div>;
 }
 
 export default function AnalytikaPage() {
   const [tab, setTab] = useState("abc");
-  const [abc, setAbc] = useState(null);
-  const [churn, setChurn] = useState(null);
-  const [reorder, setReorder] = useState([]);
+  const [abc, setAbc] = useState<any>(null);
+  const [churn, setChurn] = useState<any>(null);
+  const [reorder, setReorder] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   const API = process.env.NEXT_PUBLIC_API_URL || "/api";
@@ -44,7 +44,7 @@ export default function AnalytikaPage() {
       </div>
 
       <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
-        {tabs.map(t => (
+        {tabs.map((t: any) => (
           <button key={t.id} onClick={() => setTab(t.id)}
             className={`px-4 py-2.5 rounded-lg text-sm font-medium whitespace-nowrap transition-all ${
               tab === t.id ? "bg-emerald-600 text-white shadow-lg shadow-emerald-200" : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400"
@@ -67,16 +67,16 @@ export default function AnalytikaPage() {
           {/* Matritsa grid */}
           <div className="grid grid-cols-4 gap-1 mb-6">
             <div className="p-2 text-center text-xs font-bold text-gray-400" />
-            {["X (Barqaror)", "Y (Mavsumiy)", "Z (Tartibsiz)"].map(x => (
+            {["X (Barqaror)", "Y (Mavsumiy)", "Z (Tartibsiz)"].map((x: string) => (
               <div key={x} className="p-2 text-center text-xs font-bold text-gray-500 bg-gray-50 dark:bg-gray-800 rounded">{x}</div>
             ))}
-            {["A (Top 80%)", "B (O'rta 15%)", "C (Quyi 5%)"].map((a, ai) => (
+            {["A (Top 80%)", "B (O'rta 15%)", "C (Quyi 5%)"].map((a: string, ai: number) => (
               <>
                 <div key={a} className="p-2 text-xs font-bold text-gray-500 bg-gray-50 dark:bg-gray-800 rounded flex items-center">{a}</div>
-                {["X", "Y", "Z"].map(x => {
-                  const key = `${["A","B","C"][ai]}${x}`;
+                {["X", "Y", "Z"].map((x: string) => {
+                  const key = `${["A","B","C"][ai]}${x}` as string;
                   const count = abc.matritsa_statistika?.[key] || 0;
-                  const colors = { AX: "bg-emerald-100 text-emerald-700 border-emerald-300",
+                  const colors: Record<string, string> = { AX: "bg-emerald-100 text-emerald-700 border-emerald-300",
                                    AY: "bg-amber-50 text-amber-700 border-amber-300",
                                    AZ: "bg-red-50 text-red-700 border-red-300",
                                    BX: "bg-emerald-50 text-emerald-600 border-emerald-200",
@@ -112,7 +112,7 @@ export default function AnalytikaPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {(abc.tovarlar || []).slice(0, 30).map((t, i) => (
+                  {(abc.tovarlar || []).slice(0, 30).map((t: any, i: number) => (
                     <tr key={i} className="border-t border-gray-100 dark:border-gray-800">
                       <td className="px-4 py-2.5 font-medium">{t.nomi}</td>
                       <td className="px-4 py-2.5">
@@ -146,7 +146,7 @@ export default function AnalytikaPage() {
 
           {/* Klientlar ro'yxati */}
           <div className="space-y-2">
-            {(churn.klientlar || []).slice(0, 20).map((k, i) => (
+            {(churn.klientlar || []).slice(0, 20).map((k: any, i: number) => (
               <Card key={i} className={`p-4 border-l-4 ${
                 k.daraja === "kritik" ? "border-l-red-500" :
                 k.daraja === "yuqori" ? "border-l-orange-500" :
@@ -183,7 +183,7 @@ export default function AnalytikaPage() {
             <p className="text-xs text-gray-500 mt-0.5">Reorder Point algoritmi asosida</p>
           </div>
           <div className="divide-y divide-gray-100 dark:divide-gray-800">
-            {(reorder || []).map((t, i) => (
+            {(reorder || []).map((t: any, i: number) => (
               <div key={i} className="flex items-center justify-between px-4 py-3">
                 <div className="flex items-center gap-3">
                   <span className="text-xl">{t.emoji}</span>

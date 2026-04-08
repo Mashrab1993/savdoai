@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback } from "react";
 
 export default function TashrifPage() {
-  const [tashriflar, setTashriflar] = useState([]);
+  const [tashriflar, setTashriflar] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [checkinLoading, setCheckinLoading] = useState(false);
   const [klientId, setKlientId] = useState("");
@@ -22,7 +22,7 @@ export default function TashrifPage() {
     try {
       let lat = null, lon = null, acc = null;
       if (navigator.geolocation) {
-        const pos = await new Promise((resolve, reject) =>
+        const pos: any = await new Promise((resolve, reject) =>
           navigator.geolocation.getCurrentPosition(resolve, reject, { enableHighAccuracy: true, timeout: 10000 })
         ).catch(() => null);
         if (pos) {
@@ -46,7 +46,7 @@ export default function TashrifPage() {
     } finally { setCheckinLoading(false); }
   }, [klientId, API]);
 
-  const doCheckout = useCallback(async (kid) => {
+  const doCheckout = useCallback(async (kid: any) => {
     const res = await fetch(`${API}/tashrif/checkout`, {
       method: "POST", headers,
       body: JSON.stringify({ klient_id: kid }),
@@ -58,9 +58,9 @@ export default function TashrifPage() {
   }, [API]);
 
   // Ochiq check-inlar (checkout qilinmaganlar)
-  const ochiq = tashriflar.filter(t => {
+  const ochiq = tashriflar.filter((t: any) => {
     if (t.turi !== "checkin") return false;
-    return !tashriflar.some(t2 => t2.turi === "checkout" && t2.klient_id === t.klient_id && t2.vaqt > t.vaqt);
+    return !tashriflar.some((t2: any) => t2.turi === "checkout" && t2.klient_id === t.klient_id && t2.vaqt > t.vaqt);
   });
 
   if (loading) return <div className="flex justify-center p-20"><div className="animate-spin h-8 w-8 border-b-2 border-emerald-500 rounded-full" /></div>;
@@ -95,7 +95,7 @@ export default function TashrifPage() {
         <div className="mb-6">
           <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">🟢 Ochiq tashriflar</h3>
           <div className="space-y-2">
-            {ochiq.map(t => (
+            {ochiq.map((t: any) => (
               <div key={t.id || t.vaqt} className="flex items-center justify-between p-3 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg border border-emerald-200 dark:border-emerald-800">
                 <div>
                   <span className="font-medium text-sm">{t.klient_nomi || `Klient #${t.klient_id}`}</span>
@@ -117,7 +117,7 @@ export default function TashrifPage() {
           <h3 className="text-sm font-semibold">Tashrif tarixi</h3>
         </div>
         <div className="divide-y divide-gray-100 dark:divide-gray-800">
-          {tashriflar.slice(0, 50).map((t, i) => (
+          {tashriflar.slice(0, 50).map((t: any, i: number) => (
             <div key={i} className="flex items-center justify-between px-4 py-3">
               <div className="flex items-center gap-3">
                 <span className={`text-lg ${t.turi === "checkin" ? "" : ""}`}>

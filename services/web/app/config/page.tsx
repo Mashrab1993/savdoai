@@ -126,7 +126,7 @@ const MODULLAR = [
 
 export default function ConfigPage() {
   const [activeModul, setActiveModul] = useState("klient");
-  const [config, setConfig] = useState({});
+  const [config, setConfig] = useState<Record<string, any>>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -154,7 +154,7 @@ export default function ConfigPage() {
   }, [API_BASE]);
 
   // Fieldni o'zgartirish
-  const handleChange = useCallback((modulId, key, value) => {
+  const handleChange = useCallback((modulId: string, key: string, value: any) => {
     setConfig(prev => ({
       ...prev,
       [modulId]: { ...(prev[modulId] || {}), [key]: value },
@@ -292,7 +292,7 @@ export default function ConfigPage() {
                     onChange={e => handleChange(activeModul, f.key, e.target.value)}
                     className="px-3 py-1.5 text-sm border rounded-lg bg-gray-50 dark:bg-gray-800 dark:border-gray-700"
                   >
-                    {f.options?.map(o => (
+                    {f.options?.map((o: any) => (
                       <option key={o} value={o}>{o}</option>
                     ))}
                   </select>

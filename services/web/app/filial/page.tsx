@@ -84,7 +84,7 @@ export default function FilialPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {filiallar.map(f => (
+            {filiallar.map((f: any) => (
               <div key={f.id} onClick={() => loadQoldiq(f.id)}
                 className="bg-white dark:bg-gray-900 rounded-xl border p-4 cursor-pointer hover:shadow-md transition-shadow">
                 <div className="flex items-center gap-3 mb-2">

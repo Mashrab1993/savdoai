@@ -30,12 +30,12 @@ export default function VanSellingPage() {
     if (res.ok) setMarshrutlar(await res.json())
   }
 
-  const holatRang = (h: string) => ({
+  const holatRang = (holat: string) => ({
     tayyorlangan: "bg-gray-100 text-gray-700",
     yuklangan: "bg-blue-100 text-blue-700",
     yolda: "bg-amber-100 text-amber-700",
     yakunlandi: "bg-emerald-100 text-emerald-700",
-  }[h] || "bg-gray-100 text-gray-700")
+  }[holat] || "bg-gray-100 text-gray-700")
 
   return (
     <AdminLayout title="🚛 Van Selling">

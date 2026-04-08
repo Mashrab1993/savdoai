@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 
-const EVENT_ICONS = {
+const EVENT_ICONS: Record<string, string> = {
   "sotuv.yaratildi": "💰", "sotuv.bekor_qilindi": "↩️", "sotuv.tasdiqlandi": "✅",
   "klient.yaratildi": "👤", "klient.yangilandi": "✏️",
   "qarz.yaratildi": "💳", "qarz.tolandi": "💚",
@@ -11,11 +11,11 @@ const EVENT_ICONS = {
 };
 
 export default function WebhookPage() {
-  const [webhooklar, setWebhooklar] = useState([]);
-  const [eventlar, setEventlar] = useState({});
+  const [webhooklar, setWebhooklar] = useState<any[]>([]);
+  const [eventlar, setEventlar] = useState<Record<string, any>>({});
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [form, setForm] = useState({ nomi: "", url: "", eventlar: [] });
+  const [form, setForm] = useState<{ nomi: string; url: string; eventlar: string[] }>({ nomi: "", url: "", eventlar: [] });
 
   const API = process.env.NEXT_PUBLIC_API_URL || "/api";
   const headers = { "Content-Type": "application/json", Authorization: `Bearer ${typeof window !== "undefined" ? localStorage.getItem("token") : ""}` };
@@ -27,10 +27,10 @@ export default function WebhookPage() {
     ]).then(([wh, ev]) => { setWebhooklar(wh); setEventlar(ev); }).finally(() => setLoading(false));
   }, []);
 
-  const toggleEvent = (e) => {
+  const toggleEvent = (e: string) => {
     setForm(p => ({
       ...p,
-      eventlar: p.eventlar.includes(e) ? p.eventlar.filter(x => x !== e) : [...p.eventlar, e]
+      eventlar: p.eventlar.includes(e) ? p.eventlar.filter((x: string) => x !== e) : [...p.eventlar, e]
     }));
   };
 
@@ -44,7 +44,7 @@ export default function WebhookPage() {
     }
   };
 
-  const test = async (id) => {
+  const test = async (id: any) => {
     await fetch(`${API}/webhook/test/${id}`, { method: "POST", headers });
     alert("Test yuborildi!");
   };
@@ -81,7 +81,7 @@ export default function WebhookPage() {
           <div>
             <label className="text-sm font-medium mb-2 block">Eventlar tanlang</label>
             <div className="grid grid-cols-2 gap-1.5">
-              {Object.entries(eventlar).map(([key, label]) => (
+              {Object.entries(eventlar).map(([key, label]: [string, any]) => (
                 <button key={key} onClick={() => toggleEvent(key)}
                   className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-left transition-all ${
                     form.eventlar.includes(key) ? "bg-emerald-50 border-emerald-300 border text-emerald-700" : "bg-gray-50 dark:bg-gray-800 border border-transparent text-gray-600"
@@ -101,7 +101,7 @@ export default function WebhookPage() {
       )}
 
       <div className="space-y-3">
-        {webhooklar.map(w => (
+        {webhooklar.map((w: any) => (
           <div key={w.id} className="bg-white dark:bg-gray-900 rounded-xl border p-4">
             <div className="flex items-center justify-between mb-2">
               <div>
@@ -119,7 +119,7 @@ export default function WebhookPage() {
               <span>📌 {(w.eventlar || []).length} event</span>
             </div>
             <div className="flex flex-wrap gap-1 mt-2">
-              {(w.eventlar || []).map(e => (
+              {(w.eventlar || []).map((e: any) => (
                 <span key={e} className="px-2 py-0.5 bg-gray-100 dark:bg-gray-800 rounded text-[10px]">
                   {EVENT_ICONS[e] || "📌"} {e}
                 </span>

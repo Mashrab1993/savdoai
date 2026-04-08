@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 
 export default function SyncLogPage() {
-  const [logs, setLogs] = useState([]);
+  const [logs, setLogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const API = process.env.NEXT_PUBLIC_API_URL || "/api";
 
@@ -12,8 +12,8 @@ export default function SyncLogPage() {
     }).then(r => r.json()).then(setLogs).catch(() => {}).finally(() => setLoading(false));
   }, []);
 
-  const success = logs.filter(l => l.muvaffaqiyatli).length;
-  const fail = logs.filter(l => !l.muvaffaqiyatli).length;
+  const success = logs.filter((l: any) => l.muvaffaqiyatli).length;
+  const fail = logs.filter((l: any) => !l.muvaffaqiyatli).length;
 
   if (loading) return <div className="flex justify-center p-20"><div className="animate-spin h-8 w-8 border-b-2 border-emerald-500 rounded-full" /></div>;
 
@@ -50,7 +50,7 @@ export default function SyncLogPage() {
             </tr>
           </thead>
           <tbody>
-            {logs.map(l => (
+            {logs.map((l: any) => (
               <tr key={l.id} className="border-t border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50">
                 <td className="px-4 py-3 text-xs">{l.boshlangan ? new Date(l.boshlangan).toLocaleString("uz") : "—"}</td>
                 <td className="px-4 py-3"><span className={`px-2 py-0.5 rounded text-xs font-medium ${l.sync_turi === "auto" ? "bg-blue-100 text-blue-700" : "bg-gray-100 text-gray-700"}`}>{l.sync_turi}</span></td>

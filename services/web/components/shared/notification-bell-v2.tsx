@@ -37,12 +37,13 @@ export function NotificationBell() {
   // WebSocket dan kelgan xabarlarni qo'shish
   useEffect(() => {
     if (lastMessage?.type === "live_event" || lastMessage?.type === "notification") {
+      const msg = lastMessage as any;
       const n: Notification = {
         id: `${Date.now()}_${Math.random()}`,
-        type: lastMessage.turi || lastMessage.type || "info",
-        emoji: lastMessage.emoji || "📌",
-        title: lastMessage.sarlavha || lastMessage.title || "Yangilik",
-        body: lastMessage.tafsilot || lastMessage.body || "",
+        type: msg.turi || msg.type || "info",
+        emoji: msg.emoji || "📌",
+        title: msg.sarlavha || msg.title || "Yangilik",
+        body: msg.tafsilot || msg.body || "",
         time: new Date().toLocaleTimeString("uz-UZ", { hour: "2-digit", minute: "2-digit" }),
         read: false,
       }

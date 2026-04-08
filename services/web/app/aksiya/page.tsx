@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 
-const TURLAR = {
+const TURLAR: Record<string, { label: string; icon: string }> = {
   foiz_chegirma: { label: "Foiz chegirma", icon: "%" },
   summa_chegirma: { label: "Summa chegirma", icon: "💰" },
   tovar_hadya: { label: "Tovar hadya (N+M)", icon: "🎁" },
@@ -11,7 +11,7 @@ const TURLAR = {
 };
 
 export default function AksiyaPage() {
-  const [aksiyalar, setAksiyalar] = useState([]);
+  const [aksiyalar, setAksiyalar] = useState<any[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(true);
   const [form, setForm] = useState({
@@ -32,9 +32,9 @@ export default function AksiyaPage() {
     if (res.ok) { const d = await res.json(); setAksiyalar(p => [{ id: d.id, ...form, faol: true }, ...p]); setShowForm(false); }
   };
 
-  const toggle = async (id, faol) => {
+  const toggle = async (id: any, faol: any) => {
     await fetch(`${API}/aksiya/${id}/holat?faol=${!faol}`, { method: "PUT", headers });
-    setAksiyalar(p => p.map(a => a.id === id ? { ...a, faol: !faol } : a));
+    setAksiyalar(p => p.map((a: any) => a.id === id ? { ...a, faol: !faol } : a));
   };
 
   if (loading) return <div className="flex justify-center p-20"><div className="animate-spin h-8 w-8 border-b-2 border-emerald-500 rounded-full" /></div>;
@@ -111,7 +111,7 @@ export default function AksiyaPage() {
       )}
 
       <div className="space-y-3">
-        {aksiyalar.map(a => (
+        {aksiyalar.map((a: any) => (
           <div key={a.id} className={`flex items-center justify-between p-4 rounded-xl border ${a.faol ? "bg-white dark:bg-gray-900" : "bg-gray-50 dark:bg-gray-950 opacity-60"}`}>
             <div className="flex items-center gap-3">
               <span className="text-2xl">{TURLAR[a.turi]?.icon || "📋"}</span>

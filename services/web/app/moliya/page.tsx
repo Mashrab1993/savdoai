@@ -1,10 +1,10 @@
 "use client";
 import { useState, useEffect } from "react";
 
-function Card({ children, className = "" }) {
+function Card({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return <div className={`bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 ${className}`}>{children}</div>;
 }
-function Row({ label, value, bold = false, indent = 0, color = "" }) {
+function Row({ label, value, bold = false, indent = 0, color = "" }: { label: string; value: any; bold?: boolean; indent?: number; color?: string }) {
   return (
     <div className={`flex justify-between py-2 px-4 ${bold ? "font-bold border-t-2 border-gray-200 dark:border-gray-700" : "border-b border-gray-50 dark:border-gray-800"}`}
       style={{ paddingLeft: `${16 + indent * 16}px` }}>
@@ -16,10 +16,10 @@ function Row({ label, value, bold = false, indent = 0, color = "" }) {
 
 export default function MoliyaPage() {
   const [tab, setTab] = useState("pl");
-  const [pl, setPl] = useState(null);
-  const [bs, setBs] = useState(null);
-  const [cf, setCf] = useState(null);
-  const [kpi, setKpi] = useState(null);
+  const [pl, setPl] = useState<any>(null);
+  const [bs, setBs] = useState<any>(null);
+  const [cf, setCf] = useState<any>(null);
+  const [kpi, setKpi] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   const API = process.env.NEXT_PUBLIC_API_URL || "/api";
@@ -46,7 +46,7 @@ export default function MoliyaPage() {
     { id: "kpi", label: "📈 KPI" },
   ];
 
-  const N = (v) => Number(v || 0);
+  const N = (v: any) => Number(v || 0);
 
   return (
     <div className="max-w-4xl mx-auto p-4 sm:p-6">
@@ -56,7 +56,7 @@ export default function MoliyaPage() {
       </div>
 
       <div className="flex gap-2 mb-6 overflow-x-auto">
-        {tabs.map(t => (
+        {tabs.map((t: any) => (
           <button key={t.id} onClick={() => setTab(t.id)}
             className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap ${
               tab === t.id ? "bg-blue-600 text-white" : "bg-gray-100 dark:bg-gray-800 text-gray-600"
@@ -81,7 +81,7 @@ export default function MoliyaPage() {
           <Row label="YALPI FOYDA" value={N(pl.yalpi_foyda?.summa).toLocaleString()} bold />
           <Row label={`Margin: ${pl.yalpi_foyda?.margin_foiz}%`} value="" indent={1} color="text-blue-500" />
           <div className="px-4 py-1 bg-gray-50 dark:bg-gray-800 text-xs font-semibold text-gray-500">XARAJATLAR</div>
-          {pl.xarajatlar?.tafsilot && Object.entries(pl.xarajatlar.tafsilot).map(([k, v]) => (
+          {pl.xarajatlar?.tafsilot && Object.entries(pl.xarajatlar.tafsilot).map(([k, v]: [string, any]) => (
             <Row key={k} label={k.charAt(0).toUpperCase() + k.slice(1)} value={`-${N(v).toLocaleString()}`} indent={1} color="text-red-400" />
           ))}
           <Row label="Jami xarajat" value={`-${N(pl.xarajatlar?.jami).toLocaleString()}`} bold color="text-red-500" />
@@ -150,7 +150,7 @@ export default function MoliyaPage() {
             { label: "Kunlik sotuv", value: kpi.sotuv_soni_kunlik, icon: "📈", color: "blue" },
             { label: "Faol klientlar", value: kpi.klient_soni, icon: "👥", color: "purple" },
             { label: "Ombor qiymati", value: N(kpi.ombor_qiymati).toLocaleString(), icon: "🏭", color: "amber" },
-          ].map((s, i) => (
+          ].map((s: any, i: number) => (
             <Card key={i} className="p-4 text-center">
               <div className="text-2xl mb-1">{s.icon}</div>
               <div className="text-lg font-bold">{s.value}</div>

@@ -2,8 +2,8 @@
 import { useState, useEffect } from "react";
 
 export default function LeaderboardPage() {
-  const [myStats, setMyStats] = useState(null);
-  const [board, setBoard] = useState([]);
+  const [myStats, setMyStats] = useState<any>(null);
+  const [board, setBoard] = useState<any[]>([]);
   const [davr, setDavr] = useState("hafta");
   const [loading, setLoading] = useState(true);
 
@@ -63,7 +63,7 @@ export default function LeaderboardPage() {
         <div className="mb-6">
           <h3 className="text-sm font-semibold mb-3">🎖️ Badgelar</h3>
           <div className="flex flex-wrap gap-2">
-            {myStats.badges.map((b, i) => (
+            {myStats.badges.map((b: any, i: number) => (
               <div key={i} className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-full">
                 <span>{b.emoji}</span>
                 <span className="text-xs font-medium text-amber-700 dark:text-amber-400">{b.nomi}</span>
@@ -77,7 +77,7 @@ export default function LeaderboardPage() {
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-bold">🏆 Leaderboard</h2>
         <div className="flex gap-1">
-          {[["hafta", "Hafta"], ["oy", "Oy"]].map(([k, l]) => (
+          {[["hafta", "Hafta"], ["oy", "Oy"]].map(([k, l]: string[]) => (
             <button key={k} onClick={() => setDavr(k)}
               className={`px-3 py-1.5 rounded-lg text-xs font-medium ${
                 davr === k ? "bg-emerald-600 text-white" : "bg-gray-100 dark:bg-gray-800 text-gray-600"
@@ -87,7 +87,7 @@ export default function LeaderboardPage() {
       </div>
 
       <div className="space-y-2">
-        {board.map((r, i) => (
+        {board.map((r: any, i: number) => (
           <div key={i} className={`flex items-center justify-between p-3.5 rounded-xl border ${
             i < 3 ? "bg-gradient-to-r from-amber-50 to-white dark:from-amber-900/10 dark:to-gray-900 border-amber-200 dark:border-amber-800" : "bg-white dark:bg-gray-900"
           }`}>

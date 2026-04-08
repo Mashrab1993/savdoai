@@ -103,7 +103,7 @@ export default function OnboardingPage() {
           </div>
           {/* Step dots */}
           <div className="flex justify-between mt-3">
-            {STEPS.map((s, i) => (
+            {STEPS.map((s: any, i: number) => (
               <div key={s.id} className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
                 i < step ? "bg-emerald-500 text-white" :
                 i === step ? `bg-${current.color}-500 text-white scale-110 shadow-lg` :

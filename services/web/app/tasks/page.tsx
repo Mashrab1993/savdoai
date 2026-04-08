@@ -47,9 +47,9 @@ export default function TasksPage() {
   }
 
   const counts = {
-    yangi: tasks.filter(t => t.holat === "yangi").length,
-    jarayonda: tasks.filter(t => t.holat === "jarayonda").length,
-    bajarildi: tasks.filter(t => t.holat === "bajarildi").length,
+    yangi: tasks.filter((t: any) => t.holat === "yangi").length,
+    jarayonda: tasks.filter((t: any) => t.holat === "jarayonda").length,
+    bajarildi: tasks.filter((t: any) => t.holat === "bajarildi").length,
   }
 
   return (
@@ -76,7 +76,7 @@ export default function TasksPage() {
 
         {/* Task cards */}
         <div className="space-y-2">
-          {tasks.map(t => (
+          {tasks.map((t: any) => (
             <div key={t.id} className={`p-4 rounded-xl border-l-4 bg-white dark:bg-gray-900 border ${HOLAT_RANG[t.holat] || ""}`}>
               <div className="flex items-start justify-between">
                 <div className="flex-1">

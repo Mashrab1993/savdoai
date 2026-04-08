@@ -2,13 +2,13 @@
 import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 
-function Card({ children, className = "" }) {
+function Card({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return <div className={`bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 ${className}`}>{children}</div>;
 }
 
 export default function Klient360Page() {
   const [klientId, setKlientId] = useState("");
-  const [data, setData] = useState(null);
+  const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const searchParams = useSearchParams();
 
@@ -20,7 +20,7 @@ export default function Klient360Page() {
     if (id) { setKlientId(id); yukla(id); }
   }, [searchParams]);
 
-  const yukla = async (id) => {
+  const yukla = async (id: any) => {
     setLoading(true);
     try {
       const res = await fetch(`${API}/klient360/${id}`, { headers: h });
@@ -82,7 +82,7 @@ export default function Klient360Page() {
               { label: "O'rtacha chek", value: Number(m.ortacha_chek || 0).toLocaleString(), icon: "📊" },
               { label: "Joriy qarz", value: Number(m.joriy_qarz || 0).toLocaleString(), icon: "💳", danger: Number(m.joriy_qarz || 0) > 0 },
               { label: "CLV (1 yil)", value: Number(data.clv?.yillik_prognoz || 0).toLocaleString(), icon: "🎯" },
-            ].map((s, i) => (
+            ].map((s: any, i: number) => (
               <Card key={i} className={`p-3 text-center ${s.danger ? "border-red-300 bg-red-50 dark:bg-red-900/10" : ""}`}>
                 <div className="text-lg">{s.icon}</div>
                 <div className={`text-lg font-bold ${s.danger ? "text-red-600" : ""}`}>{s.value}</div>
@@ -96,7 +96,7 @@ export default function Klient360Page() {
             <Card>
               <div className="p-4 border-b"><h3 className="text-sm font-semibold">🏆 Top tovarlar</h3></div>
               <div className="divide-y divide-gray-100 dark:divide-gray-800">
-                {(data.top_tovarlar || []).map((t, i) => (
+                {(data.top_tovarlar || []).map((t: any, i: number) => (
                   <div key={i} className="flex items-center justify-between px-4 py-2.5">
                     <div className="flex items-center gap-2">
                       <span className="text-xs font-bold text-gray-400 w-5">{i+1}.</span>
@@ -115,7 +115,7 @@ export default function Klient360Page() {
             <Card>
               <div className="p-4 border-b"><h3 className="text-sm font-semibold">🎯 Cross-sell tavsiyalar</h3></div>
               <div className="p-4 space-y-2">
-                {(data.cross_sell || []).map((c, i) => (
+                {(data.cross_sell || []).map((c: any, i: number) => (
                   <div key={i} className="flex items-center justify-between p-3 rounded-lg bg-emerald-50 dark:bg-emerald-900/10 border border-emerald-200 dark:border-emerald-800">
                     <div>
                       <div className="text-sm font-medium">{c.nomi}</div>
@@ -134,7 +134,7 @@ export default function Klient360Page() {
             <Card>
               <div className="p-4 border-b"><h3 className="text-sm font-semibold">📅 Sotuv kunlari</h3></div>
               <div className="p-4 space-y-2">
-                {(data.hafta_kunlari || []).map((h, i) => (
+                {(data.hafta_kunlari || []).map((h: any, i: number) => (
                   <div key={i} className="flex items-center gap-3">
                     <span className="text-xs font-bold w-8">{h.kun}</span>
                     <div className="flex-1 bg-gray-100 dark:bg-gray-800 rounded-full h-4 overflow-hidden">
