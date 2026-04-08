@@ -3,24 +3,10 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import {
-  LayoutDashboard,
-  Users,
-  Package,
-  CreditCard,
-  FileText,
-  BarChart3,
-  Settings,
-  Building2,
-  ChevronLeft,
-  ChevronRight,
-  GraduationCap,
-  Receipt,
-  Tag,
-  Landmark,
-  ShoppingCart,
-  Brain,
-  Star,
-  Target,
+  LayoutDashboard, Users, Package, CreditCard, FileText, BarChart3,
+  Settings, ChevronLeft, ChevronRight, GraduationCap, Receipt, Tag,
+  Landmark, ShoppingCart, Brain, Star, Target, Gift, RefreshCw,
+  MapPin, Shield, Activity, Wallet,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useState } from "react"
@@ -33,11 +19,14 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   const { locale } = useLocale()
   const nav = translations.nav
 
-  const handleNavClick = () => {
-    onNavigate?.()
-  }
+  const handleNavClick = () => { onNavigate?.() }
+
+  // ═══════════════════════════════════════════════════════
+  //  ASOSIY NAVIGATSIYA
+  // ═══════════════════════════════════════════════════════
 
   const navItems = [
+    { href: "/live",        label: "🔴 LIVE",              icon: Activity },
     { href: "/dashboard",   label: nav.dashboard[locale],   icon: LayoutDashboard },
     { href: "/sales",       label: locale === "uz" ? "Sotuv" : "Продажа", icon: ShoppingCart },
     { href: "/clients",     label: nav.clients[locale],     icon: Users },
@@ -46,6 +35,32 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
     { href: "/invoices",    label: nav.invoices[locale],    icon: FileText },
     { href: "/reports",     label: nav.reports[locale],     icon: BarChart3 },
   ]
+
+  // ═══════════════════════════════════════════════════════
+  //  YANGI v25.4.0 MODULLAR
+  // ═══════════════════════════════════════════════════════
+
+  const navItemsNew = [
+    { href: "/moliya",          label: "💼 Moliya",          icon: CreditCard },
+    { href: "/aksiya",          label: "🎁 Aksiyalar",       icon: Gift },
+    { href: "/pro-analitika",   label: "📊 Pro Analitika",   icon: BarChart3 },
+    { href: "/klient360",       label: "👤 Klient 360°",     icon: Users },
+    { href: "/tasks",           label: "📋 Topshiriqlar",    icon: Target },
+    { href: "/kalendar",        label: "📅 Kalendar",        icon: Star },
+    { href: "/leaderboard",     label: "🏆 Leaderboard",     icon: Star },
+    { href: "/van-selling",     label: "🚛 Van Selling",     icon: Target },
+    { href: "/route",           label: "🗺️ Marshrut",       icon: MapPin },
+    { href: "/filial",          label: "🏢 Filiallar",       icon: Shield },
+    { href: "/agent-monitor",   label: "📡 Agent Monitor",   icon: Activity },
+    { href: "/sverka",          label: "📋 Akt Sverki",      icon: Shield },
+    { href: "/tashrif",         label: "📍 Tashriflar",      icon: MapPin },
+    { href: "/webhook",         label: "🔗 Webhook",         icon: RefreshCw },
+    { href: "/sync-log",        label: "🔄 Sync log",        icon: RefreshCw },
+  ]
+
+  // ═══════════════════════════════════════════════════════
+  //  QOLDIQ NAVIGATSIYA
+  // ═══════════════════════════════════════════════════════
 
   const navItemsSecondary = [
     { href: "/kpi",          label: "📊 KPI",              icon: Target },
@@ -57,93 +72,92 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
     { href: "/cash",        label: nav.cash[locale],        icon: Landmark },
   ]
 
-  // Mark future routes as "next phase" with a subtle pill
-  const roadmapHrefs = new Set<string>([])
+  // ═══════════════════════════════════════════════════════
+  //  SOZLAMALAR
+  // ═══════════════════════════════════════════════════════
 
-  const renderNavItem = (item: { href: string; label: string; icon: React.ElementType }) => {
-    const active = pathname === item.href || pathname.startsWith(item.href + "/")
-    const Icon = item.icon
-    const isRoadmap = roadmapHrefs.has(item.href)
-    return (
-      <Link
-        key={item.href}
-        href={item.href}
-        onClick={handleNavClick}
-        className={cn(
-          "flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors",
-          active
-            ? "bg-sidebar-primary text-sidebar-primary-foreground"
-            : "text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
-          collapsed && "justify-center px-0"
-        )}
-        title={collapsed ? item.label : undefined}
-      >
-        <Icon className="w-4 h-4 shrink-0" />
-        {!collapsed && (
-          <>
-            <span className="truncate flex-1">{item.label}</span>
-            {isRoadmap && !active && (
-              <span className="text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded bg-sidebar-accent text-sidebar-foreground/40 shrink-0">
-                {locale === "uz" ? "Beta" : "Beta"}
-              </span>
+  const navItemsSettings = [
+    { href: "/config",      label: "⚙️ Sozlamalar",    icon: Settings },
+    { href: "/settings",    label: "🔒 Hisobim",       icon: Shield },
+  ]
+
+  const renderSection = (items: typeof navItems, title?: string) => (
+    <>
+      {title && !collapsed && (
+        <div className="px-3 pt-4 pb-1">
+          <span className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-600">
+            {title}
+          </span>
+        </div>
+      )}
+      {items.map((item) => {
+        const isActive = pathname === item.href || pathname?.startsWith(item.href + "/")
+        return (
+          <Link
+            key={item.href}
+            href={item.href}
+            onClick={handleNavClick}
+            className={cn(
+              "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all",
+              isActive
+                ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
+                : "text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-800/50",
+              collapsed && "justify-center px-2"
             )}
-          </>
-        )}
-      </Link>
-    )
-  }
+            title={collapsed ? item.label : undefined}
+          >
+            <item.icon className={cn("h-4.5 w-4.5 flex-shrink-0", isActive ? "text-emerald-600 dark:text-emerald-400" : "")} />
+            {!collapsed && <span className="truncate">{item.label}</span>}
+            {isActive && !collapsed && (
+              <div className="ml-auto w-1.5 h-1.5 rounded-full bg-emerald-500" />
+            )}
+          </Link>
+        )
+      })}
+    </>
+  )
 
   return (
-    <aside
-      className={cn(
-        "flex flex-col bg-sidebar text-sidebar-foreground border-r border-sidebar-border transition-all duration-300 shrink-0",
-        collapsed ? "w-16" : "w-62"
-      )}
-    >
+    <aside className={cn(
+      "flex flex-col h-full bg-white dark:bg-gray-950 border-r border-gray-200 dark:border-gray-800 transition-all duration-200",
+      collapsed ? "w-16" : "w-56"
+    )}>
       {/* Logo */}
-      <div className={cn(
-        "flex items-center gap-3 h-16 px-4 border-b border-sidebar-border shrink-0",
-        collapsed && "justify-center px-0"
-      )}>
-        <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary shrink-0">
-          <Building2 className="w-4 h-4 text-primary-foreground" />
-        </div>
+      <div className="flex items-center justify-between px-3 py-4 border-b border-gray-100 dark:border-gray-800">
         {!collapsed && (
-          <div className="flex flex-col min-w-0">
-            <span className="font-bold text-sm text-sidebar-foreground leading-none truncate">
-              SavdoAI
-            </span>
-            <span className="text-[10px] text-sidebar-foreground/40 mt-0.5 truncate">v25</span>
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
+              <span className="text-white text-sm font-bold">S</span>
+            </div>
+            <div>
+              <div className="text-sm font-bold text-gray-900 dark:text-white">SavdoAI</div>
+              <div className="text-[10px] text-gray-400">v25.4.0 Pro</div>
+            </div>
           </div>
         )}
-      </div>
-
-      {/* Nav */}
-      <nav className="flex-1 px-2 py-4 overflow-y-auto space-y-0.5">
-        {navItems.map(renderNavItem)}
-
-        {/* Divider */}
-        <div className={cn(
-          "my-3 border-t border-sidebar-border",
-          collapsed ? "mx-2" : "mx-1"
-        )} />
-
-        {navItemsSecondary.map(renderNavItem)}
-      </nav>
-
-      {/* Settings + Collapse */}
-      <div className="px-2 pb-3 space-y-0.5 border-t border-sidebar-border pt-3">
-        {renderNavItem({ href: "/settings", label: nav.settings[locale], icon: Settings })}
         <button
           onClick={() => setCollapsed(!collapsed)}
-          className={cn(
-            "flex items-center gap-2 w-full px-3 py-2 rounded-md text-sm text-sidebar-foreground/40 hover:text-sidebar-foreground hover:bg-sidebar-accent transition-colors",
-            collapsed && "justify-center px-0"
-          )}
+          className="p-1 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-400"
         >
-          {collapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
-          {!collapsed && <span className="text-xs">{nav.collapse[locale]}</span>}
+          {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
         </button>
+      </div>
+
+      {/* Navigation */}
+      <nav className="flex-1 overflow-y-auto py-2 px-2 space-y-0.5">
+        {renderSection(navItems)}
+
+        {/* Yangi modullar — ajratilgan */}
+        {!collapsed && <div className="my-2 mx-3 border-t border-gray-100 dark:border-gray-800" />}
+        {renderSection(navItemsNew, "Yangi")}
+
+        {!collapsed && <div className="my-2 mx-3 border-t border-gray-100 dark:border-gray-800" />}
+        {renderSection(navItemsSecondary, "Boshqa")}
+      </nav>
+
+      {/* Bottom settings */}
+      <div className="border-t border-gray-100 dark:border-gray-800 py-2 px-2 space-y-0.5">
+        {renderSection(navItemsSettings)}
       </div>
     </aside>
   )

@@ -1,0 +1,82 @@
+# SavdoAI — Cursor AI Qoidalari
+
+## Loyiha haqida
+SavdoAI — O'zbekiston do'konchilari uchun AI-powered savdo boshqaruv tizimi.
+Telegram bot + Next.js web panel + FastAPI backend + PostgreSQL + Redis.
+Dual-Brain AI: Gemini 2.5 Pro (STT/OCR) + Claude Sonnet (mantiq).
+
+## Arxitektura
+```
+savdoai/
+├── services/
+│   ├── api/          # FastAPI backend (main.py — 107 endpoint)
+│   │   ├── main.py   # Asosiy API server
+│   │   ├── deps.py   # JWT auth, rate limiting
+│   │   └── routes/   # Route modullari
+│   ├── bot/          # Telegram bot
+│   │   ├── main.py   # Bot entry point
+│   │   ├── db.py     # Bot DB operations
+│   │   ├── handlers/ # Buyurtma, matn, callback handlers
+│   │   └── services/ # AI, voice, fuzzy, export
+│   ├── web/          # Next.js admin panel
+│   │   ├── app/      # Pages (App Router)
+│   │   └── components/
+│   ├── cognitive/    # AI router, engine
+│   └── worker/       # Celery tasks
+├── shared/
+│   ├── services/     # 57+ biznes logika modullari
+│   ├── database/     # asyncpg pool + RLS
+│   ├── cache/        # Redis cache
+│   └── utils/        # hisob.py (Decimal), uzb_nlp.py, fmt.py
+└── android/          # Print companion app (Kotlin)
+```
+
+## Kod yozish qoidalari
+
+### Python (Backend)
+- **Decimal arifmetika**: Hamma pul hisob-kitoblarida `from shared.utils.hisob import D` ishlatish. HECH QACHON float ishlatmang.
+- **O'zbek nomlash**: Funksiya va o'zgaruvchilar O'zbekcha bo'lishi kerak (masalan: `chegirma_hisoblash`, `klient_id`, `jami_summa`).
+- **DB pattern**: `async with get_conn(uid) as conn:` — har doim RLS context bilan.
+- **Xato boshqarish**: Har bir DB operatsiya try/except ichida, log.error bilan.
+- **Type hints**: Barcha funksiyalarda type annotation bo'lishi kerak.
+- **Docstring**: O'zbekcha docstring — funksiya maqsadi va parametrlari.
+
+### TypeScript (Web Panel)
+- **Next.js App Router**: `"use client"` direktivasi kerak bo'lganda.
+- **Tailwind CSS**: shadcn/ui komponentlari bilan.
+- **API chaqiruv**: `fetch` bilan, `Authorization: Bearer` header.
+- **Dark mode**: `dark:` Tailwind sinflarini qo'llash.
+
+### Kotlin (Android)
+- **Coroutines**: suspend funksiyalar, Flow, StateFlow.
+- **Hilt DI**: @Inject, @HiltViewModel.
+- **Room DB**: Entity, Dao, Database pattern.
+
+## Raqobatchilar tahlili natijasi
+
+### SD Agent'dan o'rganilgan (qo'shilishi kerak):
+1. **Server Config System** — 23 modul ✅ (server_config.py yaratildi)
+2. **Aksiya tizimi** — 6 tur ✅ (aksiya.py yaratildi)
+3. **9 ta tovar filtr** — kategoriya, brand, narx turi, ombor
+4. **15 ta buyurtma amali** — edit, send, comment, tag, payment, print, bonus
+5. **Check-in/out** — GPS bilan tashrif qayd qilish
+6. **Ombor qoldiq qaytarish** — buyurtma bekor qilganda
+7. **Van selling** — yetkazib berish boshqaruvi
+
+### Smartup ERP'dan o'rganilgan:
+1. **Sync logging** — 19 field ✅ (sync_log jadvali yaratildi)
+2. **GPS foreground service** — fon tracking
+3. **Merchandising** — YOLO tovar aniqlash
+4. **Multi-filial** — ko'p filiallar boshqaruvi
+
+## Muhim fayllar
+- `shared/services/server_config.py` — Config system (572 qator)
+- `shared/services/aksiya.py` — Aksiya engine (385 qator)
+- `shared/services/hisobot_engine.py` — Universal reporting (636 qator)
+- `shared/services/ochiq_savat.py` — Multi-client cart (653 qator)
+- `shared/services/pipeline.py` — DRAFT→CONFIRMED→POSTED (366 qator)
+- `shared/services/ledger.py` — Double-entry bookkeeping (346 qator)
+- `shared/services/smart_narx.py` — 4-layer pricing (198 qator)
+- `shared/utils/uzb_nlp.py` — O'zbek NLP (1,156 qator, 8 sheva)
+- `shared/utils/hisob.py` — 100% Decimal arithmetic (423 qator)
+- `services/cognitive/engine.py` — AI tool calling (812 qator)
