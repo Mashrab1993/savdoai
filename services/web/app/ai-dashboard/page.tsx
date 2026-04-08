@@ -1,10 +1,10 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, type ReactNode } from "react";
 
-function Card({ children, className = "" }) {
+function Card({ children, className = "" }: { children: ReactNode; className?: string }) {
   return <div className={`bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-4 ${className}`}>{children}</div>;
 }
-function Stat({ label, value, icon, trend, color = "emerald" }) {
+function Stat({ label, value, icon, trend, color = "emerald" }: { label: string; value: string | number; icon: string; trend?: number; color?: string }) {
   return (
     <Card>
       <div className="flex items-center justify-between mb-2">
