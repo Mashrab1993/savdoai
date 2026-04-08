@@ -22,11 +22,11 @@ function Stat({ label, value, icon, trend, color = "emerald" }: { label: string;
 }
 
 export default function AIDashboard() {
-  const [data, setData] = useState(null);
-  const [insights, setInsights] = useState([]);
-  const [config, setConfig] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [tab, setTab] = useState("umumiy");
+  const [data, setData] = useState<Record<string, any> | null>(null);
+  const [insights, setInsights] = useState<Array<Record<string, any>>>([]);
+  const [config, setConfig] = useState<Record<string, Record<string, boolean>> | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [tab, setTab] = useState<string>("umumiy");
 
   const API = process.env.NEXT_PUBLIC_API_URL || "/api";
   const h = { Authorization: `Bearer ${typeof window !== "undefined" ? localStorage.getItem("token") : ""}` };
