@@ -100,7 +100,7 @@ export default function AIDashboard() {
             <Card>
               <h3 className="text-sm font-semibold mb-3">📈 Haftalik sotuv trendi</h3>
               <div className="space-y-2">
-                {(hafta.kunlik || []).map((k, i) => (
+                {(hafta.kunlik || []).map((k: any, i: number) => (
                   <div key={i} className="flex items-center gap-2">
                     <span className="text-xs text-gray-500 w-8">{k.kun}</span>
                     <div className="flex-1 bg-gray-100 dark:bg-gray-800 rounded-full h-5 overflow-hidden">
@@ -118,7 +118,7 @@ export default function AIDashboard() {
             <Card>
               <h3 className="text-sm font-semibold mb-3">🏆 Top 5 tovar (bu oy)</h3>
               <div className="space-y-2">
-                {(oy.top_tovarlar || []).slice(0, 5).map((t, i) => (
+                {(oy.top_tovarlar || []).slice(0, 5).map((t: any, i: number) => (
                   <div key={i} className="flex items-center justify-between py-1.5 border-b border-gray-50 dark:border-gray-800 last:border-0">
                     <div className="flex items-center gap-2">
                       <span className="text-xs font-bold text-gray-400 w-5">{i + 1}.</span>
@@ -139,7 +139,7 @@ export default function AIDashboard() {
           <Card className="mb-6">
             <h3 className="text-sm font-semibold mb-3">👥 Top klientlar (bu oy)</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              {(oy.top_klientlar || []).slice(0, 6).map((k, i) => (
+              {(oy.top_klientlar || []).slice(0, 6).map((k: any, i: number) => (
                 <div key={i} className="flex items-center gap-3 p-3 rounded-lg bg-gray-50 dark:bg-gray-800">
                   <div className="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-900 flex items-center justify-center">
                     <span className="text-xs font-bold text-emerald-600">{i + 1}</span>
