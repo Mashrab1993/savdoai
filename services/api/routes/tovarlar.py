@@ -32,6 +32,26 @@ class TovarYaratSorov(BaseModel):
     min_sotish_narxi: float = Field(0, ge=0)
     qoldiq:           float = Field(0, ge=0)
     min_qoldiq:       float = Field(0, ge=0)
+    # SalesDoc-compatible maydonlar
+    brend:            Optional[str]   = None
+    podkategoriya:    Optional[str]   = None
+    guruh:            Optional[str]   = None
+    ishlab_chiqaruvchi: Optional[str] = None
+    segment:          Optional[str]   = None
+    shtrix_kod:       Optional[str]   = None
+    artikul:          Optional[str]   = None
+    sap_kod:          Optional[str]   = None
+    kod:              Optional[str]   = None
+    ikpu_kod:         Optional[str]   = None
+    gtin:             Optional[str]   = None
+    hajm:             Optional[float] = None
+    ogirlik:          Optional[float] = None
+    blokda_soni:      Optional[int]   = None
+    korobkada_soni:   Optional[int]   = None
+    saralash:         Optional[int]   = None
+    yaroqlilik_muddati: Optional[int] = None
+    tavsif:           Optional[str]   = None
+    savdo_yonalishi:  Optional[str]   = None
 
 
 class TovarYangilaSorov(BaseModel):
@@ -43,6 +63,26 @@ class TovarYangilaSorov(BaseModel):
     min_sotish_narxi: Optional[float] = None
     qoldiq:           Optional[float] = None
     min_qoldiq:       Optional[float] = None
+    # SalesDoc-compatible maydonlar
+    brend:            Optional[str]   = None
+    podkategoriya:    Optional[str]   = None
+    guruh:            Optional[str]   = None
+    ishlab_chiqaruvchi: Optional[str] = None
+    segment:          Optional[str]   = None
+    shtrix_kod:       Optional[str]   = None
+    artikul:          Optional[str]   = None
+    sap_kod:          Optional[str]   = None
+    kod:              Optional[str]   = None
+    ikpu_kod:         Optional[str]   = None
+    gtin:             Optional[str]   = None
+    hajm:             Optional[float] = None
+    ogirlik:          Optional[float] = None
+    blokda_soni:      Optional[int]   = None
+    korobkada_soni:   Optional[int]   = None
+    saralash:         Optional[int]   = None
+    yaroqlilik_muddati: Optional[int] = None
+    tavsif:           Optional[str]   = None
+    savdo_yonalishi:  Optional[str]   = None
 
 
 class QoldiqYangilaSorov(BaseModel):
@@ -76,7 +116,9 @@ async def tovarlar(
         if kategoriya:
             rows = await c.fetch("""
                 SELECT id, user_id, nomi, kategoriya, birlik, olish_narxi, sotish_narxi,
-                       min_sotish_narxi, qoldiq, min_qoldiq, yaratilgan
+                       min_sotish_narxi, qoldiq, min_qoldiq, yaratilgan,
+                       brend, podkategoriya, shtrix_kod, artikul, kod, ikpu_kod,
+                       hajm, ogirlik, blokda_soni, korobkada_soni, faol, tavsif
                 FROM tovarlar WHERE kategoriya=$3
                 ORDER BY nomi LIMIT $1 OFFSET $2
             """, limit, offset, kategoriya)
@@ -87,7 +129,9 @@ async def tovarlar(
         else:
             rows = await c.fetch("""
                 SELECT id, user_id, nomi, kategoriya, birlik, olish_narxi, sotish_narxi,
-                       min_sotish_narxi, qoldiq, min_qoldiq, yaratilgan
+                       min_sotish_narxi, qoldiq, min_qoldiq, yaratilgan,
+                       brend, podkategoriya, shtrix_kod, artikul, kod, ikpu_kod,
+                       hajm, ogirlik, blokda_soni, korobkada_soni, faol, tavsif
                 FROM tovarlar ORDER BY kategoriya,nomi LIMIT $1 OFFSET $2
             """, limit, offset)
             total = await c.fetchval(
@@ -102,7 +146,12 @@ async def tovar_bir(tovar_id: int, uid: int = Depends(get_uid)):
     async with rls_conn(uid) as c:
         t = await c.fetchrow("""
             SELECT id, user_id, nomi, kategoriya, birlik, olish_narxi, sotish_narxi,
-                   min_sotish_narxi, qoldiq, min_qoldiq, yaratilgan
+                   min_sotish_narxi, qoldiq, min_qoldiq, yaratilgan,
+                   brend, podkategoriya, guruh, ishlab_chiqaruvchi, segment,
+                   shtrix_kod, artikul, sap_kod, kod, ikpu_kod, ikpu_paket_kod,
+                   ikpu_birlik_kod, gtin, hajm, ogirlik, blokda_soni, korobkada_soni,
+                   saralash, yaroqlilik_muddati, tavsif, rasm_url, faol,
+                   savdo_yonalishi, yangilangan
             FROM tovarlar WHERE id=$1
         """, tovar_id)
         if not t:
