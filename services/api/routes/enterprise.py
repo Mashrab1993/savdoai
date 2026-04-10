@@ -157,3 +157,11 @@ async def ent_migrate(uid: int = Depends(get_uid)):
     async with get_conn(uid) as conn:
         await conn.execute(ENTERPRISE_MIGRATION_SQL)
         return {"muvaffaqiyat": True, "xabar": "Enterprise jadvallar yaratildi (topshiriq, foto, uskuna, filial, kassa)"}
+
+# Combined router for main.py import
+from fastapi import APIRouter as _AR
+router = _AR()
+router.include_router(task_router)
+router.include_router(foto_router)
+router.include_router(uskuna_router)
+router.include_router(filial_router)

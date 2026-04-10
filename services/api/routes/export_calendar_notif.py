@@ -218,3 +218,9 @@ async def notif_migrate(uid: int = Depends(get_uid)):
     async with get_conn(uid) as conn:
         await conn.execute(NOTIF_MIGRATION)
         return {"muvaffaqiyat": True}
+
+# Combined router for main.py import
+from fastapi import APIRouter as _AR
+router = _AR()
+router.include_router(export_router)
+router.include_router(calendar_router)

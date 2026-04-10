@@ -78,3 +78,9 @@ async def bugun(uid: int = Depends(get_uid)):
     """AI kunlik ish rejasi — ertalab ochganda tayyor."""
     async with get_conn(uid) as conn:
         return await kunlik_reja(conn, uid)
+
+# Combined router for main.py import
+from fastapi import APIRouter as _AR
+router = _AR()
+router.include_router(moliya_router)
+router.include_router(live_router)

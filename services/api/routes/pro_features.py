@@ -79,3 +79,9 @@ async def game_migrate(uid: int = Depends(get_uid)):
     async with get_conn(uid) as conn:
         await conn.execute(GAMIFICATION_MIGRATION)
         return {"muvaffaqiyat": True}
+
+# Combined router for main.py import
+from fastapi import APIRouter as _AR
+router = _AR()
+router.include_router(k360_router)
+router.include_router(route_router)

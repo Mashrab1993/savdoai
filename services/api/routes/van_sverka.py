@@ -181,3 +181,9 @@ async def sverka_migrate(uid: int = Depends(get_uid)):
     async with get_conn(uid) as conn:
         await conn.execute(AKT_SVERKI_MIGRATION)
         return {"muvaffaqiyat": True}
+
+# Combined router for main.py import
+from fastapi import APIRouter as _AR
+router = _AR()
+router.include_router(van_router)
+router.include_router(sverka_router)

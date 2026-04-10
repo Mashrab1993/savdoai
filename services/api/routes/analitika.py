@@ -173,3 +173,9 @@ async def cohort_tahlil(oylar: int = 6, uid: int = Depends(get_uid)):
             })
 
         return {"cohortlar": natija, "jami_oylar": oylar}
+
+# Combined router for main.py import
+from fastapi import APIRouter as _AR
+router = _AR()
+router.include_router(abc_router)
+router.include_router(churn_router)
