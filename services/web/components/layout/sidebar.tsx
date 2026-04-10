@@ -67,6 +67,11 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
     { href: "/sync-log",        label: "🔄 Sync log",        icon: RefreshCw },
     { href: "/suppliers",       label: "🏭 Postavshiklar",   icon: Shield },
     { href: "/purchase",        label: "📥 Kirimlar",        icon: Package },
+    { href: "/warehouses",      label: "🏢 Skladlar",         icon: Package },
+    { href: "/price-types",     label: "💰 Narx turlari",    icon: Tag },
+    { href: "/price-list",      label: "📋 Prays-list",      icon: FileText },
+    { href: "/price-history",   label: "📈 Narx tarixi",     icon: BarChart3 },
+    { href: "/audit-dashboard", label: "✅ Audit",            icon: Shield },
   ]
 
   // ═══════════════════════════════════════════════════════
