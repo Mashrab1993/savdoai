@@ -412,6 +412,91 @@ try:
 except Exception as e:
     log.warning("⚠️ Multi-filial yuklanmadi: %s", e)
 
+# ═══ YANGI MODULLAR (SalesDoc funksiyalari) ═══
+try:
+    from services.api.routes.aksiya import router as aksiya_router
+    app.include_router(aksiya_router, tags=["Aksiya"])
+    log.info("✅ Aksiya (chegirma/bonus) moduli ulandi")
+except Exception as e:
+    log.warning("⚠️ Aksiya moduli yuklanmadi: %s", e)
+
+try:
+    from services.api.routes.analitika import router as analitika_router
+    app.include_router(analitika_router, tags=["Analitika"])
+    log.info("✅ Analitika moduli ulandi")
+except Exception as e:
+    log.warning("⚠️ Analitika moduli yuklanmadi: %s", e)
+
+try:
+    from services.api.routes.config import router as config_router
+    app.include_router(config_router, tags=["Config"])
+    log.info("✅ Config moduli ulandi")
+except Exception as e:
+    log.warning("⚠️ Config moduli yuklanmadi: %s", e)
+
+try:
+    from services.api.routes.moliya_live import router as moliya_router
+    app.include_router(moliya_router, tags=["Moliya"])
+    log.info("✅ Moliya (P&L, balans) moduli ulandi")
+except Exception as e:
+    log.warning("⚠️ Moliya moduli yuklanmadi: %s", e)
+
+try:
+    from services.api.routes.tashrif import router as tashrif_router
+    app.include_router(tashrif_router, tags=["Tashrif"])
+    log.info("✅ Tashrif (check-in/out) moduli ulandi")
+except Exception as e:
+    log.warning("⚠️ Tashrif moduli yuklanmadi: %s", e)
+
+try:
+    from services.api.routes.tovarlar_v2 import router as tovarlar_v2_router
+    app.include_router(tovarlar_v2_router, tags=["Tovarlar V2"])
+    log.info("✅ Tovarlar V2 (kengaytirilgan) moduli ulandi")
+except Exception as e:
+    log.warning("⚠️ Tovarlar V2 yuklanmadi: %s", e)
+
+try:
+    from services.api.routes.export_calendar_notif import router as export_router
+    app.include_router(export_router, tags=["Export"])
+    log.info("✅ Export/Calendar/Notification moduli ulandi")
+except Exception as e:
+    log.warning("⚠️ Export moduli yuklanmadi: %s", e)
+
+try:
+    from services.api.routes.gps import router as gps_router
+    app.include_router(gps_router, tags=["GPS"])
+    log.info("✅ GPS moduli ulandi")
+except Exception as e:
+    log.warning("⚠️ GPS moduli yuklanmadi: %s", e)
+
+try:
+    from services.api.routes.enterprise import router as enterprise_router
+    app.include_router(enterprise_router, tags=["Enterprise"])
+    log.info("✅ Enterprise (vazifa, uskunalar) moduli ulandi")
+except Exception as e:
+    log.warning("⚠️ Enterprise moduli yuklanmadi: %s", e)
+
+try:
+    from services.api.routes.van_sverka import router as van_router
+    app.include_router(van_router, tags=["Van Selling"])
+    log.info("✅ Van Selling (marshrut yetkazish) moduli ulandi")
+except Exception as e:
+    log.warning("⚠️ Van Selling yuklanmadi: %s", e)
+
+try:
+    from services.api.routes.pro_features import router as pro_router
+    app.include_router(pro_router, tags=["Pro"])
+    log.info("✅ Pro Features (360, marshrut, leaderboard) ulandi")
+except Exception as e:
+    log.warning("⚠️ Pro Features yuklanmadi: %s", e)
+
+try:
+    from services.api.routes.sd_agent_gaps import router as sd_router
+    app.include_router(sd_router, tags=["SD Agent"])
+    log.info("✅ SD Agent (blok, tara, almashtirish) ulandi")
+except Exception as e:
+    log.warning("⚠️ SD Agent yuklanmadi: %s", e)
+
 # ════════════════════════════════════════════════════════════
 #  JWT + AUTH — deps.py dan import (shared bilan kassa/ws)
 # ════════════════════════════════════════════════════════════
