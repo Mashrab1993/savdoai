@@ -65,6 +65,8 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
     { href: "/tashrif",         label: "📍 Tashriflar",      icon: MapPin },
     { href: "/webhook",         label: "🔗 Webhook",         icon: RefreshCw },
     { href: "/sync-log",        label: "🔄 Sync log",        icon: RefreshCw },
+    { href: "/suppliers",       label: "🏭 Postavshiklar",   icon: Shield },
+    { href: "/purchase",        label: "📥 Kirimlar",        icon: Package },
   ]
 
   // ═══════════════════════════════════════════════════════
