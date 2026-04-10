@@ -27,13 +27,20 @@ import {
   Sheet, SheetContent, SheetHeader, SheetTitle,
 } from "@/components/ui/sheet"
 
+// Dinamik kategoriyalar — SalesDoc uslubida
 const CATEGORIES: { uz: string; ru: string; key: string }[] = [
-  { key: "all",          uz: "Barchasi",     ru: "Все" },
-  { key: "Kiyim",        uz: "Kiyim",        ru: "Одежда" },
-  { key: "Poyabzal",     uz: "Poyabzal",     ru: "Обувь" },
-  { key: "Aksessuarlar", uz: "Aksessuarlar", ru: "Аксессуары" },
-  { key: "Bolalar",      uz: "Bolalar",      ru: "Детские" },
+  { key: "all",                uz: "Barchasi",           ru: "Все" },
+  { key: "Kosmetika",         uz: "Kosmetika",          ru: "Косметика" },
+  { key: "Parfyumeriya",      uz: "Parfyumeriya",       ru: "Парфюмерия" },
+  { key: "Maishiy kimyo",     uz: "Maishiy kimyo",      ru: "Бытовая химия" },
+  { key: "Oziq-ovqat",        uz: "Oziq-ovqat",         ru: "Продукты питания" },
+  { key: "Gigiyena",          uz: "Gigiyena",            ru: "Гигиена" },
+  { key: "Shaxsiy parvarish", uz: "Shaxsiy parvarish",  ru: "Личная гигиена" },
+  { key: "Shirinlik",         uz: "Shirinlik",           ru: "Сладости" },
+  { key: "Boshqa",            uz: "Boshqa",              ru: "Другое" },
 ]
+
+type ActiveFilter = "all" | "active" | "inactive"
 
 function fmt(n: number) {
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M so'm`
@@ -48,6 +55,7 @@ export default function ProductsPage() {
   const { data: rawProducts, loading, error, refetch } = useApi(productService.list)
   const [search, setSearch] = useState("")
   const [categoryFilter, setCategoryFilter] = useState("all")
+  const [activeFilter, setActiveFilter] = useState<ActiveFilter>("all")
   const [addModalOpen, setAddModalOpen] = useState(false)
   const [saving, setSaving] = useState(false)
   const [form, setForm] = useState({ nomi: "", kategoriya: "Boshqa", birlik: "dona", olish_narxi: "", sotish_narxi: "", qoldiq: "", min_qoldiq: "" })
