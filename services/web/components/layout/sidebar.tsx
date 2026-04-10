@@ -72,6 +72,8 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
     { href: "/price-list",      label: "📋 Prays-list",      icon: FileText },
     { href: "/price-history",   label: "📈 Narx tarixi",     icon: BarChart3 },
     { href: "/audit-dashboard", label: "✅ Audit",            icon: Shield },
+    { href: "/categories",      label: "📁 Kategoriyalar",   icon: Package },
+    { href: "/bonuses",         label: "🎁 Bonuslar",        icon: Gift },
   ]
 
   // ═══════════════════════════════════════════════════════
