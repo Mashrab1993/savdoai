@@ -396,3 +396,7 @@ async def rls_tekshir() -> list[dict]:
                  status, r["tablename"],
                  r["rls_yoqilgan"], r["policy_soni"])
     return result
+
+
+# ── Alias: get_conn = rls_conn (eski modullar uchun moslik) ──
+get_conn = rls_conn
