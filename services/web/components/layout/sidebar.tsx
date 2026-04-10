@@ -74,6 +74,9 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
     { href: "/audit-dashboard", label: "✅ Audit",            icon: Shield },
     { href: "/categories",      label: "📁 Kategoriyalar",   icon: Package },
     { href: "/bonuses",         label: "🎁 Bonuslar",        icon: Gift },
+    { href: "/inventory",       label: "📋 Inventarizatsiya", icon: Package },
+    { href: "/territories",     label: "🗺️ Territoriyalar",  icon: MapPin },
+    { href: "/payment-methods", label: "💳 To'lov usullari", icon: CreditCard },
   ]
 
   // ═══════════════════════════════════════════════════════
