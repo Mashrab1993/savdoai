@@ -26,3 +26,4 @@ websockets>=12.0
 qrcode[pil]>=7.4
 sentry-sdk
 thefuzz[speedup]>=0.20.0
+python-multipart>=0.0.9
