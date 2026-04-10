@@ -34,6 +34,8 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
     { href: "/debts",       label: nav.debts[locale],       icon: CreditCard },
     { href: "/invoices",    label: nav.invoices[locale],    icon: FileText },
     { href: "/reports",     label: nav.reports[locale],     icon: BarChart3 },
+    { href: "/orders",      label: locale === "uz" ? "Buyurtmalar" : "Заказы", icon: ShoppingCart },
+    { href: "/ombor",       label: locale === "uz" ? "Ombor" : "Склад", icon: Package },
   ]
 
   // ═══════════════════════════════════════════════════════
