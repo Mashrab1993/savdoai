@@ -913,3 +913,41 @@ CREATE TABLE IF NOT EXISTS gps_log (
 );
 CREATE INDEX IF NOT EXISTS idx_gps_uid_vaqt ON gps_log(user_id, vaqt DESC);
 SELECT enable_rls('gps_log');
+
+-- ═══════════════════════════════════════════════════════════════
+--  v25.4.0 MIGRATION: SalesDoc-compatible tovar maydonlari
+-- ═══════════════════════════════════════════════════════════════
+
+-- Tovarlar jadvaliga SalesDoc maydonlarini qo'shish
+ALTER TABLE tovarlar ADD COLUMN IF NOT EXISTS brend         TEXT DEFAULT '';
+ALTER TABLE tovarlar ADD COLUMN IF NOT EXISTS podkategoriya TEXT DEFAULT '';
+ALTER TABLE tovarlar ADD COLUMN IF NOT EXISTS guruh         TEXT DEFAULT '';
+ALTER TABLE tovarlar ADD COLUMN IF NOT EXISTS ishlab_chiqaruvchi TEXT DEFAULT '';
+ALTER TABLE tovarlar ADD COLUMN IF NOT EXISTS segment       TEXT DEFAULT '';
+ALTER TABLE tovarlar ADD COLUMN IF NOT EXISTS shtrix_kod    TEXT DEFAULT '';
+ALTER TABLE tovarlar ADD COLUMN IF NOT EXISTS artikul       TEXT DEFAULT '';
+ALTER TABLE tovarlar ADD COLUMN IF NOT EXISTS sap_kod       TEXT DEFAULT '';
+ALTER TABLE tovarlar ADD COLUMN IF NOT EXISTS kod           TEXT DEFAULT '';
+ALTER TABLE tovarlar ADD COLUMN IF NOT EXISTS ikpu_kod      TEXT DEFAULT '';
+ALTER TABLE tovarlar ADD COLUMN IF NOT EXISTS ikpu_paket_kod TEXT DEFAULT '';
+ALTER TABLE tovarlar ADD COLUMN IF NOT EXISTS ikpu_birlik_kod TEXT DEFAULT '';
+ALTER TABLE tovarlar ADD COLUMN IF NOT EXISTS gtin          TEXT DEFAULT '';
+ALTER TABLE tovarlar ADD COLUMN IF NOT EXISTS hajm          DECIMAL(18,3) DEFAULT 1;
+ALTER TABLE tovarlar ADD COLUMN IF NOT EXISTS ogirlik       DECIMAL(18,3) DEFAULT 1;
+ALTER TABLE tovarlar ADD COLUMN IF NOT EXISTS blokda_soni   INT DEFAULT 1;
+ALTER TABLE tovarlar ADD COLUMN IF NOT EXISTS korobkada_soni INT DEFAULT 1;
+ALTER TABLE tovarlar ADD COLUMN IF NOT EXISTS saralash      INT DEFAULT 500;
+ALTER TABLE tovarlar ADD COLUMN IF NOT EXISTS yaroqlilik_muddati INT DEFAULT 0;
+ALTER TABLE tovarlar ADD COLUMN IF NOT EXISTS tavsif        TEXT DEFAULT '';
+ALTER TABLE tovarlar ADD COLUMN IF NOT EXISTS rasm_url      TEXT DEFAULT '';
+ALTER TABLE tovarlar ADD COLUMN IF NOT EXISTS faol          BOOLEAN DEFAULT TRUE;
+ALTER TABLE tovarlar ADD COLUMN IF NOT EXISTS savdo_yonalishi TEXT DEFAULT '';
+ALTER TABLE tovarlar ADD COLUMN IF NOT EXISTS yangilangan   TIMESTAMPTZ DEFAULT NOW();
+
+-- Indekslar
+CREATE INDEX IF NOT EXISTS idx_tv_brend ON tovarlar(user_id, brend) WHERE brend != '';
+CREATE INDEX IF NOT EXISTS idx_tv_kat ON tovarlar(user_id, kategoriya);
+CREATE INDEX IF NOT EXISTS idx_tv_shtrix ON tovarlar(user_id, shtrix_kod) WHERE shtrix_kod != '';
+CREATE INDEX IF NOT EXISTS idx_tv_ikpu ON tovarlar(user_id, ikpu_kod) WHERE ikpu_kod != '';
+CREATE INDEX IF NOT EXISTS idx_tv_faol ON tovarlar(user_id, faol);
+
