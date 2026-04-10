@@ -47,6 +47,11 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   const navItemsNew = [
     { href: "/moliya",          label: "💼 Moliya",          icon: CreditCard },
     { href: "/aksiya",          label: "🎁 Aksiyalar",       icon: Gift },
+    { href: "/staff",           label: "👥 Xodimlar",        icon: Users },
+    { href: "/planning",        label: "🎯 Rejalashtirish",  icon: Target },
+    { href: "/returns",         label: "↩️ Qaytarishlar",    icon: RefreshCw },
+    { href: "/write-off",       label: "🗑️ Spisanie",       icon: Target },
+    { href: "/transfers",       label: "🔄 Ko'chirish",      icon: RefreshCw },
     { href: "/pro-analitika",   label: "📊 Pro Analitika",   icon: BarChart3 },
     { href: "/klient360",       label: "👤 Klient 360°",     icon: Users },
     { href: "/tasks",           label: "📋 Topshiriqlar",    icon: Target },
