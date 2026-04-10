@@ -576,3 +576,88 @@ export const subscriptionService = {
     ogohlar: string[];
   }>("/api/v1/tarif"),
 }
+
+// ── Aksiya (SalesDoc: Bonus va chegirmalar) ──────────────────────────────────
+export const aksiyaService = {
+  list: () => api.get<unknown[]>("/api/v1/aksiyalar"),
+  get: (id: number) => api.get<unknown>(`/api/v1/aksiya/${id}`),
+  create: (data: unknown) => api.post<unknown>("/api/v1/aksiya", data),
+  calculate: (tovarId: number, qty: number) =>
+    api.get<unknown>(`/api/v1/aksiya/hisob?tovar_id=${tovarId}&miqdor=${qty}`),
+}
+
+// ── Analitika (SalesDoc: Hisobotlar va tahlil) ───────────────────────────────
+export const analitikaService = {
+  abcXyz: () => api.get<unknown>("/api/v1/analitika/abc-xyz"),
+  churn: () => api.get<unknown>("/api/v1/analitika/churn"),
+  cohort: () => api.get<unknown>("/api/v1/analitika/cohort"),
+}
+
+// ── Moliya (SalesDoc: Moliyaviy hisobotlar) ──────────────────────────────────
+export const moliyaService = {
+  pnl: (period?: string) => api.get<unknown>(`/api/v1/moliya/pnl${period ? `?davr=${period}` : ""}`),
+  balans: () => api.get<unknown>("/api/v1/moliya/balans"),
+  cashFlow: (period?: string) => api.get<unknown>(`/api/v1/moliya/cash-flow${period ? `?davr=${period}` : ""}`),
+  kpiMoliya: () => api.get<unknown>("/api/v1/moliya/kpi"),
+}
+
+// ── Tashrif (SalesDoc: Check-in/out, vizitlar) ───────────────────────────────
+export const tashrifService = {
+  checkIn: (data: { lat: number; lng: number; klient_id?: number }) =>
+    api.post<unknown>("/api/v1/tashrif/checkin", data),
+  checkOut: (id: number) => api.post<unknown>(`/api/v1/tashrif/checkout/${id}`, {}),
+  list: (sana?: string) => api.get<unknown[]>(`/api/v1/tashriflar${sana ? `?sana=${sana}` : ""}`),
+}
+
+// ── Tovarlar V2 (SalesDoc: Kengaytirilgan tovar boshqaruvi) ──────────────────
+export const tovarV2Service = {
+  filter: (params: Record<string, string>) => {
+    const qs = new URLSearchParams(params).toString()
+    return api.get<unknown>(`/api/v1/tovarlar/v2?${qs}`)
+  },
+  categories: () => api.get<unknown[]>("/api/v1/tovarlar/v2/kategoriyalar"),
+  brands: () => api.get<unknown[]>("/api/v1/tovarlar/v2/brendlar"),
+}
+
+// ── Export (SalesDoc: Excel/PDF export) ───────────────────────────────────────
+export const exportService = {
+  excel: (turi: string) => api.get<ExportTaskDto>(`/api/v1/export/excel?turi=${turi}`),
+  pdf: (turi: string) => api.get<ExportTaskDto>(`/api/v1/export/pdf?turi=${turi}`),
+  calendar: () => api.get<unknown>("/api/v1/kalendar"),
+}
+
+// ── GPS (SalesDoc: GPS monitoring) ───────────────────────────────────────────
+export const gpsService = {
+  track: (data: { lat: number; lng: number }) =>
+    api.post<unknown>("/api/v1/gps/track", data),
+  history: (agentId?: number, sana?: string) =>
+    api.get<unknown[]>(`/api/v1/gps/history${agentId ? `?agent_id=${agentId}` : ""}${sana ? `&sana=${sana}` : ""}`),
+}
+
+// ── Enterprise (SalesDoc: Vazifa va uskunalar) ───────────────────────────────
+export const enterpriseService = {
+  tasks: () => api.get<unknown[]>("/api/v1/vazifalar"),
+  createTask: (data: unknown) => api.post<unknown>("/api/v1/vazifa", data),
+  equipment: () => api.get<unknown[]>("/api/v1/uskunalar"),
+}
+
+// ── Van Selling (SalesDoc: Marshrut yetkazish) ───────────────────────────────
+export const vanService = {
+  routes: () => api.get<unknown[]>("/api/v1/van/marshrutlar"),
+  sverka: (marshrutId: number) => api.get<unknown>(`/api/v1/van/sverka/${marshrutId}`),
+  deliver: (data: unknown) => api.post<unknown>("/api/v1/van/yetkazish", data),
+}
+
+// ── Pro Features (SalesDoc: Klient 360, Leaderboard) ─────────────────────────
+export const proService = {
+  client360: (klientId: number) => api.get<unknown>(`/api/v1/pro/klient360/${klientId}`),
+  leaderboard: () => api.get<unknown[]>("/api/v1/pro/leaderboard"),
+  routeOptimize: () => api.get<unknown>("/api/v1/pro/marshrut-optim"),
+}
+
+// ── Config (SalesDoc: Sozlamalar) ────────────────────────────────────────────
+export const configService = {
+  get: () => api.get<unknown>("/api/v1/config"),
+  update: (data: unknown) => api.post<unknown>("/api/v1/config", data),
+  modules: () => api.get<unknown>("/api/v1/config/modullar"),
+}
