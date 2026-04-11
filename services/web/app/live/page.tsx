@@ -118,8 +118,8 @@ export default function LiveDashboardPage() {
         const h = { Authorization: `Bearer ${token}` }
         const base = process.env.NEXT_PUBLIC_API_URL || ""
         const [live, plan] = await Promise.all([
-          fetch(`${base}/api/live`, { headers: h }).then(r => r.ok ? r.json() : null),
-          fetch(`${base}/api/reja/bugun`, { headers: h }).then(r => r.ok ? r.json() : null),
+          fetch(`${base}/live`, { headers: h }).then(r => r.ok ? r.json() : null),
+          fetch(`${base}/reja/bugun`, { headers: h }).then(r => r.ok ? r.json() : null),
         ])
         setLiveData(live)
         setReja(plan)
@@ -136,7 +136,7 @@ export default function LiveDashboardPage() {
     if (lastMessage?.type === "sync" || lastMessage?.type === "live_event") {
       // Reload on any update
       const token = localStorage.getItem("auth_token")
-      fetch(`${process.env.NEXT_PUBLIC_API_URL || ""}/api/live`, {
+      fetch(`${process.env.NEXT_PUBLIC_API_URL || ""}/live`, {
         headers: { Authorization: `Bearer ${token}` },
       }).then(r => r.ok ? r.json() : null).then(d => d && setLiveData(d))
     }

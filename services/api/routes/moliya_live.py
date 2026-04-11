@@ -84,3 +84,4 @@ from fastapi import APIRouter as _AR
 router = _AR()
 router.include_router(moliya_router)
 router.include_router(live_router)
+router.include_router(reja_router)
