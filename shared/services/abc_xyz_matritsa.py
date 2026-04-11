@@ -90,7 +90,7 @@ async def abc_xyz_tahlil(conn, uid: int, kunlar: int = 90) -> dict:
                 c.tovar_nomi,
                 DATE_TRUNC('week', c.sana) AS hafta,
                 SUM(c.miqdor) AS miqdor,
-                SUM(c.jami_summa) AS summa
+                SUM(c.jami) AS summa
             FROM chiqimlar c
             JOIN sotuv_sessiyalar s ON s.id = c.sessiya_id
             WHERE s.user_id = $1 AND c.sana >= NOW() - ($2 || ' days')::interval
