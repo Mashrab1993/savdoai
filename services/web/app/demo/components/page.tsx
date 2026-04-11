@@ -17,6 +17,7 @@ import Client360View from "@/components/dashboard/client-360-view"
 import WarehouseTransferBoard from "@/components/dashboard/warehouse-transfer-board"
 import CashboxBalance from "@/components/dashboard/cashbox-balance"
 import DebtorsList from "@/components/dashboard/debtors-list"
+import AgentRouteCard from "@/components/dashboard/agent-route-card"
 import { useLocale } from "@/lib/locale-context"
 
 // ─── Synthetic data ─────────────────────────────────────────
@@ -183,6 +184,16 @@ const DEBTORS = [
   { klient_id: 1, klient_ismi: "Do'kon Buyuk Ipak Yo'li",  telefon: "+998 90 123 45 67", joriy_qarz: 12_500_000, kredit_limit: 50_000_000, qarz_soni: 4, eng_eski_muddat: new Date(Date.now() - 3 * 86400e3).toISOString(),   oxirgi_tolov: new Date(Date.now() - 1 * 86400e3).toISOString() },
 ]
 
+const ROUTE_STOPS = [
+  { id: 1, klient_ismi: "Do'kon Buyuk Ipak Yo'li",  manzil: "Registon 42",              planned_order: 2_500_000, actual_order: 2_480_000, holat: "tashrif_qilingan" as const, vaqt: new Date(Date.now() - 5 * 3600e3).toISOString() },
+  { id: 2, klient_ismi: "Supermarket Registon",     manzil: "Universitet ko'chasi 12", planned_order: 5_000_000, actual_order: 5_480_000, holat: "tashrif_qilingan" as const, vaqt: new Date(Date.now() - 4 * 3600e3).toISOString() },
+  { id: 3, klient_ismi: "Mini Market Samarqand",     manzil: "Siyob bozori",             planned_order: 1_500_000, actual_order: 1_250_000, holat: "tashrif_qilingan" as const, vaqt: new Date(Date.now() - 3 * 3600e3).toISOString() },
+  { id: 4, klient_ismi: "Karvon Retail",              manzil: "Dahmazor",                 planned_order: 3_000_000, actual_order: 0,         holat: "no_show"          as const, vaqt: new Date(Date.now() - 2 * 3600e3).toISOString() },
+  { id: 5, klient_ismi: "Oziq-ovqat Urgut",          manzil: "Urgut markaz",             planned_order: 2_000_000,                            holat: "kutilmoqda"       as const },
+  { id: 6, klient_ismi: "Do'kon Juma Charxin",      manzil: "Juma Charxin",              planned_order: 1_200_000,                            holat: "kutilmoqda"       as const },
+  { id: 7, klient_ismi: "Universal Jomboy",          manzil: "Jomboy tumani",            planned_order: 2_500_000,                            holat: "kutilmoqda"       as const },
+]
+
 // ─── Page ───────────────────────────────────────────────────
 
 export default function DemoComponentsPage() {
@@ -285,6 +296,17 @@ export default function DemoComponentsPage() {
             10. DebtorsList
           </p>
           <DebtorsList debtors={DEBTORS} />
+        </section>
+
+        {/* 11. Agent route timeline */}
+        <section>
+          <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+            11. AgentRouteCard
+          </p>
+          <AgentRouteCard
+            agent={{ id: 1, ism: "Sayitqulov Mashrab" }}
+            stops={ROUTE_STOPS}
+          />
         </section>
       </div>
     </AdminLayout>
