@@ -16,6 +16,7 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table"
 import { Search, Plus, Pencil, Trash2, Package, AlertTriangle, XCircle, Download, Upload, Eye } from "lucide-react"
+import ProductStockGrid, { type ProductCardData } from "@/components/dashboard/product-stock-grid"
 import { useLocale } from "@/lib/locale-context"
 import { translations } from "@/lib/i18n"
 import { formatCurrency } from "@/lib/format"
@@ -333,87 +334,24 @@ export default function ProductsPage() {
           </div>
         </div>
 
-        {/* Table */}
-        <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl shadow-sm overflow-hidden">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>{L.product[locale]}</TableHead>
-                <TableHead>SKU</TableHead>
-                <TableHead>{translations.fields.category[locale]}</TableHead>
-                <TableHead className="text-right">{translations.fields.price[locale]}</TableHead>
-                <TableHead className="text-right">{translations.fields.stock[locale]}</TableHead>
-                <TableHead>{translations.fields.status[locale]}</TableHead>
-                <TableHead className="text-right">{translations.fields.actions[locale]}</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filtered.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={7} className="text-center py-12 text-muted-foreground">
-                    {L.noProducts[locale]}
-                  </TableCell>
-                </TableRow>
-              ) : (
-                filtered.map(product => (
-                  <TableRow key={product.id} className="border-b border-border hover:bg-secondary/50 transition-colors">
-                    <TableCell>
-                      <div>
-                        <p className="font-medium text-foreground text-sm">{product.name}</p>
-                        <p className="text-xs text-muted-foreground">{product.description}</p>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-sm font-mono text-muted-foreground">{product.sku}</TableCell>
-                    <TableCell>
-                      <span className="text-xs bg-secondary text-secondary-foreground px-2 py-0.5 rounded-full">{product.category}</span>
-                    </TableCell>
-                    <TableCell className="text-right text-sm font-medium text-foreground">{fmt(product.price)}</TableCell>
-                    <TableCell className="text-right">
-                      <span className={`text-sm font-medium ${product.stock === 0 ? "text-destructive" : product.stock <= product.lowStockThreshold ? "text-yellow-500" : "text-foreground"}`}>
-                        {product.stock}
-                      </span>
-                    </TableCell>
-                    <TableCell><StatusBadge status={product.status} /></TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-1">
-                        <Button variant="ghost" size="icon" className="h-7 w-7"
-                          title={locale === "uz" ? "Tarix" : "История"}
-                          onClick={() => openTarix(Number(product.id))}>
-                          <Eye className="w-3.5 h-3.5" />
-                        </Button>
-                        <Button variant="ghost" size="icon" className="h-7 w-7"
-                          onClick={async () => {
-                            const newPrice = prompt(locale === "uz" ? "Yangi sotish narxi:" : "Новая цена продажи:", String(product.price))
-                            if (!newPrice) return
-                            try {
-                              await productService.update(Number(product.id), { sotish_narxi: Number(newPrice) })
-                              refetch()
-                            } catch { /* silent */ }
-                          }}>
-                          <Pencil className="w-3.5 h-3.5" />
-                        </Button>
-                        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive"
-                          onClick={async () => {
-                            if (!confirm(locale === "uz"
-                              ? `"${product.name}" ni o'chirishni tasdiqlaysizmi?`
-                              : `Удалить "${product.name}"?`)) return
-                            try {
-                              await productService.remove(Number(product.id))
-                              refetch()
-                            } catch (err) {
-                              alert(err instanceof Error ? err.message : String(err))
-                            }
-                          }}>
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </div>
+        {/* Premium product stock grid (v0.dev → GPT-5 pipeline) */}
+        <ProductStockGrid
+          products={filtered.map<ProductCardData>(p => ({
+            id:           Number(p.id),
+            nomi:         p.name,
+            brend:        p.description || undefined,
+            kategoriya:   p.category || undefined,
+            birlik:       p.unit || "dona",
+            sotish_narxi: p.price || 0,
+            olish_narxi:  0,
+            qoldiq:       p.stock || 0,
+            min_qoldiq:   p.lowStockThreshold || 0,
+            rasm_url:     undefined,
+            faol:         p.status !== "out-of-stock",
+            shtrix_kod:   p.sku || undefined,
+          }))}
+          onProductClick={id => openTarix(id)}
+        />
         </>}
       </div>
 
