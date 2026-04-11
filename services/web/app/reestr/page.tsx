@@ -42,7 +42,31 @@ export default function ReestrPage() {
           </div>
           <div className="flex gap-2">
             <Input type="date" value={date} onChange={e => setDate(e.target.value)} className="w-44" />
-            <Button className="bg-emerald-600 hover:bg-emerald-700">
+            <Button
+              className="bg-emerald-600 hover:bg-emerald-700"
+              onClick={async () => {
+                try {
+                  const token = typeof window !== "undefined" ? localStorage.getItem("auth_token") : ""
+                  const base  = process.env.NEXT_PUBLIC_API_URL || ""
+                  const res = await fetch(
+                    `${base}/api/v1/savdolar/excel?sana_dan=${date}&sana_gacha=${date}`,
+                    { headers: { Authorization: `Bearer ${token}` } }
+                  )
+                  if (!res.ok) throw new Error("Excel xatoligi")
+                  const result = await res.json()
+                  const bytes = Uint8Array.from(atob(result.content_base64), c => c.charCodeAt(0))
+                  const blob  = new Blob([bytes], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" })
+                  const url   = URL.createObjectURL(blob)
+                  const a     = document.createElement("a")
+                  a.href      = url
+                  a.download  = result.filename || `reestr_${date}.xlsx`
+                  a.click()
+                  URL.revokeObjectURL(url)
+                } catch (e) {
+                  alert(e instanceof Error ? e.message : String(e))
+                }
+              }}
+            >
               <FileSpreadsheet className="w-4 h-4 mr-1" /> Excel yuklab olish
             </Button>
           </div>
