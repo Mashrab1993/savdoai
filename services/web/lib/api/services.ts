@@ -298,8 +298,9 @@ export interface NotificationItem {
   soni?: number
 }
 
+// Backend router mounted at /bildirishnoma (not /api/v1)
 export const notificationService = {
-  list: () => api.get<{ items: NotificationItem[]; jami: number }>("/api/v1/bildirishnomalar"),
+  list: () => api.get<{ items: NotificationItem[]; jami: number }>("/bildirishnoma?limit=50"),
 }
 
 // ── Prices ────────────────────────────────────────────────────────────────────
@@ -708,10 +709,14 @@ export const tovarV2Service = {
 }
 
 // ── Export (SalesDoc: Excel/PDF export) ───────────────────────────────────────
+// Backend routers mounted at root: /export, /kalendar
 export const exportService = {
-  excel: (turi: string) => api.get<ExportTaskDto>(`/api/v1/export/excel?turi=${turi}`),
-  pdf: (turi: string) => api.get<ExportTaskDto>(`/api/v1/export/pdf?turi=${turi}`),
-  calendar: () => api.get<unknown>("/api/v1/kalendar"),
+  tovarlarExcel: () => api.get<Blob>(`/export/tovarlar?fmt=excel`),
+  klientlarExcel: () => api.get<Blob>(`/export/klientlar?fmt=excel`),
+  sotuvlarExcel: (dan: string, gacha: string) =>
+    api.get<Blob>(`/export/sotuvlar?sana_dan=${dan}&sana_gacha=${gacha}&fmt=excel`),
+  bugun: () => api.get<unknown>("/kalendar/bugun"),
+  hafta: () => api.get<unknown>("/kalendar/hafta"),
 }
 
 // ── GPS (SalesDoc: GPS monitoring) ───────────────────────────────────────────
