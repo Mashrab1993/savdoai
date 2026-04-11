@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/table"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Search, Plus, Pencil, Trash2, Users, DollarSign, AlertCircle, Eye } from "lucide-react"
+import { PageHeader } from "@/components/ui/page-header"
 import { useLocale } from "@/lib/locale-context"
 import { translations } from "@/lib/i18n"
 import { useApi } from "@/hooks/use-api"
@@ -144,6 +145,18 @@ export default function ClientsPage() {
         {loading && <PageLoading />}
         {error && !loading && <PageError message={error} onRetry={refetch} />}
         {!loading && !error && <>
+        <PageHeader
+          icon={Users}
+          gradient="violet"
+          title={L.title[locale]}
+          subtitle={locale === "uz" ? "Barcha mijozlar va qarz holati" : "Все клиенты и долги"}
+          action={
+            <Button onClick={() => { setEditingClientId(null); setForm({}); setModalOpen(true) }}>
+              <Plus className="w-4 h-4 mr-1" /> {L.addClient[locale]}
+            </Button>
+          }
+        />
+
         {/* Summary cards */}
         <div className="grid grid-cols-3 gap-4">
           <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl shadow-sm p-4 flex items-center gap-3 hover:border-border/70 transition-colors">
