@@ -33,11 +33,13 @@ log = logging.getLogger(__name__)
 OPENAI_KEY   = os.getenv("OPENAI_API_KEY", "").strip()
 DEEPSEEK_KEY = os.getenv("DEEPSEEK_API_KEY", "").strip()
 XAI_KEY      = os.getenv("XAI_API_KEY", "").strip()
+V0_KEY       = os.getenv("V0_API_KEY", "").strip()
 
 OPENAI_MODEL   = os.getenv("OPENAI_MODEL",   "gpt-5")         # override qilsa bo'ladi
 WHISPER_MODEL  = os.getenv("WHISPER_MODEL",  "whisper-1")
 DEEPSEEK_MODEL = os.getenv("DEEPSEEK_MODEL", "deepseek-chat")
 XAI_MODEL      = os.getenv("XAI_MODEL",      "grok-4")
+V0_MODEL       = os.getenv("V0_MODEL",       "v0-1.0-md")
 
 HTTP_TIMEOUT = float(os.getenv("AI_EXTRAS_TIMEOUT", "60"))
 
@@ -124,7 +126,15 @@ grok = ChatProvider(
     api_key=XAI_KEY,
 )
 
-_PROVIDERS = [gpt5, deepseek, grok]
+# v0.dev — OpenAI-uyg'un endpoint orqali ishlaydi (Vercel Platform API)
+v0 = ChatProvider(
+    name="v0.dev",
+    base_url="https://api.v0.dev/v1",
+    model=V0_MODEL,
+    api_key=V0_KEY,
+)
+
+_PROVIDERS = [gpt5, deepseek, grok, v0]
 
 
 def active_providers() -> list[str]:
@@ -238,6 +248,34 @@ async def cheap_batch(
         )
     except Exception as e:
         log.warning("deepseek batch: %s", e)
+        return None
+
+
+async def generate_ui(prompt: str, *, max_tokens: int = 4000) -> Optional[str]:
+    """
+    v0.dev API — matn → React + Tailwind + shadcn/ui komponent.
+
+    Bizning web stek allaqachon Next.js + shadcn/ui + Tailwind bo'lgani
+    uchun v0 qaytargan kod 1:1 mos keladi — komponentni
+    services/web/components/ga joylashtirish kifoya.
+    """
+    if not v0.ready:
+        return None
+
+    system = (
+        "You are v0 by Vercel. Generate a single React component using "
+        "TypeScript, Tailwind CSS and shadcn/ui. Use lucide-react icons. "
+        "Include framer-motion animations where appropriate. Return ONLY "
+        "the code inside a ```tsx code block — no explanation."
+    )
+    try:
+        return await v0.chat(
+            system, prompt,
+            temperature=0.4,
+            max_tokens=max_tokens,
+        )
+    except Exception as e:
+        log.warning("v0 generate_ui: %s", e)
         return None
 
 

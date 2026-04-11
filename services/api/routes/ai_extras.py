@@ -11,11 +11,13 @@ from pydantic import BaseModel, Field
 from services.cognitive.ai_extras import (
     active_providers,
     cheap_batch,
+    generate_ui,
     gpt5,
     deepseek,
     grok,
     market_intel,
     second_opinion,
+    v0,
 )
 from services.api.deps import get_current_user  # type: ignore
 
@@ -39,6 +41,10 @@ class MarketIn(BaseModel):
     savol: str = Field(..., min_length=3, max_length=500)
 
 
+class UIGenIn(BaseModel):
+    prompt: str = Field(..., min_length=10, max_length=4000)
+
+
 # ─── Endpoints ──────────────────────────────────────────────────────
 
 @router.get("/status")
@@ -49,6 +55,7 @@ async def ai_status(_=Depends(get_current_user)):
         "gpt5":     gpt5.ready,
         "deepseek": deepseek.ready,
         "grok":     grok.ready,
+        "v0":       v0.ready,
     }
 
 
@@ -89,3 +96,15 @@ async def api_market_intel(inp: MarketIn, _=Depends(get_current_user)):
     if result is None:
         raise HTTPException(502, "Grok javob qaytarmadi")
     return {"javob": result}
+
+
+@router.post("/generate-ui")
+async def api_generate_ui(inp: UIGenIn, _=Depends(get_current_user)):
+    """v0.dev — matn → shadcn/ui + Tailwind React komponent."""
+    if not v0.ready:
+        raise HTTPException(503, "v0.dev kaliti sozlanmagan")
+
+    result = await generate_ui(inp.prompt)
+    if result is None:
+        raise HTTPException(502, "v0 javob qaytarmadi")
+    return {"kod": result}
