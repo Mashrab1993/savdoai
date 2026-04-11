@@ -20,7 +20,7 @@ import { formatCurrency } from "@/lib/format"
 import { useEffect } from "react"
 import { useApi } from "@/hooks/use-api"
 import { useWebSocket } from "@/hooks/use-websocket"
-import { dashboardService, dashboardTopService, statistikaService } from "@/lib/api/services"
+import { dashboardService, dashboardTopService, statistikaService, agentlarKpiService } from "@/lib/api/services"
 import { normalizeDashboard, type DashboardVM } from "@/lib/api/normalizers"
 import { PageLoading, PageError } from "@/components/shared/page-states"
 import type { ReportEntry } from "@/lib/api/types"
@@ -40,6 +40,7 @@ export default function DashboardPage() {
   const { data: monthlyData } = useApi(dashboardService.monthly)
   const { data: topData } = useApi(dashboardTopService.get)
   const { data: statsExtra } = useApi(statistikaService.get)
+  const { data: agentlarKpi } = useApi(agentlarKpiService.bugungi)
 
   // Real-time yangilanish — WebSocket orqali
   const { lastMessage } = useWebSocket()
@@ -105,18 +106,18 @@ export default function DashboardPage() {
               </div>
             )}
 
-            {/* Agent KPI leaderboard — pulls from statsExtra.agentlar if backend provides it */}
-            {Array.isArray((statsExtra as any)?.agentlar) && (statsExtra as any).agentlar.length > 0 && (
+            {/* Agent KPI leaderboard — fed by /api/v1/agentlar/bugungi-kpi */}
+            {Array.isArray(agentlarKpi) && agentlarKpi.length > 0 && (
               <AgentKpiBoard
-                agents={((statsExtra as any).agentlar as any[]).map<AgentKpi>(a => ({
-                  id:           a.id ?? a.agent_id ?? a.ism,
-                  ism:          a.ism || a.name || "—",
+                agents={agentlarKpi.map<AgentKpi>(a => ({
+                  id:           a.id,
+                  ism:          a.ism || "—",
                   reja:         Number(a.reja || 0),
-                  tashrif_soni: Number(a.tashrif_soni || a.visited || 0),
-                  rejali_summa: Number(a.rejali_summa || a.on_plan_summa || 0),
-                  rejali_soni:  Number(a.rejali_soni  || a.on_plan_soni  || 0),
-                  ofplan_summa: Number(a.ofplan_summa || a.off_plan_summa || 0),
-                  ofplan_soni:  Number(a.ofplan_soni  || a.off_plan_soni  || 0),
+                  tashrif_soni: Number(a.tashrif_soni || 0),
+                  rejali_summa: Number(a.rejali_summa || 0),
+                  rejali_soni:  Number(a.rejali_soni  || 0),
+                  ofplan_summa: Number(a.ofplan_summa || 0),
+                  ofplan_soni:  Number(a.ofplan_soni  || 0),
                   qaytarish:    Number(a.qaytarish || 0),
                 }))}
               />

@@ -244,6 +244,98 @@ async def hisobot_kunlik_trend(kunlar: int = 30, uid: int = Depends(get_uid)):
     return [dict(r) for r in rows]
 
 
+@router.get("/agentlar/bugungi-kpi")
+async def agentlar_bugungi_kpi(uid: int = Depends(get_uid)):
+    """
+    Bugungi agent KPI hisoboti — SalesDoc supervisor dashboard shaklida.
+
+    Agar shogirdlar jadvalida real agentlar bo'lsa, ularning bugungi
+    ishlarini jamlab qaytaradi. Aks holda joriy foydalanuvchi o'zi
+    "bosh agent" sifatida qaytariladi (bot-driven single-user flow).
+
+    Response shape mos keladi services/web/components/dashboard/
+    agent-kpi-board.tsx ga:
+      [{ id, ism, reja, tashrif_soni, rejali_summa, rejali_soni,
+         ofplan_summa, ofplan_soni, qaytarish }]
+    """
+    async with rls_conn(uid) as c:
+        # 1. Shogirdlar bormi?
+        try:
+            shogirdlar = await c.fetch(
+                "SELECT id, ism FROM shogirdlar WHERE admin_uid=$1 AND faol=TRUE ORDER BY id",
+                uid,
+            )
+        except Exception:
+            shogirdlar = []
+
+        if shogirdlar:
+            # Per-agent aggregate (sotuv_sessiyalar hali shogird_id'ga ega emas,
+            # shuning uchun hozir placeholder — keyinroq join qilamiz)
+            result = []
+            for s in shogirdlar:
+                result.append({
+                    "id":           s["id"],
+                    "ism":          s["ism"],
+                    "reja":         0,
+                    "tashrif_soni": 0,
+                    "rejali_summa": 0,
+                    "rejali_soni":  0,
+                    "ofplan_summa": 0,
+                    "ofplan_soni":  0,
+                    "qaytarish":    0,
+                })
+            return result
+
+        # 2. Bitta foydalanuvchili rejim — o'zini agent sifatida ko'rsatadi
+        row = await c.fetchrow(
+            """
+            SELECT
+                COUNT(*)                            AS soni,
+                COALESCE(SUM(jami), 0)              AS summa
+            FROM sotuv_sessiyalar
+            WHERE user_id = $1
+              AND (sana AT TIME ZONE 'Asia/Tashkent')::date = CURRENT_DATE
+              AND COALESCE(holat, 'yangi') NOT IN ('bekor')
+            """,
+            uid,
+        )
+        klient_count = await c.fetchval(
+            "SELECT COUNT(*) FROM klientlar WHERE user_id=$1", uid,
+        ) or 0
+        try:
+            qaytarish = await c.fetchval(
+                """
+                SELECT COUNT(*) FROM qaytarishlar
+                WHERE user_id=$1
+                  AND (sana AT TIME ZONE 'Asia/Tashkent')::date = CURRENT_DATE
+                """,
+                uid,
+            ) or 0
+        except Exception:
+            qaytarish = 0
+        user_row = await c.fetchrow(
+            """
+            SELECT COALESCE(NULLIF(ism, ''), dokon_nomi, username, 'Agent') AS ism
+            FROM users WHERE id=$1
+            """,
+            uid,
+        )
+
+    return [
+        {
+            "id":           uid,
+            "ism":          (user_row["ism"] if user_row else "Agent"),
+            "reja":         int(klient_count),
+            "tashrif_soni": 0,          # visits not tracked in bot-only mode
+            "rejali_summa": float(row["summa"] or 0),
+            "rejali_soni":  int(row["soni"] or 0),
+            "ofplan_summa": 0,
+            "ofplan_soni":  0,
+            "qaytarish":    int(qaytarish),
+        }
+    ]
+
+
 @router.get("/audit-log")
 async def audit_log_list(
     limit: int = 100,

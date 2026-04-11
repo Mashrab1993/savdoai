@@ -444,6 +444,23 @@ export const statistikaService = {
   get: () => api.get<StatistikaResponse>("/api/v1/statistika"),
 }
 
+// ── Agentlar Bugungi KPI ──────────────────────────────────────────────────────
+export interface AgentKpiRow {
+  id:           number
+  ism:          string
+  reja:         number
+  tashrif_soni: number
+  rejali_summa: number
+  rejali_soni:  number
+  ofplan_summa: number
+  ofplan_soni:  number
+  qaytarish:    number
+}
+
+export const agentlarKpiService = {
+  bugungi: () => api.get<AgentKpiRow[]>("/api/v1/agentlar/bugungi-kpi"),
+}
+
 // ── Foyda Tahlili ─────────────────────────────────────────────────────────────
 export interface FoydaResponse {
   kunlar: number
