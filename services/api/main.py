@@ -2237,6 +2237,7 @@ async def savdolar_royxati(
     sana_gacha: Optional[str] = None,
     qarzdor: Optional[bool] = None,
     min_summa: Optional[float] = None,
+    holat: Optional[str] = None,  # yangi/tasdiqlangan/otgruzka/yetkazildi/bekor
     sort: str = "sana",
     uid: int = Depends(get_uid),
 ):
@@ -2276,6 +2277,11 @@ async def savdolar_royxati(
             params.append(min_summa)
             idx += 1
 
+        if holat:
+            where_parts.append(f"ss.holat = ${idx}")
+            params.append(holat)
+            idx += 1
+
         where_sql = (" AND " + " AND ".join(where_parts)) if where_parts else ""
 
         sort_map = {
@@ -2288,10 +2294,10 @@ async def savdolar_royxati(
 
         rows = await c.fetch(f"""
             SELECT ss.id, ss.klient_ismi, ss.jami, ss.tolangan, ss.qarz,
-                   ss.izoh, ss.sana,
+                   ss.izoh, ss.sana, ss.holat, ss.holat_yangilangan,
                    COALESCE(k.telefon, '')  AS telefon,
                    COALESCE(k.manzil, '')   AS manzil,
-                   COALESCE(k.nomi, '')     AS klient_nomi,
+                   COALESCE(k.ism, '')      AS klient_nomi,
                    COUNT(ch.id)             AS tovar_soni
             FROM sotuv_sessiyalar ss
             LEFT JOIN chiqimlar ch ON ch.sessiya_id = ss.id
@@ -2308,13 +2314,18 @@ async def savdolar_royxati(
             WHERE 1=1 {where_sql}
         """, *params[2:])
 
-        # Umumiy statistika (bugungi)
+        # Umumiy statistika (bugungi) + holat bo'yicha ajratish
         stats = await c.fetchrow("""
             SELECT
                 COALESCE(SUM(jami), 0)     AS jami_tushum,
                 COALESCE(SUM(tolangan), 0) AS tolangan,
                 COALESCE(SUM(qarz), 0)     AS qarz,
-                COUNT(*)                   AS soni
+                COUNT(*)                   AS soni,
+                COUNT(*) FILTER (WHERE holat = 'yangi')         AS yangi,
+                COUNT(*) FILTER (WHERE holat = 'tasdiqlangan')  AS tasdiqlangan,
+                COUNT(*) FILTER (WHERE holat = 'otgruzka')      AS otgruzka,
+                COUNT(*) FILTER (WHERE holat = 'yetkazildi')    AS yetkazildi,
+                COUNT(*) FILTER (WHERE holat = 'bekor')         AS bekor
             FROM sotuv_sessiyalar
             WHERE (sana AT TIME ZONE 'Asia/Tashkent')::date = CURRENT_DATE
         """)
@@ -2327,6 +2338,13 @@ async def savdolar_royxati(
             "bugun_tolangan": float(stats["tolangan"]),
             "bugun_qarz": float(stats["qarz"]),
             "bugun_soni": int(stats["soni"]),
+            "holatlar": {
+                "yangi":        int(stats["yangi"] or 0),
+                "tasdiqlangan": int(stats["tasdiqlangan"] or 0),
+                "otgruzka":     int(stats["otgruzka"] or 0),
+                "yetkazildi":   int(stats["yetkazildi"] or 0),
+                "bekor":        int(stats["bekor"] or 0),
+            },
         },
     }
 
@@ -2710,12 +2728,18 @@ async def savdolar_excel(
 
 @app.get("/api/v1/savdo/{sessiya_id}", tags=["Sotuv"])
 async def savdo_tafsilot(sessiya_id: int, uid: int = Depends(get_uid)):
-    """Bitta sotuv sessiyasi tafsiloti — tovarlar bilan"""
+    """Bitta sotuv sessiyasi tafsiloti — tovarlar + klient + status bilan"""
     async with rls_conn(uid) as c:
-        sess = await c.fetchrow(
-            "SELECT id, klient_ismi, jami, tolangan, qarz, izoh, sana FROM sotuv_sessiyalar WHERE id=$1 AND user_id=$2",
-            sessiya_id, uid
-        )
+        sess = await c.fetchrow("""
+            SELECT ss.id, ss.klient_id, ss.klient_ismi, ss.jami, ss.tolangan,
+                   ss.qarz, ss.izoh, ss.sana, ss.holat, ss.holat_yangilangan,
+                   ss.otgruzka_vaqti, ss.yetkazildi_vaqti, ss.bekor_vaqti, ss.bekor_sabab,
+                   COALESCE(k.telefon, '') AS klient_telefon,
+                   COALESCE(k.manzil, '')  AS klient_manzil
+            FROM sotuv_sessiyalar ss
+            LEFT JOIN klientlar k ON k.id = ss.klient_id
+            WHERE ss.id = $1 AND ss.user_id = $2
+        """, sessiya_id, uid)
         if not sess:
             raise HTTPException(404, "Sotuv topilmadi")
         tovarlar = await c.fetch("""
@@ -2724,6 +2748,71 @@ async def savdo_tafsilot(sessiya_id: int, uid: int = Depends(get_uid)):
             FROM chiqimlar WHERE sessiya_id=$1 AND user_id=$2 ORDER BY id
         """, sessiya_id, uid)
     return {**dict(sess), "tovarlar": [dict(r) for r in tovarlar]}
+
+
+class SavdoHolatSorov(BaseModel):
+    holat: str  # yangi / tasdiqlangan / otgruzka / yetkazildi / bekor
+    sabab: Optional[str] = None
+
+
+@app.put("/api/v1/savdo/{sessiya_id}/holat", tags=["Sotuv"])
+async def savdo_holat_ozgartir(
+    sessiya_id: int, data: SavdoHolatSorov, uid: int = Depends(get_uid)
+):
+    """Sotuv holatini o'zgartirish workflow: yangi → tasdiqlangan → otgruzka → yetkazildi.
+
+    Yoki istalgan vaqtda bekor qilish mumkin.
+    """
+    ALLOWED = {"yangi", "tasdiqlangan", "otgruzka", "yetkazildi", "bekor"}
+    if data.holat not in ALLOWED:
+        raise HTTPException(400, f"Noto'g'ri holat. Ruxsat: {ALLOWED}")
+
+    async with rls_conn(uid) as c:
+        sess = await c.fetchrow(
+            "SELECT id, holat FROM sotuv_sessiyalar WHERE id=$1 AND user_id=$2",
+            sessiya_id, uid
+        )
+        if not sess:
+            raise HTTPException(404, "Sotuv topilmadi")
+
+        # Timestamp'ni holatga qarab belgilash
+        extra_updates = []
+        params: list = [data.holat, sessiya_id, uid]
+        idx = 4
+        if data.holat == "otgruzka":
+            extra_updates.append("otgruzka_vaqti = NOW()")
+        elif data.holat == "yetkazildi":
+            extra_updates.append("yetkazildi_vaqti = NOW()")
+        elif data.holat == "bekor":
+            extra_updates.append("bekor_vaqti = NOW()")
+            if data.sabab:
+                extra_updates.append(f"bekor_sabab = ${idx}")
+                params.insert(-2, data.sabab)
+                idx += 1
+
+        extras = (", " + ", ".join(extra_updates)) if extra_updates else ""
+        await c.execute(f"""
+            UPDATE sotuv_sessiyalar
+            SET holat = $1, holat_yangilangan = NOW(){extras}
+            WHERE id = $2 AND user_id = $3
+        """, *params)
+
+        # Bekor qilinganda — tovar qoldig'ini qaytarish
+        if data.holat == "bekor" and sess["holat"] != "bekor":
+            chiqimlar = await c.fetch(
+                "SELECT tovar_id, miqdor FROM chiqimlar WHERE sessiya_id=$1", sessiya_id
+            )
+            for ch in chiqimlar:
+                if ch["tovar_id"]:
+                    await c.execute(
+                        "UPDATE tovarlar SET qoldiq = qoldiq + $1 "
+                        "WHERE id = $2 AND user_id = $3",
+                        ch["miqdor"], ch["tovar_id"], uid
+                    )
+
+    log.info("📋 Sotuv #%d holat: %s → %s (uid=%d)",
+             sessiya_id, sess["holat"], data.holat, uid)
+    return {"id": sessiya_id, "holat": data.holat, "status": "yangilandi"}
 
 
 # ════════════════════════════════════════════════════════════════

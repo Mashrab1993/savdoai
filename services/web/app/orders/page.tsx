@@ -19,14 +19,23 @@ import {
 import { formatCurrency } from "@/lib/format"
 import { savdoService } from "@/lib/api/services"
 
-type OrderStatus = "all" | "yangi" | "tasdiqlangan" | "yetkazildi" | "bekor"
+type OrderStatus = "all" | "yangi" | "tasdiqlangan" | "otgruzka" | "yetkazildi" | "bekor"
 
 const STATUS_MAP: Record<string, { label: string; color: string; icon: any }> = {
-  yangi:         { label: "Yangi",        color: "bg-blue-100 text-blue-800",    icon: Clock },
-  tasdiqlangan:  { label: "Tasdiqlangan", color: "bg-yellow-100 text-yellow-800", icon: CheckCircle2 },
-  yetkazildi:    { label: "Yetkazildi",   color: "bg-emerald-100 text-emerald-800", icon: Truck },
-  bekor:         { label: "Bekor qilindi", color: "bg-red-100 text-red-800",     icon: XCircle },
-  yakunlandi:    { label: "Yakunlandi",   color: "bg-gray-100 text-gray-800",    icon: CheckCircle2 },
+  yangi:         { label: "Yangi",        color: "bg-blue-100 text-blue-800",        icon: Clock },
+  tasdiqlangan:  { label: "Tasdiqlangan", color: "bg-yellow-100 text-yellow-800",    icon: CheckCircle2 },
+  otgruzka:      { label: "Otgruzka",     color: "bg-purple-100 text-purple-800",    icon: Truck },
+  yetkazildi:    { label: "Yetkazildi",   color: "bg-emerald-100 text-emerald-800",  icon: CheckCircle2 },
+  bekor:         { label: "Bekor",        color: "bg-red-100 text-red-800",          icon: XCircle },
+}
+
+// Valid next statuses from current state
+const NEXT_STATUSES: Record<string, string[]> = {
+  yangi:         ["tasdiqlangan", "bekor"],
+  tasdiqlangan:  ["otgruzka", "bekor"],
+  otgruzka:      ["yetkazildi", "bekor"],
+  yetkazildi:    [],
+  bekor:         [],
 }
 
 export default function OrdersPage() {
@@ -45,6 +54,26 @@ export default function OrdersPage() {
     () => savdoService.list({ sana_dan: sanaDan, sana_gacha: sanaGacha, limit: 200 }),
     [sanaDan, sanaGacha]
   )
+
+  async function changeStatus(sessId: number, newHolat: string, sabab?: string) {
+    try {
+      const token = typeof window !== "undefined" ? localStorage.getItem("auth_token") : ""
+      const base  = process.env.NEXT_PUBLIC_API_URL || ""
+      const res = await fetch(`${base}/api/v1/savdo/${sessId}/holat`, {
+        method:  "PUT",
+        headers: {
+          "Content-Type":  "application/json",
+          Authorization:   `Bearer ${token}`,
+        },
+        body: JSON.stringify({ holat: newHolat, sabab }),
+      })
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      refetch()
+      setSheetOpen(false)
+    } catch (e) {
+      alert(e instanceof Error ? e.message : String(e))
+    }
+  }
 
   async function handleExcelExport() {
     setExporting(true)
@@ -101,11 +130,14 @@ export default function OrdersPage() {
     const items: any[] = rawOrders
       ? (Array.isArray(rawOrders) ? rawOrders : (rawOrders as any).items || (rawOrders as any).sessiyalar || [])
       : []
+    const byStatus = (s: string) => items.filter((o: any) => (o.holat || "yangi") === s).length
     return {
       jami: items.length,
-      yangi: items.filter((o: any) => (o.holat || o.status) === "yangi").length,
-      tasdiqlangan: items.filter((o: any) => (o.holat || o.status) === "tasdiqlangan").length,
-      yetkazildi: items.filter((o: any) => (o.holat || o.status) === "yetkazildi").length,
+      yangi:        byStatus("yangi"),
+      tasdiqlangan: byStatus("tasdiqlangan"),
+      otgruzka:     byStatus("otgruzka"),
+      yetkazildi:   byStatus("yetkazildi"),
+      bekor:        byStatus("bekor"),
       jami_summa: items.reduce((s: number, o: any) => s + (o.jami || o.total || 0), 0),
     }
   }, [rawOrders])
@@ -151,32 +183,42 @@ export default function OrdersPage() {
           </div>
         </div>
 
-        {/* Stats */}
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
-          <div className="bg-white dark:bg-gray-900 rounded-xl border p-4 cursor-pointer hover:shadow-md"
-               onClick={() => setStatusFilter("all")}>
-            <div className="text-sm text-muted-foreground">Jami</div>
-            <div className="text-2xl font-bold mt-1">{stats.jami}</div>
-          </div>
-          <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-200 p-4 cursor-pointer hover:shadow-md"
-               onClick={() => setStatusFilter("yangi")}>
-            <div className="text-sm text-blue-600">Yangi</div>
-            <div className="text-2xl font-bold mt-1 text-blue-700">{stats.yangi}</div>
-          </div>
-          <div className="bg-yellow-50 dark:bg-yellow-900/20 rounded-xl border border-yellow-200 p-4 cursor-pointer hover:shadow-md"
-               onClick={() => setStatusFilter("tasdiqlangan")}>
-            <div className="text-sm text-yellow-600">Tasdiqlangan</div>
-            <div className="text-2xl font-bold mt-1 text-yellow-700">{stats.tasdiqlangan}</div>
-          </div>
-          <div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-xl border border-emerald-200 p-4 cursor-pointer hover:shadow-md"
-               onClick={() => setStatusFilter("yetkazildi")}>
-            <div className="text-sm text-emerald-600">Yetkazildi</div>
-            <div className="text-2xl font-bold mt-1 text-emerald-700">{stats.yetkazildi}</div>
-          </div>
-          <div className="bg-white dark:bg-gray-900 rounded-xl border p-4">
-            <div className="text-sm text-muted-foreground">Jami summa</div>
-            <div className="text-xl font-bold mt-1 text-emerald-600">{formatCurrency(stats.jami_summa)}</div>
-          </div>
+        {/* Stats — 6 status buckets */}
+        <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
+          <button className={`bg-card rounded-xl border p-3 text-left transition ${statusFilter === "all" ? "ring-2 ring-primary" : ""}`}
+                  onClick={() => setStatusFilter("all")}>
+            <div className="text-xs text-muted-foreground">Jami</div>
+            <div className="text-2xl font-bold">{stats.jami}</div>
+          </button>
+          <button className={`bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-200 p-3 text-left ${statusFilter === "yangi" ? "ring-2 ring-blue-500" : ""}`}
+                  onClick={() => setStatusFilter("yangi")}>
+            <div className="text-xs text-blue-600">Yangi</div>
+            <div className="text-2xl font-bold text-blue-700">{stats.yangi}</div>
+          </button>
+          <button className={`bg-yellow-50 dark:bg-yellow-900/20 rounded-xl border border-yellow-200 p-3 text-left ${statusFilter === "tasdiqlangan" ? "ring-2 ring-yellow-500" : ""}`}
+                  onClick={() => setStatusFilter("tasdiqlangan")}>
+            <div className="text-xs text-yellow-600">Tasdiq.</div>
+            <div className="text-2xl font-bold text-yellow-700">{stats.tasdiqlangan}</div>
+          </button>
+          <button className={`bg-purple-50 dark:bg-purple-900/20 rounded-xl border border-purple-200 p-3 text-left ${statusFilter === "otgruzka" ? "ring-2 ring-purple-500" : ""}`}
+                  onClick={() => setStatusFilter("otgruzka")}>
+            <div className="text-xs text-purple-600">Otgruzka</div>
+            <div className="text-2xl font-bold text-purple-700">{stats.otgruzka}</div>
+          </button>
+          <button className={`bg-emerald-50 dark:bg-emerald-900/20 rounded-xl border border-emerald-200 p-3 text-left ${statusFilter === "yetkazildi" ? "ring-2 ring-emerald-500" : ""}`}
+                  onClick={() => setStatusFilter("yetkazildi")}>
+            <div className="text-xs text-emerald-600">Yetkazildi</div>
+            <div className="text-2xl font-bold text-emerald-700">{stats.yetkazildi}</div>
+          </button>
+          <button className={`bg-red-50 dark:bg-red-900/20 rounded-xl border border-red-200 p-3 text-left ${statusFilter === "bekor" ? "ring-2 ring-red-500" : ""}`}
+                  onClick={() => setStatusFilter("bekor")}>
+            <div className="text-xs text-red-600">Bekor</div>
+            <div className="text-2xl font-bold text-red-700">{stats.bekor}</div>
+          </button>
+        </div>
+        <div className="bg-card border rounded-xl p-3 text-right">
+          <span className="text-sm text-muted-foreground">Jami summa: </span>
+          <span className="text-lg font-bold text-emerald-600">{formatCurrency(stats.jami_summa)}</span>
         </div>
 
         {/* Search */}
@@ -206,10 +248,9 @@ export default function OrdersPage() {
                   <TableHead>Sana</TableHead>
                   <TableHead>Mijoz</TableHead>
                   <TableHead className="hidden md:table-cell">Telefon</TableHead>
-                  <TableHead className="hidden lg:table-cell">Manzil</TableHead>
+                  <TableHead className="text-center">Holat</TableHead>
                   <TableHead className="text-center">Tovar</TableHead>
                   <TableHead className="text-right">Summa</TableHead>
-                  <TableHead className="text-right hidden sm:table-cell">To'landi</TableHead>
                   <TableHead className="text-right">Qarz</TableHead>
                   <TableHead className="w-10"></TableHead>
                 </TableRow>
@@ -217,7 +258,7 @@ export default function OrdersPage() {
               <TableBody>
                 {orders.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={10} className="text-center py-10 text-muted-foreground">
+                    <TableCell colSpan={9} className="text-center py-10 text-muted-foreground">
                       <ShoppingCart className="w-10 h-10 mx-auto mb-2 opacity-30" />
                       Buyurtmalar topilmadi
                     </TableCell>
@@ -227,6 +268,9 @@ export default function OrdersPage() {
                   const tolandi = Number(o.tolangan || 0)
                   const qarz = Number(o.qarz || 0)
                   const sana = o.sana ? new Date(o.sana).toLocaleDateString("uz-UZ") : "-"
+                  const holat = o.holat || "yangi"
+                  const holatMeta = STATUS_MAP[holat] || STATUS_MAP.yangi
+                  const HolatIcon = holatMeta.icon
                   return (
                     <TableRow key={o.id || i} className="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800"
                               onClick={() => viewOrder(o)}>
@@ -241,17 +285,17 @@ export default function OrdersPage() {
                       <TableCell className="hidden md:table-cell text-xs text-muted-foreground">
                         {o.telefon || "—"}
                       </TableCell>
-                      <TableCell className="hidden lg:table-cell text-xs text-muted-foreground max-w-[200px] truncate">
-                        {o.manzil || "—"}
+                      <TableCell className="text-center">
+                        <Badge className={`text-xs ${holatMeta.color}`}>
+                          <HolatIcon className="w-3 h-3 mr-1 inline" />
+                          {holatMeta.label}
+                        </Badge>
                       </TableCell>
                       <TableCell className="text-center font-mono text-xs">
                         {o.tovar_soni || o.items_count || 0}
                       </TableCell>
                       <TableCell className="text-right font-mono font-bold text-sm">
                         {formatCurrency(jami)}
-                      </TableCell>
-                      <TableCell className="text-right font-mono text-sm hidden sm:table-cell text-emerald-600">
-                        {formatCurrency(tolandi)}
                       </TableCell>
                       <TableCell className={`text-right font-mono text-sm ${qarz > 0 ? "text-red-500 font-semibold" : "text-muted-foreground"}`}>
                         {qarz > 0 ? formatCurrency(qarz) : "—"}
@@ -278,50 +322,106 @@ export default function OrdersPage() {
                 Buyurtma #{selectedOrder?.id}
               </SheetTitle>
             </SheetHeader>
-            {selectedOrder && (
-              <div className="space-y-4 mt-4">
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Mijoz:</span>
-                    <span className="font-medium">{selectedOrder.klient_ism || "Noma'lum"}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Holat:</span>
-                    <Badge className={`text-xs ${(STATUS_MAP[selectedOrder.holat || selectedOrder.status] || STATUS_MAP.yangi).color}`}>
-                      {(STATUS_MAP[selectedOrder.holat || selectedOrder.status] || STATUS_MAP.yangi).label}
-                    </Badge>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Sana:</span>
-                    <span>{selectedOrder.yaratilgan || selectedOrder.created_at || "-"}</span>
-                  </div>
-                  <div className="flex justify-between text-sm font-bold">
-                    <span>Jami:</span>
-                    <span className="text-emerald-600">{formatCurrency(selectedOrder.jami || selectedOrder.total || 0)}</span>
-                  </div>
-                </div>
-
-                {/* Order items */}
-                {selectedOrder.tovarlar && (
-                  <div>
-                    <h3 className="font-medium mb-2">Tovarlar:</h3>
-                    <div className="space-y-2">
-                      {(Array.isArray(selectedOrder.tovarlar) ? selectedOrder.tovarlar : []).map((t: any, i: number) => (
-                        <div key={i} className="flex justify-between text-sm border-b pb-2">
-                          <div>
-                            <div className="font-medium">{t.nomi || t.tovar_nomi || `Tovar #${t.tovar_id}`}</div>
-                            <div className="text-xs text-muted-foreground">{t.miqdor || t.qty} dona x {formatCurrency(t.narx || t.price || 0)}</div>
-                          </div>
-                          <div className="font-mono font-bold">
-                            {formatCurrency((t.miqdor || t.qty || 0) * (t.narx || t.price || 0))}
-                          </div>
-                        </div>
-                      ))}
+            {selectedOrder && (() => {
+              const curHolat = selectedOrder.holat || "yangi"
+              const curMeta = STATUS_MAP[curHolat] || STATUS_MAP.yangi
+              const nextOptions = NEXT_STATUSES[curHolat] || []
+              return (
+                <div className="space-y-4 mt-4">
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Mijoz:</span>
+                      <span className="font-medium">{selectedOrder.klient_ismi || selectedOrder.klient_nomi || "Mijoz"}</span>
                     </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Telefon:</span>
+                      <span>{selectedOrder.klient_telefon || selectedOrder.telefon || "—"}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Holat:</span>
+                      <Badge className={`text-xs ${curMeta.color}`}>
+                        {curMeta.label}
+                      </Badge>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Sana:</span>
+                      <span>{selectedOrder.sana ? new Date(selectedOrder.sana).toLocaleString("uz-UZ") : "-"}</span>
+                    </div>
+                    <div className="flex justify-between text-sm font-bold border-t pt-2">
+                      <span>Jami:</span>
+                      <span className="text-emerald-600">{formatCurrency(Number(selectedOrder.jami || 0))}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">To&apos;langan:</span>
+                      <span className="text-emerald-600">{formatCurrency(Number(selectedOrder.tolangan || 0))}</span>
+                    </div>
+                    {Number(selectedOrder.qarz || 0) > 0 && (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Qarz:</span>
+                        <span className="text-red-600 font-semibold">{formatCurrency(Number(selectedOrder.qarz || 0))}</span>
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
-            )}
+
+                  {/* Status action buttons */}
+                  {nextOptions.length > 0 && (
+                    <div>
+                      <h3 className="font-medium mb-2 text-sm">Holatni o&apos;zgartirish:</h3>
+                      <div className="flex flex-wrap gap-2">
+                        {nextOptions.map(ns => {
+                          const meta = STATUS_MAP[ns]
+                          const Icon = meta.icon
+                          return (
+                            <Button key={ns} size="sm"
+                                    variant={ns === "bekor" ? "destructive" : "default"}
+                                    onClick={() => {
+                                      if (ns === "bekor") {
+                                        const sabab = prompt("Bekor qilish sababini kiriting (ixtiyoriy):") || undefined
+                                        changeStatus(selectedOrder.id, ns, sabab)
+                                      } else {
+                                        changeStatus(selectedOrder.id, ns)
+                                      }
+                                    }}>
+                              <Icon className="w-3 h-3 mr-1" />
+                              → {meta.label}
+                            </Button>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Order items */}
+                  {selectedOrder.tovarlar && (
+                    <div>
+                      <h3 className="font-medium mb-2 text-sm">Tovarlar:</h3>
+                      <div className="space-y-2">
+                        {(Array.isArray(selectedOrder.tovarlar) ? selectedOrder.tovarlar : []).map((t: any, i: number) => (
+                          <div key={i} className="flex justify-between text-sm border-b pb-2">
+                            <div>
+                              <div className="font-medium">{t.tovar_nomi || t.nomi || "Tovar"}</div>
+                              <div className="text-xs text-muted-foreground">
+                                {Number(t.miqdor || 0).toFixed(0)} {t.birlik || "dona"} × {formatCurrency(Number(t.sotish_narxi || t.narx || 0))}
+                              </div>
+                            </div>
+                            <div className="font-mono font-bold">
+                              {formatCurrency(Number(t.jami || 0))}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {selectedOrder.izoh && (
+                    <div className="bg-secondary rounded-lg p-3 text-sm">
+                      <div className="text-xs text-muted-foreground mb-1">Izoh</div>
+                      {selectedOrder.izoh}
+                    </div>
+                  )}
+                </div>
+              )
+            })()}
           </SheetContent>
         </Sheet>
       </div>

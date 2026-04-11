@@ -1546,6 +1546,154 @@ async def cmd_rfm(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         await msg.edit_text(f"❌ RFM xatosi: {e}")
 
 
+async def cmd_zayavkalar(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    """/zayavkalar — Yangi/tasdiqlangan/otgruzka holatlari bo'yicha buyurtmalar."""
+    if not await faol_tekshir(update):
+        return
+    uid = update.effective_user.id
+    try:
+        async with db._P().acquire() as c:
+            rows = await c.fetch("""
+                SELECT holat,
+                       COUNT(*) AS soni,
+                       COALESCE(SUM(jami), 0) AS jami
+                FROM sotuv_sessiyalar
+                WHERE user_id = $1
+                GROUP BY holat
+            """, uid)
+
+            pending = await c.fetch("""
+                SELECT ss.id, ss.klient_ismi, ss.jami, ss.holat, ss.sana,
+                       COALESCE(k.telefon, '') AS telefon
+                FROM sotuv_sessiyalar ss
+                LEFT JOIN klientlar k ON k.id = ss.klient_id
+                WHERE ss.user_id = $1 AND ss.holat IN ('yangi', 'tasdiqlangan', 'otgruzka')
+                ORDER BY ss.sana DESC
+                LIMIT 20
+            """, uid)
+
+        meta = {
+            "yangi":        ("🔵", "Yangi"),
+            "tasdiqlangan": ("🟡", "Tasdiqlangan"),
+            "otgruzka":     ("🟣", "Otgruzka"),
+            "yetkazildi":   ("🟢", "Yetkazildi"),
+            "bekor":        ("🔴", "Bekor"),
+        }
+
+        parts = ["📋 *ZAYAVKALAR HOLATI*\n━━━━━━━━━━━━━━━━━━"]
+        for r in rows:
+            emoji, label = meta.get(r["holat"], ("⚪", r["holat"]))
+            parts.append(f"{emoji} {label}: *{r['soni']}* ta · {pul(r['jami'])}")
+
+        if pending:
+            parts.append("\n━━━━━━━━━━━━━━━━━━")
+            parts.append("*Pending zayavkalar:*")
+            for p in pending[:12]:
+                emoji, _ = meta.get(p["holat"], ("⚪", ""))
+                tel = f" · {p['telefon']}" if p["telefon"] else ""
+                parts.append(
+                    f"{emoji} #{p['id']} *{p['klient_ismi'] or 'Mijoz'}*{tel}\n"
+                    f"   {pul(p['jami'])}"
+                )
+
+        parts.append("\n💡 Web panel /orders da batafsil boshqarish")
+        text = "\n".join(parts)
+        if len(text) > 4000:
+            text = text[:3990] + "..."
+        await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
+    except Exception as e:
+        log.error("zayavkalar: %s", e, exc_info=True)
+        await update.message.reply_text(f"❌ Xato: {e}")
+
+
+async def cmd_otgruzka(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    """/otgruzka <id> — Zayavkani otgruzka holatiga o'tkazish."""
+    if not await faol_tekshir(update):
+        return
+    text = update.message.text or ""
+    parts = text.split()
+    if len(parts) < 2 or not parts[1].isdigit():
+        await update.message.reply_text(
+            "📦 *Otgruzka*\n\n"
+            "Ishlatilishi: `/otgruzka <sotuv_id>`\n"
+            "Masalan: `/otgruzka 42`\n\n"
+            "Bu zayavkani 'otgruzka' (jo'natilmoqda) holatiga o'tkazadi.",
+            parse_mode=ParseMode.MARKDOWN
+        )
+        return
+
+    sess_id = int(parts[1])
+    uid = update.effective_user.id
+    try:
+        async with db._P().acquire() as c:
+            sess = await c.fetchrow(
+                "SELECT id, holat, klient_ismi, jami FROM sotuv_sessiyalar "
+                "WHERE id=$1 AND user_id=$2", sess_id, uid
+            )
+            if not sess:
+                await update.message.reply_text(f"❌ Sotuv #{sess_id} topilmadi.")
+                return
+            await c.execute("""
+                UPDATE sotuv_sessiyalar
+                SET holat = 'otgruzka', otgruzka_vaqti = NOW(),
+                    holat_yangilangan = NOW()
+                WHERE id = $1 AND user_id = $2
+            """, sess_id, uid)
+        await update.message.reply_text(
+            f"📦 Sotuv #{sess_id} *otgruzka* holatiga o'tkazildi.\n"
+            f"Mijoz: {sess['klient_ismi'] or 'Mijoz'}\n"
+            f"Summa: {pul(sess['jami'])}",
+            parse_mode=ParseMode.MARKDOWN
+        )
+    except Exception as e:
+        log.error("otgruzka: %s", e, exc_info=True)
+        await update.message.reply_text(f"❌ Xato: {e}")
+
+
+async def cmd_yetkazildi(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    """/yetkazildi <id> — Zayavkani yetkazildi holatiga o'tkazish."""
+    if not await faol_tekshir(update):
+        return
+    text = update.message.text or ""
+    parts = text.split()
+    if len(parts) < 2 or not parts[1].isdigit():
+        await update.message.reply_text(
+            "✅ *Yetkazildi*\n\n"
+            "Ishlatilishi: `/yetkazildi <sotuv_id>`\n"
+            "Masalan: `/yetkazildi 42`\n\n"
+            "Bu zayavkani 'yetkazildi' holatiga o'tkazadi.",
+            parse_mode=ParseMode.MARKDOWN
+        )
+        return
+
+    sess_id = int(parts[1])
+    uid = update.effective_user.id
+    try:
+        async with db._P().acquire() as c:
+            sess = await c.fetchrow(
+                "SELECT id, holat, klient_ismi, jami FROM sotuv_sessiyalar "
+                "WHERE id=$1 AND user_id=$2", sess_id, uid
+            )
+            if not sess:
+                await update.message.reply_text(f"❌ Sotuv #{sess_id} topilmadi.")
+                return
+            await c.execute("""
+                UPDATE sotuv_sessiyalar
+                SET holat = 'yetkazildi', yetkazildi_vaqti = NOW(),
+                    holat_yangilangan = NOW()
+                WHERE id = $1 AND user_id = $2
+            """, sess_id, uid)
+        await update.message.reply_text(
+            f"✅ Sotuv #{sess_id} *yetkazildi* holatiga o'tkazildi.\n"
+            f"Mijoz: {sess['klient_ismi'] or 'Mijoz'}\n"
+            f"Summa: {pul(sess['jami'])}",
+            parse_mode=ParseMode.MARKDOWN
+        )
+    except Exception as e:
+        log.error("yetkazildi: %s", e, exc_info=True)
+        await update.message.reply_text(f"❌ Xato: {e}")
+
+
 async def cmd_sotuv_today(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     """/sotuv_today — Bugungi barcha sotuvlar tafsiloti."""
     if not await faol_tekshir(update):

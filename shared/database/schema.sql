@@ -134,6 +134,16 @@ CREATE INDEX IF NOT EXISTS idx_ss_uid_sana   ON sotuv_sessiyalar(user_id, sana D
 CREATE INDEX IF NOT EXISTS idx_ss_uid_klient ON sotuv_sessiyalar(user_id, klient_id) WHERE klient_id IS NOT NULL;
 SELECT enable_rls('sotuv_sessiyalar');
 
+-- v25.5 Order status workflow (SalesDoc: new / shipped / delivered / cancelled)
+ALTER TABLE sotuv_sessiyalar ADD COLUMN IF NOT EXISTS holat TEXT NOT NULL DEFAULT 'yangi'
+    CHECK(holat IN ('yangi','tasdiqlangan','otgruzka','yetkazildi','bekor'));
+ALTER TABLE sotuv_sessiyalar ADD COLUMN IF NOT EXISTS holat_yangilangan TIMESTAMPTZ DEFAULT NOW();
+ALTER TABLE sotuv_sessiyalar ADD COLUMN IF NOT EXISTS otgruzka_vaqti TIMESTAMPTZ;
+ALTER TABLE sotuv_sessiyalar ADD COLUMN IF NOT EXISTS yetkazildi_vaqti TIMESTAMPTZ;
+ALTER TABLE sotuv_sessiyalar ADD COLUMN IF NOT EXISTS bekor_vaqti TIMESTAMPTZ;
+ALTER TABLE sotuv_sessiyalar ADD COLUMN IF NOT EXISTS bekor_sabab TEXT;
+CREATE INDEX IF NOT EXISTS idx_ss_holat ON sotuv_sessiyalar(user_id, holat);
+
 CREATE TABLE IF NOT EXISTS chiqimlar (
     id               BIGSERIAL   PRIMARY KEY,
     user_id          BIGINT      NOT NULL REFERENCES users(id),
