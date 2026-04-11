@@ -1334,6 +1334,109 @@ async def kirim_saqlash(data: KirimSo_rov, uid: int = Depends(get_uid)):
     return {"kirim_id": kirim_id, "status": "saqlandi"}
 
 
+@app.post("/api/v1/kirim/import/excel", tags=["Sotuv"])
+async def kirim_import_excel(
+    file_base64: str,
+    uid: int = Depends(get_uid),
+):
+    """Omborga dastlabki qoldiqlarni Excel fayldan bulk import qilish.
+
+    Ustunlar (1-qator sarlavha):
+    - nomi (majburiy)
+    - kategoriya, birlik
+    - miqdor (majburiy)
+    - narx
+    - manba, izoh
+    """
+    import io as _io, base64 as _b64
+    from openpyxl import load_workbook
+    try:
+        content = _b64.b64decode(file_base64)
+        wb = load_workbook(_io.BytesIO(content), data_only=True)
+    except Exception as e:
+        raise HTTPException(400, f"Fayl o'qilmadi: {e}")
+
+    ws = wb.active
+    headers_row = next(ws.iter_rows(min_row=1, max_row=1, values_only=True))
+    norm = [(str(h or "").strip().lower()) for h in headers_row]
+
+    def find_col(names: list[str]) -> int:
+        for nm in names:
+            for i, h in enumerate(norm):
+                if nm in h:
+                    return i
+        return -1
+
+    idx_nomi       = find_col(["nom", "tovar", "name"])
+    idx_kateg      = find_col(["kateg", "category"])
+    idx_birlik     = find_col(["birlik", "unit"])
+    idx_miqdor     = find_col(["miqdor", "qty", "count", "kol"])
+    idx_narx       = find_col(["narx", "price"])
+    idx_manba      = find_col(["manba", "supplier", "post"])
+    idx_izoh       = find_col(["izoh", "comment", "note"])
+
+    if idx_nomi < 0 or idx_miqdor < 0:
+        raise HTTPException(400,
+            "Majburiy ustunlar topilmadi: 'nomi' va 'miqdor'")
+
+    saved = 0
+    errors: list[str] = []
+
+    async with rls_conn(uid) as c:
+        for ridx, row in enumerate(ws.iter_rows(min_row=2, values_only=True), 2):
+            def cell(i): return row[i] if 0 <= i < len(row) else None
+            nomi = str(cell(idx_nomi) or "").strip()
+            if not nomi:
+                continue
+            try:
+                miqdor = float(cell(idx_miqdor) or 0)
+                if miqdor <= 0:
+                    continue
+                kateg  = str(cell(idx_kateg)  or "Boshqa")
+                birlik = str(cell(idx_birlik) or "dona")
+                narx   = float(cell(idx_narx) or 0)
+                jami   = miqdor * narx
+                manba  = str(cell(idx_manba) or "") if idx_manba >= 0 else ""
+                izoh   = str(cell(idx_izoh)  or "") if idx_izoh  >= 0 else ""
+
+                async with c.transaction():
+                    # Upsert tovar + oshirish
+                    tv = await c.fetchrow("""
+                        INSERT INTO tovarlar
+                            (user_id, nomi, kategoriya, birlik, olish_narxi, qoldiq)
+                        VALUES ($1, $2, $3, $4, $5, $6)
+                        ON CONFLICT (user_id, lower(nomi)) DO UPDATE SET
+                            qoldiq      = COALESCE(tovarlar.qoldiq, 0) + EXCLUDED.qoldiq,
+                            olish_narxi = CASE WHEN EXCLUDED.olish_narxi > 0
+                                               THEN EXCLUDED.olish_narxi
+                                               ELSE tovarlar.olish_narxi END,
+                            yangilangan = NOW()
+                        RETURNING id
+                    """, uid, nomi, kateg, birlik, narx, miqdor)
+
+                    await c.execute("""
+                        INSERT INTO kirimlar
+                            (user_id, tovar_id, tovar_nomi, kategoriya,
+                             miqdor, birlik, narx, jami, manba, izoh)
+                        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
+                    """, uid, tv["id"], nomi, kateg, miqdor, birlik,
+                        narx, jami, manba or None, izoh or None)
+
+                saved += 1
+            except Exception as e:
+                errors.append(f"Qator #{ridx}: {nomi[:30]}: {str(e)[:80]}")
+                if len(errors) >= 20:
+                    break
+
+    from shared.cache.redis_cache import user_cache_tozala
+    await user_cache_tozala(uid)
+
+    return {
+        "saved": saved,
+        "errors": errors[:20],
+    }
+
+
 @app.get("/api/v1/kirimlar", tags=["Sotuv"])
 async def kirimlar_royxati(
     limit: int = 50, offset: int = 0,
