@@ -177,7 +177,8 @@ async def dona_blok_hisoblash(conn, tovar_id: int, miqdor_dona: float = 0,
     - Narx: blok narx * 2 + dona narx * 3
     """
     row = await conn.fetchrow(
-        "SELECT sotuv_narx, blok_hajmi, blok_narx FROM tovarlar WHERE id=$1", tovar_id)
+        "SELECT sotish_narxi AS sotuv_narx, blok_hajmi, blok_narx "
+        "FROM tovarlar WHERE id=$1", tovar_id)
     if not row:
         return {"xato": "Tovar topilmadi"}
 
@@ -357,12 +358,13 @@ async def bugungi_klientlar_juft_toq(conn, uid: int) -> List[dict]:
     turi = hozirgi_hafta_turi()
 
     rows = await conn.fetch("""
-        SELECT k.id, k.nom, k.telefon, k.manzil, k.hafta_turi
+        SELECT k.id, k.ism AS nom, k.telefon, k.manzil, k.hafta_turi
         FROM klientlar k
         JOIN tashrif_jadvali tj ON tj.klient_id = k.id AND tj.user_id = k.user_id
-        WHERE k.user_id=$1 AND k.faol=TRUE AND tj.hafta_kuni=$2
-            AND (k.hafta_turi = 'har' OR k.hafta_turi = $3)
-        ORDER BY k.nom
+        WHERE k.user_id = $1
+          AND tj.hafta_kuni = $2
+          AND (k.hafta_turi = 'har' OR k.hafta_turi = $3)
+        ORDER BY k.ism
     """, uid, haftakun, turi)
     return [dict(r) for r in rows]
 

@@ -44,18 +44,18 @@ async def narx_tavsiyalar(conn, uid: int, limit: int = 10) -> list[dict]:
                 SELECT
                     c.tovar_id,
                     t.nomi,
-                    t.sotish_narxi AS joriy_narx,
+                    t.sotish_narxi    AS joriy_narx,
                     t.olish_narxi,
                     t.qoldiq,
                     t.birlik,
-                    COUNT(*) AS sotuv_soni,
-                    SUM(c.miqdor) AS jami_miqdor,
-                    SUM(c.summa) AS jami_summa,
-                    AVG(c.narx) AS ortacha_sotuv_narx
+                    COUNT(*)                AS sotuv_soni,
+                    SUM(c.miqdor)           AS jami_miqdor,
+                    SUM(c.jami)             AS jami_summa,
+                    AVG(c.sotish_narxi)     AS ortacha_sotuv_narx
                 FROM chiqimlar c
                 JOIN tovarlar t ON t.id = c.tovar_id AND t.user_id = c.user_id
-                WHERE c.user_id=$1
-                  AND c.yaratilgan >= NOW() - INTERVAL '30 days'
+                WHERE c.user_id = $1
+                  AND c.sana >= NOW() - INTERVAL '30 days'
                   AND c.tovar_id IS NOT NULL
                 GROUP BY c.tovar_id, t.nomi, t.sotish_narxi, t.olish_narxi,
                          t.qoldiq, t.birlik

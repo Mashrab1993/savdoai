@@ -127,23 +127,32 @@ async def marshrut_optimallashtir(conn, uid: int,
     """
     # Klientlarni olish
     if klient_idlar:
+        # Klientlarda latitude/longitude ustunlari hali qo'shilmagan —
+        # agentning oxirgi checkin GPS ma'lumotlaridan foydalanamiz.
         klientlar = await conn.fetch("""
-            SELECT id, nom, latitude, longitude, manzil
-            FROM klientlar
-            WHERE user_id=$1 AND id = ANY($2)
-                AND latitude IS NOT NULL AND longitude IS NOT NULL
+            SELECT DISTINCT ON (k.id) k.id, k.ism AS nom, k.manzil,
+                   co.latitude, co.longitude
+            FROM klientlar k
+            JOIN checkin_out co ON co.klient_id = k.id AND co.user_id = k.user_id
+            WHERE k.user_id = $1 AND k.id = ANY($2)
+              AND co.latitude IS NOT NULL AND co.longitude IS NOT NULL
+            ORDER BY k.id, co.vaqt DESC
         """, uid, klient_idlar)
     else:
-        # Bugungi tashrif ro'yxatidagi klientlar
+        # Bugungi tashrif ro'yxatidagi klientlar (oxirgi checkin GPS bilan)
         klientlar = await conn.fetch("""
-            SELECT DISTINCT k.id, k.nom, k.latitude, k.longitude, k.manzil
+            SELECT DISTINCT ON (k.id) k.id, k.ism AS nom, k.manzil,
+                   co.latitude, co.longitude
             FROM klientlar k
-            WHERE k.user_id=$1 AND k.latitude IS NOT NULL AND k.longitude IS NOT NULL
-                AND k.id NOT IN (
-                    SELECT co.klient_id FROM checkin_out co
-                    WHERE co.user_id=$1 AND co.turi='checkin' AND co.vaqt::date = CURRENT_DATE
-                )
-            ORDER BY k.nom
+            JOIN checkin_out co ON co.klient_id = k.id AND co.user_id = k.user_id
+            WHERE k.user_id = $1
+              AND co.latitude IS NOT NULL AND co.longitude IS NOT NULL
+              AND k.id NOT IN (
+                  SELECT klient_id FROM checkin_out
+                  WHERE user_id = $1 AND turi = 'checkin'
+                    AND vaqt::date = CURRENT_DATE
+              )
+            ORDER BY k.id, co.vaqt DESC
             LIMIT 30
         """, uid)
 

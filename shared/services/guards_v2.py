@@ -170,7 +170,7 @@ async def checkout(conn, uid: int, klient_id: int,
 async def checkin_tarix(conn, uid: int, klient_id: int = None,
                          sana: str = None, limit: int = 50) -> List[dict]:
     """Check-in/out tarixini olish."""
-    query = "SELECT co.*, k.nom as klient_nomi FROM checkin_out co LEFT JOIN klientlar k ON k.id = co.klient_id WHERE co.user_id = $1"
+    query = "SELECT co.*, k.ism as klient_nomi FROM checkin_out co LEFT JOIN klientlar k ON k.id = co.klient_id WHERE co.user_id = $1"
     params = [uid]
     idx = 2
 
