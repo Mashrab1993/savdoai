@@ -1546,6 +1546,102 @@ async def cmd_rfm(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         await msg.edit_text(f"❌ RFM xatosi: {e}")
 
 
+async def cmd_sotuv_today(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    """/sotuv_today — Bugungi barcha sotuvlar tafsiloti."""
+    if not await faol_tekshir(update):
+        return
+    uid = update.effective_user.id
+    try:
+        async with db._P().acquire() as c:
+            rows = await c.fetch("""
+                SELECT ss.id, ss.klient_ismi, ss.jami, ss.tolangan, ss.qarz, ss.sana,
+                       COUNT(ch.id) AS tovar_soni
+                FROM sotuv_sessiyalar ss
+                LEFT JOIN chiqimlar ch ON ch.sessiya_id = ss.id
+                WHERE ss.user_id = $1
+                  AND (ss.sana AT TIME ZONE 'Asia/Tashkent')::date = CURRENT_DATE
+                GROUP BY ss.id
+                ORDER BY ss.sana DESC
+            """, uid)
+
+        if not rows:
+            await update.message.reply_text("📋 Bugun hali sotuv yo'q.")
+            return
+
+        jami_summa = sum(float(r["jami"]) for r in rows)
+        jami_tolangan = sum(float(r["tolangan"]) for r in rows)
+        jami_qarz = sum(float(r["qarz"]) for r in rows)
+
+        parts = [f"📋 *BUGUNGI SOTUVLAR* ({len(rows)} ta)\n━━━━━━━━━━━━━━━━━━"]
+        for r in rows[:15]:
+            vaqt = r["sana"].strftime("%H:%M") if r["sana"] else ""
+            parts.append(
+                f"`{vaqt}` *{(r['klient_ismi'] or 'Mijoz')[:20]}*\n"
+                f"   {r['tovar_soni']} ta · {pul(r['jami'])}"
+                + (f" · ⚠️ {pul(r['qarz'])}" if float(r["qarz"]) > 0 else "")
+            )
+
+        if len(rows) > 15:
+            parts.append(f"\n_...va yana {len(rows) - 15} ta sotuv_")
+
+        parts.append("\n━━━━━━━━━━━━━━━━━━")
+        parts.append(f"💰 Jami: *{pul(jami_summa)}*")
+        parts.append(f"✅ To'langan: *{pul(jami_tolangan)}*")
+        if jami_qarz > 0:
+            parts.append(f"⚠️ Qarz: *{pul(jami_qarz)}*")
+
+        text = "\n".join(parts)
+        if len(text) > 4000:
+            text = text[:3990] + "..."
+        await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
+    except Exception as e:
+        log.error("sotuv_today: %s", e, exc_info=True)
+        await update.message.reply_text(f"❌ Xato: {e}")
+
+
+async def cmd_kirim_today(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    """/kirim_today — Bugungi kirimlar (postuplenie)."""
+    if not await faol_tekshir(update):
+        return
+    uid = update.effective_user.id
+    try:
+        async with db._P().acquire() as c:
+            rows = await c.fetch("""
+                SELECT id, tovar_nomi, miqdor, birlik, narx, jami, manba, sana
+                FROM kirimlar
+                WHERE user_id = $1
+                  AND (sana AT TIME ZONE 'Asia/Tashkent')::date = CURRENT_DATE
+                ORDER BY sana DESC
+            """, uid)
+
+        if not rows:
+            await update.message.reply_text("📥 Bugun hali kirim yo'q.")
+            return
+
+        jami = sum(float(r["jami"]) for r in rows)
+        parts = [f"📥 *BUGUNGI KIRIMLAR* ({len(rows)} ta)\n━━━━━━━━━━━━━━━━━━"]
+        for r in rows[:15]:
+            vaqt = r["sana"].strftime("%H:%M") if r["sana"] else ""
+            parts.append(
+                f"`{vaqt}` *{r['tovar_nomi'][:25]}*\n"
+                f"   {float(r['miqdor']):.0f} {r['birlik']} × {pul(r['narx'])} = *{pul(r['jami'])}*"
+                + (f"\n   _{r['manba']}_" if r["manba"] else "")
+            )
+        if len(rows) > 15:
+            parts.append(f"\n_...va yana {len(rows) - 15} ta_")
+
+        parts.append("\n━━━━━━━━━━━━━━━━━━")
+        parts.append(f"💵 Jami kirim: *{pul(jami)}*")
+
+        text = "\n".join(parts)
+        if len(text) > 4000:
+            text = text[:3990] + "..."
+        await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
+    except Exception as e:
+        log.error("kirim_today: %s", e, exc_info=True)
+        await update.message.reply_text(f"❌ Xato: {e}")
+
+
 async def cmd_ombor_qiymati(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     """/ombor_qiymati — Ombor umumiy qiymati (olish + bozor + foyda prognozi)."""
     if not await faol_tekshir(update):
