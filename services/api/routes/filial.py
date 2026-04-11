@@ -95,6 +95,51 @@ async def filial_tovarlar(filial_id: int, uid: int = Depends(get_uid)):
     }
 
 
+@router.get("/transferlar")
+async def transferlar_list(
+    sana_dan: Optional[str] = None,
+    sana_gacha: Optional[str] = None,
+    uid: int = Depends(get_uid),
+):
+    """Filiallar orasidagi transferlar ro'yxati."""
+    where = ["ft.user_id = $1"]
+    params: list = [uid]
+    if sana_dan:
+        params.append(sana_dan)
+        where.append(f"ft.yaratilgan >= ${len(params)}::timestamptz")
+    if sana_gacha:
+        params.append(sana_gacha)
+        where.append(f"ft.yaratilgan < ${len(params)}::timestamptz + interval '1 day'")
+    where_sql = " AND ".join(where)
+
+    async with rls_conn(uid) as c:
+        rows = await c.fetch(f"""
+            SELECT ft.id, ft.dan_filial_id, ft.ga_filial_id,
+                   ft.tovar_id, ft.tovar_nomi, ft.miqdor,
+                   ft.holat, ft.izoh, ft.yaratilgan,
+                   fd.nomi AS dan_nomi,
+                   fg.nomi AS ga_nomi
+            FROM filial_transferlar ft
+            LEFT JOIN filiallar fd ON fd.id = ft.dan_filial_id
+            LEFT JOIN filiallar fg ON fg.id = ft.ga_filial_id
+            WHERE {where_sql}
+            ORDER BY ft.yaratilgan DESC
+            LIMIT 200
+        """, *params)
+
+        stats = await c.fetchrow(f"""
+            SELECT COUNT(*) AS soni,
+                   COALESCE(SUM(miqdor), 0) AS jami_miqdor
+            FROM filial_transferlar ft
+            WHERE {where_sql}
+        """, *params)
+
+    return {
+        "items": [dict(r) for r in rows],
+        "stats": dict(stats) if stats else {},
+    }
+
+
 @router.post("/transfer")
 async def filial_transfer(data: TransferSorov, uid: int = Depends(get_uid)):
     """Filiallar arasi tovar transfer."""
