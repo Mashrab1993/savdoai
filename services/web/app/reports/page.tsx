@@ -16,6 +16,7 @@ import { Download, TrendingUp, Users, DollarSign, Package, Loader2 } from "lucid
 import { useApi } from "@/hooks/use-api"
 import { getPublicApiBaseUrl } from "@/lib/api/base-url"
 import { reportService, dashboardService, foydaService } from "@/lib/api/services"
+import PnLReport from "@/components/dashboard/pnl-report"
 import { normalizeDashboard } from "@/lib/api/normalizers"
 import { PageLoading, PageError } from "@/components/shared/page-states"
 import type { ReportEntry } from "@/lib/api/types"
@@ -181,6 +182,20 @@ export default function ReportsPage() {
             </div>
           ))}
         </div>
+
+        {/* PnL statement (when foyda data loaded) */}
+        {foydaData && (
+          <PnLReport
+            data={{
+              davr_nomi:           locale === "uz" ? `Oxirgi ${foydaData.kunlar} kun` : `Последние ${foydaData.kunlar} дн.`,
+              tushum:               foydaData.brutto_sotuv ?? 0,
+              tannarx:              foydaData.tannarx ?? 0,
+              yalpi_foyda:          foydaData.sof_foyda ?? 0,
+              operatsion_xarajatlar: foydaData.xarajatlar ?? 0,
+              sof_foyda:            foydaData.toza_foyda ?? 0,
+            }}
+          />
+        )}
 
         {/* Charts row 1 */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
