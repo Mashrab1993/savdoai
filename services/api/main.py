@@ -2223,6 +2223,141 @@ async def savdolar_royxati(
     }
 
 
+@app.get("/api/v1/sklad-qogozi/excel", tags=["Ombor"])
+async def sklad_qogozi_excel(uid: int = Depends(get_uid)):
+    """Sklad qog'ozi — ombor inventarizatsiyasi (barcha tovarlar + qoldiq + qiymat)."""
+    import io, base64
+    from datetime import datetime
+    from openpyxl import Workbook
+    from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+
+    async with rls_conn(uid) as c:
+        rows = await c.fetch("""
+            SELECT t.nomi, t.kategoriya, t.brend, t.shtrix_kod,
+                   t.birlik, t.qoldiq, t.min_qoldiq,
+                   t.olish_narxi, t.sotish_narxi,
+                   (t.qoldiq * t.olish_narxi)   AS ombor_qiymati,
+                   (t.qoldiq * t.sotish_narxi)  AS bozor_qiymati
+            FROM tovarlar t
+            WHERE t.user_id = $1
+            ORDER BY t.kategoriya, t.nomi
+        """, uid)
+        user = await c.fetchrow(
+            "SELECT ism, dokon_nomi, manzil FROM users WHERE id=$1", uid)
+
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Sklad qog'ozi"
+
+    # Sarlavha qator
+    ws.merge_cells("A1:K1")
+    t = ws.cell(row=1, column=1, value="SKLAD QOG'OZI — OMBOR INVENTARIZATSIYASI")
+    t.font = Font(bold=True, size=16, color="1B5E20")
+    t.alignment = Alignment(horizontal="center")
+    ws.row_dimensions[1].height = 28
+
+    ws.merge_cells("A2:K2")
+    dokon = (user and user["dokon_nomi"]) or "SavdoAI"
+    sub = ws.cell(row=2, column=1,
+                  value=f"{dokon} · {datetime.now().strftime('%d.%m.%Y %H:%M')}")
+    sub.font = Font(size=11, italic=True, color="666666")
+    sub.alignment = Alignment(horizontal="center")
+
+    # Jadval sarlavhasi (4-qator)
+    headers = [
+        "№", "Tovar", "Kategoriya", "Brend", "Shtrix kod",
+        "Qoldiq", "Birlik", "Min q.",
+        "Olish narxi", "Ombor qiymati", "Bozor qiymati",
+    ]
+    widths  = [5, 32, 18, 16, 16, 10, 8, 8, 14, 16, 16]
+
+    header_fill = PatternFill(start_color="0A819C", end_color="0A819C", fill_type="solid")
+    header_font = Font(bold=True, color="FFFFFF", size=11)
+    thin = Side(style="thin", color="888888")
+    border = Border(left=thin, right=thin, top=thin, bottom=thin)
+
+    start = 4
+    for i, (h, w) in enumerate(zip(headers, widths), 1):
+        cell = ws.cell(row=start, column=i, value=h)
+        cell.fill = header_fill
+        cell.font = header_font
+        cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+        cell.border = border
+        ws.column_dimensions[chr(64 + i)].width = w
+    ws.row_dimensions[start].height = 28
+
+    total_ombor = 0.0
+    total_bozor = 0.0
+    total_qoldiq = 0.0
+    for idx, r in enumerate(rows, start + 1):
+        d = dict(r)
+        qoldiq = float(d["qoldiq"] or 0)
+        min_q  = float(d["min_qoldiq"] or 0)
+        ombor  = float(d["ombor_qiymati"] or 0)
+        bozor  = float(d["bozor_qiymati"] or 0)
+        vals = [
+            idx - start,
+            d["nomi"], d["kategoriya"] or "", d["brend"] or "",
+            d["shtrix_kod"] or "",
+            qoldiq, d["birlik"] or "", min_q,
+            float(d["olish_narxi"] or 0),
+            ombor, bozor,
+        ]
+        # Rang: tugagan=qizil, kam=sariq, normal=oq
+        if qoldiq <= 0:
+            fill = PatternFill(start_color="FFEBEE", end_color="FFEBEE", fill_type="solid")
+        elif min_q > 0 and qoldiq <= min_q:
+            fill = PatternFill(start_color="FFF9C4", end_color="FFF9C4", fill_type="solid")
+        else:
+            fill = None
+
+        for col, v in enumerate(vals, 1):
+            cell = ws.cell(row=idx, column=col, value=v)
+            cell.border = border
+            if fill:
+                cell.fill = fill
+            if col in (6, 8, 9, 10, 11):
+                cell.number_format = '#,##0.##'
+                cell.alignment = Alignment(horizontal="right")
+
+        total_qoldiq += qoldiq
+        total_ombor  += ombor
+        total_bozor  += bozor
+
+    # Total
+    total_row = len(rows) + start + 1
+    for col in range(1, 12):
+        ws.cell(row=total_row, column=col).fill = PatternFill(
+            start_color="E8F5E9", end_color="E8F5E9", fill_type="solid")
+        ws.cell(row=total_row, column=col).border = border
+    ws.cell(row=total_row, column=1, value="JAMI").font = Font(bold=True)
+    q_cell = ws.cell(row=total_row, column=6, value=total_qoldiq)
+    q_cell.font = Font(bold=True); q_cell.number_format = '#,##0.##'
+    o_cell = ws.cell(row=total_row, column=10, value=total_ombor)
+    o_cell.font = Font(bold=True, color="1B5E20"); o_cell.number_format = '#,##0'
+    b_cell = ws.cell(row=total_row, column=11, value=total_bozor)
+    b_cell.font = Font(bold=True, color="1B5E20"); b_cell.number_format = '#,##0'
+
+    # Imzo joyi
+    sig_row = total_row + 3
+    ws.cell(row=sig_row, column=2, value="Ombor mudiri: ____________________").font = Font(size=10)
+    ws.cell(row=sig_row, column=7, value="Buxgalter: ____________________").font = Font(size=10)
+    ws.cell(row=sig_row + 1, column=2, value="Sana: ____________________").font = Font(size=10)
+
+    ws.freeze_panes = f"A{start + 1}"
+    ws.auto_filter.ref = f"A{start}:K{total_row}"
+
+    buf = io.BytesIO()
+    wb.save(buf); buf.seek(0)
+    return {
+        "filename": f"Sklad_qogozi_{datetime.now().strftime('%Y%m%d')}.xlsx",
+        "content_base64": base64.b64encode(buf.getvalue()).decode(),
+        "soni": len(rows),
+        "jami_ombor_qiymati": total_ombor,
+        "jami_bozor_qiymati": total_bozor,
+    }
+
+
 @app.post("/api/v1/nakladnoy/excel", tags=["Sotuv"])
 async def nakladnoy_excel_batch(
     payload: dict,
