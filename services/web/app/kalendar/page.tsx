@@ -18,8 +18,8 @@ export default function CalendarPage() {
 
   useEffect(() => {
     Promise.all([
-      fetch(`${API}/api/kalendar/bugun`, { headers: h }).then(r => r.ok ? r.json() : null),
-      fetch(`${API}/api/kalendar/hafta`, { headers: h }).then(r => r.ok ? r.json() : null),
+      fetch(`${API}/kalendar/bugun`, { headers: h }).then(r => r.ok ? r.json() : null),
+      fetch(`${API}/kalendar/hafta`, { headers: h }).then(r => r.ok ? r.json() : null),
     ]).then(([b, h]) => { setBugun(b); setHafta(h) }).finally(() => setLoading(false))
   }, [])
 

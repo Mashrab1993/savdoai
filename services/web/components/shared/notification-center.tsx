@@ -21,7 +21,7 @@ export function NotificationCenter() {
 
   const load = async () => {
     try {
-      const res = await fetch(`${API}/api/bildirishnoma?limit=20`, { headers: h })
+      const res = await fetch(`${API}/bildirishnoma?limit=20`, { headers: h })
       if (res.ok) { const d = await res.json(); setItems(d.bildirishnomalar || []); setUnread(d.oqilmagan_soni || 0) }
     } catch (_) {}
   }
@@ -32,11 +32,11 @@ export function NotificationCenter() {
   }, [])
 
   const markRead = async (id: number) => {
-    await fetch(`${API}/api/bildirishnoma/${id}/oqish`, { method: "PUT", headers: h })
+    await fetch(`${API}/bildirishnoma/${id}/oqish`, { method: "PUT", headers: h })
     setItems(p => p.map(n => n.id === id ? { ...n, oqildi: true } : n)); setUnread(c => Math.max(0, c - 1))
   }
   const markAll = async () => {
-    await fetch(`${API}/api/bildirishnoma/barchasi-oqildi`, { method: "PUT", headers: h })
+    await fetch(`${API}/bildirishnoma/barchasi-oqildi`, { method: "PUT", headers: h })
     setItems(p => p.map(n => ({ ...n, oqildi: true }))); setUnread(0)
   }
   const ago = (iso: string) => { const m = (Date.now() - new Date(iso).getTime()) / 60000; return m < 60 ? `${Math.floor(m)}m` : m < 1440 ? `${Math.floor(m/60)}s` : `${Math.floor(m/1440)}k` }

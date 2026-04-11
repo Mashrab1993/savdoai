@@ -15,8 +15,8 @@ export default function AgentMonitorPage() {
       try {
         // Live dashboard — bugungi ma'lumotlar
         const [liveRes, syncRes] = await Promise.all([
-          fetch(`${API}/api/live`, { headers: h }).then(r => r.ok ? r.json() : null),
-          fetch(`${API}/api/config/sync-log?limit=20`, { headers: h }).then(r => r.ok ? r.json() : []),
+          fetch(`${API}/live`, { headers: h }).then(r => r.ok ? r.json() : null),
+          fetch(`${API}/config/sync-log?limit=20`, { headers: h }).then(r => r.ok ? r.json() : []),
         ])
 
         // Sync loglardan agent ma'lumotlarini chiqarish

@@ -13,20 +13,20 @@ export default function VanSellingPage() {
   const h = { Authorization: `Bearer ${typeof window !== "undefined" ? localStorage.getItem("auth_token") : ""}` }
 
   useEffect(() => {
-    fetch(`${API}/api/van/marshrutlar`, { headers: h })
+    fetch(`${API}/van/marshrutlar`, { headers: h })
       .then(r => r.ok ? r.json() : []).then(setMarshrutlar).finally(() => setLoading(false))
   }, [])
 
   const loadDetail = async (id: number) => {
-    const res = await fetch(`${API}/api/van/marshrut/${id}`, { headers: h })
+    const res = await fetch(`${API}/van/marshrut/${id}`, { headers: h })
     if (res.ok) setSelected(await res.json())
   }
 
   const yakunlash = async (id: number) => {
-    await fetch(`${API}/api/van/marshrut/${id}/yakunlash`, { method: "POST", headers: h })
+    await fetch(`${API}/van/marshrut/${id}/yakunlash`, { method: "POST", headers: h })
     setSelected(null)
     // Refresh
-    const res = await fetch(`${API}/api/van/marshrutlar`, { headers: h })
+    const res = await fetch(`${API}/van/marshrutlar`, { headers: h })
     if (res.ok) setMarshrutlar(await res.json())
   }
 

@@ -30,7 +30,7 @@ export default function RoutePage() {
         body.boshlangich_lat = myLocation.lat
         body.boshlangich_lon = myLocation.lon
       }
-      const res = await fetch(`${API}/api/marshrut/optimallashtir`, { method: "POST", headers: h, body: JSON.stringify(body) })
+      const res = await fetch(`${API}/marshrut/optimallashtir`, { method: "POST", headers: h, body: JSON.stringify(body) })
       if (res.ok) setResult(await res.json())
     } finally { setLoading(false) }
   }

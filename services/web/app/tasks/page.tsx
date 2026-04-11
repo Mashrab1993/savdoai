@@ -27,12 +27,12 @@ export default function TasksPage() {
   const h = { "Content-Type": "application/json", Authorization: `Bearer ${typeof window !== "undefined" ? localStorage.getItem("auth_token") : ""}` }
 
   useEffect(() => {
-    const url = filter === "all" ? `${API}/api/topshiriq` : `${API}/api/topshiriq?holat=${filter}`
+    const url = filter === "all" ? `${API}/topshiriq` : `${API}/topshiriq?holat=${filter}`
     fetch(url, { headers: h }).then(r => r.ok ? r.json() : []).then(setTasks).finally(() => setLoading(false))
   }, [filter])
 
   const create = async () => {
-    const res = await fetch(`${API}/api/topshiriq`, { method: "POST", headers: h, body: JSON.stringify(form) })
+    const res = await fetch(`${API}/topshiriq`, { method: "POST", headers: h, body: JSON.stringify(form) })
     if (res.ok) {
       const d = await res.json()
       setTasks(p => [{ id: d.id, ...form, holat: "yangi", yaratilgan: new Date().toISOString() }, ...p])
@@ -42,7 +42,7 @@ export default function TasksPage() {
   }
 
   const updateHolat = async (id: number, holat: string) => {
-    await fetch(`${API}/api/topshiriq/${id}`, { method: "PUT", headers: h, body: JSON.stringify({ holat }) })
+    await fetch(`${API}/topshiriq/${id}`, { method: "PUT", headers: h, body: JSON.stringify({ holat }) })
     setTasks(p => p.map(t => t.id === id ? { ...t, holat } : t))
   }
 
