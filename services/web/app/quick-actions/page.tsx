@@ -4,15 +4,18 @@ import { Plus, ShoppingCart, Users, Package, FileText, CreditCard, Truck, Camera
 import Link from "next/link"
 
 const ACTIONS = [
-  { href: "/sales", label: "Yangi sotuv", desc: "Tez sotuv yaratish", icon: ShoppingCart, color: "emerald" },
-  { href: "/products", label: "Tovar qo'shish", desc: "Yangi tovar qo'shish", icon: Package, color: "blue" },
-  { href: "/clients", label: "Mijoz qo'shish", desc: "Yangi mijoz", icon: Users, color: "purple" },
-  { href: "/invoices", label: "Faktura yaratish", desc: "Schyot-faktura", icon: FileText, color: "orange" },
-  { href: "/cash", label: "Kassa operatsiya", desc: "Kirim/chiqim", icon: CreditCard, color: "yellow" },
-  { href: "/purchase", label: "Tovar kirim", desc: "Kirim qabul qilish", icon: Truck, color: "indigo" },
-  { href: "/photo-reports", label: "Foto hisobot", desc: "Rasm yuklash", icon: Camera, color: "pink" },
-  { href: "/expenses", label: "Xarajat qo'shish", desc: "Xarajatni qayd etish", icon: Receipt, color: "red" },
-  { href: "/reports", label: "Hisobot olish", desc: "Tezkor hisobot", icon: BarChart3, color: "teal" },
+  { href: "/order-create",    label: "Yangi sotuv (POS)",   desc: "Web POS orqali sotuv",       icon: ShoppingCart, color: "emerald" },
+  { href: "/product-create",  label: "Tovar qo'shish",      desc: "27 maydonli forma",           icon: Package,      color: "blue"    },
+  { href: "/client-create",   label: "Mijoz qo'shish",      desc: "Yangi klient",                icon: Users,        color: "purple"  },
+  { href: "/kirim",           label: "Tovar kirim",         desc: "Ombor qoldig'ini oshirish",   icon: Truck,        color: "indigo"  },
+  { href: "/invoices",        label: "Faktura yaratish",    desc: "Schyot-faktura",              icon: FileText,     color: "orange"  },
+  { href: "/cash",            label: "Kassa operatsiya",    desc: "Kirim / chiqim",              icon: CreditCard,   color: "yellow"  },
+  { href: "/expense-create",  label: "Xarajat qo'shish",    desc: "Kassa chiqim",                icon: Receipt,      color: "red"     },
+  { href: "/photo-reports",   label: "Foto hisobot",        desc: "Agent rasmlari",              icon: Camera,       color: "pink"    },
+  { href: "/reports/rfm",     label: "RFM Tahlil",          desc: "Klientlar segmentatsiya",     icon: BarChart3,    color: "teal"    },
+  { href: "/reports/sales-detail", label: "Sotuv detail",   desc: "Har qator foyda bilan",       icon: FileText,     color: "cyan"    },
+  { href: "/sklad-qogozi",    label: "Sklad qog'ozi",       desc: "Ombor hujjati",                icon: FileText,     color: "emerald" },
+  { href: "/klient360",       label: "Klient 360°",         desc: "To'liq profil",                icon: Users,        color: "blue"    },
 ]
 
 export default function QuickActionsPage() {
