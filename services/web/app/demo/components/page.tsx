@@ -20,6 +20,7 @@ import DebtorsList from "@/components/dashboard/debtors-list"
 import AgentRouteCard from "@/components/dashboard/agent-route-card"
 import SupplierBalance from "@/components/dashboard/supplier-balance"
 import PhotoReportGrid from "@/components/dashboard/photo-report-grid"
+import SalesPivotTable from "@/components/dashboard/sales-pivot-table"
 import { useLocale } from "@/lib/locale-context"
 
 // ─── Synthetic data ─────────────────────────────────────────
@@ -217,6 +218,17 @@ const PHOTOS = [
   { id: 8, url: "https://picsum.photos/seed/savdoai8/800/800", thumb_url: "https://picsum.photos/seed/savdoai8/400/400", agent_ismi: "Boriev Mirjalol",     klient_ismi: "Klub Toy Xizmat",        manzil: "Siyob",        turi: "defekt" as const, vaqt: new Date(Date.now() - 72 * 3600e3).toISOString(), izoh: "Muddati o'tgan tovar" },
 ]
 
+const PIVOT_BY_CATEGORY = [
+  { key: "Kimyo",    jami: 125_400_000, soni: 342, miqdor: 1840, prev_jami: 108_000_000 },
+  { key: "Ichimlik", jami:  98_600_000, soni: 520, miqdor: 4120, prev_jami:  87_500_000 },
+  { key: "Sut",      jami:  72_800_000, soni: 285, miqdor: 3200, prev_jami:  69_000_000 },
+  { key: "Shirinlik",jami:  58_400_000, soni: 412, miqdor: 2180, prev_jami:  62_000_000 },
+  { key: "Chipsi",   jami:  42_100_000, soni: 168, miqdor: 1530, prev_jami:  38_500_000 },
+  { key: "Non",      jami:  28_900_000, soni: 195, miqdor: 2850, prev_jami:  31_000_000 },
+  { key: "Gozok",    jami:  15_200_000, soni:  88, miqdor:  420, prev_jami:  12_800_000 },
+  { key: "Konservalar", jami: 8_600_000, soni: 42, miqdor:  180, prev_jami:   9_500_000 },
+]
+
 // ─── Page ───────────────────────────────────────────────────
 
 export default function DemoComponentsPage() {
@@ -346,6 +358,18 @@ export default function DemoComponentsPage() {
             13. PhotoReportGrid
           </p>
           <PhotoReportGrid photos={PHOTOS} />
+        </section>
+
+        {/* 14. Sales pivot table */}
+        <section>
+          <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+            14. SalesPivotTable
+          </p>
+          <SalesPivotTable
+            dimension="kategoriya"
+            rows={PIVOT_BY_CATEGORY}
+            subtitle="Oxirgi 30 kun, kategoriya kesimida"
+          />
         </section>
       </div>
     </AdminLayout>
