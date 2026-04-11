@@ -1204,10 +1204,15 @@ async def sotuv_saqlash(data: SotuvSo_rov, request: Request, uid: int = Depends(
                     VALUES ($1,$2,$3,$4,$5,$5,0)
                 """, uid, klient_id, klient_ismi, sess_id, qarz_summa)
 
-            # 5. Klient jami_sotib yangilash (har doim — naqd yoki qarz)
+            # 5. Klient jami_sotib + CRM statistika yangilash
             if klient_id and jami > 0:
                 await c.execute("""
-                    UPDATE klientlar SET jami_sotib = jami_sotib + $2 WHERE id=$1
+                    UPDATE klientlar
+                    SET jami_sotib     = jami_sotib + $2,
+                        jami_xaridlar  = COALESCE(jami_xaridlar, 0) + $2,
+                        xarid_soni     = COALESCE(xarid_soni, 0) + 1,
+                        oxirgi_sotuv   = NOW()
+                    WHERE id = $1
                 """, klient_id, jami)
 
     await user_cache_tozala(uid)

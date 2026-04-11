@@ -790,18 +790,19 @@ async def sotuv_saqlash(uid: int, data: dict) -> dict:
                 # Jami hisoblash
                 t_jami = narx_hisob(miqdor, sotish_n, birlik, chegirma)
 
-                # Chiqim saqlash
+                # Chiqim saqlash — chiqimlar jadvalida izoh ustuni yo'q,
+                # agar kerak bo'lsa sotuv_sessiyalar.izoh ishlatiladi
                 await c.execute("""
                     INSERT INTO chiqimlar
                         (user_id, sessiya_id, klient_id, klient_ismi,
                          tovar_id, tovar_nomi, kategoriya,
                          miqdor, birlik, olish_narxi, sotish_narxi,
-                         chegirma_foiz, jami, izoh)
-                    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
+                         chegirma_foiz, jami)
+                    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
                 """, uid, sess_id, klient_id, klient_ismi,
                     tovar_id, nomi, kategoriya,
                     miqdor, birlik, olish_n, sotish_n,
-                    chegirma, t_jami, t.get("izoh"))
+                    chegirma, t_jami)
 
                 # Qoldiqni kamaytirish (manfiy bo'lmaydi)
                 if tovar_id:

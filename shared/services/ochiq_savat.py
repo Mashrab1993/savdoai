@@ -423,8 +423,8 @@ async def savat_yop(conn, uid: int, klient_ismi: str,
             await conn.execute("""
                 INSERT INTO qarzlar
                     (user_id, klient_id, klient_ismi, sessiya_id,
-                     jami, tolangan, qolgan, muddat)
-                VALUES ($1,$2,$3,$4,$5,$6,$7, NOW() + INTERVAL '30 days')
+                     dastlabki_summa, tolangan, qolgan, muddat)
+                VALUES ($1,$2,$3,$4,$5,$6,$7, (NOW() + INTERVAL '30 days')::date)
             """, uid, klient_id, savat["klient_ismi"], sessiya_id,
                  jami, tolangan, qarz)
 
