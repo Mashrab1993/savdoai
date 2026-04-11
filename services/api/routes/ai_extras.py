@@ -19,7 +19,7 @@ from services.cognitive.ai_extras import (
     second_opinion,
     v0,
 )
-from services.api.deps import get_current_user  # type: ignore
+from services.api.deps import get_uid
 
 router = APIRouter(prefix="/api/v1/ai", tags=["AI"])
 
@@ -48,8 +48,12 @@ class UIGenIn(BaseModel):
 # ─── Endpoints ──────────────────────────────────────────────────────
 
 @router.get("/status")
-async def ai_status(_=Depends(get_current_user)):
-    """Qaysi AI providerlar faol ekanini ko'rsatadi."""
+async def ai_status():
+    """
+    Qaysi AI providerlar faol ekanini ko'rsatadi.
+    Public — faqat bool flag qaytaradi, maxfiy ma'lumot chiqmaydi,
+    shuning uchun auth talab qilmaydi (health check uchun).
+    """
     return {
         "faol": active_providers(),
         "gpt5":     gpt5.ready,
@@ -61,7 +65,7 @@ async def ai_status(_=Depends(get_current_user)):
 
 @router.post("/second-opinion")
 async def api_second_opinion(inp: SecondOpinionIn,
-                              _=Depends(get_current_user)):
+                              uid: int = Depends(get_uid)):
     """GPT-5 dan Claude javobini tekshirishni so'rash."""
     if not gpt5.ready:
         raise HTTPException(503, "GPT-5 kaliti sozlanmagan")
@@ -75,7 +79,7 @@ async def api_second_opinion(inp: SecondOpinionIn,
 
 
 @router.post("/batch")
-async def api_batch(inp: BatchIn, _=Depends(get_current_user)):
+async def api_batch(inp: BatchIn, uid: int = Depends(get_uid)):
     """DeepSeek V3 — arzon va tez batch chaqiruv."""
     if not deepseek.ready:
         raise HTTPException(503, "DeepSeek kaliti sozlanmagan")
@@ -87,7 +91,7 @@ async def api_batch(inp: BatchIn, _=Depends(get_current_user)):
 
 
 @router.post("/market-intel")
-async def api_market_intel(inp: MarketIn, _=Depends(get_current_user)):
+async def api_market_intel(inp: MarketIn, uid: int = Depends(get_uid)):
     """Grok 4 — real-time bozor tahlil."""
     if not grok.ready:
         raise HTTPException(503, "Grok kaliti sozlanmagan")
@@ -99,7 +103,7 @@ async def api_market_intel(inp: MarketIn, _=Depends(get_current_user)):
 
 
 @router.post("/generate-ui")
-async def api_generate_ui(inp: UIGenIn, _=Depends(get_current_user)):
+async def api_generate_ui(inp: UIGenIn, uid: int = Depends(get_uid)):
     """v0.dev — matn → shadcn/ui + Tailwind React komponent."""
     if not v0.ready:
         raise HTTPException(503, "v0.dev kaliti sozlanmagan")
