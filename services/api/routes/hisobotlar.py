@@ -199,6 +199,148 @@ async def admin_statistika(uid: int = Depends(get_uid)):
 #  REPORTS — SalesDoc-level reporting
 # ════════════════════════════════════════════════════════════
 
+@router.get("/photo-reports")
+async def photo_reports(
+    sana_dan: Optional[str] = None,
+    sana_gacha: Optional[str] = None,
+    qidiruv: Optional[str] = None,
+    uid: int = Depends(get_uid),
+):
+    """Agentlar yuklagan rasmlar — checkin_out.foto_url orqali."""
+    where = ["co.user_id = $1", "co.foto_url IS NOT NULL", "co.foto_url <> ''"]
+    params: list = [uid]
+    if sana_dan:
+        params.append(sana_dan)
+        where.append(f"co.vaqt >= ${len(params)}::timestamptz")
+    if sana_gacha:
+        params.append(sana_gacha)
+        where.append(f"co.vaqt < ${len(params)}::timestamptz + interval '1 day'")
+    if qidiruv:
+        params.append(f"%{qidiruv}%")
+        where.append(f"k.ism ILIKE ${len(params)}")
+    where_sql = " AND ".join(where)
+
+    async with rls_conn(uid) as c:
+        try:
+            rows = await c.fetch(f"""
+                SELECT co.id, co.klient_id, co.turi, co.vaqt, co.foto_url,
+                       co.izoh, co.latitude, co.longitude,
+                       k.ism AS klient_nomi, k.manzil
+                FROM checkin_out co
+                LEFT JOIN klientlar k ON k.id = co.klient_id
+                WHERE {where_sql}
+                ORDER BY co.vaqt DESC
+                LIMIT 500
+            """, *params)
+
+            stats = await c.fetchrow("""
+                SELECT
+                    COUNT(*)                                                      AS jami,
+                    COUNT(*) FILTER (WHERE vaqt::date = CURRENT_DATE)             AS bugun,
+                    COUNT(*) FILTER (WHERE vaqt >= NOW() - interval '7 days')     AS hafta,
+                    COUNT(*) FILTER (WHERE vaqt >= NOW() - interval '30 days')    AS oy
+                FROM checkin_out
+                WHERE user_id = $1 AND foto_url IS NOT NULL AND foto_url <> ''
+            """, uid)
+        except Exception as e:
+            log.warning("photo-reports: %s", e)
+            return {"items": [], "stats": {}}
+
+    return {
+        "items": [dict(r) for r in rows],
+        "stats": dict(stats) if stats else {},
+    }
+
+
+@router.get("/qaytarishlar")
+async def qaytarishlar_list(
+    sana_dan: Optional[str] = None,
+    sana_gacha: Optional[str] = None,
+    qidiruv: Optional[str] = None,
+    limit: int = 200,
+    uid: int = Depends(get_uid),
+):
+    """Qaytarishlar (vozvrat) ro'yxati + statistika."""
+    where = ["user_id = $1"]
+    params: list = [uid]
+    if sana_dan:
+        params.append(sana_dan)
+        where.append(f"sana >= ${len(params)}::timestamptz")
+    if sana_gacha:
+        params.append(sana_gacha)
+        where.append(f"sana < ${len(params)}::timestamptz + interval '1 day'")
+    if qidiruv:
+        params.append(f"%{qidiruv}%")
+        where.append(
+            f"(klient_ismi ILIKE ${len(params)} OR tovar_nomi ILIKE ${len(params)})"
+        )
+    params.append(limit)
+    where_sql = " AND ".join(where)
+
+    async with rls_conn(uid) as c:
+        rows = await c.fetch(f"""
+            SELECT id, chiqim_id, sessiya_id, klient_ismi, tovar_nomi,
+                   miqdor, birlik, narx, jami, sabab, sana
+            FROM qaytarishlar
+            WHERE {where_sql}
+            ORDER BY sana DESC
+            LIMIT ${len(params)}
+        """, *params)
+
+        stats = await c.fetchrow(f"""
+            SELECT COUNT(*)                  AS soni,
+                   COALESCE(SUM(jami), 0)    AS jami_summa,
+                   COALESCE(SUM(miqdor), 0)  AS jami_miqdor
+            FROM qaytarishlar
+            WHERE {where_sql}
+        """, *params[:-1])
+
+    return {
+        "items": [dict(r) for r in rows],
+        "stats": dict(stats) if stats else {},
+    }
+
+
+class QaytarishYarat(__import__("pydantic").BaseModel):
+    chiqim_id: Optional[int] = None
+    klient_ismi: Optional[str] = ""
+    tovar_nomi: str
+    miqdor: float
+    birlik: Optional[str] = "dona"
+    narx: float
+    sabab: Optional[str] = ""
+
+
+@router.post("/qaytarish")
+async def qaytarish_yarat(data: QaytarishYarat, uid: int = Depends(get_uid)):
+    """Yangi qaytarish (vozvrat) yaratish."""
+    jami = data.miqdor * data.narx
+    async with rls_conn(uid) as c:
+        row = await c.fetchrow("""
+            INSERT INTO qaytarishlar
+                (user_id, chiqim_id, klient_ismi, tovar_nomi,
+                 miqdor, birlik, narx, jami, sabab)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+            RETURNING id, sana
+        """, uid, data.chiqim_id, data.klient_ismi or "",
+            data.tovar_nomi, data.miqdor, data.birlik or "dona",
+            data.narx, jami, data.sabab or "")
+
+        # Tovar qoldig'ini qaytarish (agar chiqim_id orqali tovar_id aniqlanishi mumkin)
+        if data.chiqim_id:
+            await c.execute("""
+                UPDATE tovarlar SET qoldiq = COALESCE(qoldiq, 0) + $1
+                WHERE id = (SELECT tovar_id FROM chiqimlar WHERE id = $2)
+                  AND user_id = $3
+            """, data.miqdor, data.chiqim_id, uid)
+    return {
+        "id": row["id"],
+        "jami": float(jami),
+        "sana": row["sana"].isoformat(),
+        "status": "yaratildi",
+    }
+
+
 @router.get("/reports/rfm")
 async def report_rfm(uid: int = Depends(get_uid)):
     """Butun klient bazasi bo'yicha RFM segmentatsiya (web hisobot uchun).
