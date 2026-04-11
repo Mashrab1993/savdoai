@@ -21,6 +21,7 @@ import AgentRouteCard from "@/components/dashboard/agent-route-card"
 import SupplierBalance from "@/components/dashboard/supplier-balance"
 import PhotoReportGrid from "@/components/dashboard/photo-report-grid"
 import SalesPivotTable from "@/components/dashboard/sales-pivot-table"
+import NotificationStream from "@/components/dashboard/notification-stream"
 import { useLocale } from "@/lib/locale-context"
 
 // ─── Synthetic data ─────────────────────────────────────────
@@ -229,6 +230,20 @@ const PIVOT_BY_CATEGORY = [
   { key: "Konservalar", jami: 8_600_000, soni: 42, miqdor:  180, prev_jami:   9_500_000 },
 ]
 
+const STREAM = [
+  { id: 1,  type: "sotuv"       as const, title: "Yangi zakaz #4821",              summa: 2_480_000, agent: "Sayitqulov Mashrab",  klient: "Do'kon Buyuk Ipak Yo'li",   vaqt: new Date(Date.now() - 1 * 60e3).toISOString() },
+  { id: 2,  type: "tolov"       as const, title: "To'lov qabul qilindi",           summa: 5_480_000, agent: "Boriev Mirjalol",     klient: "Supermarket Registon",     vaqt: new Date(Date.now() - 5 * 60e3).toISOString(),   body: "Plastik karta orqali" },
+  { id: 3,  type: "tashrif"     as const, title: "Tashrif ro'yxatga olindi",                          agent: "Babadjanova Nargiza", klient: "Mini Market Samarqand",    vaqt: new Date(Date.now() - 12 * 60e3).toISOString() },
+  { id: 4,  type: "kpi_success" as const, title: "Kunlik reja bajarildi 🏆",       summa: 28_261_100, agent: "Sayitqulov Mashrab",                                        vaqt: new Date(Date.now() - 18 * 60e3).toISOString(),  body: "6 mijozdan 28.3 mln so'm" },
+  { id: 5,  type: "kam_qoldiq"  as const, title: "Kam qoldiq ogohlantirishi",                                                       klient: "Ariel Automat 6kg",         vaqt: new Date(Date.now() - 25 * 60e3).toISOString(),  body: "Ombordagi qoldiq: 8 ta (min: 30)" },
+  { id: 6,  type: "sotuv"       as const, title: "Yangi zakaz #4820",              summa: 1_250_000, agent: "Berdiyev Rahmatillo", klient: "Oziq-ovqat Urgut",          vaqt: new Date(Date.now() - 32 * 60e3).toISOString() },
+  { id: 7,  type: "photo"       as const, title: "Tashrif fotosi yuklandi",                           agent: "Sayitqulov Mashrab",  klient: "Do'kon Buyuk Ipak Yo'li",   vaqt: new Date(Date.now() - 45 * 60e3).toISOString() },
+  { id: 8,  type: "qaytarish"   as const, title: "Qaytarish yaratildi",            summa: 180_000,    agent: "Boriev Mirjalol",     klient: "Klub Toy Xizmat",           vaqt: new Date(Date.now() - 58 * 60e3).toISOString(),  body: "Muddati o'tgan tovar" },
+  { id: 9,  type: "yangi_mijoz" as const, title: "Yangi mijoz qo'shildi",                                                             klient: "Do'kon Yangi Bozor",       vaqt: new Date(Date.now() - 72 * 60e3).toISOString() },
+  { id: 10, type: "yetkazildi"  as const, title: "Zakaz yetkazildi #4815",         summa: 4_220_000,  agent: "Davlat Rahimov",      klient: "Taloni Market",             vaqt: new Date(Date.now() - 2 * 3600e3).toISOString() },
+  { id: 11, type: "xarajat"     as const, title: "Xarajat ro'yxatga olindi",       summa: 1_800_000,  agent: "Admin",                                                   vaqt: new Date(Date.now() - 3 * 3600e3).toISOString(),  body: "Benzin + logistika" },
+]
+
 // ─── Page ───────────────────────────────────────────────────
 
 export default function DemoComponentsPage() {
@@ -370,6 +385,14 @@ export default function DemoComponentsPage() {
             rows={PIVOT_BY_CATEGORY}
             subtitle="Oxirgi 30 kun, kategoriya kesimida"
           />
+        </section>
+
+        {/* 15. Notification stream */}
+        <section>
+          <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+            15. NotificationStream
+          </p>
+          <NotificationStream events={STREAM} live />
         </section>
       </div>
     </AdminLayout>
