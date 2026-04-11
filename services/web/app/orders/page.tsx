@@ -18,6 +18,7 @@ import {
 } from "lucide-react"
 import { formatCurrency } from "@/lib/format"
 import { savdoService } from "@/lib/api/services"
+import OrderStatusBoard, { type Order as BoardOrder, type OrderStatus as BoardStatus } from "@/components/dashboard/order-status-board"
 
 type OrderStatus = "all" | "yangi" | "tasdiqlangan" | "otgruzka" | "yetkazildi" | "bekor"
 
@@ -240,77 +241,27 @@ export default function OrdersPage() {
         ) : error ? (
           <div className="text-center p-10 text-red-500">Xatolik: {String(error)}</div>
         ) : (
-          <div className="bg-white dark:bg-gray-900 rounded-xl border overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-14">#</TableHead>
-                  <TableHead>Sana</TableHead>
-                  <TableHead>Mijoz</TableHead>
-                  <TableHead className="hidden md:table-cell">Telefon</TableHead>
-                  <TableHead className="text-center">Holat</TableHead>
-                  <TableHead className="text-center">Tovar</TableHead>
-                  <TableHead className="text-right">Summa</TableHead>
-                  <TableHead className="text-right">Qarz</TableHead>
-                  <TableHead className="w-10"></TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {orders.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={9} className="text-center py-10 text-muted-foreground">
-                      <ShoppingCart className="w-10 h-10 mx-auto mb-2 opacity-30" />
-                      Buyurtmalar topilmadi
-                    </TableCell>
-                  </TableRow>
-                ) : orders.map((o: any, i: number) => {
-                  const jami = Number(o.jami || o.total || 0)
-                  const tolandi = Number(o.tolangan || 0)
-                  const qarz = Number(o.qarz || 0)
-                  const sana = o.sana ? new Date(o.sana).toLocaleDateString("uz-UZ") : "-"
-                  const holat = o.holat || "yangi"
-                  const holatMeta = STATUS_MAP[holat] || STATUS_MAP.yangi
-                  const HolatIcon = holatMeta.icon
-                  return (
-                    <TableRow key={o.id || i} className="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800"
-                              onClick={() => viewOrder(o)}>
-                      <TableCell className="font-mono text-xs">#{o.id}</TableCell>
-                      <TableCell className="text-sm">{sana}</TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <User className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-                          <span className="font-medium text-sm">{o.klient_ismi || o.klient_nomi || "Mijoz"}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell className="hidden md:table-cell text-xs text-muted-foreground">
-                        {o.telefon || "—"}
-                      </TableCell>
-                      <TableCell className="text-center">
-                        <Badge className={`text-xs ${holatMeta.color}`}>
-                          <HolatIcon className="w-3 h-3 mr-1 inline" />
-                          {holatMeta.label}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-center font-mono text-xs">
-                        {o.tovar_soni || o.items_count || 0}
-                      </TableCell>
-                      <TableCell className="text-right font-mono font-bold text-sm">
-                        {formatCurrency(jami)}
-                      </TableCell>
-                      <TableCell className={`text-right font-mono text-sm ${qarz > 0 ? "text-red-500 font-semibold" : "text-muted-foreground"}`}>
-                        {qarz > 0 ? formatCurrency(qarz) : "—"}
-                      </TableCell>
-                      <TableCell>
-                        <Button variant="ghost" size="icon" className="h-7 w-7">
-                          <Eye className="w-3.5 h-3.5" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  )
-                })}
-              </TableBody>
-            </Table>
-          </div>
+          <OrderStatusBoard
+            orders={orders.map<BoardOrder>((o: any) => ({
+              id:          Number(o.id),
+              klient_ismi: o.klient_ismi || o.klient_nomi || "—",
+              jami:        Number(o.jami || o.total || 0),
+              tolangan:    Number(o.tolangan || 0),
+              qarz:        Number(o.qarz || 0),
+              holat:       (o.holat || "yangi") as BoardStatus,
+              sana:        o.sana || new Date().toISOString(),
+              bekor_sabab: o.bekor_sabab || undefined,
+            }))}
+            onStatusChange={(id, newStatus) => {
+              // For 'bekor' prompt for reason; others go straight
+              if (newStatus === "bekor") {
+                const sabab = prompt("Bekor qilish sababi:")
+                if (sabab) changeStatus(id, newStatus, sabab)
+              } else {
+                changeStatus(id, newStatus)
+              }
+            }}
+          />
         )}
 
         {/* Order Detail Sheet */}
