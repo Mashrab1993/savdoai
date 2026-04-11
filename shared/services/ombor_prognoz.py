@@ -52,18 +52,23 @@ async def ombor_prognoz(conn, uid: int, kunlar: int = 30,
         SELECT
             t.id,
             t.nomi,
+            t.kategoriya,
             t.qoldiq,
             t.min_qoldiq,
             t.birlik,
             t.olish_narxi,
+            t.sotish_narxi,
             COALESCE(s.jami_sotilgan, 0) AS jami_sotilgan,
             COALESCE(s.sotuv_kunlari, 0) AS sotuv_kunlari
         FROM tovarlar t
         LEFT JOIN sotuv_tezlik s ON s.tovar_id = t.id
         WHERE t.user_id = $1
-          AND t.qoldiq > 0
         ORDER BY
-            CASE WHEN s.jami_sotilgan > 0 THEN t.qoldiq / (s.jami_sotilgan / $2::numeric) ELSE 999 END ASC
+            CASE
+                WHEN t.qoldiq <= 0 THEN 0
+                WHEN s.jami_sotilgan > 0 THEN t.qoldiq / (s.jami_sotilgan / $2::numeric)
+                ELSE 999
+            END ASC
         LIMIT $3
     """, uid, kunlar, limit)
 
@@ -111,17 +116,26 @@ async def ombor_prognoz(conn, uid: int, kunlar: int = 30,
         natijalar.append({
             "id": r["id"],
             "nomi": r["nomi"],
+            "kategoriya": r["kategoriya"],
             "birlik": r["birlik"],
             "qoldiq": float(qoldiq),
             "min_qoldiq": float(min_qoldiq),
+            # Web panel uchun alias (zaxira/min_zaxira)
+            "zaxira": float(qoldiq),
+            "min_zaxira": float(min_qoldiq),
             "kunlik_sotuv": round(float(kunlik_sotuv), 2),
             "jami_sotilgan_30kun": float(jami_sotilgan),
+            "sotilgan": float(jami_sotilgan),  # alias
             "qolgan_kun": qolgan_kun if qolgan_kun < 999 else None,
+            "kunlarga_yetadi": qolgan_kun if qolgan_kun < 999 else 999,
             "holat": holat,
             "buyurtma_kerak": buyurtma_kerak,
             "buyurtma_miqdor": round(buyurtma_miqdor, 1),
             "buyurtma_narx": round(float(D(r["olish_narxi"])) * buyurtma_miqdor)
                              if buyurtma_miqdor > 0 else 0,
+            "olish_narxi": float(D(r["olish_narxi"])),
+            "sotish_narxi": float(D(r["sotish_narxi"])),
+            "ombor_qiymati": round(float(qoldiq) * float(D(r["olish_narxi"]))),
         })
 
     return natijalar

@@ -22,27 +22,61 @@ type SortDir = "asc" | "desc"
 export default function OmborPage() {
   const [search, setSearch] = useState("")
   const [filter, setFilter] = useState<"all" | "low" | "out" | "ok">("all")
+  const [kategoriya, setKategoriya] = useState("all")
   const [sortField, setSortField] = useState<SortField>("nomi")
   const [sortDir, setSortDir] = useState<SortDir>("asc")
   const [kunlar, setKunlar] = useState(30)
+  const [exporting, setExporting] = useState(false)
 
-  const { data: rawData, loading, error, refetch } = useApi(() => omborService.prognoz(kunlar))
+  const { data: rawData, loading, error, refetch } = useApi(() => omborService.prognoz(kunlar), [kunlar])
+
+  async function handleExcelExport() {
+    setExporting(true)
+    try {
+      const token = typeof window !== "undefined" ? localStorage.getItem("auth_token") : ""
+      const base  = process.env.NEXT_PUBLIC_API_URL || ""
+      const res = await fetch(`${base}/api/v1/ombor/prognoz/excel?kunlar=${kunlar}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      if (!res.ok) throw new Error("Export xatoligi")
+      const result = await res.json()
+      const bytes = Uint8Array.from(atob(result.content_base64), c => c.charCodeAt(0))
+      const blob = new Blob([bytes], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement("a")
+      a.href = url; a.download = result.filename || "ombor.xlsx"; a.click()
+      URL.revokeObjectURL(url)
+    } catch (err) {
+      alert(err instanceof Error ? err.message : String(err))
+    } finally {
+      setExporting(false)
+    }
+  }
+
+  const allItems: any[] = useMemo(() => {
+    if (!rawData) return []
+    return Array.isArray(rawData) ? rawData : (rawData as any).tovarlar || []
+  }, [rawData])
+
+  const kategoriyalar = useMemo(() => {
+    const s = new Set<string>()
+    allItems.forEach(t => t.kategoriya && s.add(t.kategoriya))
+    return Array.from(s).sort()
+  }, [allItems])
 
   const data = useMemo(() => {
-    if (!rawData) return []
-    let items: any[] = Array.isArray(rawData) ? rawData : (rawData as any).tovarlar || []
+    let items = [...allItems]
 
-    // Filter
     if (search) {
       const q = search.toLowerCase()
-      items = items.filter((t: any) => (t.nomi || "").toLowerCase().includes(q))
+      items = items.filter(t => (t.nomi || "").toLowerCase().includes(q))
     }
-    if (filter === "low") items = items.filter((t: any) => t.zaxira > 0 && t.zaxira <= (t.min_zaxira || 5))
-    if (filter === "out") items = items.filter((t: any) => !t.zaxira || t.zaxira <= 0)
-    if (filter === "ok") items = items.filter((t: any) => t.zaxira > (t.min_zaxira || 5))
+    if (kategoriya !== "all") items = items.filter(t => t.kategoriya === kategoriya)
+    if (filter === "low") items = items.filter(t => t.zaxira > 0 && t.zaxira <= (t.min_zaxira || 5))
+    if (filter === "out") items = items.filter(t => !t.zaxira || t.zaxira <= 0)
+    if (filter === "ok") items = items.filter(t => t.zaxira > (t.min_zaxira || 5))
 
-    // Sort
-    items.sort((a: any, b: any) => {
+    items.sort((a, b) => {
       const av = a[sortField] ?? 0
       const bv = b[sortField] ?? 0
       if (typeof av === "string") return sortDir === "asc" ? av.localeCompare(bv) : bv.localeCompare(av)
@@ -50,18 +84,14 @@ export default function OmborPage() {
     })
 
     return items
-  }, [rawData, search, filter, sortField, sortDir])
+  }, [allItems, search, filter, kategoriya, sortField, sortDir])
 
-  const stats = useMemo(() => {
-    if (!rawData) return { jami: 0, kam: 0, tugagan: 0, normal: 0 }
-    const items: any[] = Array.isArray(rawData) ? rawData : (rawData as any).tovarlar || []
-    return {
-      jami: items.length,
-      kam: items.filter((t: any) => t.zaxira > 0 && t.zaxira <= (t.min_zaxira || 5)).length,
-      tugagan: items.filter((t: any) => !t.zaxira || t.zaxira <= 0).length,
-      normal: items.filter((t: any) => t.zaxira > (t.min_zaxira || 5)).length,
-    }
-  }, [rawData])
+  const stats = useMemo(() => ({
+    jami:    allItems.length,
+    kam:     allItems.filter(t => t.zaxira > 0 && t.zaxira <= (t.min_zaxira || 5)).length,
+    tugagan: allItems.filter(t => !t.zaxira || t.zaxira <= 0).length,
+    normal:  allItems.filter(t => t.zaxira > (t.min_zaxira || 5)).length,
+  }), [allItems])
 
   const toggleSort = (field: SortField) => {
     if (sortField === field) setSortDir(d => d === "asc" ? "desc" : "asc")
@@ -90,8 +120,8 @@ export default function OmborPage() {
             <Button variant="outline" size="sm" onClick={() => refetch()}>
               Yangilash
             </Button>
-            <Button variant="outline" size="sm">
-              <Download className="w-4 h-4 mr-1" /> Excel
+            <Button variant="outline" size="sm" onClick={handleExcelExport} disabled={exporting}>
+              <Download className="w-4 h-4 mr-1" /> {exporting ? "..." : "Excel"}
             </Button>
           </div>
         </div>
@@ -132,6 +162,16 @@ export default function OmborPage() {
             />
           </div>
           <div className="flex gap-2">
+            <select
+              value={kategoriya}
+              onChange={e => setKategoriya(e.target.value)}
+              className="border rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-900"
+            >
+              <option value="all">Barcha kategoriyalar</option>
+              {kategoriyalar.map(k => (
+                <option key={k} value={k}>{k}</option>
+              ))}
+            </select>
             <select
               value={kunlar}
               onChange={e => setKunlar(Number(e.target.value))}

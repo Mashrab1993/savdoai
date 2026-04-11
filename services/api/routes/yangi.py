@@ -127,14 +127,101 @@ async def tolov_link_yaratish(data: TolovLinkSorov, uid: int = Depends(get_uid))
 # ═══ OMBOR PROGNOZ ═══
 
 @router.get("/ombor/prognoz", tags=["Tovarlar"])
-async def ombor_prognoz_v2(kunlar: int = 30, limit: int = 50,
+async def ombor_prognoz_v2(kunlar: int = 30, limit: int = 500,
+                            kategoriya: str | None = None,
                             uid: int = Depends(get_uid)):
     """Tovar tugash prognozi — qolgan kunlar, buyurtma tavsiyasi."""
     from shared.services.ombor_prognoz import ombor_prognoz, kam_qoldiq_xulosa
     async with rls_conn(uid) as c:
         tovarlar = await ombor_prognoz(c, uid, kunlar=kunlar, limit=limit)
         xulosa = await kam_qoldiq_xulosa(c, uid)
+    if kategoriya:
+        tovarlar = [t for t in tovarlar if t.get("kategoriya") == kategoriya]
     return {"tovarlar": tovarlar, "xulosa": xulosa, "kunlar": kunlar}
+
+
+@router.get("/ombor/prognoz/excel", tags=["Tovarlar"])
+async def ombor_prognoz_excel(kunlar: int = 30, uid: int = Depends(get_uid)):
+    """Ombor prognozini Excel faylga export qilish."""
+    import io, base64
+    from openpyxl import Workbook
+    from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+    from shared.services.ombor_prognoz import ombor_prognoz
+
+    async with rls_conn(uid) as c:
+        tovarlar = await ombor_prognoz(c, uid, kunlar=kunlar, limit=5000)
+
+    wb = Workbook()
+    ws = wb.active
+    ws.title = f"Ombor prognoz {kunlar}k"
+
+    headers = [
+        "№", "Tovar", "Kategoriya", "Birlik",
+        "Qoldiq", "Min qoldiq", "Kunlik sotuv", f"Sotilgan ({kunlar}k)",
+        "Qolgan kun", "Holat", "Buyurtma", "Buyurtma narxi",
+        "Ombor qiymati",
+    ]
+    widths = [5, 32, 18, 8, 10, 10, 12, 14, 12, 14, 12, 15, 15]
+
+    header_fill = PatternFill(start_color="0A819C", end_color="0A819C", fill_type="solid")
+    header_font = Font(bold=True, color="FFFFFF", size=11)
+    thin = Side(style="thin", color="888888")
+    border = Border(left=thin, right=thin, top=thin, bottom=thin)
+
+    for i, (h, w) in enumerate(zip(headers, widths), 1):
+        cell = ws.cell(row=1, column=i, value=h)
+        cell.fill = header_fill
+        cell.font = header_font
+        cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+        cell.border = border
+        ws.column_dimensions[chr(64 + i)].width = w
+    ws.row_dimensions[1].height = 30
+
+    holat_color = {
+        "tugagan":       "FFEBEE",
+        "kam":           "FFF3E0",
+        "xavfli":        "FFF9C4",
+        "ogohlantirish": "FFFDE7",
+        "diqqat":        "F1F8E9",
+        "yaxshi":        "E8F5E9",
+    }
+
+    for idx, t in enumerate(tovarlar, 2):
+        vals = [
+            idx - 1,
+            t.get("nomi") or "",
+            t.get("kategoriya") or "",
+            t.get("birlik") or "",
+            t.get("qoldiq") or 0,
+            t.get("min_qoldiq") or 0,
+            t.get("kunlik_sotuv") or 0,
+            t.get("sotilgan") or 0,
+            t.get("qolgan_kun") if t.get("qolgan_kun") is not None else "∞",
+            (t.get("holat") or "").upper(),
+            t.get("buyurtma_miqdor") or 0,
+            t.get("buyurtma_narx") or 0,
+            t.get("ombor_qiymati") or 0,
+        ]
+        color = holat_color.get(t.get("holat") or "yaxshi", "FFFFFF")
+        row_fill = PatternFill(start_color=color, end_color=color, fill_type="solid")
+        for col, v in enumerate(vals, 1):
+            cell = ws.cell(row=idx, column=col, value=v)
+            cell.border = border
+            cell.fill = row_fill
+            if col in (5, 6, 7, 8, 11, 12, 13):
+                cell.number_format = '#,##0.##'
+                cell.alignment = Alignment(horizontal="right")
+
+    ws.freeze_panes = "B2"
+    ws.auto_filter.ref = f"A1:M{len(tovarlar) + 1}"
+
+    buf = io.BytesIO()
+    wb.save(buf); buf.seek(0)
+    return {
+        "filename": f"Ombor_prognoz_{kunlar}kun.xlsx",
+        "content_base64": base64.b64encode(buf.getvalue()).decode(),
+        "soni": len(tovarlar),
+    }
 
 
 # ═══ AI BUSINESS ADVISOR ═══
