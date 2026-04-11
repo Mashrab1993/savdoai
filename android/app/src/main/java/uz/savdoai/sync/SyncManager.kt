@@ -53,12 +53,12 @@ object SyncManager {
             entitySoni++
 
             // 2. Tovarlar sync
-            val tovarlarRes = syncEntity(serverUrl, token, "/api/tovarlar/v2/filtr", "{}")
+            val tovarlarRes = syncEntity(serverUrl, token, "/tovarlar/v2/filtr", "{}")
             entitySoni++
             qabulQilingan += tovarlarRes.length
 
             // 3. Klientlar sync
-            val klientlarRes = syncEntity(serverUrl, token, "/api/klientlar", null)
+            val klientlarRes = syncEntity(serverUrl, token, "/api/v1/klientlar", null)
             entitySoni++
             qabulQilingan += klientlarRes.length
 
@@ -141,7 +141,7 @@ object SyncManager {
                 put("qurilma_info", "${android.os.Build.MANUFACTURER} ${android.os.Build.MODEL}")
             }
 
-            val url = URL("$serverUrl/api/config/sync-log")
+            val url = URL("$serverUrl/config/sync-log")
             val conn = (url.openConnection() as HttpURLConnection).apply {
                 requestMethod = "POST"
                 setRequestProperty("Authorization", "Bearer $token")

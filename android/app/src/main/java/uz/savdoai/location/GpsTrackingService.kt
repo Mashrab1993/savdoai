@@ -213,7 +213,7 @@ class GpsTrackingService : Service() {
                     })
                 }
 
-                val url = URL("$serverUrl/api/gps/tracks")
+                val url = URL("$serverUrl/gps/tracks")
                 val conn = (url.openConnection() as HttpURLConnection).apply {
                     requestMethod = "POST"
                     setRequestProperty("Content-Type", "application/json")

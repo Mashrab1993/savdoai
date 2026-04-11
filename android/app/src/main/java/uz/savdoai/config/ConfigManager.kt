@@ -37,7 +37,7 @@ object ConfigManager {
      */
     suspend fun sync(serverUrl: String, token: String): Boolean = withContext(Dispatchers.IO) {
         try {
-            val url = URL("$serverUrl/api/config")
+            val url = URL("$serverUrl/config")
             val conn = (url.openConnection() as HttpURLConnection).apply {
                 requestMethod = "GET"
                 setRequestProperty("Authorization", "Bearer $token")
