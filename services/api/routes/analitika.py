@@ -130,7 +130,7 @@ async def cohort_tahlil(oylar: int = 6, uid: int = Depends(get_uid)):
                     DATE_TRUNC('month', MIN(s.sana)) AS cohort_oy,
                     DATE_TRUNC('month', s.sana) AS sotuv_oy
                 FROM klientlar k
-                JOIN sotuvlar s ON s.klient_id = k.id AND s.user_id = k.user_id
+                JOIN sotuv_sessiyalar s ON s.klient_id = k.id AND s.user_id = k.user_id
                 WHERE k.user_id = $1
                     AND s.sana >= NOW() - ($2 || ' months')::interval
                 GROUP BY k.id, DATE_TRUNC('month', s.sana)

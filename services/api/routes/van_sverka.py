@@ -121,46 +121,62 @@ async def akt_yaratish(klient_id: int, sana_dan: str, sana_gacha: str,
                         uid: int = Depends(get_uid)):
     """SD Agent client/revise analogi — klient bilan akt sverki."""
     async with get_conn(uid) as conn:
-        # Boshlang'ich qoldiq
+        # Boshlang'ich qoldiq (sana_dan dan oldingi qarz)
         bosh_qoldiq = await conn.fetchval("""
-            SELECT COALESCE(
-                (SELECT SUM(jami) - SUM(tolangan) FROM sotuvlar
-                 WHERE user_id=$1 AND klient_id=$2 AND sana < $3::date),
-            0)
+            SELECT COALESCE(SUM(jami) - SUM(tolangan), 0)
+            FROM sotuv_sessiyalar
+            WHERE user_id = $1 AND klient_id = $2
+              AND (sana AT TIME ZONE 'Asia/Tashkent')::date < $3::date
         """, uid, klient_id, sana_dan) or Decimal("0")
 
         # Davr ichidagi sotuvlar
         jami_sotuv = await conn.fetchval("""
-            SELECT COALESCE(SUM(jami), 0) FROM sotuvlar
-            WHERE user_id=$1 AND klient_id=$2 AND sana BETWEEN $3::date AND $4::date
+            SELECT COALESCE(SUM(jami), 0) FROM sotuv_sessiyalar
+            WHERE user_id = $1 AND klient_id = $2
+              AND (sana AT TIME ZONE 'Asia/Tashkent')::date
+                  BETWEEN $3::date AND $4::date
         """, uid, klient_id, sana_dan, sana_gacha) or Decimal("0")
 
         # Davr ichidagi to'lovlar
         jami_tolov = await conn.fetchval("""
-            SELECT COALESCE(SUM(tolangan), 0) FROM sotuvlar
-            WHERE user_id=$1 AND klient_id=$2 AND sana BETWEEN $3::date AND $4::date
+            SELECT COALESCE(SUM(tolangan), 0) FROM sotuv_sessiyalar
+            WHERE user_id = $1 AND klient_id = $2
+              AND (sana AT TIME ZONE 'Asia/Tashkent')::date
+                  BETWEEN $3::date AND $4::date
         """, uid, klient_id, sana_dan, sana_gacha) or Decimal("0")
 
         # Qaytarishlar
         jami_qaytarish = await conn.fetchval("""
-            SELECT COALESCE(SUM(jami), 0) FROM sotuvlar
-            WHERE user_id=$1 AND klient_id=$2 AND turi='qaytarish'
-            AND sana BETWEEN $3::date AND $4::date
-        """, uid, klient_id, sana_dan, sana_gacha) or Decimal("0")
+            SELECT COALESCE(SUM(jami), 0) FROM qaytarishlar
+            WHERE user_id = $1
+              AND (sana AT TIME ZONE 'Asia/Tashkent')::date
+                  BETWEEN $2::date AND $3::date
+              AND EXISTS (
+                  SELECT 1 FROM chiqimlar ch
+                  WHERE ch.id = qaytarishlar.chiqim_id AND ch.klient_id = $4
+              )
+        """, uid, sana_dan, sana_gacha, klient_id) or Decimal("0")
 
         yakuniy = bosh_qoldiq + jami_sotuv - jami_tolov - jami_qaytarish
 
-        akt_id = await conn.fetchval("""
-            INSERT INTO akt_sverki (user_id, klient_id, sana_dan, sana_gacha,
-                boshlangich_qoldiq, jami_sotuv, jami_tolov, jami_qaytarish, yakuniy_qoldiq)
-            VALUES ($1,$2,$3::date,$4::date,$5,$6,$7,$8,$9) RETURNING id
-        """, uid, klient_id, sana_dan, sana_gacha,
-            bosh_qoldiq, jami_sotuv, jami_tolov, jami_qaytarish, yakuniy)
+        try:
+            akt_id = await conn.fetchval("""
+                INSERT INTO akt_sverki (user_id, klient_id, sana_dan, sana_gacha,
+                    boshlangich_qoldiq, jami_sotuv, jami_tolov, jami_qaytarish, yakuniy_qoldiq)
+                VALUES ($1,$2,$3::date,$4::date,$5,$6,$7,$8,$9) RETURNING id
+            """, uid, klient_id, sana_dan, sana_gacha,
+                bosh_qoldiq, jami_sotuv, jami_tolov, jami_qaytarish, yakuniy)
+        except Exception as e:
+            log.warning("akt_sverki insert failed: %s — jadval yaratilmaganmikin?", e)
+            akt_id = None
 
         # Tafsilotlar
         sotuvlar = await conn.fetch("""
-            SELECT id, sana, jami, tolangan, qarz, turi FROM sotuvlar
-            WHERE user_id=$1 AND klient_id=$2 AND sana BETWEEN $3::date AND $4::date
+            SELECT id, sana, jami, tolangan, qarz
+            FROM sotuv_sessiyalar
+            WHERE user_id = $1 AND klient_id = $2
+              AND (sana AT TIME ZONE 'Asia/Tashkent')::date
+                  BETWEEN $3::date AND $4::date
             ORDER BY sana
         """, uid, klient_id, sana_dan, sana_gacha)
 

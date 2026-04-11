@@ -61,35 +61,35 @@ async def tovarlar_filtrla(filtr: TovarFiltr, uid: int = Depends(get_uid)):
     9. Narxsizlarni yashirish
     """
     async with get_conn(uid) as conn:
-        # Asosiy SQL
+        # Asosiy SQL — SavdoAI schema: brend/rasm_url/saralash/olish_narxi/sotish_narxi
         query = """
-            SELECT t.id, t.nomi, t.shtrix_kod, t.kategoriya, t.brand,
-                   t.birlik, t.foto_url, t.sort_index,
-                   COALESCE(t.tan_narx, 0) as tan_narx,
-                   COALESCE(t.sotuv_narx, 0) as sotuv_narx,
-                   COALESCE(t.qoldiq, 0) as qoldiq
+            SELECT t.id, t.nomi, t.shtrix_kod, t.kategoriya, t.brend AS brand,
+                   t.birlik, t.rasm_url AS foto_url, t.saralash AS sort_index,
+                   COALESCE(t.olish_narxi, 0)  AS tan_narx,
+                   COALESCE(t.sotish_narxi, 0) AS sotuv_narx,
+                   COALESCE(t.qoldiq, 0)       AS qoldiq
             FROM tovarlar t
-            WHERE t.user_id = $1 AND t.faol = TRUE
+            WHERE t.user_id = $1
         """
         params = [uid]
         idx = 2
 
-        # 1. Kategoriya filtri
+        # 1. Kategoriya filtri (nom bo'yicha — kategoriya_id ustuni yo'q)
         if filtr.kategoriya_id:
-            query += f" AND t.kategoriya_id = ${idx}"
-            params.append(filtr.kategoriya_id)
+            query += f" AND t.kategoriya = ${idx}"
+            params.append(str(filtr.kategoriya_id))
             idx += 1
 
-        # 2. Sub-kategoriya filtri
+        # 2. Sub-kategoriya filtri (podkategoriya nom bo'yicha)
         if filtr.sub_kategoriya_id:
-            query += f" AND t.sub_kategoriya_id = ${idx}"
-            params.append(filtr.sub_kategoriya_id)
+            query += f" AND t.podkategoriya = ${idx}"
+            params.append(str(filtr.sub_kategoriya_id))
             idx += 1
 
-        # 3. Brand filtri
+        # 3. Brand filtri (brend nom bo'yicha)
         if filtr.brand_id:
-            query += f" AND t.brand_id = ${idx}"
-            params.append(filtr.brand_id)
+            query += f" AND t.brend = ${idx}"
+            params.append(str(filtr.brand_id))
             idx += 1
 
         # 4. Narx turi filtri (narx_turlar jadvalidan)
@@ -131,24 +131,23 @@ async def tovarlar_filtrla(filtr: TovarFiltr, uid: int = Depends(get_uid)):
             params.append(filtr.klient_id)
             idx += 1
 
-        # 7. Faqat buyurtma qilinganlar
+        # 7. Faqat buyurtma qilinganlar (oxirgi 30 kun ichida sotilgan)
         if filtr.faqat_buyurtma_qilingan:
             query += """
                 AND EXISTS (
-                    SELECT 1 FROM sotuv_tafsilot st
-                    JOIN sotuvlar s ON s.id = st.sotuv_id
-                    WHERE st.tovar_id = t.id AND s.user_id = t.user_id
-                    AND s.sana >= CURRENT_DATE - INTERVAL '30 days'
+                    SELECT 1 FROM chiqimlar ch
+                    WHERE ch.tovar_id = t.id AND ch.user_id = t.user_id
+                      AND ch.sana >= CURRENT_DATE - INTERVAL '30 days'
                 )
             """
 
         # 8. Faqat fotoli
         if filtr.faqat_fotoli:
-            query += " AND t.foto_url IS NOT NULL AND t.foto_url != ''"
+            query += " AND t.rasm_url IS NOT NULL AND t.rasm_url != ''"
 
         # 9. Narxsizlarni yashirish
         if filtr.narxsizlarni_yashirish:
-            query += " AND COALESCE(t.sotuv_narx, 0) > 0"
+            query += " AND COALESCE(t.sotish_narxi, 0) > 0"
 
         # Manfiy qoldiq
         if not filtr.manfiy_qoldiqli:
@@ -164,8 +163,8 @@ async def tovarlar_filtrla(filtr: TovarFiltr, uid: int = Depends(get_uid)):
         saralash_map = {
             "nom": "t.nomi ASC",
             "qoldiq": "COALESCE(t.qoldiq, 0) DESC, t.nomi ASC",
-            "narx": "COALESCE(t.sotuv_narx, 0) DESC",
-            "sort_index": "COALESCE(t.sort_index, 0) ASC, t.nomi ASC",
+            "narx": "COALESCE(t.sotish_narxi, 0) DESC",
+            "sort_index": "COALESCE(t.saralash, 0) ASC, t.nomi ASC",
         }
         query += f" ORDER BY {saralash_map.get(filtr.saralash, 't.nomi ASC')}"
 
@@ -194,8 +193,8 @@ async def kategoriyalar(uid: int = Depends(get_uid)):
     """Tovar kategoriyalari ro'yxati."""
     async with get_conn(uid) as conn:
         rows = await conn.fetch(
-            "SELECT DISTINCT kategoriya, COUNT(*) as soni "
-            "FROM tovarlar WHERE user_id=$1 AND faol=TRUE "
+            "SELECT kategoriya, COUNT(*) as soni "
+            "FROM tovarlar WHERE user_id = $1 AND kategoriya IS NOT NULL "
             "GROUP BY kategoriya ORDER BY kategoriya", uid)
         return [dict(r) for r in rows]
 
@@ -205,7 +204,7 @@ async def brandlar(uid: int = Depends(get_uid)):
     """Tovar brandlari ro'yxati."""
     async with get_conn(uid) as conn:
         rows = await conn.fetch(
-            "SELECT DISTINCT brand, COUNT(*) as soni "
-            "FROM tovarlar WHERE user_id=$1 AND faol=TRUE AND brand IS NOT NULL "
-            "GROUP BY brand ORDER BY brand", uid)
+            "SELECT brend AS brand, COUNT(*) as soni "
+            "FROM tovarlar WHERE user_id = $1 AND brend IS NOT NULL AND brend <> '' "
+            "GROUP BY brend ORDER BY brend", uid)
         return [dict(r) for r in rows]

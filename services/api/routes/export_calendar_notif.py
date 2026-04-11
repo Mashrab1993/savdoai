@@ -89,14 +89,17 @@ async def bugungi_tashriflar(uid: int = Depends(get_uid)):
     haftakun = date.today().weekday()
     async with get_conn(uid) as conn:
         rows = await conn.fetch("""
-            SELECT tj.*, k.nom, k.telefon, k.manzil, k.latitude, k.longitude,
-                COALESCE((SELECT SUM(qarz) FROM sotuvlar WHERE klient_id=k.id AND qarz>0), 0) AS qarz,
-                EXISTS(SELECT 1 FROM checkin_out WHERE klient_id=k.id AND user_id=$1
-                    AND turi='checkin' AND vaqt::date=CURRENT_DATE) AS checkin_qilindi
+            SELECT tj.*, k.ism AS nom, k.telefon, k.manzil,
+                COALESCE((SELECT SUM(qolgan) FROM qarzlar
+                          WHERE klient_id = k.id AND NOT yopildi), 0) AS qarz,
+                EXISTS(SELECT 1 FROM checkin_out
+                       WHERE klient_id = k.id AND user_id = $1
+                         AND turi = 'checkin'
+                         AND vaqt::date = CURRENT_DATE) AS checkin_qilindi
             FROM tashrif_jadvali tj
             JOIN klientlar k ON k.id = tj.klient_id
-            WHERE tj.user_id=$1 AND tj.hafta_kuni=$2 AND tj.faol=TRUE
-            ORDER BY tj.vaqt_dan NULLS LAST, k.nom
+            WHERE tj.user_id = $1 AND tj.hafta_kuni = $2 AND tj.faol = TRUE
+            ORDER BY tj.vaqt_dan NULLS LAST, k.ism
         """, uid, haftakun)
         return {
             "sana": date.today().isoformat(),
@@ -113,11 +116,12 @@ async def haftalik_kalendar(uid: int = Depends(get_uid)):
     async with get_conn(uid) as conn:
         rows = await conn.fetch("""
             SELECT tj.hafta_kuni, COUNT(*) AS klient_soni,
-                array_agg(k.nom ORDER BY k.nom) AS klient_nomlari
+                   array_agg(k.ism ORDER BY k.ism) AS klient_nomlari
             FROM tashrif_jadvali tj
             JOIN klientlar k ON k.id = tj.klient_id
-            WHERE tj.user_id=$1 AND tj.faol=TRUE
-            GROUP BY tj.hafta_kuni ORDER BY tj.hafta_kuni
+            WHERE tj.user_id = $1 AND tj.faol = TRUE
+            GROUP BY tj.hafta_kuni
+            ORDER BY tj.hafta_kuni
         """, uid)
         hafta = {i: {"kun": KUNLAR[i], "klient_soni": 0, "klientlar": []} for i in range(7)}
         for r in rows:

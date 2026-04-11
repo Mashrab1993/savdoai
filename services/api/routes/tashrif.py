@@ -64,12 +64,14 @@ amallar_router = APIRouter(prefix="/buyurtma-amal", tags=["buyurtma-amal"])
 async def amallar_olish(sotuv_id: int, uid: int = Depends(get_uid)):
     """Buyurtma uchun mumkin bo'lgan amallar ro'yxati — SD Agent 15-action analog."""
     async with get_conn(uid) as conn:
+        # sotuv_sessiyalar da holat ustuni yo'q — standart 'yangi' holat olamiz
         sotuv = await conn.fetchrow(
-            "SELECT holat FROM sotuvlar WHERE id=$1 AND user_id=$2", sotuv_id, uid)
+            "SELECT id FROM sotuv_sessiyalar WHERE id=$1 AND user_id=$2",
+            sotuv_id, uid)
         if not sotuv:
             raise HTTPException(404, "Sotuv topilmadi")
         config = await config_yukla(conn, uid)
-        return mavjud_amallar(sotuv["holat"], config)
+        return mavjud_amallar("yangi", config)
 
 
 @amallar_router.post("/{sotuv_id}/bekor")
@@ -88,7 +90,8 @@ async def izoh_qoshish(sotuv_id: int, body: IzohBody, uid: int = Depends(get_uid
     """Buyurtmaga izoh qo'shish."""
     async with get_conn(uid) as conn:
         await conn.execute(
-            "UPDATE sotuvlar SET izoh = COALESCE(izoh, '') || E'\\n' || $1 WHERE id=$2 AND user_id=$3",
+            "UPDATE sotuv_sessiyalar SET izoh = COALESCE(izoh, '') || E'\\n' || $1 "
+            "WHERE id = $2 AND user_id = $3",
             body.izoh, sotuv_id, uid)
         return {"muvaffaqiyat": True}
 
@@ -122,8 +125,11 @@ async def nasiya_belgilash(sotuv_id: int, body: NasiyaBody, uid: int = Depends(g
         if body.nasiya_kun > config.buyurtma.nasiya_max_kun:
             raise HTTPException(400, f"Max nasiya muddat: {config.buyurtma.nasiya_max_kun} kun")
 
+        # sotuv_sessiyalarda nasiya/nasiya_muddati ustunlari yo'q —
+        # izoh ustuniga qayd qilamiz (soddalashtirilgan yechim).
         await conn.execute("""
-            UPDATE sotuvlar SET nasiya = TRUE, nasiya_muddati = NOW() + ($1 || ' days')::interval
+            UPDATE sotuv_sessiyalar
+            SET izoh = COALESCE(izoh, '') || ' [nasiya: ' || $1 || ' kun]'
             WHERE id = $2 AND user_id = $3
         """, str(body.nasiya_kun), sotuv_id, uid)
         return {"muvaffaqiyat": True, "nasiya_kun": body.nasiya_kun}
