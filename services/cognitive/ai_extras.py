@@ -35,7 +35,7 @@ DEEPSEEK_KEY = os.getenv("DEEPSEEK_API_KEY", "").strip()
 XAI_KEY      = os.getenv("XAI_API_KEY", "").strip()
 V0_KEY       = os.getenv("V0_API_KEY", "").strip()
 
-OPENAI_MODEL   = os.getenv("OPENAI_MODEL",   "gpt-5")         # override qilsa bo'ladi
+OPENAI_MODEL   = os.getenv("OPENAI_MODEL",   "gpt-5.4")       # override qilsa bo'ladi
 WHISPER_MODEL  = os.getenv("WHISPER_MODEL",  "whisper-1")
 DEEPSEEK_MODEL = os.getenv("DEEPSEEK_MODEL", "deepseek-chat")
 XAI_MODEL      = os.getenv("XAI_MODEL",      "grok-4")
@@ -79,9 +79,15 @@ class ChatProvider:
                 {"role": "system", "content": system},
                 {"role": "user",   "content": user},
             ],
-            "temperature": temperature,
-            "max_tokens": max_tokens,
         }
+        # GPT-5 oilasi max_completion_tokens ishlatadi va temperature'ni
+        # qo'llab-quvvatlamaydi. Boshqa modellar eski max_tokens.
+        if self.model.startswith("gpt-5") or self.model.startswith("o1") \
+                or self.model.startswith("o3") or self.model.startswith("o4"):
+            body["max_completion_tokens"] = max_tokens
+        else:
+            body["max_tokens"] = max_tokens
+            body["temperature"] = temperature
         if json_mode:
             body["response_format"] = {"type": "json_object"}
 
@@ -149,13 +155,16 @@ def active_providers() -> list[str]:
 async def whisper_transcribe(
     audio_bytes: bytes,
     filename: str = "voice.ogg",
-    language: str = "uz",
+    language: Optional[str] = None,
 ) -> Optional[str]:
     """
     Whisper V3 orqali ovozni matn qilish (Gemini fallback sifatida).
 
-    Gemini ovozni tushunmay qolsa — shovqinli omborda, bir nechta ovoz
-    aralashsa — Whisper qo'llanadi.
+    DIQQAT: Whisper-1 rasmiy ro'yxatida o'zbek tili (uz) YO'Q. Agar
+    o'zbek ovoz bo'lsa, language parametrini bermang — auto-detect
+    ishlaydi (Whisper ovozni qo'shni turkiy til sifatida transkriptsiya
+    qiladi, sifat past bo'lishi mumkin). Shuning uchun asosiy STT
+    Gemini 2.5 Pro — Whisper faqat zaxira sifatida.
     """
     if not OPENAI_KEY:
         return None
@@ -164,9 +173,10 @@ async def whisper_transcribe(
     files = {"file": (filename, audio_bytes, "audio/ogg")}
     data = {
         "model": WHISPER_MODEL,
-        "language": language,
         "response_format": "text",
     }
+    if language:
+        data["language"] = language
 
     try:
         async with httpx.AsyncClient(timeout=HTTP_TIMEOUT) as cli:
