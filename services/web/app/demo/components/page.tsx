@@ -14,6 +14,7 @@ import ClientDirectoryTable from "@/components/dashboard/client-directory-table"
 import ProductStockGrid from "@/components/dashboard/product-stock-grid"
 import PnLReport from "@/components/dashboard/pnl-report"
 import Client360View from "@/components/dashboard/client-360-view"
+import WarehouseTransferBoard from "@/components/dashboard/warehouse-transfer-board"
 import { useLocale } from "@/lib/locale-context"
 
 // ─── Synthetic data ─────────────────────────────────────────
@@ -145,6 +146,14 @@ const CLIENT_360 = {
   ],
 }
 
+const TRANSFERS = [
+  { id: 101, dan_filial_id: 1, dan_filial_nomi: "Markaz ombor",   ga_filial_id: 2, ga_filial_nomi: "Siyob filiali",     tovar_nomi: "Coca-Cola 1.5L",         miqdor: 240,  birlik: "dona", holat: "kutilmoqda"   as const, yaratilgan: new Date(Date.now() - 2 * 3600e3).toISOString(),  izoh: "Haftalik yetkazib berish" },
+  { id: 100, dan_filial_id: 1, dan_filial_nomi: "Markaz ombor",   ga_filial_id: 3, ga_filial_nomi: "Urgut filiali",     tovar_nomi: "Ariel Automat 6kg",      miqdor: 60,   birlik: "dona", holat: "kutilmoqda"   as const, yaratilgan: new Date(Date.now() - 4 * 3600e3).toISOString() },
+  { id: 99,  dan_filial_id: 2, dan_filial_nomi: "Siyob filiali",   ga_filial_id: 1, ga_filial_nomi: "Markaz ombor",     tovar_nomi: "Nescafe Gold 100g",      miqdor: 24,   birlik: "dona", holat: "tasdiqlangan" as const, yaratilgan: new Date(Date.now() - 24 * 3600e3).toISOString(), izoh: "Mijoz qaytarishi" },
+  { id: 98,  dan_filial_id: 1, dan_filial_nomi: "Markaz ombor",   ga_filial_id: 4, ga_filial_nomi: "Jomboy filiali",    tovar_nomi: "Lays Classic 150g",       miqdor: 120,  birlik: "dona", holat: "tasdiqlangan" as const, yaratilgan: new Date(Date.now() - 30 * 3600e3).toISOString() },
+  { id: 97,  dan_filial_id: 3, dan_filial_nomi: "Urgut filiali",   ga_filial_id: 1, ga_filial_nomi: "Markaz ombor",     tovar_nomi: "Snickers 50g",           miqdor: 96,   birlik: "dona", holat: "bekor"        as const, yaratilgan: new Date(Date.now() - 2 * 86400e3).toISOString(), izoh: "Buyurtma bekor qilindi" },
+]
+
 // ─── Page ───────────────────────────────────────────────────
 
 export default function DemoComponentsPage() {
@@ -219,6 +228,18 @@ export default function DemoComponentsPage() {
             7. Client360View
           </p>
           <Client360View client={CLIENT_360} />
+        </section>
+
+        {/* 8. Warehouse transfers */}
+        <section>
+          <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+            8. WarehouseTransferBoard
+          </p>
+          <WarehouseTransferBoard
+            transfers={TRANSFERS}
+            onApprove={(id) => alert(`Tasdiqlandi: #${id}`)}
+            onCancel={(id) => alert(`Bekor qilindi: #${id}`)}
+          />
         </section>
       </div>
     </AdminLayout>
