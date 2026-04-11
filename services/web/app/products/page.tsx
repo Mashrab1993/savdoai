@@ -26,6 +26,8 @@ import { PageLoading, PageError } from "@/components/shared/page-states"
 import {
   Sheet, SheetContent, SheetHeader, SheetTitle,
 } from "@/components/ui/sheet"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Textarea } from "@/components/ui/textarea"
 
 // Dinamik kategoriyalar — SalesDoc uslubida
 const CATEGORIES: { uz: string; ru: string; key: string }[] = [
@@ -58,7 +60,24 @@ export default function ProductsPage() {
   const [activeFilter, setActiveFilter] = useState<ActiveFilter>("all")
   const [addModalOpen, setAddModalOpen] = useState(false)
   const [saving, setSaving] = useState(false)
-  const [form, setForm] = useState({ nomi: "", kategoriya: "Boshqa", birlik: "dona", olish_narxi: "", sotish_narxi: "", qoldiq: "", min_qoldiq: "" })
+  const emptyForm = {
+    // Asosiy
+    nomi: "", kategoriya: "Boshqa", birlik: "dona",
+    olish_narxi: "", sotish_narxi: "", min_sotish_narxi: "",
+    qoldiq: "", min_qoldiq: "",
+    // Identifikatsiya
+    brend: "", podkategoriya: "", guruh: "",
+    ishlab_chiqaruvchi: "", segment: "", savdo_yonalishi: "",
+    shtrix_kod: "", artikul: "", sap_kod: "", kod: "",
+    ikpu_kod: "", gtin: "",
+    // O'lchamlar
+    hajm: "", ogirlik: "",
+    blokda_soni: "", korobkada_soni: "",
+    saralash: "", yaroqlilik_muddati: "",
+    // Tavsif
+    tavsif: "",
+  }
+  const [form, setForm] = useState(emptyForm)
   const [tarixOpen, setTarixOpen] = useState(false)
   const [tarixData, setTarixData] = useState<{
     tovar: { nomi?: string; kategoriya?: string; birlik?: string; qoldiq?: number; sotish_narxi?: number; olish_narxi?: number; [k: string]: unknown }
@@ -85,19 +104,45 @@ export default function ProductsPage() {
     if (!form.nomi.trim()) return
     setSaving(true)
     try {
-      await productService.create({
-        nomi: form.nomi.trim(),
-        kategoriya: form.kategoriya,
-        birlik: form.birlik,
-        olish_narxi: Number(form.olish_narxi) || 0,
-        sotish_narxi: Number(form.sotish_narxi) || 0,
-        qoldiq: Number(form.qoldiq) || 0,
-        min_qoldiq: Number(form.min_qoldiq) || 0,
-      })
+      const num = (v: string) => (v.trim() === "" ? undefined : Number(v))
+      const str = (v: string) => (v.trim() === "" ? undefined : v.trim())
+      const payload: Record<string, unknown> = {
+        nomi:             form.nomi.trim(),
+        kategoriya:       form.kategoriya || "Boshqa",
+        birlik:           form.birlik    || "dona",
+        olish_narxi:      Number(form.olish_narxi) || 0,
+        sotish_narxi:     Number(form.sotish_narxi) || 0,
+        min_sotish_narxi: Number(form.min_sotish_narxi) || 0,
+        qoldiq:           Number(form.qoldiq) || 0,
+        min_qoldiq:       Number(form.min_qoldiq) || 0,
+        brend:              str(form.brend),
+        podkategoriya:      str(form.podkategoriya),
+        guruh:              str(form.guruh),
+        ishlab_chiqaruvchi: str(form.ishlab_chiqaruvchi),
+        segment:            str(form.segment),
+        savdo_yonalishi:    str(form.savdo_yonalishi),
+        shtrix_kod:         str(form.shtrix_kod),
+        artikul:            str(form.artikul),
+        sap_kod:            str(form.sap_kod),
+        kod:                str(form.kod),
+        ikpu_kod:           str(form.ikpu_kod),
+        gtin:               str(form.gtin),
+        hajm:               num(form.hajm),
+        ogirlik:            num(form.ogirlik),
+        blokda_soni:        num(form.blokda_soni),
+        korobkada_soni:     num(form.korobkada_soni),
+        saralash:           num(form.saralash),
+        yaroqlilik_muddati: num(form.yaroqlilik_muddati),
+        tavsif:             str(form.tavsif),
+      }
+      Object.keys(payload).forEach(k => payload[k] === undefined && delete payload[k])
+      await productService.create(payload as Parameters<typeof productService.create>[0])
       setAddModalOpen(false)
-      setForm({ nomi: "", kategoriya: "Boshqa", birlik: "dona", olish_narxi: "", sotish_narxi: "", qoldiq: "", min_qoldiq: "" })
+      setForm(emptyForm)
       refetch()
-    } catch { /* silent */ }
+    } catch (err) {
+      alert(err instanceof Error ? err.message : String(err))
+    }
     finally { setSaving(false) }
   }
 
@@ -322,49 +367,164 @@ export default function ProductsPage() {
         </>}
       </div>
 
-      {/* Tovar qo'shish modal */}
+      {/* Tovar qo'shish modal — SalesDoc style 4 tab */}
       <Dialog open={addModalOpen} onOpenChange={setAddModalOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{locale === "uz" ? "Yangi tovar qo'shish" : "Добавить товар"}</DialogTitle>
           </DialogHeader>
-          <div className="grid gap-3 py-3">
-            <div>
-              <Label>{locale === "uz" ? "Tovar nomi *" : "Название *"}</Label>
-              <Input value={form.nomi} onChange={e => setForm(f => ({ ...f, nomi: e.target.value }))}
-                     placeholder={locale === "uz" ? "Ariel 3kg" : "Ariel 3kg"} />
-            </div>
-            <div className="grid grid-cols-2 gap-3">
+          <Tabs defaultValue="asosiy" className="w-full">
+            <TabsList className="grid grid-cols-4 w-full">
+              <TabsTrigger value="asosiy">{locale === "uz" ? "Asosiy" : "Основное"}</TabsTrigger>
+              <TabsTrigger value="ident">{locale === "uz" ? "Identifikatsiya" : "Идентификация"}</TabsTrigger>
+              <TabsTrigger value="olchov">{locale === "uz" ? "O'lchamlar" : "Размеры"}</TabsTrigger>
+              <TabsTrigger value="tavsif">{locale === "uz" ? "Tavsif" : "Описание"}</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="asosiy" className="space-y-3 pt-3">
               <div>
-                <Label>{locale === "uz" ? "Kategoriya" : "Категория"}</Label>
-                <Input value={form.kategoriya} onChange={e => setForm(f => ({ ...f, kategoriya: e.target.value }))} />
+                <Label>{locale === "uz" ? "Tovar nomi *" : "Название *"}</Label>
+                <Input value={form.nomi} onChange={e => setForm(f => ({ ...f, nomi: e.target.value }))}
+                       placeholder="Ariel 3kg" />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label>{locale === "uz" ? "Kategoriya" : "Категория"}</Label>
+                  <Input value={form.kategoriya} onChange={e => setForm(f => ({ ...f, kategoriya: e.target.value }))} />
+                </div>
+                <div>
+                  <Label>{locale === "uz" ? "Birlik" : "Единица"}</Label>
+                  <Input value={form.birlik} onChange={e => setForm(f => ({ ...f, birlik: e.target.value }))} />
+                </div>
+              </div>
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <Label>{locale === "uz" ? "Olish narxi" : "Закупка"}</Label>
+                  <Input type="number" value={form.olish_narxi} onChange={e => setForm(f => ({ ...f, olish_narxi: e.target.value }))} placeholder="0" />
+                </div>
+                <div>
+                  <Label>{locale === "uz" ? "Sotish narxi" : "Продажа"}</Label>
+                  <Input type="number" value={form.sotish_narxi} onChange={e => setForm(f => ({ ...f, sotish_narxi: e.target.value }))} placeholder="0" />
+                </div>
+                <div>
+                  <Label>{locale === "uz" ? "Min sotish" : "Мин продажа"}</Label>
+                  <Input type="number" value={form.min_sotish_narxi} onChange={e => setForm(f => ({ ...f, min_sotish_narxi: e.target.value }))} placeholder="0" />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label>{locale === "uz" ? "Qoldiq" : "Остаток"}</Label>
+                  <Input type="number" value={form.qoldiq} onChange={e => setForm(f => ({ ...f, qoldiq: e.target.value }))} placeholder="0" />
+                </div>
+                <div>
+                  <Label>{locale === "uz" ? "Min qoldiq" : "Мин остаток"}</Label>
+                  <Input type="number" value={form.min_qoldiq} onChange={e => setForm(f => ({ ...f, min_qoldiq: e.target.value }))} placeholder="0" />
+                </div>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="ident" className="space-y-3 pt-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label>{locale === "uz" ? "Brend" : "Бренд"}</Label>
+                  <Input value={form.brend} onChange={e => setForm(f => ({ ...f, brend: e.target.value }))} placeholder="Procter & Gamble" />
+                </div>
+                <div>
+                  <Label>{locale === "uz" ? "Ishlab chiqaruvchi" : "Производитель"}</Label>
+                  <Input value={form.ishlab_chiqaruvchi} onChange={e => setForm(f => ({ ...f, ishlab_chiqaruvchi: e.target.value }))} />
+                </div>
+              </div>
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <Label>{locale === "uz" ? "Podkategoriya" : "Подкатегория"}</Label>
+                  <Input value={form.podkategoriya} onChange={e => setForm(f => ({ ...f, podkategoriya: e.target.value }))} />
+                </div>
+                <div>
+                  <Label>{locale === "uz" ? "Guruh" : "Группа"}</Label>
+                  <Input value={form.guruh} onChange={e => setForm(f => ({ ...f, guruh: e.target.value }))} />
+                </div>
+                <div>
+                  <Label>{locale === "uz" ? "Segment" : "Сегмент"}</Label>
+                  <Input value={form.segment} onChange={e => setForm(f => ({ ...f, segment: e.target.value }))} placeholder="Premium / Economy" />
+                </div>
               </div>
               <div>
-                <Label>{locale === "uz" ? "Birlik" : "Единица"}</Label>
-                <Input value={form.birlik} onChange={e => setForm(f => ({ ...f, birlik: e.target.value }))} />
+                <Label>{locale === "uz" ? "Savdo yo'nalishi" : "Направление продаж"}</Label>
+                <Input value={form.savdo_yonalishi} onChange={e => setForm(f => ({ ...f, savdo_yonalishi: e.target.value }))} placeholder="B2B / B2C / HoReCa" />
               </div>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label>{locale === "uz" ? "Shtrix kod (EAN-13)" : "Штрих-код"}</Label>
+                  <Input value={form.shtrix_kod} onChange={e => setForm(f => ({ ...f, shtrix_kod: e.target.value }))} placeholder="4810056670015" />
+                </div>
+                <div>
+                  <Label>GTIN</Label>
+                  <Input value={form.gtin} onChange={e => setForm(f => ({ ...f, gtin: e.target.value }))} />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label>{locale === "uz" ? "Artikul" : "Артикул"}</Label>
+                  <Input value={form.artikul} onChange={e => setForm(f => ({ ...f, artikul: e.target.value }))} />
+                </div>
+                <div>
+                  <Label>{locale === "uz" ? "SAP kod" : "SAP код"}</Label>
+                  <Input value={form.sap_kod} onChange={e => setForm(f => ({ ...f, sap_kod: e.target.value }))} />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label>{locale === "uz" ? "Ichki kod" : "Внутр. код"}</Label>
+                  <Input value={form.kod} onChange={e => setForm(f => ({ ...f, kod: e.target.value }))} />
+                </div>
+                <div>
+                  <Label>IKPU kod</Label>
+                  <Input value={form.ikpu_kod} onChange={e => setForm(f => ({ ...f, ikpu_kod: e.target.value }))} placeholder="05031000001" />
+                </div>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="olchov" className="space-y-3 pt-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label>{locale === "uz" ? "Hajm (litr/m³)" : "Объём (л/м³)"}</Label>
+                  <Input type="number" step="0.001" value={form.hajm} onChange={e => setForm(f => ({ ...f, hajm: e.target.value }))} />
+                </div>
+                <div>
+                  <Label>{locale === "uz" ? "Og'irlik (kg)" : "Вес (кг)"}</Label>
+                  <Input type="number" step="0.001" value={form.ogirlik} onChange={e => setForm(f => ({ ...f, ogirlik: e.target.value }))} />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label>{locale === "uz" ? "Blokda soni" : "В блоке шт"}</Label>
+                  <Input type="number" value={form.blokda_soni} onChange={e => setForm(f => ({ ...f, blokda_soni: e.target.value }))} placeholder="1" />
+                </div>
+                <div>
+                  <Label>{locale === "uz" ? "Korobkada soni" : "В коробке шт"}</Label>
+                  <Input type="number" value={form.korobkada_soni} onChange={e => setForm(f => ({ ...f, korobkada_soni: e.target.value }))} placeholder="1" />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label>{locale === "uz" ? "Saralash tartibi" : "Порядок сортировки"}</Label>
+                  <Input type="number" value={form.saralash} onChange={e => setForm(f => ({ ...f, saralash: e.target.value }))} placeholder="500" />
+                </div>
+                <div>
+                  <Label>{locale === "uz" ? "Yaroqlilik muddati (kun)" : "Срок годности (дней)"}</Label>
+                  <Input type="number" value={form.yaroqlilik_muddati} onChange={e => setForm(f => ({ ...f, yaroqlilik_muddati: e.target.value }))} placeholder="0" />
+                </div>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="tavsif" className="space-y-3 pt-3">
               <div>
-                <Label>{locale === "uz" ? "Olish narxi" : "Цена закупки"}</Label>
-                <Input type="number" value={form.olish_narxi} onChange={e => setForm(f => ({ ...f, olish_narxi: e.target.value }))} placeholder="0" />
+                <Label>{locale === "uz" ? "Tavsif / Izoh" : "Описание"}</Label>
+                <Textarea rows={6} value={form.tavsif} onChange={e => setForm(f => ({ ...f, tavsif: e.target.value }))}
+                          placeholder={locale === "uz" ? "Tovar haqida qo'shimcha ma'lumot..." : "Дополнительная информация..."} />
               </div>
-              <div>
-                <Label>{locale === "uz" ? "Sotish narxi" : "Цена продажи"}</Label>
-                <Input type="number" value={form.sotish_narxi} onChange={e => setForm(f => ({ ...f, sotish_narxi: e.target.value }))} placeholder="0" />
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label>{locale === "uz" ? "Qoldiq" : "Остаток"}</Label>
-                <Input type="number" value={form.qoldiq} onChange={e => setForm(f => ({ ...f, qoldiq: e.target.value }))} placeholder="0" />
-              </div>
-              <div>
-                <Label>{locale === "uz" ? "Min qoldiq" : "Мин остаток"}</Label>
-                <Input type="number" value={form.min_qoldiq} onChange={e => setForm(f => ({ ...f, min_qoldiq: e.target.value }))} placeholder="0" />
-              </div>
-            </div>
-          </div>
+            </TabsContent>
+          </Tabs>
           <DialogFooter>
             <Button variant="outline" onClick={() => setAddModalOpen(false)}>
               {locale === "uz" ? "Bekor" : "Отмена"}

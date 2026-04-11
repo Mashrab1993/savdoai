@@ -1994,21 +1994,26 @@ async def savdolar_royxati(
     klient: Optional[str] = None,
     sana_dan: Optional[str] = None,
     sana_gacha: Optional[str] = None,
+    qarzdor: Optional[bool] = None,
+    min_summa: Optional[float] = None,
+    sort: str = "sana",
     uid: int = Depends(get_uid),
 ):
     """
-    Sotuv sessiyalari ro'yxati — sanalar va klient bo'yicha filtr.
-    Web panel /invoices sahifasi uchun.
+    Sotuv sessiyalari ro'yxati — SalesDoc-style filtrlash.
+    Klient telefon va manzili klientlar jadvalidan olinadi.
     """
-    limit = min(limit, 100)
+    limit = min(limit, 200)
     async with rls_conn(uid) as c:
-        # Filtr shartlari
         where_parts = []
         params: list = [limit, offset]
         idx = 3
 
         if klient:
-            where_parts.append(f"lower(ss.klient_ismi) LIKE lower(${idx})")
+            where_parts.append(
+                f"(lower(ss.klient_ismi) LIKE lower(${idx}) "
+                f"OR lower(COALESCE(k.ism,'')) LIKE lower(${idx}))"
+            )
             params.append(f"%{like_escape(klient)}%")
             idx += 1
 
@@ -2022,23 +2027,44 @@ async def savdolar_royxati(
             params.append(sana_gacha)
             idx += 1
 
+        if qarzdor:
+            where_parts.append("ss.qarz > 0")
+
+        if min_summa is not None:
+            where_parts.append(f"ss.jami >= ${idx}")
+            params.append(min_summa)
+            idx += 1
+
         where_sql = (" AND " + " AND ".join(where_parts)) if where_parts else ""
+
+        sort_map = {
+            "sana":   "ss.sana DESC",
+            "jami":   "ss.jami DESC",
+            "qarz":   "ss.qarz DESC",
+            "klient": "ss.klient_ismi ASC",
+        }
+        order_by = sort_map.get(sort, "ss.sana DESC")
 
         rows = await c.fetch(f"""
             SELECT ss.id, ss.klient_ismi, ss.jami, ss.tolangan, ss.qarz,
                    ss.izoh, ss.sana,
-                   COUNT(ch.id) AS tovar_soni
+                   COALESCE(k.telefon, '')  AS telefon,
+                   COALESCE(k.manzil, '')   AS manzil,
+                   COALESCE(k.nomi, '')     AS klient_nomi,
+                   COUNT(ch.id)             AS tovar_soni
             FROM sotuv_sessiyalar ss
             LEFT JOIN chiqimlar ch ON ch.sessiya_id = ss.id
+            LEFT JOIN klientlar  k ON k.id = ss.klient_id
             WHERE 1=1 {where_sql}
-            GROUP BY ss.id
-            ORDER BY ss.sana DESC
+            GROUP BY ss.id, k.telefon, k.manzil, k.ism
+            ORDER BY {order_by}
             LIMIT $1 OFFSET $2
         """, *params)
 
-        # Jami (filtr bilan)
         total = await c.fetchval(f"""
-            SELECT COUNT(*) FROM sotuv_sessiyalar ss WHERE 1=1 {where_sql}
+            SELECT COUNT(*) FROM sotuv_sessiyalar ss
+            LEFT JOIN klientlar k ON k.id = ss.klient_id
+            WHERE 1=1 {where_sql}
         """, *params[2:])
 
         # Umumiy statistika (bugungi)
@@ -2061,6 +2087,103 @@ async def savdolar_royxati(
             "bugun_qarz": float(stats["qarz"]),
             "bugun_soni": int(stats["soni"]),
         },
+    }
+
+
+@app.get("/api/v1/savdolar/excel", tags=["Sotuv"])
+async def savdolar_excel(
+    sana_dan: Optional[str] = None,
+    sana_gacha: Optional[str] = None,
+    uid: int = Depends(get_uid),
+):
+    """SalesDoc Реестр 3.0 formatida Excel — sanalar bo'yicha buyurtmalar reestri."""
+    import io, base64
+    from openpyxl import Workbook
+    from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+
+    async with rls_conn(uid) as c:
+        where_parts = []
+        params: list = []
+        idx = 1
+        if sana_dan:
+            where_parts.append(f"ss.sana >= ${idx}::timestamptz")
+            params.append(sana_dan); idx += 1
+        if sana_gacha:
+            where_parts.append(f"ss.sana < ${idx}::timestamptz + interval '1 day'")
+            params.append(sana_gacha); idx += 1
+        where_sql = (" AND " + " AND ".join(where_parts)) if where_parts else ""
+
+        rows = await c.fetch(f"""
+            SELECT ss.id, ss.klient_ismi, ss.jami, ss.tolangan, ss.qarz, ss.sana,
+                   COALESCE(k.telefon, '') AS telefon,
+                   COALESCE(k.manzil, '')  AS manzil,
+                   COALESCE(k.jami_sotib, 0) AS balans
+            FROM sotuv_sessiyalar ss
+            LEFT JOIN klientlar k ON k.id = ss.klient_id
+            WHERE 1=1 {where_sql}
+            ORDER BY ss.sana DESC
+        """, *params)
+
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Реестр 3.0"
+
+    headers = ["№", "Дата отгрузки", "Торгов. Точка", "Адрес", "Номер клиента",
+               "Торгов. Пред.", "Баланс клиента", "Сумма", "Отметка"]
+    widths  = [5, 13, 30, 35, 16, 14, 16, 16, 10]
+
+    header_fill = PatternFill(start_color="0A819C", end_color="0A819C", fill_type="solid")
+    header_font = Font(bold=True, color="FFFFFF", size=11)
+    thin = Side(style="thin", color="888888")
+    border = Border(left=thin, right=thin, top=thin, bottom=thin)
+
+    for i, (h, w) in enumerate(zip(headers, widths), 1):
+        cell = ws.cell(row=1, column=i, value=h)
+        cell.fill = header_fill
+        cell.font = header_font
+        cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+        cell.border = border
+        ws.column_dimensions[chr(64 + i)].width = w
+    ws.row_dimensions[1].height = 28
+
+    total_sum = 0.0
+    for idx2, r in enumerate(rows, 2):
+        d = dict(r)
+        sana_str = d["sana"].strftime("%d.%m.%Y") if d.get("sana") else ""
+        vals = [
+            idx2 - 1, sana_str, d["klient_ismi"] or "Mijoz",
+            d["manzil"] or "", d["telefon"] or "", "SavdoAI Bot",
+            float(d["balans"]), float(d["jami"]), ""
+        ]
+        for col, v in enumerate(vals, 1):
+            cell = ws.cell(row=idx2, column=col, value=v)
+            cell.border = border
+            if col in (7, 8):
+                cell.number_format = '#,##0'
+                cell.alignment = Alignment(horizontal="right")
+        total_sum += float(d["jami"])
+
+    total_row = len(rows) + 2
+    ws.cell(row=total_row, column=3, value="ИТОГО").font = Font(bold=True)
+    total_cell = ws.cell(row=total_row, column=8, value=total_sum)
+    total_cell.font = Font(bold=True, color="1B5E20")
+    total_cell.number_format = '#,##0'
+    for col in range(1, 10):
+        ws.cell(row=total_row, column=col).fill = PatternFill(
+            start_color="E8F5E9", end_color="E8F5E9", fill_type="solid"
+        )
+        ws.cell(row=total_row, column=col).border = border
+
+    ws.freeze_panes = "A2"
+    ws.auto_filter.ref = f"A1:I{len(rows) + 1}"
+
+    buf = io.BytesIO()
+    wb.save(buf); buf.seek(0)
+    return {
+        "filename": f"Реестр_3.0_{sana_dan or 'barcha'}.xlsx",
+        "content_base64": base64.b64encode(buf.getvalue()).decode(),
+        "soni": len(rows),
+        "jami_summa": total_sum,
     }
 
 

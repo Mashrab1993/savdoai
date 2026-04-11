@@ -108,36 +108,99 @@ class TovarImportSorov(BaseModel):
 async def tovarlar(
     limit: int = 20, offset: int = 0,
     kategoriya: Optional[str] = None,
+    brend: Optional[str] = None,
+    segment: Optional[str] = None,
+    ishlab_chiqaruvchi: Optional[str] = None,
+    savdo_yonalishi: Optional[str] = None,
+    qidiruv: Optional[str] = None,
+    kam_qoldiq: Optional[bool] = None,
+    sort: str = "kategoriya",
     uid: int = Depends(get_uid)
 ):
-    """Tovarlar ro'yxati"""
-    limit = min(limit, 100)
+    """Tovarlar ro'yxati — SalesDoc-style filtrlash (brend, segment, qidiruv, kam qoldiq)"""
+    limit = min(limit, 500)
+    where = ["user_id = $1"]
+    params: list = [uid]
+
+    def add(col: str, val):
+        params.append(val)
+        where.append(f"{col} = ${len(params)}")
+
+    if kategoriya:         add("kategoriya", kategoriya)
+    if brend:              add("brend", brend)
+    if segment:            add("segment", segment)
+    if ishlab_chiqaruvchi: add("ishlab_chiqaruvchi", ishlab_chiqaruvchi)
+    if savdo_yonalishi:    add("savdo_yonalishi", savdo_yonalishi)
+
+    if qidiruv:
+        q = f"%{like_escape(qidiruv)}%"
+        params.append(q)
+        where.append(
+            f"(nomi ILIKE ${len(params)} OR shtrix_kod ILIKE ${len(params)} "
+            f"OR artikul ILIKE ${len(params)} OR ikpu_kod ILIKE ${len(params)})"
+        )
+    if kam_qoldiq:
+        where.append("min_qoldiq > 0 AND qoldiq <= min_qoldiq")
+
+    sort_map = {
+        "kategoriya": "kategoriya, nomi",
+        "nomi":       "nomi",
+        "narx":       "sotish_narxi DESC",
+        "qoldiq":     "qoldiq DESC",
+        "yangi":      "yaratilgan DESC",
+    }
+    order_by = sort_map.get(sort, "kategoriya, nomi")
+
+    where_sql = " AND ".join(where)
+    params.append(limit); params.append(offset)
+
+    sql = f"""
+        SELECT id, user_id, nomi, kategoriya, birlik, olish_narxi, sotish_narxi,
+               min_sotish_narxi, qoldiq, min_qoldiq, yaratilgan,
+               brend, podkategoriya, guruh, ishlab_chiqaruvchi, segment,
+               shtrix_kod, artikul, sap_kod, kod, ikpu_kod, gtin,
+               hajm, ogirlik, blokda_soni, korobkada_soni, saralash,
+               yaroqlilik_muddati, tavsif, rasm_url, faol, savdo_yonalishi
+        FROM tovarlar
+        WHERE {where_sql}
+        ORDER BY {order_by}
+        LIMIT ${len(params)-1} OFFSET ${len(params)}
+    """
+    count_sql = f"SELECT COUNT(*) FROM tovarlar WHERE {where_sql}"
+
     async with rls_conn(uid) as c:
-        if kategoriya:
-            rows = await c.fetch("""
-                SELECT id, user_id, nomi, kategoriya, birlik, olish_narxi, sotish_narxi,
-                       min_sotish_narxi, qoldiq, min_qoldiq, yaratilgan,
-                       brend, podkategoriya, shtrix_kod, artikul, kod, ikpu_kod,
-                       hajm, ogirlik, blokda_soni, korobkada_soni, faol, tavsif
-                FROM tovarlar WHERE kategoriya=$3
-                ORDER BY nomi LIMIT $1 OFFSET $2
-            """, limit, offset, kategoriya)
-            total = await c.fetchval(
-                "SELECT COUNT(*) FROM tovarlar WHERE user_id=$2 AND kategoriya=$1",
-                kategoriya, uid
-            )
-        else:
-            rows = await c.fetch("""
-                SELECT id, user_id, nomi, kategoriya, birlik, olish_narxi, sotish_narxi,
-                       min_sotish_narxi, qoldiq, min_qoldiq, yaratilgan,
-                       brend, podkategoriya, shtrix_kod, artikul, kod, ikpu_kod,
-                       hajm, ogirlik, blokda_soni, korobkada_soni, faol, tavsif
-                FROM tovarlar ORDER BY kategoriya,nomi LIMIT $1 OFFSET $2
-            """, limit, offset)
-            total = await c.fetchval(
-                "SELECT COUNT(*) FROM tovarlar WHERE user_id=$1", uid
-            )
+        rows = await c.fetch(sql, *params)
+        total = await c.fetchval(count_sql, *params[:-2])
     return {"total": total, "items": [dict(r) for r in rows]}
+
+
+@router.get("/tovarlar/facets")
+async def tovarlar_facets(uid: int = Depends(get_uid)):
+    """Filter dropdownlari uchun unikal qiymatlar — SalesDoc-style"""
+    async with rls_conn(uid) as c:
+        async def unique(col: str) -> List[str]:
+            rows = await c.fetch(
+                f"SELECT DISTINCT {col} AS v FROM tovarlar "
+                f"WHERE user_id=$1 AND {col} IS NOT NULL AND {col} <> '' "
+                f"ORDER BY {col}", uid
+            )
+            return [r["v"] for r in rows]
+        total = await c.fetchval(
+            "SELECT COUNT(*) FROM tovarlar WHERE user_id=$1", uid
+        )
+        kam_qoldiq = await c.fetchval(
+            "SELECT COUNT(*) FROM tovarlar WHERE user_id=$1 "
+            "AND min_qoldiq > 0 AND qoldiq <= min_qoldiq", uid
+        )
+        return {
+            "jami":              int(total or 0),
+            "kam_qoldiq":        int(kam_qoldiq or 0),
+            "kategoriyalar":     await unique("kategoriya"),
+            "brendlar":          await unique("brend"),
+            "segmentlar":        await unique("segment"),
+            "ishlab_chiqaruvchilar": await unique("ishlab_chiqaruvchi"),
+            "savdo_yonalishlari":    await unique("savdo_yonalishi"),
+        }
 
 
 @router.get("/tovar/{tovar_id}")
@@ -161,24 +224,72 @@ async def tovar_bir(tovar_id: int, uid: int = Depends(get_uid)):
 
 @router.post("/tovar")
 async def tovar_yarat(data: TovarYaratSorov, uid: int = Depends(get_uid)):
-    """Yangi tovar yaratish"""
+    """Yangi tovar yaratish — SalesDoc-compatible, barcha 40+ maydonlar saqlanadi"""
     from shared.cache.redis_cache import user_cache_tozala
+    d = data.model_dump()
+    d["nomi"] = d["nomi"].strip()
     async with rls_conn(uid) as c:
         tovar = await c.fetchrow("""
-            INSERT INTO tovarlar
-                (user_id, nomi, kategoriya, birlik,
-                 olish_narxi, sotish_narxi, min_sotish_narxi, qoldiq, min_qoldiq)
-            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+            INSERT INTO tovarlar (
+                user_id, nomi, kategoriya, birlik,
+                olish_narxi, sotish_narxi, min_sotish_narxi, qoldiq, min_qoldiq,
+                brend, podkategoriya, guruh, ishlab_chiqaruvchi, segment,
+                shtrix_kod, artikul, sap_kod, kod, ikpu_kod, gtin,
+                hajm, ogirlik, blokda_soni, korobkada_soni,
+                saralash, yaroqlilik_muddati, tavsif, savdo_yonalishi
+            )
+            VALUES (
+                $1,$2,$3,$4,
+                $5,$6,$7,$8,$9,
+                COALESCE($10,''), COALESCE($11,''), COALESCE($12,''),
+                COALESCE($13,''), COALESCE($14,''),
+                COALESCE($15,''), COALESCE($16,''), COALESCE($17,''),
+                COALESCE($18,''), COALESCE($19,''), COALESCE($20,''),
+                COALESCE($21,1), COALESCE($22,1),
+                COALESCE($23,1), COALESCE($24,1),
+                COALESCE($25,500), COALESCE($26,0),
+                COALESCE($27,''), COALESCE($28,'')
+            )
             ON CONFLICT (user_id, lower(nomi)) DO UPDATE SET
                 kategoriya       = EXCLUDED.kategoriya,
                 birlik           = EXCLUDED.birlik,
                 olish_narxi      = EXCLUDED.olish_narxi,
                 sotish_narxi     = EXCLUDED.sotish_narxi,
-                min_sotish_narxi = EXCLUDED.min_sotish_narxi
+                min_sotish_narxi = EXCLUDED.min_sotish_narxi,
+                brend            = COALESCE(NULLIF(EXCLUDED.brend,''), tovarlar.brend),
+                podkategoriya    = COALESCE(NULLIF(EXCLUDED.podkategoriya,''), tovarlar.podkategoriya),
+                guruh            = COALESCE(NULLIF(EXCLUDED.guruh,''), tovarlar.guruh),
+                ishlab_chiqaruvchi = COALESCE(NULLIF(EXCLUDED.ishlab_chiqaruvchi,''), tovarlar.ishlab_chiqaruvchi),
+                segment          = COALESCE(NULLIF(EXCLUDED.segment,''), tovarlar.segment),
+                shtrix_kod       = COALESCE(NULLIF(EXCLUDED.shtrix_kod,''), tovarlar.shtrix_kod),
+                artikul          = COALESCE(NULLIF(EXCLUDED.artikul,''), tovarlar.artikul),
+                sap_kod          = COALESCE(NULLIF(EXCLUDED.sap_kod,''), tovarlar.sap_kod),
+                kod              = COALESCE(NULLIF(EXCLUDED.kod,''), tovarlar.kod),
+                ikpu_kod         = COALESCE(NULLIF(EXCLUDED.ikpu_kod,''), tovarlar.ikpu_kod),
+                gtin             = COALESCE(NULLIF(EXCLUDED.gtin,''), tovarlar.gtin),
+                hajm             = EXCLUDED.hajm,
+                ogirlik          = EXCLUDED.ogirlik,
+                blokda_soni      = EXCLUDED.blokda_soni,
+                korobkada_soni   = EXCLUDED.korobkada_soni,
+                saralash         = EXCLUDED.saralash,
+                yaroqlilik_muddati = EXCLUDED.yaroqlilik_muddati,
+                tavsif           = COALESCE(NULLIF(EXCLUDED.tavsif,''), tovarlar.tavsif),
+                savdo_yonalishi  = COALESCE(NULLIF(EXCLUDED.savdo_yonalishi,''), tovarlar.savdo_yonalishi),
+                yangilangan      = NOW()
             RETURNING id, nomi
-        """, uid, data.nomi.strip(), data.kategoriya, data.birlik,
-            data.olish_narxi, data.sotish_narxi, data.min_sotish_narxi,
-            data.qoldiq, data.min_qoldiq)
+        """,
+            uid, d["nomi"], d["kategoriya"], d["birlik"],
+            d["olish_narxi"], d["sotish_narxi"], d["min_sotish_narxi"],
+            d["qoldiq"], d["min_qoldiq"],
+            d.get("brend"), d.get("podkategoriya"), d.get("guruh"),
+            d.get("ishlab_chiqaruvchi"), d.get("segment"),
+            d.get("shtrix_kod"), d.get("artikul"), d.get("sap_kod"),
+            d.get("kod"), d.get("ikpu_kod"), d.get("gtin"),
+            d.get("hajm"), d.get("ogirlik"),
+            d.get("blokda_soni"), d.get("korobkada_soni"),
+            d.get("saralash"), d.get("yaroqlilik_muddati"),
+            d.get("tavsif"), d.get("savdo_yonalishi"),
+        )
     await user_cache_tozala(uid)
     log.info("📦 Tovar yaratildi: %s (uid=%d)", data.nomi, uid)
     return {"id": tovar["id"], "nomi": tovar["nomi"], "status": "yaratildi"}
@@ -193,14 +304,31 @@ async def tovar_yangilash(tovar_id: int, data: TovarYangilaSorov,
     if not yangilar:
         raise HTTPException(400, "Yangilash uchun kamida 1 ta maydon kerak")
 
-    _RUXSAT = {"nomi", "kategoriya", "birlik", "olish_narxi", "sotish_narxi",
-               "min_sotish_narxi", "qoldiq", "min_qoldiq"}
+    _RUXSAT = {
+        "nomi", "kategoriya", "birlik", "olish_narxi", "sotish_narxi",
+        "min_sotish_narxi", "qoldiq", "min_qoldiq",
+        "brend", "podkategoriya", "guruh", "ishlab_chiqaruvchi", "segment",
+        "shtrix_kod", "artikul", "sap_kod", "kod", "ikpu_kod", "gtin",
+        "hajm", "ogirlik", "blokda_soni", "korobkada_soni",
+        "saralash", "yaroqlilik_muddati", "tavsif", "savdo_yonalishi",
+    }
     noma = set(yangilar.keys()) - _RUXSAT
     if noma:
         raise HTTPException(400, f"Ruxsat etilmagan maydon: {noma}")
 
-    set_q = ", ".join(f"{k} = ${i+3}" for i, k in enumerate(yangilar.keys()))
-    vals = list(yangilar.values())
+    # yangilangan timestamp avtomatik yangilanishi uchun
+    yangilar["yangilangan"] = "NOW()"  # SQL literal sentinel
+    set_parts = []
+    vals = []
+    idx = 3
+    for k, v in yangilar.items():
+        if k == "yangilangan":
+            set_parts.append("yangilangan = NOW()")
+        else:
+            set_parts.append(f"{k} = ${idx}")
+            vals.append(v)
+            idx += 1
+    set_q = ", ".join(set_parts)
 
     async with rls_conn(uid) as c:
         result = await c.execute(

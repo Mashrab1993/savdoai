@@ -34,8 +34,43 @@ export default function OrdersPage() {
   const [statusFilter, setStatusFilter] = useState<OrderStatus>("all")
   const [selectedOrder, setSelectedOrder] = useState<any>(null)
   const [sheetOpen, setSheetOpen] = useState(false)
+  const today = new Date().toISOString().split("T")[0]
+  const monthAgo = new Date(Date.now() - 30 * 86400000).toISOString().split("T")[0]
+  const [sanaDan, setSanaDan] = useState(monthAgo)
+  const [sanaGacha, setSanaGacha] = useState(today)
+  const [onlyDebt, setOnlyDebt] = useState(false)
+  const [exporting, setExporting] = useState(false)
 
-  const { data: rawOrders, loading, error, refetch } = useApi(() => savdoService.list({}))
+  const { data: rawOrders, loading, error, refetch } = useApi(
+    () => savdoService.list({ sana_dan: sanaDan, sana_gacha: sanaGacha, limit: 200 }),
+    [sanaDan, sanaGacha]
+  )
+
+  async function handleExcelExport() {
+    setExporting(true)
+    try {
+      const token = typeof window !== "undefined" ? localStorage.getItem("auth_token") : ""
+      const base  = process.env.NEXT_PUBLIC_API_URL || ""
+      const qs    = new URLSearchParams({ sana_dan: sanaDan, sana_gacha: sanaGacha })
+      const res   = await fetch(`${base}/api/v1/savdolar/excel?${qs}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      if (!res.ok) throw new Error("Export xatoligi")
+      const result = await res.json()
+      const bytes = Uint8Array.from(atob(result.content_base64), c => c.charCodeAt(0))
+      const blob  = new Blob([bytes], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" })
+      const url   = URL.createObjectURL(blob)
+      const a     = document.createElement("a")
+      a.href      = url
+      a.download  = result.filename || "reestr.xlsx"
+      a.click()
+      URL.revokeObjectURL(url)
+    } catch (err) {
+      alert(err instanceof Error ? err.message : String(err))
+    } finally {
+      setExporting(false)
+    }
+  }
 
   const orders = useMemo(() => {
     let items: any[] = []
@@ -55,8 +90,12 @@ export default function OrdersPage() {
       items = items.filter((o: any) => (o.holat || o.status || "") === statusFilter)
     }
 
+    if (onlyDebt) {
+      items = items.filter((o: any) => (o.qarz || 0) > 0)
+    }
+
     return items.sort((a: any, b: any) => (b.id || 0) - (a.id || 0))
-  }, [rawOrders, search, statusFilter])
+  }, [rawOrders, search, statusFilter, onlyDebt])
 
   const stats = useMemo(() => {
     const items: any[] = rawOrders
@@ -95,10 +134,19 @@ export default function OrdersPage() {
               Barcha buyurtmalar va sotuvlar
             </p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2 items-center">
+            <Input type="date" value={sanaDan} onChange={e => setSanaDan(e.target.value)}
+                   className="w-40" title="Sana dan" />
+            <span className="text-muted-foreground">—</span>
+            <Input type="date" value={sanaGacha} onChange={e => setSanaGacha(e.target.value)}
+                   className="w-40" title="Sana gacha" />
+            <Button variant={onlyDebt ? "default" : "outline"} size="sm"
+                    onClick={() => setOnlyDebt(d => !d)}>
+              Faqat qarzdor
+            </Button>
             <Button variant="outline" size="sm" onClick={() => refetch()}>Yangilash</Button>
-            <Button variant="outline" size="sm">
-              <Download className="w-4 h-4 mr-1" /> Export
+            <Button variant="outline" size="sm" onClick={handleExcelExport} disabled={exporting}>
+              <Download className="w-4 h-4 mr-1" /> {exporting ? "..." : "Excel"}
             </Button>
           </div>
         </div>
@@ -154,51 +202,63 @@ export default function OrdersPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-16">#</TableHead>
+                  <TableHead className="w-14">#</TableHead>
+                  <TableHead>Sana</TableHead>
                   <TableHead>Mijoz</TableHead>
-                  <TableHead className="text-center">Tovarlar</TableHead>
-                  <TableHead className="text-center">Summa</TableHead>
-                  <TableHead className="text-center">Holat</TableHead>
-                  <TableHead className="text-center">Sana</TableHead>
-                  <TableHead className="w-16"></TableHead>
+                  <TableHead className="hidden md:table-cell">Telefon</TableHead>
+                  <TableHead className="hidden lg:table-cell">Manzil</TableHead>
+                  <TableHead className="text-center">Tovar</TableHead>
+                  <TableHead className="text-right">Summa</TableHead>
+                  <TableHead className="text-right hidden sm:table-cell">To'landi</TableHead>
+                  <TableHead className="text-right">Qarz</TableHead>
+                  <TableHead className="w-10"></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {orders.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center py-10 text-muted-foreground">
+                    <TableCell colSpan={10} className="text-center py-10 text-muted-foreground">
                       <ShoppingCart className="w-10 h-10 mx-auto mb-2 opacity-30" />
                       Buyurtmalar topilmadi
                     </TableCell>
                   </TableRow>
                 ) : orders.map((o: any, i: number) => {
-                  const status = STATUS_MAP[o.holat || o.status || "yangi"] || STATUS_MAP.yangi
+                  const jami = Number(o.jami || o.total || 0)
+                  const tolandi = Number(o.tolangan || 0)
+                  const qarz = Number(o.qarz || 0)
+                  const sana = o.sana ? new Date(o.sana).toLocaleDateString("uz-UZ") : "-"
                   return (
-                    <TableRow key={o.id || i} className="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800" onClick={() => viewOrder(o)}>
-                      <TableCell className="font-mono font-bold">#{o.id}</TableCell>
+                    <TableRow key={o.id || i} className="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800"
+                              onClick={() => viewOrder(o)}>
+                      <TableCell className="font-mono text-xs">#{o.id}</TableCell>
+                      <TableCell className="text-sm">{sana}</TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          <User className="w-4 h-4 text-muted-foreground" />
-                          <span className="font-medium">{o.klient_ism || o.client_name || "Noma'lum"}</span>
+                          <User className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                          <span className="font-medium text-sm">{o.klient_ismi || o.klient_nomi || "Mijoz"}</span>
                         </div>
                       </TableCell>
-                      <TableCell className="text-center font-mono">
-                        {o.tovarlar_soni || o.items_count || "-"}
+                      <TableCell className="hidden md:table-cell text-xs text-muted-foreground">
+                        {o.telefon || "—"}
                       </TableCell>
-                      <TableCell className="text-center font-mono font-bold">
-                        {formatCurrency(o.jami || o.total || 0)}
+                      <TableCell className="hidden lg:table-cell text-xs text-muted-foreground max-w-[200px] truncate">
+                        {o.manzil || "—"}
                       </TableCell>
-                      <TableCell className="text-center">
-                        <Badge className={`text-xs ${status.color}`}>
-                          {status.label}
-                        </Badge>
+                      <TableCell className="text-center font-mono text-xs">
+                        {o.tovar_soni || o.items_count || 0}
                       </TableCell>
-                      <TableCell className="text-center text-sm text-muted-foreground">
-                        {o.yaratilgan || o.created_at || "-"}
+                      <TableCell className="text-right font-mono font-bold text-sm">
+                        {formatCurrency(jami)}
+                      </TableCell>
+                      <TableCell className="text-right font-mono text-sm hidden sm:table-cell text-emerald-600">
+                        {formatCurrency(tolandi)}
+                      </TableCell>
+                      <TableCell className={`text-right font-mono text-sm ${qarz > 0 ? "text-red-500 font-semibold" : "text-muted-foreground"}`}>
+                        {qarz > 0 ? formatCurrency(qarz) : "—"}
                       </TableCell>
                       <TableCell>
-                        <Button variant="ghost" size="sm">
-                          <Eye className="w-4 h-4" />
+                        <Button variant="ghost" size="icon" className="h-7 w-7">
+                          <Eye className="w-3.5 h-3.5" />
                         </Button>
                       </TableCell>
                     </TableRow>
