@@ -8,18 +8,18 @@ const REPORT_CATEGORIES = [
     label: "Sotuv hisobotlari",
     items: [
       { href: "/reports", label: "Kunlik/Haftalik/Oylik", icon: BarChart3 },
-      { href: "/reports", label: "Sotuv detallari", icon: FileText },
-      { href: "/reports", label: "Tovar bo'yicha", icon: Package },
-      { href: "/reports", label: "Hajm bo'yicha", icon: TrendingUp },
+      { href: "/reports/sales-detail", label: "Sotuv detallari", icon: FileText },
+      { href: "/reports/sales-detail", label: "Tovar bo'yicha", icon: Package },
+      { href: "/orders", label: "Buyurtmalar reestri", icon: ShoppingCart },
     ],
   },
   {
     label: "Mijoz hisobotlari",
     items: [
-      { href: "/reports", label: "Mijoz bo'yicha sotuv", icon: Users },
+      { href: "/reports/rfm", label: "RFM tahlil", icon: TrendingUp },
       { href: "/klient360", label: "Klient 360°", icon: Users },
       { href: "/sverka", label: "Akt sverka", icon: FileText },
-      { href: "/reports", label: "RFM tahlil", icon: TrendingUp },
+      { href: "/clients", label: "Klient ro'yxati", icon: Users },
     ],
   },
   {
