@@ -1546,6 +1546,173 @@ async def cmd_rfm(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         await msg.edit_text(f"❌ RFM xatosi: {e}")
 
 
+async def cmd_top_tovar(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    """/top_tovar [kun] — Top 10 eng ko'p sotilayotgan tovarlar.
+
+    Default 30 kun. Daromad, miqdor, foyda bo'yicha sortlangan.
+    """
+    if not await faol_tekshir(update):
+        return
+
+    text = update.message.text or ""
+    args = text.replace("/top_tovar", "").strip()
+    try:
+        kunlar = int(args) if args else 30
+    except ValueError:
+        kunlar = 30
+
+    uid = update.effective_user.id
+    msg = await update.message.reply_text(f"📦 Top tovarlar ({kunlar} kun)...")
+
+    try:
+        async with db._P().acquire() as c:
+            rows = await c.fetch("""
+                SELECT ch.tovar_nomi,
+                       SUM(ch.miqdor)                               AS miqdor,
+                       SUM(ch.jami)                                 AS jami,
+                       SUM((ch.sotish_narxi - ch.olish_narxi)
+                           * ch.miqdor)                             AS foyda,
+                       COUNT(DISTINCT ch.sessiya_id)                AS sotuv_soni
+                FROM chiqimlar ch
+                WHERE ch.user_id = $1
+                  AND ch.sana >= NOW() - make_interval(days => $2)
+                GROUP BY ch.tovar_nomi
+                ORDER BY jami DESC
+                LIMIT 10
+            """, uid, kunlar)
+
+        if not rows:
+            await msg.edit_text(f"📦 Oxirgi {kunlar} kunda sotuv yo'q.")
+            return
+
+        parts = [f"📦 *TOP 10 TOVAR* ({kunlar} kun)\n━━━━━━━━━━━━━━━━━━"]
+        for i, r in enumerate(rows, 1):
+            medal = "🥇" if i == 1 else "🥈" if i == 2 else "🥉" if i == 3 else f"{i}."
+            parts.append(
+                f"{medal} *{r['tovar_nomi'][:30]}*\n"
+                f"   {pul(r['jami'])} · {float(r['miqdor']):.0f} dona · "
+                f"{r['sotuv_soni']} marta"
+            )
+            if r['foyda']:
+                parts.append(f"   💰 foyda: {pul(r['foyda'])}")
+
+        jami = sum(float(r['jami']) for r in rows)
+        jami_foyda = sum(float(r['foyda'] or 0) for r in rows)
+        parts.append("━━━━━━━━━━━━━━━━━━")
+        parts.append(f"Jami: *{pul(jami)}* · foyda: *{pul(jami_foyda)}*")
+
+        await msg.edit_text("\n".join(parts), parse_mode=ParseMode.MARKDOWN)
+    except Exception as e:
+        log.error("cmd_top_tovar: %s", e, exc_info=True)
+        await msg.edit_text(f"❌ Xato: {e}")
+
+
+async def cmd_top_klient(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    """/top_klient [kun] — Top 10 eng ko'p xarid qilayotgan klientlar."""
+    if not await faol_tekshir(update):
+        return
+
+    text = update.message.text or ""
+    args = text.replace("/top_klient", "").strip()
+    try:
+        kunlar = int(args) if args else 30
+    except ValueError:
+        kunlar = 30
+
+    uid = update.effective_user.id
+    msg = await update.message.reply_text(f"👥 Top klientlar ({kunlar} kun)...")
+
+    try:
+        async with db._P().acquire() as c:
+            rows = await c.fetch("""
+                SELECT COALESCE(k.ism, ss.klient_ismi, 'Mijoz') AS ism,
+                       k.telefon,
+                       COUNT(*)                                 AS sotuv_soni,
+                       SUM(ss.jami)                             AS jami,
+                       SUM(ss.qarz)                             AS qarz,
+                       MAX(ss.sana)                             AS oxirgi
+                FROM sotuv_sessiyalar ss
+                LEFT JOIN klientlar k ON k.id = ss.klient_id
+                WHERE ss.user_id = $1
+                  AND ss.sana >= NOW() - make_interval(days => $2)
+                GROUP BY k.ism, ss.klient_ismi, k.telefon
+                ORDER BY jami DESC
+                LIMIT 10
+            """, uid, kunlar)
+
+        if not rows:
+            await msg.edit_text(f"👥 Oxirgi {kunlar} kunda klient yo'q.")
+            return
+
+        parts = [f"👥 *TOP 10 KLIENT* ({kunlar} kun)\n━━━━━━━━━━━━━━━━━━"]
+        for i, r in enumerate(rows, 1):
+            medal = "🥇" if i == 1 else "🥈" if i == 2 else "🥉" if i == 3 else f"{i}."
+            parts.append(
+                f"{medal} *{r['ism'][:25]}*"
+                f"{' ' + r['telefon'] if r['telefon'] else ''}\n"
+                f"   {pul(r['jami'])} · {r['sotuv_soni']} ta sotuv"
+            )
+            if r['qarz'] and float(r['qarz']) > 0:
+                parts.append(f"   ⚠️ qarz: {pul(r['qarz'])}")
+
+        jami = sum(float(r['jami']) for r in rows)
+        parts.append("━━━━━━━━━━━━━━━━━━")
+        parts.append(f"Jami: *{pul(jami)}*")
+
+        await msg.edit_text("\n".join(parts), parse_mode=ParseMode.MARKDOWN)
+    except Exception as e:
+        log.error("cmd_top_klient: %s", e, exc_info=True)
+        await msg.edit_text(f"❌ Xato: {e}")
+
+
+async def cmd_kategoriya_stat(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    """/kategoriya — Kategoriyalar bo'yicha sotuv ulushi (30 kun)."""
+    if not await faol_tekshir(update):
+        return
+
+    uid = update.effective_user.id
+    msg = await update.message.reply_text("📊 Kategoriya tahlili...")
+
+    try:
+        async with db._P().acquire() as c:
+            rows = await c.fetch("""
+                SELECT kategoriya,
+                       SUM(jami)                 AS jami,
+                       SUM(miqdor)               AS miqdor,
+                       COUNT(DISTINCT sessiya_id) AS sotuv_soni,
+                       SUM((sotish_narxi - olish_narxi) * miqdor) AS foyda
+                FROM chiqimlar
+                WHERE user_id = $1
+                  AND sana >= NOW() - INTERVAL '30 days'
+                GROUP BY kategoriya
+                ORDER BY jami DESC
+            """, uid)
+
+        if not rows:
+            await msg.edit_text("📊 30 kunda sotuv yo'q.")
+            return
+
+        jami_total = sum(float(r["jami"]) for r in rows) or 1
+        parts = ["📊 *KATEGORIYA BO'YICHA* (30 kun)\n━━━━━━━━━━━━━━━━━━"]
+        for r in rows:
+            j = float(r["jami"])
+            pct = (j / jami_total) * 100
+            bar = "█" * int(pct / 5) + "░" * (20 - int(pct / 5))
+            parts.append(
+                f"*{(r['kategoriya'] or 'Boshqa')[:14]}*\n"
+                f"`{bar}` {pct:.1f}%\n"
+                f"  {pul(j)} · foyda: {pul(r['foyda'] or 0)}"
+            )
+
+        parts.append("━━━━━━━━━━━━━━━━━━")
+        parts.append(f"JAMI: *{pul(jami_total)}*")
+
+        await msg.edit_text("\n".join(parts), parse_mode=ParseMode.MARKDOWN)
+    except Exception as e:
+        log.error("cmd_kategoriya: %s", e, exc_info=True)
+        await msg.edit_text(f"❌ Xato: {e}")
+
+
 async def cmd_raqobat(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     """Raqobatchi narx monitoring."""
     if not await faol_tekshir(update):
