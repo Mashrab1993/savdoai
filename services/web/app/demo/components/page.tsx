@@ -19,6 +19,7 @@ import CashboxBalance from "@/components/dashboard/cashbox-balance"
 import DebtorsList from "@/components/dashboard/debtors-list"
 import AgentRouteCard from "@/components/dashboard/agent-route-card"
 import SupplierBalance from "@/components/dashboard/supplier-balance"
+import PhotoReportGrid from "@/components/dashboard/photo-report-grid"
 import { useLocale } from "@/lib/locale-context"
 
 // ─── Synthetic data ─────────────────────────────────────────
@@ -204,6 +205,18 @@ const SUPPLIERS = [
   { id: 6, nomi: "Milk Gold",               telefon: "+998 90 444 55 66", kategoriya: "Sut",       balans: 5_800_000,  jami_xarid: 92_000_000,   aktiv_buyurtma: 2, oxirgi_kirim: new Date(Date.now() - 3 * 86400e3).toISOString(),  kredit_muddat_kun: 14 },
 ]
 
+// Placeholder photos from picsum (stable per seed)
+const PHOTOS = [
+  { id: 1, url: "https://picsum.photos/seed/savdoai1/800/800", thumb_url: "https://picsum.photos/seed/savdoai1/400/400", agent_ismi: "Sayitqulov Mashrab",  klient_ismi: "Do'kon Buyuk Ipak Yo'li", manzil: "Registon 42", turi: "tashrif" as const, vaqt: new Date(Date.now() - 2 * 3600e3).toISOString(),  izoh: "Mijoz hududida tashrif" },
+  { id: 2, url: "https://picsum.photos/seed/savdoai2/800/800", thumb_url: "https://picsum.photos/seed/savdoai2/400/400", agent_ismi: "Boriev Mirjalol",     klient_ismi: "Supermarket Registon",    manzil: "Universitet", turi: "qoldiq"  as const, vaqt: new Date(Date.now() - 3 * 3600e3).toISOString(),  izoh: "Tokchada qoldiq tekshiruvi" },
+  { id: 3, url: "https://picsum.photos/seed/savdoai3/800/800", thumb_url: "https://picsum.photos/seed/savdoai3/400/400", agent_ismi: "Babadjanova Nargiza", klient_ismi: "Mini Market Samarqand",   manzil: "Siyob bozori", turi: "aksiya" as const, vaqt: new Date(Date.now() - 5 * 3600e3).toISOString(),  izoh: "Yangi aksiya plakat joylashtirildi" },
+  { id: 4, url: "https://picsum.photos/seed/savdoai4/800/800", thumb_url: "https://picsum.photos/seed/savdoai4/400/400", agent_ismi: "Berdiyev Rahmatillo", klient_ismi: "Oziq-ovqat Urgut",       manzil: "Urgut markaz", turi: "defekt" as const, vaqt: new Date(Date.now() - 26 * 3600e3).toISOString(), izoh: "Nosoz qadoqlash — 3 dona" },
+  { id: 5, url: "https://picsum.photos/seed/savdoai5/800/800", thumb_url: "https://picsum.photos/seed/savdoai5/400/400", agent_ismi: "Sayitqulov Mashrab",  klient_ismi: "Do'kon Juma Charxin",    manzil: "Juma Charxin", turi: "tashrif" as const, vaqt: new Date(Date.now() - 28 * 3600e3).toISOString() },
+  { id: 6, url: "https://picsum.photos/seed/savdoai6/800/800", thumb_url: "https://picsum.photos/seed/savdoai6/400/400", agent_ismi: "Babadjanova Nargiza", klient_ismi: "Karvon Retail",          manzil: "Dahmazor",     turi: "qoldiq"  as const, vaqt: new Date(Date.now() - 30 * 3600e3).toISOString() },
+  { id: 7, url: "https://picsum.photos/seed/savdoai7/800/800", thumb_url: "https://picsum.photos/seed/savdoai7/400/400", agent_ismi: "Tursunov Jamshed",    klient_ismi: "Universal Jomboy",        manzil: "Jomboy",       turi: "aksiya" as const, vaqt: new Date(Date.now() - 48 * 3600e3).toISOString(), izoh: "Yangi brend displey" },
+  { id: 8, url: "https://picsum.photos/seed/savdoai8/800/800", thumb_url: "https://picsum.photos/seed/savdoai8/400/400", agent_ismi: "Boriev Mirjalol",     klient_ismi: "Klub Toy Xizmat",        manzil: "Siyob",        turi: "defekt" as const, vaqt: new Date(Date.now() - 72 * 3600e3).toISOString(), izoh: "Muddati o'tgan tovar" },
+]
+
 // ─── Page ───────────────────────────────────────────────────
 
 export default function DemoComponentsPage() {
@@ -325,6 +338,14 @@ export default function DemoComponentsPage() {
             12. SupplierBalance
           </p>
           <SupplierBalance suppliers={SUPPLIERS} />
+        </section>
+
+        {/* 13. Photo reports */}
+        <section>
+          <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+            13. PhotoReportGrid
+          </p>
+          <PhotoReportGrid photos={PHOTOS} />
         </section>
       </div>
     </AdminLayout>
