@@ -253,6 +253,59 @@ async def whisper_transcribe(
 #  HIGH-LEVEL HELPERS — asosiy kod ushbularni chaqiradi
 # ════════════════════════════════════════════════════════════════════
 
+async def gpt5_pro_responses(
+    system: str,
+    user: str,
+    *,
+    max_tokens: int = 3500,
+    model: str = "gpt-5.4-pro",
+) -> Optional[str]:
+    """
+    gpt-5.4-pro orqali chuqur audit (Responses API, deep reasoning).
+
+    Chat Completions endpoint bilan ishlamaydi — faqat /v1/responses.
+    Reasoning token'lari bor, javob sekin (60-150s), lekin sifat eng yuqori.
+    Faqat eng muhim auditlar uchun ishlating — arzon emas.
+
+    Returns plain text content of the assistant message, or None.
+    """
+    if not OPENAI_KEY:
+        return None
+
+    headers = {
+        "Authorization": f"Bearer {OPENAI_KEY}",
+        "Content-Type":  "application/json",
+    }
+    # Responses API: `instructions` + `input`
+    body = {
+        "model": model,
+        "instructions": system,
+        "input": user,
+        "max_output_tokens": max_tokens,
+    }
+    try:
+        async with httpx.AsyncClient(timeout=240) as cli:
+            r = await cli.post(
+                "https://api.openai.com/v1/responses",
+                json=body,
+                headers=headers,
+            )
+            if r.status_code >= 400:
+                log.warning("gpt5_pro_responses: %s %s", r.status_code, r.text[:300])
+                return None
+            data = r.json()
+            # Flatten the output_text from the message block
+            for item in data.get("output", []):
+                if item.get("type") == "message":
+                    for c in item.get("content", []):
+                        if c.get("type") == "output_text":
+                            return c.get("text", "")
+            return None
+    except Exception as e:
+        log.warning("gpt5_pro_responses: %s", e)
+        return None
+
+
 async def second_opinion(
     question: str,
     claude_answer: str,
