@@ -1,70 +1,272 @@
 "use client"
-import { useState } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { AdminLayout } from "@/components/layout/admin-layout"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
-import { Warehouse, Plus, Search, Pencil, Trash2, Check, X } from "lucide-react"
+import {
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+} from "@/components/ui/table"
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
+} from "@/components/ui/dialog"
+import {
+  Warehouse, Plus, Package, AlertCircle, Store, Building,
+} from "lucide-react"
+import { formatCurrency } from "@/lib/format"
+
+type Filial = {
+  id: number; nomi: string; manzil?: string; telefon?: string;
+  turi: "dokon" | "ombor" | "sklad" | "filial";
+  faol: boolean; asosiy: boolean;
+  tovar_soni: number; ombor_qiymat: number;
+}
+
+async function api<T = unknown>(path: string, opts: RequestInit = {}): Promise<T> {
+  const token = typeof window !== "undefined" ? localStorage.getItem("auth_token") : ""
+  const base  = process.env.NEXT_PUBLIC_API_URL || ""
+  const res = await fetch(`${base}${path}`, {
+    ...opts,
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+      ...(opts.headers || {}),
+    },
+  })
+  if (!res.ok) throw new Error(`HTTP ${res.status}`)
+  return res.json() as Promise<T>
+}
+
+const TURI_META: Record<string, { label: string; icon: typeof Store; color: string }> = {
+  dokon:  { label: "Do'kon",  icon: Store,     color: "bg-sky-100 text-sky-800" },
+  ombor:  { label: "Ombor",   icon: Warehouse, color: "bg-emerald-100 text-emerald-800" },
+  sklad:  { label: "Sklad",   icon: Package,   color: "bg-blue-100 text-blue-800" },
+  filial: { label: "Filial",  icon: Building,  color: "bg-purple-100 text-purple-800" },
+}
 
 export default function WarehousesPage() {
-  const [search, setSearch] = useState("")
+  const [filiallar, setFiliallar] = useState<Filial[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState("")
   const [showAdd, setShowAdd] = useState(false)
-  const [form, setForm] = useState({ nomi: "", kod: "", turi: "asosiy", faol: true })
-  const [warehouses] = useState<any[]>([])
-  const filtered = warehouses.filter(w => !search || (w.nomi || "").toLowerCase().includes(search.toLowerCase()))
+  const [saving, setSaving] = useState(false)
+  const [form, setForm] = useState({
+    nomi: "", manzil: "", telefon: "", turi: "dokon",
+  })
+
+  const fetchData = useCallback(async () => {
+    setLoading(true); setError("")
+    try {
+      const data = await api<{ items: Filial[] }>("/api/v1/filial")
+      setFiliallar(data.items || [])
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e))
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  useEffect(() => { fetchData() }, [fetchData])
+
+  async function handleSave() {
+    if (!form.nomi.trim()) return
+    setSaving(true)
+    try {
+      await api("/api/v1/filial", {
+        method: "POST",
+        body: JSON.stringify({
+          nomi:    form.nomi.trim(),
+          manzil:  form.manzil.trim(),
+          telefon: form.telefon.trim(),
+          turi:    form.turi,
+        }),
+      })
+      setShowAdd(false)
+      setForm({ nomi: "", manzil: "", telefon: "", turi: "dokon" })
+      fetchData()
+    } catch (e) {
+      alert(e instanceof Error ? e.message : String(e))
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const stats = {
+    jami:        filiallar.length,
+    dokonlar:    filiallar.filter(f => f.turi === "dokon").length,
+    omborlar:    filiallar.filter(f => f.turi === "ombor" || f.turi === "sklad").length,
+    jami_qiymat: filiallar.reduce((s, f) => s + Number(f.ombor_qiymat || 0), 0),
+  }
 
   return (
     <AdminLayout>
-      <div className="max-w-6xl mx-auto p-4 sm:p-6 space-y-6">
-        <div className="flex items-center justify-between">
-          <div><h1 className="text-2xl font-bold flex items-center gap-2"><Warehouse className="w-7 h-7 text-emerald-600" /> Skladlar</h1>
-            <p className="text-sm text-muted-foreground mt-1">Skladlar ro'yxati va boshqaruvi</p></div>
-          <Button onClick={() => setShowAdd(true)} className="bg-emerald-600 hover:bg-emerald-700"><Plus className="w-4 h-4 mr-1" /> Yangi sklad</Button>
+      <div className="max-w-6xl mx-auto p-4 sm:p-6 space-y-5">
+        <div className="flex items-center justify-between flex-wrap gap-3">
+          <div>
+            <h1 className="text-2xl font-bold flex items-center gap-2">
+              <Warehouse className="w-7 h-7 text-emerald-600" />
+              Omborlar va do&apos;konlar
+            </h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              Multi-filial boshqaruv — do&apos;kon, ombor, sklad, filial
+            </p>
+          </div>
+          <Button onClick={() => setShowAdd(true)}>
+            <Plus className="w-4 h-4 mr-1" /> Yangi
+          </Button>
         </div>
-        <div className="relative"><Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" /><Input placeholder="Qidirish..." value={search} onChange={e => setSearch(e.target.value)} className="pl-10" /></div>
-        <div className="bg-white dark:bg-gray-900 rounded-xl border">
-          <Table><TableHeader><TableRow>
-            <TableHead>ID</TableHead><TableHead>Nomi</TableHead><TableHead>Turi</TableHead><TableHead>Kod</TableHead>
-            <TableHead className="text-center">Ombordor</TableHead><TableHead className="text-center">Agentlar</TableHead>
-            <TableHead className="text-center">Buyurtma</TableHead><TableHead className="text-center">Kirim</TableHead>
-            <TableHead className="text-center">Ko'chirish</TableHead><TableHead className="text-center">Korreksiya</TableHead>
-            <TableHead className="text-center">Holat</TableHead><TableHead className="w-20"></TableHead>
-          </TableRow></TableHeader>
-            <TableBody>{filtered.length === 0 ? (
-              <TableRow><TableCell colSpan={12} className="text-center py-10 text-muted-foreground"><Warehouse className="w-10 h-10 mx-auto mb-2 opacity-30" />Skladlar topilmadi<div className="text-xs mt-1">Yangi sklad qo'shing</div></TableCell></TableRow>
-            ) : filtered.map((w: any, i: number) => (
-              <TableRow key={i}>
-                <TableCell className="font-mono">{w.id}</TableCell>
-                <TableCell className="font-medium">{w.nomi}</TableCell>
-                <TableCell><Badge variant="secondary">{w.turi || "Asosiy"}</Badge></TableCell>
-                <TableCell className="font-mono">{w.kod || "-"}</TableCell>
-                <TableCell className="text-center">{w.ombordor || "-"}</TableCell>
-                <TableCell className="text-center">{w.agentlar_soni || 0}</TableCell>
-                <TableCell className="text-center">{w.buyurtma ? <Check className="w-4 h-4 text-emerald-500 mx-auto" /> : <X className="w-4 h-4 text-gray-300 mx-auto" />}</TableCell>
-                <TableCell className="text-center">{w.kirim ? <Check className="w-4 h-4 text-emerald-500 mx-auto" /> : <X className="w-4 h-4 text-gray-300 mx-auto" />}</TableCell>
-                <TableCell className="text-center">{w.kochirish ? <Check className="w-4 h-4 text-emerald-500 mx-auto" /> : <X className="w-4 h-4 text-gray-300 mx-auto" />}</TableCell>
-                <TableCell className="text-center">{w.korreksiya ? <Check className="w-4 h-4 text-emerald-500 mx-auto" /> : <X className="w-4 h-4 text-gray-300 mx-auto" />}</TableCell>
-                <TableCell className="text-center"><Badge className={w.faol ? "bg-emerald-100 text-emerald-800" : "bg-gray-100 text-gray-600"}>{w.faol ? "Faol" : "Nofaol"}</Badge></TableCell>
-                <TableCell><div className="flex gap-1"><Button variant="ghost" size="sm"><Pencil className="w-3 h-3" /></Button><Button variant="ghost" size="sm" className="text-red-500"><Trash2 className="w-3 h-3" /></Button></div></TableCell>
-              </TableRow>
-            ))}</TableBody>
-          </Table>
-        </div>
-        <Dialog open={showAdd} onOpenChange={setShowAdd}><DialogContent><DialogHeader><DialogTitle>Yangi sklad</DialogTitle></DialogHeader>
-          <div className="space-y-4">
-            <div><label className="text-sm font-medium">Nomi *</label><Input value={form.nomi} onChange={e => setForm({...form, nomi: e.target.value})} placeholder="Sklad nomi" /></div>
-            <div className="grid grid-cols-2 gap-4">
-              <div><label className="text-sm font-medium">Kod</label><Input value={form.kod} onChange={e => setForm({...form, kod: e.target.value})} placeholder="Kod" /></div>
-              <div><label className="text-sm font-medium">Turi</label>
-                <select value={form.turi} onChange={e => setForm({...form, turi: e.target.value})} className="w-full border rounded-lg px-3 py-2 text-sm">
-                  <option value="asosiy">Asosiy</option><option value="tranzit">Tranzit</option><option value="vozvrat">Vozvrat</option>
-                </select></div>
+
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="bg-card border rounded-xl p-4">
+            <div className="text-xs text-muted-foreground">Jami filiallar</div>
+            <div className="text-2xl font-bold mt-1">{stats.jami}</div>
+          </div>
+          <div className="bg-card border rounded-xl p-4">
+            <div className="text-xs text-muted-foreground">Do&apos;konlar</div>
+            <div className="text-2xl font-bold mt-1 text-sky-600">{stats.dokonlar}</div>
+          </div>
+          <div className="bg-card border rounded-xl p-4">
+            <div className="text-xs text-muted-foreground">Omborlar</div>
+            <div className="text-2xl font-bold mt-1 text-emerald-600">{stats.omborlar}</div>
+          </div>
+          <div className="bg-card border rounded-xl p-4">
+            <div className="text-xs text-muted-foreground">Jami qiymat</div>
+            <div className="text-xl font-bold mt-1 text-emerald-600">
+              {formatCurrency(stats.jami_qiymat)}
             </div>
           </div>
-          <DialogFooter><Button variant="outline" onClick={() => setShowAdd(false)}>Bekor</Button><Button className="bg-emerald-600">Saqlash</Button></DialogFooter>
-        </DialogContent></Dialog>
+        </div>
+
+        {error && (
+          <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-red-700 flex items-center gap-2">
+            <AlertCircle className="w-5 h-5" /> {error}
+          </div>
+        )}
+
+        <div className="bg-card border rounded-xl overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-14">#</TableHead>
+                <TableHead>Nomi</TableHead>
+                <TableHead>Turi</TableHead>
+                <TableHead>Manzil</TableHead>
+                <TableHead>Telefon</TableHead>
+                <TableHead className="text-center">Tovarlar</TableHead>
+                <TableHead className="text-right">Qiymat</TableHead>
+                <TableHead className="text-center">Holat</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {loading ? (
+                <TableRow>
+                  <TableCell colSpan={8} className="text-center py-10">
+                    <div className="animate-spin h-6 w-6 border-b-2 border-emerald-500 rounded-full mx-auto" />
+                  </TableCell>
+                </TableRow>
+              ) : filiallar.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={8} className="text-center py-10 text-muted-foreground">
+                    <Warehouse className="w-10 h-10 mx-auto mb-2 opacity-30" />
+                    Filiallar topilmadi. Yangi qo&apos;shing!
+                  </TableCell>
+                </TableRow>
+              ) : filiallar.map((f, i) => {
+                const meta = TURI_META[f.turi] || TURI_META.dokon
+                const Icon = meta.icon
+                return (
+                  <TableRow key={f.id}>
+                    <TableCell className="font-mono text-xs">#{i + 1}</TableCell>
+                    <TableCell className="font-medium">
+                      {f.nomi}
+                      {f.asosiy && (
+                        <Badge className="ml-2 text-xs" variant="default">Asosiy</Badge>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <Badge className={meta.color}>
+                        <Icon className="w-3 h-3 mr-1 inline" />
+                        {meta.label}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-sm text-muted-foreground">
+                      {f.manzil || "—"}
+                    </TableCell>
+                    <TableCell className="text-sm text-muted-foreground">
+                      {f.telefon || "—"}
+                    </TableCell>
+                    <TableCell className="text-center font-mono">{f.tovar_soni || 0}</TableCell>
+                    <TableCell className="text-right font-mono font-bold">
+                      {formatCurrency(Number(f.ombor_qiymat || 0))}
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <Badge className={f.faol ? "bg-emerald-100 text-emerald-800" : "bg-gray-100 text-gray-700"}>
+                        {f.faol ? "Faol" : "Nofaol"}
+                      </Badge>
+                    </TableCell>
+                  </TableRow>
+                )
+              })}
+            </TableBody>
+          </Table>
+        </div>
+
+        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 text-sm text-blue-800">
+          <div className="font-bold mb-1">📦 Multi-filial ish tizimi:</div>
+          <div>
+            Har bir filial o&apos;zining tovar qoldiqlarini saqlaydi. Tovarlarni
+            filiallar orasida ko&apos;chirish uchun{" "}
+            <a href="/transfers" className="underline font-semibold">/transfers</a>{" "}
+            sahifasiga o&apos;ting. Asosiy filial birinchi yaratilgandan so&apos;ng
+            avtomatik belgilanadi.
+          </div>
+        </div>
+
+        <Dialog open={showAdd} onOpenChange={setShowAdd}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Yangi filial qo&apos;shish</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-3">
+              <div>
+                <Label>Nomi *</Label>
+                <Input value={form.nomi}
+                       onChange={e => setForm({ ...form, nomi: e.target.value })}
+                       placeholder="Masalan: Chorsu do'koni" />
+              </div>
+              <div>
+                <Label>Turi</Label>
+                <select
+                  value={form.turi}
+                  onChange={e => setForm({ ...form, turi: e.target.value })}
+                  className="w-full border rounded-md px-3 py-2 bg-background"
+                >
+                  <option value="dokon">Do&apos;kon</option>
+                  <option value="ombor">Ombor</option>
+                  <option value="sklad">Sklad</option>
+                  <option value="filial">Filial</option>
+                </select>
+              </div>
+              <div>
+                <Label>Manzil</Label>
+                <Input value={form.manzil}
+                       onChange={e => setForm({ ...form, manzil: e.target.value })} />
+              </div>
+              <div>
+                <Label>Telefon</Label>
+                <Input value={form.telefon}
+                       onChange={e => setForm({ ...form, telefon: e.target.value })} />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowAdd(false)}>Bekor</Button>
+              <Button onClick={handleSave} disabled={saving || !form.nomi.trim()}>
+                {saving ? "Saqlanmoqda..." : "Saqlash"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </AdminLayout>
   )

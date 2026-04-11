@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/dialog"
 import {
   PackagePlus, Plus, Search, Package, AlertCircle, Trash2,
-  TrendingUp, Download,
+  TrendingUp, Download, Upload,
 } from "lucide-react"
 import { formatCurrency } from "@/lib/format"
 import { kirimService, productService } from "@/lib/api/services"
@@ -141,6 +141,32 @@ export default function KirimPage() {
     }
   }
 
+  async function handleBulkImport(file: File) {
+    try {
+      const buf = await file.arrayBuffer()
+      const bytes = new Uint8Array(buf)
+      let binary = ""
+      for (let i = 0; i < bytes.byteLength; i++) binary += String.fromCharCode(bytes[i])
+      const base64 = btoa(binary)
+
+      const token = typeof window !== "undefined" ? localStorage.getItem("auth_token") : ""
+      const base  = process.env.NEXT_PUBLIC_API_URL || ""
+      const res = await fetch(
+        `${base}/api/v1/kirim/import/excel?file_base64=${encodeURIComponent(base64)}`,
+        { method: "POST", headers: { Authorization: `Bearer ${token}` } }
+      )
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      const result = await res.json()
+      alert(
+        `✓ ${result.saved} ta qator saqlandi` +
+        (result.errors?.length ? `\nXatolar: ${result.errors.length}\n${result.errors.slice(0, 3).join("\n")}` : "")
+      )
+      fetchData()
+    } catch (e) {
+      alert(e instanceof Error ? e.message : String(e))
+    }
+  }
+
   async function downloadShablon() {
     try {
       const r = await productService.shablonExcel()
@@ -174,6 +200,18 @@ export default function KirimPage() {
             <Input type="date" value={sanaGacha} onChange={e => setSanaGacha(e.target.value)} className="w-40" />
             <Button variant="outline" size="sm" onClick={downloadShablon}>
               <Download className="w-4 h-4 mr-1" /> Shablon
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => {
+              const input = document.createElement("input")
+              input.type = "file"
+              input.accept = ".xlsx,.xls"
+              input.onchange = e => {
+                const f = (e.target as HTMLInputElement).files?.[0]
+                if (f) handleBulkImport(f)
+              }
+              input.click()
+            }}>
+              <Upload className="w-4 h-4 mr-1" /> Bulk import
             </Button>
             <Button onClick={() => openAdd()}>
               <Plus className="w-4 h-4 mr-1" /> Yangi kirim
