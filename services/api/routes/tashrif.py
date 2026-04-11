@@ -133,3 +133,7 @@ async def nasiya_belgilash(sotuv_id: int, body: NasiyaBody, uid: int = Depends(g
             WHERE id = $2 AND user_id = $3
         """, str(body.nasiya_kun), sotuv_id, uid)
         return {"muvaffaqiyat": True, "nasiya_kun": body.nasiya_kun}
+
+
+# Mount amallar_router into the main exported router
+router.include_router(amallar_router)

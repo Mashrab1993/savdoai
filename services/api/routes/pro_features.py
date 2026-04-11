@@ -85,3 +85,4 @@ from fastapi import APIRouter as _AR
 router = _AR()
 router.include_router(k360_router)
 router.include_router(route_router)
+router.include_router(game_router)

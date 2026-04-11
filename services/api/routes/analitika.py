@@ -179,3 +179,5 @@ from fastapi import APIRouter as _AR
 router = _AR()
 router.include_router(abc_router)
 router.include_router(churn_router)
+router.include_router(cohort_router)
+router.include_router(webhook_router)

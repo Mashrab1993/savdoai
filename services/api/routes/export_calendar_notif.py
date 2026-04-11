@@ -228,3 +228,4 @@ from fastapi import APIRouter as _AR
 router = _AR()
 router.include_router(export_router)
 router.include_router(calendar_router)
+router.include_router(notif_router)
