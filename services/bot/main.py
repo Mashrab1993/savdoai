@@ -843,7 +843,7 @@ from services.bot.handlers.commands import (
     cmd_crm, cmd_chegirma, cmd_prognoz, cmd_raqobat, cmd_rfm,
     cmd_top_tovar, cmd_top_klient, cmd_kategoriya_stat, cmd_ombor_qiymati,
     cmd_sotuv_today, cmd_kirim_today,
-    cmd_zayavkalar, cmd_otgruzka, cmd_yetkazildi,
+    cmd_zayavkalar, cmd_otgruzka, cmd_yetkazildi, cmd_bekor_sotuv,
 )
 from services.bot.handlers.callbacks import (
     eksport_cb, nakladnoy_sessiya_cb, menyu_cb, paginatsiya_cb,
@@ -1170,6 +1170,7 @@ def ilovani_qur(conf:Config) -> Application:
     app.add_handler(CommandHandler("zayavkalar",       cmd_zayavkalar))
     app.add_handler(CommandHandler("otgruzka",         cmd_otgruzka))
     app.add_handler(CommandHandler("yetkazildi",       cmd_yetkazildi))
+    app.add_handler(CommandHandler("bekor_sotuv",      cmd_bekor_sotuv))
     app.add_handler(CallbackQueryHandler(barcode_cb,   pattern=r"^bc:"))
     # ═══ v25.3.2 KUCHLI HANDLERLAR — Qarz eslatma, KPI, Loyalty ═══
     from services.bot.handlers.yangi import register_yangi_handlers

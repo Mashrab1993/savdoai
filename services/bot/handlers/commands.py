@@ -1694,6 +1694,70 @@ async def cmd_yetkazildi(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(f"❌ Xato: {e}")
 
 
+async def cmd_bekor_sotuv(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    """/bekor_sotuv <id> [sabab] — Sotuvni bekor qilish + qoldiqni qaytarish."""
+    if not await faol_tekshir(update):
+        return
+    text = update.message.text or ""
+    parts = text.split(maxsplit=2)
+    if len(parts) < 2 or not parts[1].isdigit():
+        await update.message.reply_text(
+            "❌ *Bekor qilish*\n\n"
+            "Ishlatilishi: `/bekor_sotuv <id> [sabab]`\n"
+            "Masalan: `/bekor_sotuv 42 Mijoz rad etdi`\n\n"
+            "Bu zayavkani bekor qiladi va tovar qoldiqlarini qaytaradi.",
+            parse_mode=ParseMode.MARKDOWN
+        )
+        return
+
+    sess_id = int(parts[1])
+    sabab = parts[2] if len(parts) > 2 else ""
+    uid = update.effective_user.id
+    try:
+        async with db._P().acquire() as c:
+            async with c.transaction():
+                sess = await c.fetchrow(
+                    "SELECT id, holat, klient_ismi, jami FROM sotuv_sessiyalar "
+                    "WHERE id=$1 AND user_id=$2", sess_id, uid
+                )
+                if not sess:
+                    await update.message.reply_text(f"❌ Sotuv #{sess_id} topilmadi.")
+                    return
+                if sess["holat"] == "bekor":
+                    await update.message.reply_text(f"⚠️ Sotuv #{sess_id} allaqachon bekor qilingan.")
+                    return
+
+                # Qoldiqni qaytarish
+                chiqimlar = await c.fetch(
+                    "SELECT tovar_id, miqdor FROM chiqimlar WHERE sessiya_id=$1 AND tovar_id IS NOT NULL",
+                    sess_id
+                )
+                for ch in chiqimlar:
+                    await c.execute(
+                        "UPDATE tovarlar SET qoldiq = qoldiq + $1 WHERE id=$2 AND user_id=$3",
+                        ch["miqdor"], ch["tovar_id"], uid
+                    )
+
+                await c.execute("""
+                    UPDATE sotuv_sessiyalar
+                    SET holat = 'bekor', bekor_vaqti = NOW(),
+                        bekor_sabab = $1, holat_yangilangan = NOW()
+                    WHERE id = $2 AND user_id = $3
+                """, sabab or None, sess_id, uid)
+
+        await update.message.reply_text(
+            f"🔴 Sotuv #{sess_id} bekor qilindi.\n"
+            f"Mijoz: {sess['klient_ismi'] or 'Mijoz'}\n"
+            f"Summa: {pul(sess['jami'])}\n"
+            f"Qaytarildi: {len(chiqimlar)} ta tovar qoldig'i\n"
+            + (f"Sabab: _{sabab}_" if sabab else ""),
+            parse_mode=ParseMode.MARKDOWN
+        )
+    except Exception as e:
+        log.error("bekor_sotuv: %s", e, exc_info=True)
+        await update.message.reply_text(f"❌ Xato: {e}")
+
+
 async def cmd_sotuv_today(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     """/sotuv_today — Bugungi barcha sotuvlar tafsiloti."""
     if not await faol_tekshir(update):
