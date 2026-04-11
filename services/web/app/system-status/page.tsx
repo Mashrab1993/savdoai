@@ -15,7 +15,7 @@ interface ServiceStatus {
 
 export default function SystemStatusPage() {
   const [services, setServices] = useState<ServiceStatus[]>([
-    { name: "API serveri", status: "operational", latency: 45, uptime: 99.98, icon: Server },
+    { name: "Backend API", status: "operational", latency: 45, uptime: 99.98, icon: Server },
     { name: "Web panel", status: "operational", latency: 89, uptime: 99.99, icon: Server },
     { name: "PostgreSQL", status: "operational", latency: 12, uptime: 99.95, icon: Database },
     { name: "Redis cache", status: "operational", latency: 3, uptime: 99.99, icon: Zap },
@@ -24,10 +24,21 @@ export default function SystemStatusPage() {
   ])
 
   const checkStatus = async () => {
+    const base = process.env.NEXT_PUBLIC_API_URL || ""
+    const started = Date.now()
     try {
-      const res = await fetch("https://web-production-30ebb.up.railway.app/health")
-      // Update statuses based on real check
-    } catch {}
+      const res = await fetch(`${base}/health`)
+      const latency = Date.now() - started
+      setServices(prev => prev.map(s =>
+        s.name === "Backend API"
+          ? { ...s, status: res.ok ? "operational" : "degraded", latency }
+          : s
+      ))
+    } catch {
+      setServices(prev => prev.map(s =>
+        s.name === "Backend API" ? { ...s, status: "down" } : s
+      ))
+    }
   }
 
   useEffect(() => {
