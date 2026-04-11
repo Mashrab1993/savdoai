@@ -244,6 +244,57 @@ async def hisobot_kunlik_trend(kunlar: int = 30, uid: int = Depends(get_uid)):
     return [dict(r) for r in rows]
 
 
+@router.get("/audit-log")
+async def audit_log_list(
+    limit: int = 100,
+    offset: int = 0,
+    jadval: Optional[str] = None,
+    amal: Optional[str] = None,
+    uid: int = Depends(get_uid),
+):
+    """Audit log — foydalanuvchi amallarining tarixi.
+
+    Har bir amal (bekor_qilish, yangilash va h.k.) log qilinadi.
+    """
+    limit = min(limit, 500)
+    where = ["user_id = $1"]
+    params: list = [uid]
+    if jadval:
+        params.append(jadval)
+        where.append(f"jadval = ${len(params)}")
+    if amal:
+        params.append(amal)
+        where.append(f"amal = ${len(params)}")
+    where_sql = " AND ".join(where)
+
+    params.append(limit); params.append(offset)
+
+    async with rls_conn(uid) as c:
+        try:
+            rows = await c.fetch(f"""
+                SELECT id, user_id, amal, jadval, yozuv_id,
+                       eski, yangi, ip, manba, sana
+                FROM audit_log
+                WHERE {where_sql}
+                ORDER BY sana DESC
+                LIMIT ${len(params)-1} OFFSET ${len(params)}
+            """, *params)
+            stats = await c.fetchrow(f"""
+                SELECT COUNT(*) AS jami,
+                       COUNT(DISTINCT jadval) AS turli_jadval,
+                       COUNT(DISTINCT amal) AS turli_amal
+                FROM audit_log WHERE {where_sql}
+            """, *params[:-2])
+        except Exception as e:
+            log.warning("audit_log: %s", e)
+            return {"items": [], "stats": {}}
+
+    return {
+        "items": [dict(r) for r in rows],
+        "stats": dict(stats) if stats else {},
+    }
+
+
 @router.get("/photo-reports")
 async def photo_reports(
     sana_dan: Optional[str] = None,

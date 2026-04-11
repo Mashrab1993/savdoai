@@ -70,9 +70,10 @@ async def qoldiq_qaytarish(conn, uid: int, sotuv_id: int) -> dict:
     # shuning uchun faqat audit_log yozuvi qoldi)
     try:
         await conn.execute("""
-            INSERT INTO audit_log (user_id, amal, jadval, yozuv_id, eski_qiymat, yangi_qiymat)
-            VALUES ($1, 'bekor_qilish', 'sotuv_sessiyalar', $2, NULL, $3)
-        """, uid, sotuv_id, f"Qoldiq qaytarildi: {len(qaytarilgan)} tovar")
+            INSERT INTO audit_log (user_id, amal, jadval, yozuv_id, eski, yangi)
+            VALUES ($1, 'bekor_qilish', 'sotuv_sessiyalar', $2, NULL, $3::jsonb)
+        """, uid, sotuv_id,
+             __import__("json").dumps({"izoh": f"Qoldiq qaytarildi: {len(qaytarilgan)} tovar"}))
     except Exception as e:
         log.debug("audit_log yozib bo'lmadi: %s", e)
 
