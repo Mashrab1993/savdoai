@@ -1178,15 +1178,14 @@ async def sotuv_saqlash(data: SotuvSo_rov, request: Request, uid: int = Depends(
                 tovar_id = tovar["id"] if tovar else None
                 olish = float(tovar["olish_narxi"]) if tovar else 0
 
-                # Chiqim yozuvi
+                # Chiqim yozuvi — foyda virtual hisoblanadi (schema'da bu ustun yo'q)
                 await c.execute("""
                     INSERT INTO chiqimlar
-                        (user_id, sessiya_id, tovar_id, tovar_nomi, klient_ismi,
-                         miqdor, birlik, sotish_narxi, jami, olish_narxi, foyda)
+                        (user_id, sessiya_id, klient_id, tovar_id, tovar_nomi, klient_ismi,
+                         miqdor, birlik, sotish_narxi, jami, olish_narxi)
                     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
-                """, uid, sess_id, tovar_id, nomi, klient_ismi or None,
+                """, uid, sess_id, klient_id, tovar_id, nomi, klient_ismi or None,
                     miqdor, birlik, narx, t_jami, olish,
-                    t_jami - (olish * miqdor),
                 )
 
                 # Qoldiq kamaytirish
@@ -1200,8 +1199,9 @@ async def sotuv_saqlash(data: SotuvSo_rov, request: Request, uid: int = Depends(
             if qarz_summa > 0 and klient_id:
                 await c.execute("""
                     INSERT INTO qarzlar
-                        (user_id, klient_id, klient_ismi, sessiya_id, summa, qolgan, dastlabki_summa)
-                    VALUES ($1,$2,$3,$4,$5,$5,$5)
+                        (user_id, klient_id, klient_ismi, sessiya_id,
+                         dastlabki_summa, qolgan, tolangan)
+                    VALUES ($1,$2,$3,$4,$5,$5,0)
                 """, uid, klient_id, klient_ismi, sess_id, qarz_summa)
 
             # 5. Klient jami_sotib yangilash (har doim — naqd yoki qarz)
