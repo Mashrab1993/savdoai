@@ -16,6 +16,7 @@ import PnLReport from "@/components/dashboard/pnl-report"
 import Client360View from "@/components/dashboard/client-360-view"
 import WarehouseTransferBoard from "@/components/dashboard/warehouse-transfer-board"
 import CashboxBalance from "@/components/dashboard/cashbox-balance"
+import DebtorsList from "@/components/dashboard/debtors-list"
 import { useLocale } from "@/lib/locale-context"
 
 // ─── Synthetic data ─────────────────────────────────────────
@@ -173,6 +174,15 @@ const CASHBOX = {
   ],
 }
 
+const DEBTORS = [
+  { klient_id: 4, klient_ismi: "Oziq-ovqat Urgut",         telefon: "+998 93 456 78 90", joriy_qarz: 14_200_000, kredit_limit: 15_000_000, qarz_soni: 3, eng_eski_muddat: new Date(Date.now() - 120 * 86400e3).toISOString(), oxirgi_tolov: new Date(Date.now() - 45 * 86400e3).toISOString() },
+  { klient_id: 7, klient_ismi: "Old-market Pastarg'om",    telefon: "+998 97 111 22 33", joriy_qarz: 8_500_000,  kredit_limit: 10_000_000, qarz_soni: 2, eng_eski_muddat: new Date(Date.now() - 75 * 86400e3).toISOString(),  oxirgi_tolov: new Date(Date.now() - 30 * 86400e3).toISOString() },
+  { klient_id: 8, klient_ismi: "Karvon Retail",             telefon: "+998 90 555 44 33", joriy_qarz: 5_200_000,  kredit_limit: 8_000_000,  qarz_soni: 1, eng_eski_muddat: new Date(Date.now() - 42 * 86400e3).toISOString(),  oxirgi_tolov: new Date(Date.now() - 14 * 86400e3).toISOString() },
+  { klient_id: 2, klient_ismi: "Mini Market Samarqand",    telefon: "+998 91 234 56 78", joriy_qarz: 3_200_000,  kredit_limit: 10_000_000, qarz_soni: 2, eng_eski_muddat: new Date(Date.now() - 18 * 86400e3).toISOString(),  oxirgi_tolov: new Date(Date.now() - 5 * 86400e3).toISOString() },
+  { klient_id: 9, klient_ismi: "Do'kon Juma Charxin",      telefon: "+998 94 333 22 11", joriy_qarz: 1_850_000,  kredit_limit: 5_000_000,  qarz_soni: 1, eng_eski_muddat: new Date(Date.now() - 5 * 86400e3).toISOString(),   oxirgi_tolov: new Date(Date.now() - 2 * 86400e3).toISOString() },
+  { klient_id: 1, klient_ismi: "Do'kon Buyuk Ipak Yo'li",  telefon: "+998 90 123 45 67", joriy_qarz: 12_500_000, kredit_limit: 50_000_000, qarz_soni: 4, eng_eski_muddat: new Date(Date.now() - 3 * 86400e3).toISOString(),   oxirgi_tolov: new Date(Date.now() - 1 * 86400e3).toISOString() },
+]
+
 // ─── Page ───────────────────────────────────────────────────
 
 export default function DemoComponentsPage() {
@@ -267,6 +277,14 @@ export default function DemoComponentsPage() {
             9. CashboxBalance
           </p>
           <CashboxBalance data={CASHBOX} />
+        </section>
+
+        {/* 10. Debtors list */}
+        <section>
+          <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+            10. DebtorsList
+          </p>
+          <DebtorsList debtors={DEBTORS} />
         </section>
       </div>
     </AdminLayout>
