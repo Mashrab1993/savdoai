@@ -208,8 +208,8 @@ async def _tovar_barcode_bilan(uid: int, barcode: str) -> dict | None:
     try:
         async with db._P().acquire() as c:
             row = await c.fetchrow(
-                "SELECT id, nomi, qoldiq, birlik, sotish_narxi, olish_narxi, barcode "
-                "FROM tovarlar WHERE user_id=$1 AND barcode=$2",
+                "SELECT id, nomi, qoldiq, birlik, sotish_narxi, olish_narxi, shtrix_kod "
+                "FROM tovarlar WHERE user_id=$1 AND shtrix_kod=$2",
                 uid,
                 barcode,
             )

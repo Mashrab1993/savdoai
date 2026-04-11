@@ -201,11 +201,11 @@ async def _muddati_otgan_qarzlar(uid: int) -> list[dict]:
     try:
         async with db._P().acquire() as c:
             rows = await c.fetch(
-                "SELECT k.ism AS klient_ismi, q.summa - q.tolangan AS qoldiq "
+                "SELECT k.ism AS klient_ismi, q.qolgan AS qoldiq "
                 "FROM qarzlar q JOIN klientlar k ON k.id = q.klient_id "
-                "WHERE q.user_id=$1 AND q.summa > q.tolangan "
-                "AND q.muddat < CURRENT_DATE "
-                "ORDER BY (q.summa - q.tolangan) DESC LIMIT 10",
+                "WHERE q.user_id=$1 AND NOT q.yopildi "
+                "AND q.muddat IS NOT NULL AND q.muddat < CURRENT_DATE "
+                "ORDER BY q.qolgan DESC LIMIT 10",
                 uid,
             )
             return [dict(r) for r in rows]
