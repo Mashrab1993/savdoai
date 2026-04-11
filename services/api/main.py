@@ -497,6 +497,13 @@ try:
 except Exception as e:
     log.warning("⚠️ SD Agent yuklanmadi: %s", e)
 
+try:
+    from services.api.routes.suppliers import router as suppliers_router
+    app.include_router(suppliers_router, tags=["Suppliers"])
+    log.info("✅ Suppliers/Purchase moduli ulandi")
+except Exception as e:
+    log.warning("⚠️ Suppliers yuklanmadi: %s", e)
+
 # ════════════════════════════════════════════════════════════
 #  JWT + AUTH — deps.py dan import (shared bilan kassa/ws)
 # ════════════════════════════════════════════════════════════
