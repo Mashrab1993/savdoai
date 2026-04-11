@@ -662,35 +662,39 @@ export const subscriptionService = {
 }
 
 // ── Aksiya (SalesDoc: Bonus va chegirmalar) ──────────────────────────────────
+// Backend router prefix is /aksiya (NO /api/v1 prefix)
 export const aksiyaService = {
-  list: () => api.get<unknown[]>("/api/v1/aksiyalar"),
-  get: (id: number) => api.get<unknown>(`/api/v1/aksiya/${id}`),
-  create: (data: unknown) => api.post<unknown>("/api/v1/aksiya", data),
-  calculate: (tovarId: number, qty: number) =>
-    api.get<unknown>(`/api/v1/aksiya/hisob?tovar_id=${tovarId}&miqdor=${qty}`),
+  list: () => api.get<unknown[]>("/aksiya"),
+  create: (data: unknown) => api.post<unknown>("/aksiya", data),
+  setHolat: (id: number, faol: boolean) =>
+    api.put<unknown>(`/aksiya/${id}/holat?faol=${faol}`, {}),
+  calculate: (data: unknown) => api.post<unknown>("/aksiya/hisoblash", data),
 }
 
-// ── Analitika (SalesDoc: Hisobotlar va tahlil) ───────────────────────────────
+// ── Analitika ───────────────────────────────
+// Backend uses /analitika/... (no /api/v1 prefix)
 export const analitikaService = {
-  abcXyz: () => api.get<unknown>("/api/v1/analitika/abc-xyz"),
-  churn: () => api.get<unknown>("/api/v1/analitika/churn"),
-  cohort: () => api.get<unknown>("/api/v1/analitika/cohort"),
+  abcXyz: () => api.get<unknown>("/analitika/abc-xyz"),
+  churn:  () => api.get<unknown>("/analitika/churn"),
+  cohort: () => api.get<unknown>("/analitika/cohort"),
 }
 
-// ── Moliya (SalesDoc: Moliyaviy hisobotlar) ──────────────────────────────────
+// ── Moliya (P&L / Balance / Cash Flow / KPI) ─────────────────────────────────
+// Backend: /moliya/... (no /api/v1 prefix, Uzbek endpoint names)
 export const moliyaService = {
-  pnl: (period?: string) => api.get<unknown>(`/api/v1/moliya/pnl${period ? `?davr=${period}` : ""}`),
-  balans: () => api.get<unknown>("/api/v1/moliya/balans"),
-  cashFlow: (period?: string) => api.get<unknown>(`/api/v1/moliya/cash-flow${period ? `?davr=${period}` : ""}`),
-  kpiMoliya: () => api.get<unknown>("/api/v1/moliya/kpi"),
+  foydaZarar:    () => api.get<unknown>("/moliya/foyda-zarar"),
+  balans:        () => api.get<unknown>("/moliya/balans"),
+  pulOqimi:      () => api.get<unknown>("/moliya/pul-oqimi"),
+  koeffitsientlar: () => api.get<unknown>("/moliya/koeffitsientlar"),
 }
 
 // ── Tashrif (SalesDoc: Check-in/out, vizitlar) ───────────────────────────────
+// Backend router prefix is /tashrif (no /api/v1)
 export const tashrifService = {
   checkIn: (data: { lat: number; lng: number; klient_id?: number }) =>
-    api.post<unknown>("/api/v1/tashrif/checkin", data),
-  checkOut: (id: number) => api.post<unknown>(`/api/v1/tashrif/checkout/${id}`, {}),
-  list: (sana?: string) => api.get<unknown[]>(`/api/v1/tashriflar${sana ? `?sana=${sana}` : ""}`),
+    api.post<unknown>("/tashrif/checkin", data),
+  checkOut: (id: number) => api.post<unknown>(`/tashrif/checkout/${id}`, {}),
+  history: (limit = 100) => api.get<unknown[]>(`/tashrif/tarix?limit=${limit}`),
 }
 
 // ── Tovarlar V2 (SalesDoc: Kengaytirilgan tovar boshqaruvi) ──────────────────
@@ -711,37 +715,43 @@ export const exportService = {
 }
 
 // ── GPS (SalesDoc: GPS monitoring) ───────────────────────────────────────────
+// Backend: /gps/... (no /api/v1 prefix). Endpoints: POST /gps/tracks, GET /gps/tracks, GET /gps/oxirgi
 export const gpsService = {
   track: (data: { lat: number; lng: number }) =>
-    api.post<unknown>("/api/v1/gps/track", data),
+    api.post<unknown>("/gps/tracks", data),
   history: (agentId?: number, sana?: string) =>
-    api.get<unknown[]>(`/api/v1/gps/history${agentId ? `?agent_id=${agentId}` : ""}${sana ? `&sana=${sana}` : ""}`),
+    api.get<unknown[]>(`/gps/tracks${sana ? `?sana=${sana}` : ""}`),
 }
 
-// ── Enterprise (SalesDoc: Vazifa va uskunalar) ───────────────────────────────
+// ── Enterprise (topshiriq/foto/uskuna/filial/kassa) ──────────────────────────
+// Backend: /topshiriq, /foto, /uskuna (no /api/v1 prefix)
 export const enterpriseService = {
-  tasks: () => api.get<unknown[]>("/api/v1/vazifalar"),
-  createTask: (data: unknown) => api.post<unknown>("/api/v1/vazifa", data),
-  equipment: () => api.get<unknown[]>("/api/v1/uskunalar"),
+  tasks:       () => api.get<unknown[]>("/topshiriq"),
+  createTask:  (data: unknown) => api.post<unknown>("/topshiriq", data),
+  equipment:   () => api.get<unknown[]>("/uskuna"),
+  foto:        () => api.get<unknown[]>("/foto"),
 }
 
-// ── Van Selling (SalesDoc: Marshrut yetkazish) ───────────────────────────────
+// ── Van Selling ───────────────────────────────────────────────────────────────
+// Backend: /van/... (no /api/v1)
 export const vanService = {
-  routes: () => api.get<unknown[]>("/api/v1/van/marshrutlar"),
-  sverka: (marshrutId: number) => api.get<unknown>(`/api/v1/van/sverka/${marshrutId}`),
-  deliver: (data: unknown) => api.post<unknown>("/api/v1/van/yetkazish", data),
+  routes:  () => api.get<unknown[]>("/van/marshrutlar"),
+  sverka:  (marshrutId: number) => api.get<unknown>(`/sverka/${marshrutId}`),
+  deliver: (data: unknown) => api.post<unknown>("/van/yetkazish", data),
 }
 
-// ── Pro Features (SalesDoc: Klient 360, Leaderboard) ─────────────────────────
+// ── Pro Features (Klient 360, Leaderboard, Marshrut) ─────────────────────────
+// Backend routers: /klient360, /marshrut, /gamification
 export const proService = {
-  client360: (klientId: number) => api.get<unknown>(`/api/v1/pro/klient360/${klientId}`),
-  leaderboard: () => api.get<unknown[]>("/api/v1/pro/leaderboard"),
-  routeOptimize: () => api.get<unknown>("/api/v1/pro/marshrut-optim"),
+  client360:     (klientId: number) => api.get<unknown>(`/klient360/${klientId}`),
+  leaderboard:   () => api.get<unknown[]>("/gamification/leaderboard"),
+  routeOptimize: (data: unknown) => api.post<unknown>("/marshrut/optimallashtir", data),
 }
 
-// ── Config (SalesDoc: Sozlamalar) ────────────────────────────────────────────
+// ── Config (Sozlamalar) ──────────────────────────────────────────────────────
+// Backend: /config/... (no /api/v1)
 export const configService = {
-  get: () => api.get<unknown>("/api/v1/config"),
-  update: (data: unknown) => api.post<unknown>("/api/v1/config", data),
-  modules: () => api.get<unknown>("/api/v1/config/modullar"),
+  get:     () => api.get<unknown>("/config"),
+  update:  (data: unknown) => api.post<unknown>("/config", data),
+  modules: () => api.get<unknown>("/config/modullar"),
 }
