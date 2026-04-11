@@ -515,8 +515,292 @@ async def cmd_nakladnoy(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
         "Ovoz yuboring yoki yozing:\n\n"
         "_O'zbek: \"Salimovga nakladnoy yoz, 50 Ariel 45,000\"_\n"
         "_Rus: \"Накладная для Иванова, 50 Ariel по 45000\"_\n\n"
-        "✅ Word + Excel + PDF + Imzo/Muhr joyi!",
+        "✅ Word + Excel + PDF + Imzo/Muhr joyi!\n\n"
+        "📦 *Ko'p nakladnoy ishlari uchun:*\n"
+        "/nakladnoy_excel — Excel nakladnoy (SalesDoc formatida)\n"
+        "/reestr_excel — Kunlik reestr (SalesDoc formatida)",
         parse_mode=ParseMode.MARKDOWN)
+
+
+async def cmd_nakladnoy_excel(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    """SalesDoc Накладные 3.1 uslubida Excel nakladnoy yaratish"""
+    if not await faol_tekshir(update): return
+    uid = update.effective_user.id
+    try:
+        msg = await update.message.reply_text("📋 Excel nakladnoy tayyorlanmoqda...")
+
+        import tempfile, time as _t
+        import openpyxl
+        from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
+        from openpyxl.utils import get_column_letter
+        from shared.database.pool import rls_conn
+
+        # Bugungi sotuvlarni olish (user-specific, RLS orqali)
+        async with rls_conn(uid) as conn:
+            today = _t.strftime('%Y-%m-%d')
+            rows = await conn.fetch("""
+                SELECT s.id, s.klient_id, s.jami_summa, s.yaratilgan,
+                       k.ism as klient_ismi, k.telefon, k.manzil,
+                       k.jami_sotib as balans
+                FROM sotuv_sessiyalar s
+                LEFT JOIN klientlar k ON s.klient_id = k.id
+                WHERE DATE(s.yaratilgan) = $1
+                ORDER BY s.id DESC
+                LIMIT 50
+            """, today)
+
+            # Agar bo'sh bo'lsa — oxirgi 10 ta
+            if not rows:
+                rows = await conn.fetch("""
+                    SELECT s.id, s.klient_id, s.jami_summa, s.yaratilgan,
+                           k.ism as klient_ismi, k.telefon, k.manzil,
+                           k.jami_sotib as balans
+                    FROM sotuv_sessiyalar s
+                    LEFT JOIN klientlar k ON s.klient_id = k.id
+                    ORDER BY s.id DESC LIMIT 10
+                """)
+
+            if not rows:
+                await msg.edit_text("⚠️ Bugungi sotuvlar topilmadi. Avval sotuv qiling.")
+                return
+
+            # Har bir sotuv uchun tovarlarni olish
+            orders_data = []
+            for r in rows:
+                items = await conn.fetch("""
+                    SELECT c.tovar_nomi as nomi, c.miqdor, c.sotish_narxi as narx, c.birlik
+                    FROM chiqimlar c WHERE c.sotuv_id = $1
+                """, r['id'])
+                orders_data.append({
+                    'id': r['id'],
+                    'klient_ismi': r['klient_ismi'] or 'Mijoz',
+                    'telefon': r['telefon'] or '',
+                    'manzil': r['manzil'] or '',
+                    'balans': r['balans'] or 0,
+                    'items': [dict(i) for i in items],
+                })
+
+        # Excel yaratish
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = "Накладные 3.1"
+
+        bold_big = Font(name="Arial", bold=True, size=12)
+        bold = Font(name="Arial", bold=True, size=10)
+        normal = Font(name="Arial", size=10)
+        small = Font(name="Arial", size=9)
+        center = Alignment(horizontal="center", vertical="center")
+        left = Alignment(horizontal="left", vertical="center", wrap_text=True)
+        border = Border(
+            left=Side(style="thin"), right=Side(style="thin"),
+            top=Side(style="thin"), bottom=Side(style="thin"),
+        )
+        header_fill = PatternFill(start_color="E8F0FE", end_color="E8F0FE", fill_type="solid")
+
+        widths = {1: 5, 2: 40, 3: 10, 4: 8, 5: 12, 6: 14}
+        for col, w in widths.items():
+            ws.column_dimensions[get_column_letter(col)].width = w
+
+        row_num = 1
+        today_str = _t.strftime('%d.%m.%Y')
+
+        for order in orders_data:
+            # Sarlavha
+            ws.cell(row=row_num, column=3, value=f"Накладная №{order['id']}  от {today_str}").font = bold_big
+            ws.merge_cells(start_row=row_num, start_column=3, end_row=row_num, end_column=4)
+            row_num += 1
+            ws.cell(row=row_num, column=2, value=f"Кому: {order['klient_ismi']}").font = bold
+            ws.cell(row=row_num, column=5, value="ТП: SavdoAI").font = normal
+            row_num += 1
+            ws.cell(row=row_num, column=2, value=f"Адрес: {order['manzil']}").font = normal
+            ws.cell(row=row_num, column=5, value="Тел: +998770030080").font = normal
+            row_num += 1
+            ws.cell(row=row_num, column=2, value=f"Тел: {order['telefon']}").font = normal
+            ws.cell(row=row_num, column=5, value="Территория: Samarqand").font = normal
+            row_num += 1
+            ws.cell(row=row_num, column=5, value="Контактное лицо:").font = normal
+            row_num += 1
+            ws.cell(row=row_num, column=5, value="Фирма: SavdoAI").font = normal
+            row_num += 1
+            ws.cell(row=row_num, column=2, value="ИНН:").font = normal
+            row_num += 1
+            ws.cell(row=row_num, column=2, value="Экспедитор:").font = normal
+            row_num += 1
+            ws.cell(row=row_num, column=2, value=f"Баланс клиента: {order['balans']:,.0f}").font = normal
+            row_num += 2
+
+            # ZAKAZ
+            ws.cell(row=row_num, column=1, value=f"ЗАКАЗ (d0_{order['id']})").font = bold
+            row_num += 1
+
+            # Jadval sarlavhasi
+            headers = ["№", "Наименование", "Кол-во", "ЕИ", "Цена", "Сумма"]
+            for col, h in enumerate(headers, 1):
+                cell = ws.cell(row=row_num, column=col, value=h)
+                cell.font = bold
+                cell.fill = header_fill
+                cell.alignment = center
+                cell.border = border
+            row_num += 1
+
+            # Tovarlar
+            for i, item in enumerate(order['items'], 1):
+                miqdor = float(item.get('miqdor', 0))
+                narx = float(item.get('narx', 0))
+                summa = miqdor * narx
+                ws.cell(row=row_num, column=1, value=i).font = normal
+                ws.cell(row=row_num, column=2, value=item.get('nomi', '')).font = normal
+                ws.cell(row=row_num, column=3, value=miqdor).font = normal
+                ws.cell(row=row_num, column=4, value=item.get('birlik', 'dona')).font = normal
+                ws.cell(row=row_num, column=5, value=narx).font = normal
+                ws.cell(row=row_num, column=6, value=summa).font = normal
+                for col in range(1, 7):
+                    ws.cell(row=row_num, column=col).border = border
+                    ws.cell(row=row_num, column=col).alignment = center if col != 2 else left
+                row_num += 1
+
+            # Itog
+            if order['items']:
+                total_qty = sum(float(i.get('miqdor', 0)) for i in order['items'])
+                total_sum = sum(float(i.get('miqdor', 0)) * float(i.get('narx', 0)) for i in order['items'])
+                ws.cell(row=row_num, column=2, value="Итог").font = bold
+                ws.cell(row=row_num, column=3, value=total_qty).font = bold
+                ws.cell(row=row_num, column=6, value=total_sum).font = bold
+                for col in range(1, 7):
+                    ws.cell(row=row_num, column=col).border = border
+                row_num += 1
+
+            # Imzo
+            ws.cell(row=row_num, column=2, value="Отпустил: _________________________").font = small
+            ws.cell(row=row_num, column=4, value="Принял: ____________________________").font = small
+            row_num += 3
+
+        xlsx_path = os.path.join(tempfile.gettempdir(), f"nakladnoy_{int(_t.time())}.xlsx")
+        wb.save(xlsx_path)
+
+        with open(xlsx_path, "rb") as f:
+            await ctx.bot.send_document(
+                chat_id=update.effective_chat.id,
+                document=f,
+                filename=f"Накладные_{today_str}.xlsx",
+                caption=f"📋 SalesDoc formatidagi nakladnoy\n"
+                        f"Format: Накладные 3.1\n"
+                        f"Buyurtmalar: {len(orders_data)} ta",
+            )
+        import os as _os
+        try: _os.remove(xlsx_path)
+        except Exception: pass
+        await msg.delete()
+    except Exception as e:
+        log.error(f"Nakladnoy excel xato: {e}", exc_info=True)
+        await update.message.reply_text(f"⚠️ Xato: {e}")
+
+
+async def cmd_reestr_excel(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    """SalesDoc Реестр 3.0 uslubida Excel reestr yaratish"""
+    if not await faol_tekshir(update): return
+    uid = update.effective_user.id
+    try:
+        msg = await update.message.reply_text("📋 Reestr tayyorlanmoqda...")
+
+        import tempfile, time as _t
+        import openpyxl
+        from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
+        from openpyxl.utils import get_column_letter
+        from shared.database.pool import rls_conn
+
+        async with rls_conn(uid) as conn:
+            today = _t.strftime('%Y-%m-%d')
+            rows = await conn.fetch("""
+                SELECT s.id, s.klient_id, s.jami_summa, s.yaratilgan,
+                       k.ism as klient_ismi, k.telefon, k.manzil,
+                       k.jami_sotib as balans
+                FROM sotuv_sessiyalar s
+                LEFT JOIN klientlar k ON s.klient_id = k.id
+                WHERE DATE(s.yaratilgan) = $1
+                ORDER BY s.id DESC
+                LIMIT 100
+            """, today)
+            if not rows:
+                rows = await conn.fetch("""
+                    SELECT s.id, s.klient_id, s.jami_summa, s.yaratilgan,
+                           k.ism as klient_ismi, k.telefon, k.manzil,
+                           k.jami_sotib as balans
+                    FROM sotuv_sessiyalar s
+                    LEFT JOIN klientlar k ON s.klient_id = k.id
+                    ORDER BY s.id DESC LIMIT 20
+                """)
+
+        if not rows:
+            await msg.edit_text("⚠️ Sotuvlar topilmadi. Avval sotuv qiling.")
+            return
+
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = "Реестр 3.0"
+
+        bold = Font(name="Arial", bold=True, size=10)
+        normal = Font(name="Arial", size=10)
+        center = Alignment(horizontal="center", vertical="center", wrap_text=True)
+        border = Border(left=Side(style="thin"), right=Side(style="thin"),
+                        top=Side(style="thin"), bottom=Side(style="thin"))
+
+        widths = {1: 5, 2: 14, 3: 35, 4: 18, 5: 18, 6: 22, 7: 14, 8: 14, 9: 12}
+        for c, w in widths.items():
+            ws.column_dimensions[get_column_letter(c)].width = w
+
+        headers = ["№", "Дата отгрузки", "Торгов. Точка", "Адрес", "Номер клиента",
+                   "Торгов. Пред.", "Баланс клиента", "сум", "Отметка"]
+        for col, h in enumerate(headers, 1):
+            cell = ws.cell(row=2, column=col, value=h)
+            cell.font = bold
+            cell.alignment = center
+            cell.border = border
+
+        today_str = _t.strftime('%d.%m.%Y')
+        total_sum = 0
+
+        for i, r in enumerate(rows, 1):
+            row = i + 2
+            summa = float(r['jami_summa'] or 0)
+            total_sum += summa
+            ws.cell(row=row, column=1, value=i).font = normal
+            ws.cell(row=row, column=2, value=today_str).font = normal
+            ws.cell(row=row, column=3, value=r['klient_ismi'] or "Mijoz").font = normal
+            ws.cell(row=row, column=4, value=r['manzil'] or "").font = normal
+            ws.cell(row=row, column=5, value=r['telefon'] or "").font = normal
+            ws.cell(row=row, column=6, value="SavdoAI").font = normal
+            ws.cell(row=row, column=7, value=float(r['balans'] or 0)).font = normal
+            ws.cell(row=row, column=8, value=summa).font = normal
+            for col in range(1, 10):
+                ws.cell(row=row, column=col).border = border
+                ws.cell(row=row, column=col).alignment = center
+
+        total_row = len(rows) + 3
+        ws.cell(row=total_row, column=3, value="Total").font = bold
+        ws.cell(row=total_row, column=8, value=total_sum).font = bold
+        for col in range(1, 10):
+            ws.cell(row=total_row, column=col).border = border
+
+        xlsx_path = os.path.join(tempfile.gettempdir(), f"reestr_{int(_t.time())}.xlsx")
+        wb.save(xlsx_path)
+
+        with open(xlsx_path, "rb") as f:
+            await ctx.bot.send_document(
+                chat_id=update.effective_chat.id,
+                document=f,
+                filename=f"Реестр_{today_str}.xlsx",
+                caption=f"📋 Reestr — {len(rows)} ta sotuv\n"
+                        f"Jami: {total_sum:,.0f} so'm\n"
+                        f"Format: Реестр 3.0",
+            )
+        import os as _os
+        try: _os.remove(xlsx_path)
+        except Exception: pass
+        await msg.delete()
+    except Exception as e:
+        log.error(f"Reestr xato: {e}", exc_info=True)
+        await update.message.reply_text(f"⚠️ Xato: {e}")
 
 
 # ════════════ TASDIQLASH ════════════
@@ -832,6 +1116,8 @@ def ilovani_qur(conf:Config) -> Application:
     app.add_handler(CommandHandler("tez",              cmd_tez))
     app.add_handler(CommandHandler("guruh",            cmd_guruh))
     app.add_handler(CommandHandler("nakladnoy",        cmd_nakladnoy))
+    app.add_handler(CommandHandler("nakladnoy_excel",  cmd_nakladnoy_excel))
+    app.add_handler(CommandHandler("reestr_excel",     cmd_reestr_excel))
     app.add_handler(CommandHandler("hisobot",          cmd_hisobot))
     app.add_handler(CommandHandler("qarz",             cmd_qarz))
     app.add_handler(CommandHandler("foyda",            cmd_foyda))
