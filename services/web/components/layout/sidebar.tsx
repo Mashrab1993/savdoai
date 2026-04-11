@@ -28,6 +28,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   const navItems = [
     { href: "/live",        label: "🔴 LIVE",              icon: Activity },
     { href: "/dashboard",   label: nav.dashboard[locale],   icon: LayoutDashboard },
+    { href: "/order-create", label: locale === "uz" ? "💰 Yangi sotuv (POS)" : "💰 Новая продажа", icon: ShoppingCart },
     { href: "/sales",       label: locale === "uz" ? "Sotuv" : "Продажа", icon: ShoppingCart },
     { href: "/clients",     label: nav.clients[locale],     icon: Users },
     { href: "/products",    label: nav.products[locale],    icon: Package },
