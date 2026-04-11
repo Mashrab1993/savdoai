@@ -495,9 +495,16 @@ except Exception as e:
 try:
     from services.api.routes.ai_extras import router as ai_extras_router
     app.include_router(ai_extras_router)
-    log.info("✅ AI Extras (GPT-5, DeepSeek, Grok) endpoint ulandi")
+    log.info("✅ AI Extras (GPT-5, DeepSeek, Grok, v0) endpoint ulandi")
 except Exception as e:
     log.warning("⚠️ AI Extras yuklanmadi: %s", e)
+
+try:
+    from services.api.routes.sync import router as sync_router
+    app.include_router(sync_router)
+    log.info("✅ Sync (delta) endpoint ulandi — offline-first")
+except Exception as e:
+    log.warning("⚠️ Sync yuklanmadi: %s", e)
 
 try:
     from services.api.routes.sd_agent_gaps import router as sd_router

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { WifiOff, Wifi, CloudUpload } from "lucide-react"
 import { AnimatePresence, motion } from "framer-motion"
 import { installSyncListeners, flushQueue } from "@/lib/offline/sync"
+import { installDeltaSync } from "@/lib/offline/delta-sync"
 import { db } from "@/lib/offline/db"
 
 /**
@@ -20,7 +21,9 @@ export function OfflineBanner() {
   const [syncing, setSyncing] = useState(false)
 
   useEffect(() => {
-    const cleanup = installSyncListeners()
+    const cleanupSync  = installSyncListeners()
+    const cleanupDelta = installDeltaSync()
+    const cleanup = () => { cleanupSync(); cleanupDelta() }
 
     const tick = async () => {
       const q = await db.listQueue()
