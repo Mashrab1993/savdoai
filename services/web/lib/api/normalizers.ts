@@ -54,16 +54,22 @@ export function normalizeProduct(d: ProductDto): ProductVM {
   const threshold = d.min_qoldiq ?? d.min_ombor ?? 5
   const status: ProductVM["status"] =
     stock === 0 ? "out-of-stock" : stock <= threshold ? "low-stock" : "in-stock"
+  // SKU: prefer shtrix_kod (EAN), then artikul, then sap_kod, then internal kod
+  const sku = d.shtrix_kod || d.artikul || d.sap_kod || d.kod || d.sku || ""
+  // Description prefers real tavsif; falls back to "brend · ishlab_chiqaruvchi"
+  const desc = d.tavsif ||
+    [d.brend, d.ishlab_chiqaruvchi].filter(Boolean).join(" · ") ||
+    d.birlik || ""
   return {
     id: String(d.id),
     name: d.nomi ?? "",
-    sku: d.sku ?? "",
+    sku,
     category: d.kategoriya ?? "",
     price: d.sotish_narxi ?? d.narx ?? 0,
     stock,
     lowStockThreshold: threshold,
     unit: d.birlik ?? "",
-    description: d.tavsif ?? d.birlik ?? "",
+    description: desc,
     status,
   }
 }

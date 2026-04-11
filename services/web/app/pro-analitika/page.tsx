@@ -12,8 +12,8 @@ export default function AnalytikaPage() {
   const [reorder, setReorder] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const API = process.env.NEXT_PUBLIC_API_URL || "/api";
-  const h = { Authorization: `Bearer ${typeof window !== "undefined" ? localStorage.getItem("token") : ""}` };
+  const API = process.env.NEXT_PUBLIC_API_URL || "";
+  const h = { Authorization: `Bearer ${typeof window !== "undefined" ? localStorage.getItem("auth_token") : ""}` };
 
   useEffect(() => {
     setLoading(true);

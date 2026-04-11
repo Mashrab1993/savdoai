@@ -539,12 +539,12 @@ async def cmd_nakladnoy_excel(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         async with rls_conn(uid) as conn:
             today = _t.strftime('%Y-%m-%d')
             rows = await conn.fetch("""
-                SELECT s.id, s.klient_id, s.jami_summa, s.yaratilgan,
+                SELECT s.id, s.klient_id, s.jami, s.sana,
                        k.ism as klient_ismi, k.telefon, k.manzil,
                        k.jami_sotib as balans
                 FROM sotuv_sessiyalar s
                 LEFT JOIN klientlar k ON s.klient_id = k.id
-                WHERE DATE(s.yaratilgan) = $1
+                WHERE DATE(s.sana AT TIME ZONE 'Asia/Tashkent') = $1::date
                 ORDER BY s.id DESC
                 LIMIT 50
             """, today)
@@ -552,7 +552,7 @@ async def cmd_nakladnoy_excel(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
             # Agar bo'sh bo'lsa — oxirgi 10 ta
             if not rows:
                 rows = await conn.fetch("""
-                    SELECT s.id, s.klient_id, s.jami_summa, s.yaratilgan,
+                    SELECT s.id, s.klient_id, s.jami, s.sana,
                            k.ism as klient_ismi, k.telefon, k.manzil,
                            k.jami_sotib as balans
                     FROM sotuv_sessiyalar s
@@ -569,7 +569,7 @@ async def cmd_nakladnoy_excel(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
             for r in rows:
                 items = await conn.fetch("""
                     SELECT c.tovar_nomi as nomi, c.miqdor, c.sotish_narxi as narx, c.birlik
-                    FROM chiqimlar c WHERE c.sotuv_id = $1
+                    FROM chiqimlar c WHERE c.sessiya_id = $1
                 """, r['id'])
                 orders_data.append({
                     'id': r['id'],
@@ -712,18 +712,18 @@ async def cmd_reestr_excel(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         async with rls_conn(uid) as conn:
             today = _t.strftime('%Y-%m-%d')
             rows = await conn.fetch("""
-                SELECT s.id, s.klient_id, s.jami_summa, s.yaratilgan,
+                SELECT s.id, s.klient_id, s.jami, s.sana,
                        k.ism as klient_ismi, k.telefon, k.manzil,
                        k.jami_sotib as balans
                 FROM sotuv_sessiyalar s
                 LEFT JOIN klientlar k ON s.klient_id = k.id
-                WHERE DATE(s.yaratilgan) = $1
+                WHERE DATE(s.sana AT TIME ZONE 'Asia/Tashkent') = $1::date
                 ORDER BY s.id DESC
                 LIMIT 100
             """, today)
             if not rows:
                 rows = await conn.fetch("""
-                    SELECT s.id, s.klient_id, s.jami_summa, s.yaratilgan,
+                    SELECT s.id, s.klient_id, s.jami, s.sana,
                            k.ism as klient_ismi, k.telefon, k.manzil,
                            k.jami_sotib as balans
                     FROM sotuv_sessiyalar s
@@ -762,7 +762,7 @@ async def cmd_reestr_excel(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
 
         for i, r in enumerate(rows, 1):
             row = i + 2
-            summa = float(r['jami_summa'] or 0)
+            summa = float(r['jami'] or 0)
             total_sum += summa
             ws.cell(row=row, column=1, value=i).font = normal
             ws.cell(row=row, column=2, value=today_str).font = normal

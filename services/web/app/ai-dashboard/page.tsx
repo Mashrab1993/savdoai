@@ -28,8 +28,8 @@ export default function AIDashboard() {
   const [loading, setLoading] = useState<boolean>(true);
   const [tab, setTab] = useState<string>("umumiy");
 
-  const API = process.env.NEXT_PUBLIC_API_URL || "/api";
-  const h = { Authorization: `Bearer ${typeof window !== "undefined" ? localStorage.getItem("token") : ""}` };
+  const API = process.env.NEXT_PUBLIC_API_URL || "";
+  const h = { Authorization: `Bearer ${typeof window !== "undefined" ? localStorage.getItem("auth_token") : ""}` };
 
   useEffect(() => {
     Promise.all([

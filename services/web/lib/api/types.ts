@@ -145,12 +145,34 @@ export interface ProductDto {
   qoldiq?: number
   min_qoldiq?: number
   yaratilgan?: string
+  // SalesDoc-compatible extended fields
+  brend?: string
+  podkategoriya?: string
+  guruh?: string
+  ishlab_chiqaruvchi?: string
+  segment?: string
+  savdo_yonalishi?: string
+  shtrix_kod?: string
+  artikul?: string
+  sap_kod?: string
+  kod?: string
+  ikpu_kod?: string
+  gtin?: string
+  hajm?: number
+  ogirlik?: number
+  blokda_soni?: number
+  korobkada_soni?: number
+  saralash?: number
+  yaroqlilik_muddati?: number
+  tavsif?: string
+  rasm_url?: string
+  faol?: boolean
+  yangilangan?: string
   // Allow optional frontend-expected aliases
   sku?: string
   narx?: number
   ombor?: number
   min_ombor?: number
-  tavsif?: string
   holat?: string
 }
 

@@ -131,14 +131,14 @@ export default function ConfigPage() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
-  const API_BASE = process.env.NEXT_PUBLIC_API_URL || "/api";
+  const API_BASE = process.env.NEXT_PUBLIC_API_URL || "";
 
   // Config yuklash
   useEffect(() => {
     const yukla = async () => {
       try {
         const res = await fetch(`${API_BASE}/config`, {
-          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+          headers: { Authorization: `Bearer ${localStorage.getItem("auth_token")}` },
         });
         if (res.ok) {
           const data = await res.json();
@@ -171,7 +171,7 @@ export default function ConfigPage() {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
+          Authorization: `Bearer ${localStorage.getItem("auth_token")}`,
         },
         body: JSON.stringify({ sozlamalar: modulData }),
       });

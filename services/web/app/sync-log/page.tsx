@@ -4,11 +4,11 @@ import { useState, useEffect } from "react";
 export default function SyncLogPage() {
   const [logs, setLogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const API = process.env.NEXT_PUBLIC_API_URL || "/api";
+  const API = process.env.NEXT_PUBLIC_API_URL || "";
 
   useEffect(() => {
     fetch(`${API}/config/sync-log?limit=100`, {
-      headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+      headers: { Authorization: `Bearer ${localStorage.getItem("auth_token")}` },
     }).then(r => r.json()).then(setLogs).catch(() => {}).finally(() => setLoading(false));
   }, []);
 

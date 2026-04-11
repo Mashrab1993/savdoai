@@ -30,13 +30,13 @@ async def moliyaviy_prognoz(conn, uid: int) -> dict:
         rows = await conn.fetch("""
             WITH oylik AS (
                 SELECT
-                    DATE_TRUNC('month', s.yaratilgan) AS oy,
-                    SUM(s.jami_summa) AS sotuv,
-                    COUNT(DISTINCT s.id) AS sotuv_soni
+                    DATE_TRUNC('month', s.sana) AS oy,
+                    SUM(s.jami)                 AS sotuv,
+                    COUNT(DISTINCT s.id)        AS sotuv_soni
                 FROM sotuv_sessiyalar s
                 WHERE s.user_id = $1
-                  AND s.yaratilgan >= NOW() - INTERVAL '6 months'
-                GROUP BY DATE_TRUNC('month', s.yaratilgan)
+                  AND s.sana >= NOW() - INTERVAL '6 months'
+                GROUP BY DATE_TRUNC('month', s.sana)
                 ORDER BY oy
             )
             SELECT
@@ -46,15 +46,16 @@ async def moliyaviy_prognoz(conn, uid: int) -> dict:
             FROM oylik
         """, uid)
 
-        # Xarajatlar
+        # Xarajatlar — xarajatlar jadvalida `sana` va `admin_uid` ishlatiladi
         xarajat_rows = await conn.fetch("""
             SELECT
-                TO_CHAR(DATE_TRUNC('month', yaratilgan), 'YYYY-MM') AS oy_nomi,
+                TO_CHAR(DATE_TRUNC('month', sana), 'YYYY-MM') AS oy_nomi,
                 SUM(summa) AS xarajat
             FROM xarajatlar
-            WHERE user_id = $1
-              AND yaratilgan >= NOW() - INTERVAL '6 months'
-            GROUP BY DATE_TRUNC('month', yaratilgan)
+            WHERE admin_uid = $1
+              AND sana >= NOW() - INTERVAL '6 months'
+              AND NOT bekor_qilingan
+            GROUP BY DATE_TRUNC('month', sana)
         """, uid)
 
         xarajat_map = {r["oy_nomi"]: float(r["xarajat"] or 0) for r in xarajat_rows}

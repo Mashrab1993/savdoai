@@ -8,8 +8,8 @@ export default function TashrifPage() {
   const [klientId, setKlientId] = useState("");
   const [tab, setTab] = useState("tarix");
 
-  const API = process.env.NEXT_PUBLIC_API_URL || "/api";
-  const headers = { "Content-Type": "application/json", Authorization: `Bearer ${typeof window !== "undefined" ? localStorage.getItem("token") : ""}` };
+  const API = process.env.NEXT_PUBLIC_API_URL || "";
+  const headers = { "Content-Type": "application/json", Authorization: `Bearer ${typeof window !== "undefined" ? localStorage.getItem("auth_token") : ""}` };
 
   useEffect(() => {
     fetch(`${API}/tashrif/tarix?limit=100`, { headers })

@@ -7,8 +7,8 @@ export default function LeaderboardPage() {
   const [davr, setDavr] = useState("hafta");
   const [loading, setLoading] = useState(true);
 
-  const API = process.env.NEXT_PUBLIC_API_URL || "/api";
-  const h = { Authorization: `Bearer ${typeof window !== "undefined" ? localStorage.getItem("token") : ""}` };
+  const API = process.env.NEXT_PUBLIC_API_URL || "";
+  const h = { Authorization: `Bearer ${typeof window !== "undefined" ? localStorage.getItem("auth_token") : ""}` };
 
   useEffect(() => {
     Promise.all([

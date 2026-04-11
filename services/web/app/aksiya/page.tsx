@@ -20,8 +20,8 @@ export default function AksiyaPage() {
     barcha_tovarlar: true, barcha_klientlar: true, prioritet: 0,
   });
 
-  const API = process.env.NEXT_PUBLIC_API_URL || "/api";
-  const headers = { "Content-Type": "application/json", Authorization: `Bearer ${typeof window !== "undefined" ? localStorage.getItem("token") : ""}` };
+  const API = process.env.NEXT_PUBLIC_API_URL || "";
+  const headers = { "Content-Type": "application/json", Authorization: `Bearer ${typeof window !== "undefined" ? localStorage.getItem("auth_token") : ""}` };
 
   useEffect(() => {
     fetch(`${API}/aksiya`, { headers }).then(r => r.json()).then(setAksiyalar).finally(() => setLoading(false));

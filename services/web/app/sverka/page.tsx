@@ -19,7 +19,8 @@ export default function AktSverkiPage() {
     if (!klientId || !danSana || !gachaSana) return
     setLoading(true)
     try {
-      const res = await fetch(`${API}/api/sverka/${klientId}?sana_dan=${danSana}&sana_gacha=${gachaSana}`, { method: "POST", headers: h })
+      const res = await fetch(`${API}/sverka/${klientId}?sana_dan=${danSana}&sana_gacha=${gachaSana}`, { method: "POST", headers: h })
+      if (!res.ok) { alert(`Xato: HTTP ${res.status}`); return }
       if (res.ok) setResult(await res.json())
     } finally { setLoading(false) }
   }

@@ -871,6 +871,16 @@ async def dashboard(uid: int = Depends(get_uid)):
             SELECT COUNT(*) FROM tovarlar
             WHERE user_id=$1 AND min_qoldiq>0 AND qoldiq<=min_qoldiq
         """, uid)
+        # Kumulyativ (butun vaqt) sotuv — dashboardda total revenue uchun
+        total_revenue = await c.fetchval("""
+            SELECT COALESCE(SUM(jami), 0) FROM sotuv_sessiyalar WHERE user_id=$1
+        """, uid) or 0
+        # 30-kunlik faol klientlar soni
+        active_clients = await c.fetchval("""
+            SELECT COUNT(DISTINCT klient_id) FROM sotuv_sessiyalar
+            WHERE user_id=$1 AND sana >= NOW() - interval '30 days'
+              AND klient_id IS NOT NULL
+        """, uid) or 0
 
         # Muddati o'tgan qarzlar
         overdue = await c.fetchrow("""
@@ -904,6 +914,8 @@ async def dashboard(uid: int = Depends(get_uid)):
         "bugun_sotuv_jami":  float(bugun["sotuv_jami"]),
         "bugun_yangi_qarz":  float(bugun["yangi_qarz"]),
         "jami_qarz":         float(jami_qarz or 0),
+        "total_revenue":     float(total_revenue),
+        "active_clients":    int(active_clients),
         "klient_soni":       klient_soni,
         "tovar_soni":        tovar_soni,
         "kam_qoldiq_soni":   kam_qoldiq,

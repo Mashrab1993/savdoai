@@ -17,8 +17,8 @@ export default function WebhookPage() {
   const [loading, setLoading] = useState(true);
   const [form, setForm] = useState<{ nomi: string; url: string; eventlar: string[] }>({ nomi: "", url: "", eventlar: [] });
 
-  const API = process.env.NEXT_PUBLIC_API_URL || "/api";
-  const headers = { "Content-Type": "application/json", Authorization: `Bearer ${typeof window !== "undefined" ? localStorage.getItem("token") : ""}` };
+  const API = process.env.NEXT_PUBLIC_API_URL || "";
+  const headers = { "Content-Type": "application/json", Authorization: `Bearer ${typeof window !== "undefined" ? localStorage.getItem("auth_token") : ""}` };
 
   useEffect(() => {
     Promise.all([

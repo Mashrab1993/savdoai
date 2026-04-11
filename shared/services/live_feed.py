@@ -109,25 +109,30 @@ def xato_eventi(xabar: str) -> LiveEvent:
 # ════════════════════════════════════════════════════════════
 
 async def live_dashboard(conn, uid: int) -> dict:
-    """Real-time dashboard — hozirgi holat."""
+    """Real-time dashboard — hozirgi holat.
+
+    SavdoAI schema: sotuv_sessiyalar (ss) + chiqimlar (ch) + klientlar (k.ism).
+    """
 
     # Bugungi statistika
     bugun = await conn.fetchrow("""
         SELECT
-            COUNT(*) AS sotuv_soni,
-            COALESCE(SUM(jami), 0) AS jami_sotuv,
-            COALESCE(SUM(tolangan), 0) AS tolangan,
-            COALESCE(SUM(qarz), 0) AS qarz_berildi,
-            COUNT(DISTINCT klient_id) AS klient_soni
-        FROM sotuvlar
-        WHERE user_id=$1 AND sana::date = CURRENT_DATE
+            COUNT(*)                                AS sotuv_soni,
+            COALESCE(SUM(jami), 0)                  AS jami_sotuv,
+            COALESCE(SUM(tolangan), 0)              AS tolangan,
+            COALESCE(SUM(qarz), 0)                  AS qarz_berildi,
+            COUNT(DISTINCT klient_id)               AS klient_soni
+        FROM sotuv_sessiyalar
+        WHERE user_id = $1
+          AND (sana AT TIME ZONE 'Asia/Tashkent')::date = CURRENT_DATE
     """, uid)
 
     # Kechagiga nisbatan
     kecha = await conn.fetchrow("""
         SELECT COALESCE(SUM(jami), 0) AS jami
-        FROM sotuvlar
-        WHERE user_id=$1 AND sana::date = CURRENT_DATE - 1
+        FROM sotuv_sessiyalar
+        WHERE user_id = $1
+          AND (sana AT TIME ZONE 'Asia/Tashkent')::date = CURRENT_DATE - 1
     """, uid)
 
     bugun_summa = float(bugun["jami_sotuv"] or 0)
@@ -136,45 +141,48 @@ async def live_dashboard(conn, uid: int) -> dict:
 
     # Kam qoldiqli tovarlar
     kam_qoldiq = await conn.fetchval(
-        "SELECT COUNT(*) FROM tovarlar WHERE user_id=$1 AND qoldiq > 0 AND qoldiq <= 5 AND faol=TRUE",
+        "SELECT COUNT(*) FROM tovarlar "
+        "WHERE user_id = $1 AND min_qoldiq > 0 AND qoldiq <= min_qoldiq",
         uid) or 0
 
-    # Qarz statistika
+    # Jami aktiv qarz
     jami_qarz = await conn.fetchval(
-        "SELECT COALESCE(SUM(qarz), 0) FROM sotuvlar WHERE user_id=$1 AND qarz > 0",
+        "SELECT COALESCE(SUM(qolgan), 0) FROM qarzlar "
+        "WHERE user_id = $1 AND NOT yopildi",
         uid) or 0
 
     # Oxirgi 10 sotuv (live feed)
     oxirgi = await conn.fetch("""
-        SELECT s.id, s.sana, s.jami, s.tolangan, s.qarz,
-               k.nom AS klient_nomi, s.holat,
-               (SELECT COUNT(*) FROM sotuv_tafsilot WHERE sotuv_id=s.id) AS tovar_soni
-        FROM sotuvlar s
-        LEFT JOIN klientlar k ON k.id = s.klient_id
-        WHERE s.user_id=$1
-        ORDER BY s.sana DESC LIMIT 10
+        SELECT ss.id, ss.sana, ss.jami, ss.tolangan, ss.qarz,
+               COALESCE(k.ism, ss.klient_ismi, 'Mijoz') AS klient_nomi,
+               (SELECT COUNT(*) FROM chiqimlar ch WHERE ch.sessiya_id = ss.id) AS tovar_soni
+        FROM sotuv_sessiyalar ss
+        LEFT JOIN klientlar k ON k.id = ss.klient_id
+        WHERE ss.user_id = $1
+        ORDER BY ss.sana DESC
+        LIMIT 10
     """, uid)
 
     return {
         "bugun": {
-            "sotuv_soni": bugun["sotuv_soni"],
-            "jami_sotuv": str(bugun["jami_sotuv"]),
-            "tolangan": str(bugun["tolangan"]),
-            "qarz": str(bugun["qarz_berildi"]),
-            "klient_soni": bugun["klient_soni"],
+            "sotuv_soni": int(bugun["sotuv_soni"] or 0),
+            "jami_sotuv": str(bugun["jami_sotuv"] or 0),
+            "tolangan":   str(bugun["tolangan"]   or 0),
+            "qarz":       str(bugun["qarz_berildi"] or 0),
+            "klient_soni": int(bugun["klient_soni"] or 0),
             "osish_foiz": round(osish, 1),
         },
         "ogohlantirishlar": {
-            "kam_qoldiq": kam_qoldiq,
-            "jami_qarz": str(jami_qarz),
+            "kam_qoldiq": int(kam_qoldiq),
+            "jami_qarz":  str(jami_qarz),
         },
         "oxirgi_sotuvlar": [{
-            "id": r["id"],
-            "vaqt": r["sana"].isoformat() if r["sana"] else "",
-            "summa": str(r["jami"]),
-            "klient": r["klient_nomi"] or "Noma'lum",
-            "tovar_soni": r["tovar_soni"],
-            "holat": r["holat"],
+            "id":         r["id"],
+            "vaqt":       r["sana"].isoformat() if r["sana"] else "",
+            "summa":      str(r["jami"] or 0),
+            "klient":     r["klient_nomi"],
+            "tovar_soni": int(r["tovar_soni"] or 0),
+            "qarz":       str(r["qarz"] or 0),
         } for r in oxirgi],
         "server_vaqt": datetime.utcnow().isoformat(),
     }
