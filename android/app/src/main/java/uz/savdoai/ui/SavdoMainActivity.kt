@@ -1,10 +1,14 @@
 package uz.savdoai.ui
 
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.*
 import androidx.compose.foundation.*
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.*
 import androidx.compose.foundation.shape.CircleShape
@@ -20,10 +24,12 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import kotlinx.coroutines.flow.collectAsState
 import kotlinx.coroutines.launch
 import uz.savdoai.data.*
@@ -43,34 +49,95 @@ import uz.savdoai.data.repository.SavdoAIRepository
  */
 
 // ═══════════════════════════════════════════════════════
-//  BRAND RANGLAR
+//  BRAND RANGLAR — Material 3 Expressive
 // ═══════════════════════════════════════════════════════
-val SavdoGreen = Color(0xFF059669)
+val SavdoGreen      = Color(0xFF059669)
 val SavdoGreenLight = Color(0xFF10B981)
-val SavdoGreenDark = Color(0xFF047857)
-val SavdoBg = Color(0xFFF9FAFB)
-val SavdoCard = Color.White
-val SavdoRed = Color(0xFFDC2626)
-val SavdoAmber = Color(0xFFD97706)
-val SavdoBlue = Color(0xFF3B82F6)
+val SavdoGreenDark  = Color(0xFF047857)
+val SavdoBg         = Color(0xFFF8FAFC)
+val SavdoCard       = Color.White
+val SavdoRed        = Color(0xFFDC2626)
+val SavdoAmber      = Color(0xFFD97706)
+val SavdoBlue       = Color(0xFF3B82F6)
+val SavdoViolet     = Color(0xFF7C3AED)
+val SavdoBgDark     = Color(0xFF0B0F14)
+val SavdoCardDark   = Color(0xFF121820)
+
+private val LightColors = lightColorScheme(
+    primary          = SavdoGreen,
+    onPrimary        = Color.White,
+    primaryContainer = Color(0xFFD1FAE5),
+    onPrimaryContainer = SavdoGreenDark,
+    secondary        = SavdoBlue,
+    onSecondary      = Color.White,
+    tertiary         = SavdoViolet,
+    onTertiary       = Color.White,
+    background       = SavdoBg,
+    onBackground     = Color(0xFF0F172A),
+    surface          = SavdoCard,
+    onSurface        = Color(0xFF0F172A),
+    surfaceVariant   = Color(0xFFEEF2F7),
+    onSurfaceVariant = Color(0xFF475569),
+    error            = SavdoRed,
+    outline          = Color(0xFFE2E8F0),
+    outlineVariant   = Color(0xFFF1F5F9),
+)
+
+private val DarkColors = darkColorScheme(
+    primary          = SavdoGreenLight,
+    onPrimary        = Color(0xFF052E1F),
+    primaryContainer = SavdoGreenDark,
+    onPrimaryContainer = Color(0xFFD1FAE5),
+    secondary        = Color(0xFF60A5FA),
+    onSecondary      = Color(0xFF0B1220),
+    tertiary         = Color(0xFFA78BFA),
+    onTertiary       = Color(0xFF1E1B4B),
+    background       = SavdoBgDark,
+    onBackground     = Color(0xFFE2E8F0),
+    surface          = SavdoCardDark,
+    onSurface        = Color(0xFFE2E8F0),
+    surfaceVariant   = Color(0xFF1B2430),
+    onSurfaceVariant = Color(0xFF94A3B8),
+    error            = Color(0xFFF87171),
+    outline          = Color(0xFF1E293B),
+    outlineVariant   = Color(0xFF0F172A),
+)
+
+@Composable
+private fun SavdoTheme(
+    dynamicColor: Boolean = true,
+    darkTheme: Boolean = isSystemInDarkTheme(),
+    content: @Composable () -> Unit,
+) {
+    val context = LocalContext.current
+    val colors = when {
+        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S ->
+            if (darkTheme) androidx.compose.material3.dynamicDarkColorScheme(context)
+            else           androidx.compose.material3.dynamicLightColorScheme(context)
+        darkTheme -> DarkColors
+        else      -> LightColors
+    }
+    MaterialTheme(colorScheme = colors, content = content)
+}
 
 // ═══════════════════════════════════════════════════════
 //  MAIN ACTIVITY (Compose entry point)
 // ═══════════════════════════════════════════════════════
 class SavdoMainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
+        // Splash screen API 31+ (soft-fallback below via theme)
+        installSplashScreen()
+        // Edge-to-edge immersive (content behind status + nav bars)
+        enableEdgeToEdge(
+            statusBarStyle = SystemBarStyle.auto(
+                lightScrim = android.graphics.Color.TRANSPARENT,
+                darkScrim  = android.graphics.Color.TRANSPARENT,
+            ),
+        )
         super.onCreate(savedInstanceState)
         val repo = SavdoAIRepository.getInstance(applicationContext)
         setContent {
-            MaterialTheme(
-                colorScheme = lightColorScheme(
-                    primary = SavdoGreen,
-                    onPrimary = Color.White,
-                    primaryContainer = Color(0xFFD1FAE5),
-                    surface = SavdoBg,
-                    surfaceVariant = SavdoCard,
-                )
-            ) {
+            SavdoTheme {
                 SavdoApp(repo)
             }
         }
