@@ -961,3 +961,31 @@ CREATE INDEX IF NOT EXISTS idx_tv_shtrix ON tovarlar(user_id, shtrix_kod) WHERE 
 CREATE INDEX IF NOT EXISTS idx_tv_ikpu ON tovarlar(user_id, ikpu_kod) WHERE ikpu_kod != '';
 CREATE INDEX IF NOT EXISTS idx_tv_faol ON tovarlar(user_id, faol);
 
+-- ═══════════════════════════════════════════════════════════════
+--  v25.5 MIGRATION: Klient CRM (SalesDoc-level)
+-- ═══════════════════════════════════════════════════════════════
+ALTER TABLE klientlar ADD COLUMN IF NOT EXISTS kategoriya    TEXT DEFAULT 'oddiy';
+ALTER TABLE klientlar ADD COLUMN IF NOT EXISTS jami_xaridlar DECIMAL(18,2) NOT NULL DEFAULT 0;
+ALTER TABLE klientlar ADD COLUMN IF NOT EXISTS xarid_soni    INT NOT NULL DEFAULT 0;
+ALTER TABLE klientlar ADD COLUMN IF NOT EXISTS oxirgi_sotuv  TIMESTAMPTZ;
+ALTER TABLE klientlar ADD COLUMN IF NOT EXISTS tugilgan_kun  DATE;
+ALTER TABLE klientlar ADD COLUMN IF NOT EXISTS izoh          TEXT;
+CREATE INDEX IF NOT EXISTS idx_kl_kategoriya ON klientlar(user_id, kategoriya);
+CREATE INDEX IF NOT EXISTS idx_kl_oxirgi ON klientlar(user_id, oxirgi_sotuv DESC) WHERE oxirgi_sotuv IS NOT NULL;
+
+-- Avtomatik chegirma qoidalari (VIP/Gold/Silver)
+CREATE TABLE IF NOT EXISTS chegirma_qoidalar (
+    id          BIGSERIAL   PRIMARY KEY,
+    user_id     BIGINT      NOT NULL REFERENCES users(id),
+    nomi        TEXT        NOT NULL,
+    turi        TEXT        NOT NULL DEFAULT 'foiz' CHECK(turi IN ('foiz','summa')),
+    qiymat      DECIMAL(18,2) NOT NULL DEFAULT 0,
+    min_xarid   DECIMAL(18,2) NOT NULL DEFAULT 0,
+    min_soni    INT           NOT NULL DEFAULT 0,
+    kategoriya  TEXT          DEFAULT '',
+    faol        BOOLEAN       NOT NULL DEFAULT TRUE,
+    yaratilgan  TIMESTAMPTZ   NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_cheg_uid ON chegirma_qoidalar(user_id, faol);
+SELECT enable_rls('chegirma_qoidalar');
+

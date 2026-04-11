@@ -65,7 +65,7 @@ async def kunlik_reja(conn, uid: int) -> dict:
             "sarlavha": f"Qarz yig'ish: {q['ism']}",
             "tafsilot": f"{q['qarz']:,.0f} so'm • {kechikkan} kun kechikkan",
             "klient_id": q["klient_id"],
-            "klient_nomi": q["nom"],
+            "klient_nomi": q["ism"],
             "summa": str(q["qarz"]),
         })
 
@@ -93,7 +93,7 @@ async def kunlik_reja(conn, uid: int) -> dict:
             "sarlavha": f"Qayta aloqa: {k['ism']}",
             "tafsilot": f"{kun} kun sotib olmagan",
             "klient_id": k["id"],
-            "klient_nomi": k["nom"],
+            "klient_nomi": k["ism"],
         })
 
     # ═══ 3. KAM QOLDIQLI TOVARLAR ═══
