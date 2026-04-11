@@ -1,176 +1,337 @@
-"use client";
-import { useState, useEffect } from "react";
-import { useSearchParams } from "next/navigation";
+"use client"
+import { useState, useEffect, useCallback } from "react"
+import { useSearchParams } from "next/navigation"
+import { AdminLayout } from "@/components/layout/admin-layout"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Badge } from "@/components/ui/badge"
+import {
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+} from "@/components/ui/table"
+import {
+  User, Phone, MapPin, Calendar, TrendingUp, Package,
+  CreditCard, DollarSign, Search, AlertCircle, Trophy,
+} from "lucide-react"
+import { formatCurrency } from "@/lib/format"
 
-function Card({ children, className = "" }: { children: React.ReactNode; className?: string }) {
-  return <div className={`bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 ${className}`}>{children}</div>;
+type Klient360Data = {
+  klient: {
+    id: number; ism: string; telefon?: string; manzil?: string;
+    kategoriya?: string; kredit_limit?: number; jami_sotib?: number;
+    jami_xaridlar?: number; xarid_soni?: number;
+    oxirgi_sotuv?: string; yaratilgan?: string; eslatma?: string;
+  }
+  qarz_balans: {
+    jami_qarz?: number; jami_tolangan?: number;
+    aktiv_qarz?: number; aktiv_soni?: number; yopilgan_soni?: number;
+  }
+  sotuv_stats: {
+    soni?: number; jami?: number; tolangan?: number;
+    ortacha_chek?: number; oxirgi_sotuv?: string; birinchi_sotuv?: string;
+  }
+  top_tovarlar: Array<{
+    tovar_nomi: string; kategoriya?: string; miqdor: number;
+    jami: number; sotuv_soni: number; oxirgi?: string;
+  }>
+  oxirgi_sotuvlar: Array<{
+    id: number; sana: string; jami: number; tolangan: number;
+    qarz: number; tovar_soni: number;
+  }>
+  oylik_trend: Array<{ oy: string; soni: number; jami: number }>
+  rfm: {
+    R: number; F: number; M: number; segment: string;
+    recency_days: number; frequency: number; monetary: number;
+  } | null
+}
+
+const SEGMENT_COLORS: Record<string, { bg: string; label: string; icon: string }> = {
+  Champions: { bg: "bg-amber-100 text-amber-800 border-amber-300", label: "Champion (VIP)", icon: "🏆" },
+  Loyal:     { bg: "bg-emerald-100 text-emerald-800 border-emerald-300", label: "Loyal", icon: "💚" },
+  Potential: { bg: "bg-sky-100 text-sky-800 border-sky-300", label: "Potential", icon: "🌱" },
+  "At Risk": { bg: "bg-orange-100 text-orange-800 border-orange-300", label: "At Risk", icon: "⚠️" },
+  Lost:      { bg: "bg-gray-200 text-gray-700 border-gray-300", label: "Lost", icon: "💀" },
 }
 
 export default function Klient360Page() {
-  const [klientId, setKlientId] = useState("");
-  const [data, setData] = useState<any>(null);
-  const [loading, setLoading] = useState(false);
-  const searchParams = useSearchParams();
+  const [klientId, setKlientId] = useState("")
+  const [data, setData] = useState<Klient360Data | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState("")
+  const searchParams = useSearchParams()
 
-  const API = process.env.NEXT_PUBLIC_API_URL || "/api";
-  const h = { Authorization: `Bearer ${typeof window !== "undefined" ? localStorage.getItem("token") : ""}` };
+  const yukla = useCallback(async (id: string) => {
+    if (!id) return
+    setLoading(true); setError("")
+    try {
+      const token = typeof window !== "undefined" ? localStorage.getItem("auth_token") : ""
+      const base  = process.env.NEXT_PUBLIC_API_URL || ""
+      const res = await fetch(`${base}/api/v1/klient360/${id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      if (res.ok) {
+        setData(await res.json())
+      } else {
+        setError(res.status === 404 ? "Klient topilmadi" : "Xatolik yuz berdi")
+        setData(null)
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e))
+    } finally {
+      setLoading(false)
+    }
+  }, [])
 
   useEffect(() => {
-    const id = searchParams?.get("id");
-    if (id) { setKlientId(id); yukla(id); }
-  }, [searchParams]);
+    const id = searchParams?.get("id")
+    if (id) { setKlientId(id); yukla(id) }
+  }, [searchParams, yukla])
 
-  const yukla = async (id: any) => {
-    setLoading(true);
-    try {
-      const res = await fetch(`${API}/klient360/${id}`, { headers: h });
-      if (res.ok) setData(await res.json());
-    } catch (e) { console.error(e); }
-    finally { setLoading(false); }
-  };
+  const k      = data?.klient
+  const q      = data?.qarz_balans
+  const stats  = data?.sotuv_stats
+  const rfm    = data?.rfm
+  const seg    = rfm ? SEGMENT_COLORS[rfm.segment] : null
 
-  const p = data?.profil || {};
-  const m = data?.moliya || {};
-  const seg = data?.segment || {};
+  // Max value for trend chart normalization
+  const maxTrend = Math.max(1, ...(data?.oylik_trend || []).map(t => Number(t.jami)))
 
   return (
-    <div className="max-w-6xl mx-auto p-4 sm:p-6">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold">👤 Klient 360°</h1>
-        <p className="text-sm text-gray-500 mt-1">To&apos;liq klient profili — HubSpot darajasida</p>
-      </div>
+    <AdminLayout>
+      <div className="max-w-7xl mx-auto p-4 sm:p-6 space-y-5">
+        <div>
+          <h1 className="text-2xl font-bold flex items-center gap-2">
+            <User className="w-7 h-7 text-emerald-600" /> Klient 360°
+          </h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            SalesDoc darajasida klient profili — RFM, tarix, prognoz
+          </p>
+        </div>
 
-      {/* Search */}
-      <div className="flex gap-2 mb-6">
-        <input type="number" value={klientId} onChange={e => setKlientId(e.target.value)}
-          placeholder="Klient ID" className="flex-1 px-4 py-2.5 border rounded-xl text-sm" />
-        <button onClick={() => yukla(klientId)} disabled={!klientId || loading}
-          className="px-6 py-2.5 bg-emerald-600 text-white rounded-xl text-sm font-medium hover:bg-emerald-700 disabled:opacity-50">
-          {loading ? "..." : "Ko'rish"}
-        </button>
-      </div>
+        {/* Search */}
+        <div className="flex gap-2">
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              type="number"
+              placeholder="Klient ID kiriting"
+              value={klientId}
+              onChange={e => setKlientId(e.target.value)}
+              onKeyDown={e => e.key === "Enter" && yukla(klientId)}
+              className="pl-10"
+            />
+          </div>
+          <Button onClick={() => yukla(klientId)} disabled={!klientId || loading}>
+            {loading ? "Yuklanmoqda..." : "Ko'rish"}
+          </Button>
+        </div>
 
-      {data?.xato && <Card className="p-6 text-center text-red-500">{data.xato}</Card>}
+        {error && (
+          <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-red-700 flex items-center gap-2">
+            <AlertCircle className="w-5 h-5" /> {error}
+          </div>
+        )}
 
-      {data && !data.xato && (
-        <div className="space-y-4">
-          {/* Header Card */}
-          <Card className="p-5">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <div className="w-14 h-14 rounded-full bg-gradient-to-br from-emerald-400 to-teal-600 flex items-center justify-center">
-                  <span className="text-white text-xl font-bold">{(p.nom || "?")[0]}</span>
+        {data && k && (
+          <div className="space-y-5">
+            {/* Header Card */}
+            <div className="bg-gradient-to-r from-emerald-500 to-teal-600 rounded-xl p-5 text-white">
+              <div className="flex items-start justify-between flex-wrap gap-4">
+                <div className="flex items-center gap-4">
+                  <div className="w-16 h-16 rounded-full bg-white/20 backdrop-blur flex items-center justify-center text-2xl font-bold">
+                    {(k.ism || "?")[0].toUpperCase()}
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-bold">{k.ism}</h2>
+                    <div className="text-sm opacity-90 flex items-center gap-3 mt-1 flex-wrap">
+                      {k.telefon && <span className="flex items-center gap-1"><Phone className="w-3 h-3" />{k.telefon}</span>}
+                      {k.manzil && <span className="flex items-center gap-1"><MapPin className="w-3 h-3" />{k.manzil}</span>}
+                    </div>
+                    <div className="text-xs opacity-75 mt-1">
+                      Klient #{k.id} · {k.kategoriya || "oddiy"}
+                      {stats?.birinchi_sotuv && ` · birinchi xarid ${new Date(stats.birinchi_sotuv).toLocaleDateString("uz-UZ")}`}
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <h2 className="text-xl font-bold">{p.nom}</h2>
-                  <div className="text-sm text-gray-500">{p.telefon} • {p.manzil}</div>
-                  <div className="text-xs text-gray-400 mt-0.5">Klient #{p.id} • {p.kunlar_bilan} kun bilan</div>
-                </div>
-              </div>
-              <div className="text-center">
-                <div className="text-3xl">{seg.emoji}</div>
-                <div className="text-xs font-bold mt-1" style={{ color: seg.rang }}>{seg.nomi}</div>
+                {seg && rfm && (
+                  <div className={`px-4 py-3 rounded-xl border-2 bg-white/10 backdrop-blur border-white/30 text-center`}>
+                    <div className="text-3xl">{seg.icon}</div>
+                    <div className="text-sm font-bold mt-1">{seg.label}</div>
+                    <div className="text-xs opacity-75 mt-1">R{rfm.R} F{rfm.F} M{rfm.M}</div>
+                  </div>
+                )}
               </div>
             </div>
-          </Card>
 
-          {/* Stats row */}
-          <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
-            {[
-              { label: "Jami xarid", value: Number(m.jami_xarid || 0).toLocaleString(), icon: "💰" },
-              { label: "Sotuv soni", value: m.sotuv_soni, icon: "📦" },
-              { label: "O'rtacha chek", value: Number(m.ortacha_chek || 0).toLocaleString(), icon: "📊" },
-              { label: "Joriy qarz", value: Number(m.joriy_qarz || 0).toLocaleString(), icon: "💳", danger: Number(m.joriy_qarz || 0) > 0 },
-              { label: "CLV (1 yil)", value: Number(data.clv?.yillik_prognoz || 0).toLocaleString(), icon: "🎯" },
-            ].map((s: any, i: number) => (
-              <Card key={i} className={`p-3 text-center ${s.danger ? "border-red-300 bg-red-50 dark:bg-red-900/10" : ""}`}>
-                <div className="text-lg">{s.icon}</div>
-                <div className={`text-lg font-bold ${s.danger ? "text-red-600" : ""}`}>{s.value}</div>
-                <div className="text-[10px] text-gray-500">{s.label}</div>
-              </Card>
-            ))}
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            {/* Top tovarlar */}
-            <Card>
-              <div className="p-4 border-b"><h3 className="text-sm font-semibold">🏆 Top tovarlar</h3></div>
-              <div className="divide-y divide-gray-100 dark:divide-gray-800">
-                {(data.top_tovarlar || []).map((t: any, i: number) => (
-                  <div key={i} className="flex items-center justify-between px-4 py-2.5">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-bold text-gray-400 w-5">{i+1}.</span>
-                      <span className="text-sm">{t.tovar_nomi}</span>
-                    </div>
-                    <div className="text-right">
-                      <span className="text-sm font-bold">{Number(t.summa).toLocaleString()}</span>
-                      <span className="text-xs text-gray-400 ml-1">({t.miqdor}x)</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </Card>
-
-            {/* Cross-sell */}
-            <Card>
-              <div className="p-4 border-b"><h3 className="text-sm font-semibold">🎯 Cross-sell tavsiyalar</h3></div>
-              <div className="p-4 space-y-2">
-                {(data.cross_sell || []).map((c: any, i: number) => (
-                  <div key={i} className="flex items-center justify-between p-3 rounded-lg bg-emerald-50 dark:bg-emerald-900/10 border border-emerald-200 dark:border-emerald-800">
-                    <div>
-                      <div className="text-sm font-medium">{c.nomi}</div>
-                      <div className="text-xs text-emerald-600">{c.necha_klient} o&apos;xshash klient olgan</div>
-                    </div>
-                    <div className="text-sm font-bold">{Number(c.narx).toLocaleString()}</div>
-                  </div>
-                ))}
-                {(!data.cross_sell?.length) && <div className="text-sm text-gray-400 text-center py-4">Tavsiya yo&apos;q</div>}
-              </div>
-            </Card>
-          </div>
-
-          {/* Hafta kunlari + Narx sezgirligi */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <Card>
-              <div className="p-4 border-b"><h3 className="text-sm font-semibold">📅 Sotuv kunlari</h3></div>
-              <div className="p-4 space-y-2">
-                {(data.hafta_kunlari || []).map((h: any, i: number) => (
-                  <div key={i} className="flex items-center gap-3">
-                    <span className="text-xs font-bold w-8">{h.kun}</span>
-                    <div className="flex-1 bg-gray-100 dark:bg-gray-800 rounded-full h-4 overflow-hidden">
-                      <div className="bg-blue-500 h-full rounded-full" style={{ width: `${Math.min(100, h.soni * 10)}%` }} />
-                    </div>
-                    <span className="text-xs font-medium w-6 text-right">{h.soni}</span>
-                  </div>
-                ))}
-              </div>
-            </Card>
-
-            <Card className="p-4">
-              <h3 className="text-sm font-semibold mb-3">💡 Narx sezgirligi</h3>
-              <div className="space-y-3">
-                <div className="flex justify-between">
-                  <span className="text-sm text-gray-500">Chegirmali sotuvlar</span>
-                  <span className="font-bold">{data.narx_sezgirligi?.chegirmali_sotuv || 0}</span>
+            {/* Stats row */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div className="bg-card border rounded-xl p-4">
+                <div className="flex items-center gap-2 text-muted-foreground text-xs">
+                  <DollarSign className="w-4 h-4" /> Jami xarid
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-sm text-gray-500">Chegirmasiz sotuvlar</span>
-                  <span className="font-bold">{data.narx_sezgirligi?.chegirmasiz_sotuv || 0}</span>
-                </div>
-                <div className={`p-3 rounded-lg text-center text-sm font-medium ${
-                  data.narx_sezgirligi?.chegirmaga_sezgir
-                    ? "bg-amber-50 text-amber-700 border border-amber-200"
-                    : "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                }`}>
-                  {data.narx_sezgirligi?.chegirmaga_sezgir
-                    ? "⚠️ Chegirmaga SEZGIR — chegirma bersangiz ko'proq sotib oladi"
-                    : "✅ Chegirmaga sezgir emas — odatiy narxda sotib oladi"}
+                <div className="text-xl font-bold mt-1">{formatCurrency(Number(stats?.jami || 0))}</div>
+                <div className="text-[11px] text-muted-foreground mt-0.5">
+                  {stats?.soni || 0} ta sotuv
                 </div>
               </div>
-            </Card>
+              <div className="bg-card border rounded-xl p-4">
+                <div className="flex items-center gap-2 text-muted-foreground text-xs">
+                  <TrendingUp className="w-4 h-4" /> O&apos;rtacha chek
+                </div>
+                <div className="text-xl font-bold mt-1">{formatCurrency(Number(stats?.ortacha_chek || 0))}</div>
+              </div>
+              <div className={`bg-card border rounded-xl p-4 ${Number(q?.aktiv_qarz || 0) > 0 ? "border-red-300" : ""}`}>
+                <div className="flex items-center gap-2 text-muted-foreground text-xs">
+                  <CreditCard className="w-4 h-4" /> Aktiv qarz
+                </div>
+                <div className={`text-xl font-bold mt-1 ${Number(q?.aktiv_qarz || 0) > 0 ? "text-red-600" : ""}`}>
+                  {formatCurrency(Number(q?.aktiv_qarz || 0))}
+                </div>
+                <div className="text-[11px] text-muted-foreground mt-0.5">
+                  {q?.aktiv_soni || 0} ta aktiv / {q?.yopilgan_soni || 0} ta yopilgan
+                </div>
+              </div>
+              <div className="bg-card border rounded-xl p-4">
+                <div className="flex items-center gap-2 text-muted-foreground text-xs">
+                  <Calendar className="w-4 h-4" /> Oxirgi sotuv
+                </div>
+                <div className="text-sm font-bold mt-1">
+                  {stats?.oxirgi_sotuv ? new Date(stats.oxirgi_sotuv).toLocaleDateString("uz-UZ") : "—"}
+                </div>
+                {rfm && (
+                  <div className="text-[11px] text-muted-foreground mt-0.5">
+                    {rfm.recency_days} kun oldin
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* 2-column: Top products + Monthly trend */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+              {/* Top tovarlar */}
+              <div className="bg-card border rounded-xl overflow-hidden">
+                <div className="p-4 border-b flex items-center gap-2">
+                  <Trophy className="w-4 h-4 text-amber-600" />
+                  <h3 className="font-semibold">Top 10 sotib olgan tovarlar</h3>
+                </div>
+                <div className="divide-y">
+                  {(data.top_tovarlar || []).length === 0 && (
+                    <div className="p-6 text-center text-muted-foreground text-sm">
+                      Hali tovarlar yo&apos;q
+                    </div>
+                  )}
+                  {(data.top_tovarlar || []).map((t, i) => (
+                    <div key={i} className="flex items-center justify-between px-4 py-3 hover:bg-secondary/50">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <span className="text-xs font-bold text-muted-foreground w-6">#{i + 1}</span>
+                        <div className="min-w-0">
+                          <div className="text-sm font-medium truncate">{t.tovar_nomi}</div>
+                          <div className="text-[11px] text-muted-foreground">
+                            {t.kategoriya} · {Number(t.miqdor).toFixed(0)} dona · {t.sotuv_soni} marta
+                          </div>
+                        </div>
+                      </div>
+                      <div className="text-sm font-bold font-mono shrink-0">
+                        {formatCurrency(Number(t.jami))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* 12-oylik trend */}
+              <div className="bg-card border rounded-xl overflow-hidden">
+                <div className="p-4 border-b flex items-center gap-2">
+                  <TrendingUp className="w-4 h-4 text-emerald-600" />
+                  <h3 className="font-semibold">12 oylik trend</h3>
+                </div>
+                <div className="p-4 space-y-2">
+                  {(data.oylik_trend || []).length === 0 && (
+                    <div className="text-center text-muted-foreground text-sm py-8">
+                      Ma&apos;lumot yetarli emas
+                    </div>
+                  )}
+                  {(data.oylik_trend || []).map((t, i) => (
+                    <div key={i} className="flex items-center gap-3">
+                      <span className="text-xs font-mono w-16">{t.oy}</span>
+                      <div className="flex-1 bg-secondary rounded-full h-6 overflow-hidden relative">
+                        <div
+                          className="bg-gradient-to-r from-emerald-400 to-teal-500 h-full transition-all"
+                          style={{ width: `${(Number(t.jami) / maxTrend) * 100}%` }}
+                        />
+                        <span className="absolute inset-0 flex items-center justify-end pr-2 text-[10px] font-semibold">
+                          {formatCurrency(Number(t.jami))}
+                        </span>
+                      </div>
+                      <span className="text-[10px] text-muted-foreground w-8 text-right">{t.soni}×</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Oxirgi sotuvlar jadvali */}
+            <div className="bg-card border rounded-xl overflow-hidden">
+              <div className="p-4 border-b flex items-center gap-2">
+                <Package className="w-4 h-4 text-sky-600" />
+                <h3 className="font-semibold">Oxirgi 20 ta sotuv</h3>
+              </div>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-14">#</TableHead>
+                    <TableHead>Sana</TableHead>
+                    <TableHead className="text-center">Tovar</TableHead>
+                    <TableHead className="text-right">Summa</TableHead>
+                    <TableHead className="text-right">To&apos;landi</TableHead>
+                    <TableHead className="text-right">Qarz</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {(data.oxirgi_sotuvlar || []).length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center py-6 text-muted-foreground">
+                        Sotuvlar yo&apos;q
+                      </TableCell>
+                    </TableRow>
+                  ) : (data.oxirgi_sotuvlar || []).map(s => {
+                    const qarz = Number(s.qarz || 0)
+                    return (
+                      <TableRow key={s.id}>
+                        <TableCell className="font-mono text-xs">#{s.id}</TableCell>
+                        <TableCell className="text-sm">
+                          {s.sana ? new Date(s.sana).toLocaleDateString("uz-UZ") : "—"}
+                        </TableCell>
+                        <TableCell className="text-center text-xs">{s.tovar_soni}</TableCell>
+                        <TableCell className="text-right font-mono text-sm font-semibold">
+                          {formatCurrency(Number(s.jami))}
+                        </TableCell>
+                        <TableCell className="text-right font-mono text-sm text-emerald-600">
+                          {formatCurrency(Number(s.tolangan))}
+                        </TableCell>
+                        <TableCell className={`text-right font-mono text-sm ${qarz > 0 ? "text-red-500 font-semibold" : "text-muted-foreground"}`}>
+                          {qarz > 0 ? formatCurrency(qarz) : "—"}
+                        </TableCell>
+                      </TableRow>
+                    )
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+
+            {rfm && (
+              <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 text-sm text-blue-800">
+                <div className="font-bold mb-1">RFM tahlil:</div>
+                <div>
+                  <b>R (Recency)</b> — oxirgi xarid {rfm.recency_days} kun oldin (ball: {rfm.R}/5)<br />
+                  <b>F (Frequency)</b> — {rfm.frequency} marta xarid qilgan (ball: {rfm.F}/5)<br />
+                  <b>M (Monetary)</b> — jami {formatCurrency(rfm.monetary)} sarflagan (ball: {rfm.M}/5)
+                </div>
+                <Badge className="mt-2">Segment: {rfm.segment}</Badge>
+              </div>
+            )}
           </div>
-        </div>
-      )}
-    </div>
-  );
+        )}
+      </div>
+    </AdminLayout>
+  )
 }

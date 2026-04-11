@@ -14,14 +14,14 @@ log = logging.getLogger(__name__)
 async def klient_profil(conn, uid: int, klient_id: int) -> dict | None:
     """To'liq klient profili."""
     row = await conn.fetchrow("""
-        SELECT k.id, k.ism, k.telefon, k.tugilgan_kun, k.izoh,
-               k.kategoriya, k.oxirgi_sotuv, k.jami_xaridlar, k.xarid_soni,
-               COALESCE(SUM(q.summa - q.tolangan), 0) AS joriy_qarz
+        SELECT k.id, k.ism, k.telefon, k.manzil,
+               k.tugilgan_kun, k.izoh, k.kategoriya,
+               k.oxirgi_sotuv, k.jami_xaridlar, k.xarid_soni,
+               k.kredit_limit,
+               COALESCE((SELECT SUM(qolgan) FROM qarzlar
+                          WHERE klient_id = k.id AND NOT yopildi), 0) AS joriy_qarz
         FROM klientlar k
-        LEFT JOIN qarzlar q ON q.klient_id = k.id AND q.user_id = k.user_id
-                                AND q.summa > q.tolangan
         WHERE k.id = $1 AND k.user_id = $2
-        GROUP BY k.id
     """, klient_id, uid)
     return dict(row) if row else None
 
@@ -29,14 +29,13 @@ async def klient_profil(conn, uid: int, klient_id: int) -> dict | None:
 async def klient_tarix(conn, uid: int, klient_id: int, limit: int = 20) -> list[dict]:
     """Klient sotuv tarixi."""
     rows = await conn.fetch("""
-        SELECT s.id, s.yaratilgan AS sana, s.jami_summa,
-               s.tolangan, s.holat,
+        SELECT s.id, s.sana, s.jami, s.tolangan, s.qarz,
                COUNT(c.id) AS tovar_soni
         FROM sotuv_sessiyalar s
         LEFT JOIN chiqimlar c ON c.sessiya_id = s.id
         WHERE s.user_id = $1 AND s.klient_id = $2
         GROUP BY s.id
-        ORDER BY s.yaratilgan DESC
+        ORDER BY s.sana DESC
         LIMIT $3
     """, uid, klient_id, limit)
     return [dict(r) for r in rows]
