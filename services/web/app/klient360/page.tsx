@@ -13,6 +13,7 @@ import {
   CreditCard, DollarSign, Search, AlertCircle, Trophy,
 } from "lucide-react"
 import { formatCurrency } from "@/lib/format"
+import Client360View, { type Client360 } from "@/components/dashboard/client-360-view"
 
 type Klient360Data = {
   klient: {
@@ -132,8 +133,51 @@ export default function Klient360Page() {
         )}
 
         {data && k && (
+          <Client360View
+            client={{
+              id:             k.id,
+              ism:            k.ism,
+              telefon:        k.telefon,
+              manzil:         k.manzil,
+              kategoriya:     k.kategoriya,
+              jami_xaridlar:  Number(k.jami_xaridlar ?? k.jami_sotib ?? data.sotuv_stats?.jami ?? 0),
+              xarid_soni:     Number(k.xarid_soni ?? data.sotuv_stats?.soni ?? 0),
+              ortacha_chek:   Number(data.sotuv_stats?.ortacha_chek ?? 0),
+              joriy_qarz:     Number(data.qarz_balans?.aktiv_qarz ?? 0),
+              kredit_limit:   Number(k.kredit_limit ?? 0),
+              birinchi_sotuv: data.sotuv_stats?.birinchi_sotuv,
+              oxirgi_sotuv:   k.oxirgi_sotuv ?? data.sotuv_stats?.oxirgi_sotuv,
+              rfm_segment:
+                data.rfm?.segment === "Champions"  ? "champions" :
+                data.rfm?.segment === "Loyal"      ? "loyal" :
+                data.rfm?.segment === "Potential"  ? "potential" :
+                data.rfm?.segment === "At Risk"    ? "at_risk" :
+                data.rfm?.segment === "Lost"       ? "lost" :
+                data.rfm                            ? "new" :
+                                                     undefined,
+              rfm_score:      data.rfm ? { R: data.rfm.R, F: data.rfm.F, M: data.rfm.M } : undefined,
+              oxirgi_sotuvlar: (data.oxirgi_sotuvlar || []).map(o => ({
+                id:         o.id,
+                sana:       o.sana,
+                jami:       Number(o.jami || 0),
+                tovar_soni: Number(o.tovar_soni || 0),
+              })),
+              top_tovarlar:   (data.top_tovarlar || []).map(t => ({
+                nomi:   t.tovar_nomi,
+                jami:   Number(t.jami || 0),
+                miqdor: Number(t.miqdor || 0),
+              })),
+              oylik_trend:    (data.oylik_trend || []).map(m => ({
+                oy:   m.oy,
+                jami: Number(m.jami || 0),
+              })),
+            }}
+          />
+        )}
+
+        {data && k && false && (
           <div className="space-y-5">
-            {/* Header Card */}
+            {/* Header Card (legacy — kept hidden for reference) */}
             <div className="bg-gradient-to-r from-emerald-500 to-teal-600 rounded-xl p-5 text-white">
               <div className="flex items-start justify-between flex-wrap gap-4">
                 <div className="flex items-center gap-4">
