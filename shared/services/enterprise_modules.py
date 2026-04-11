@@ -172,7 +172,7 @@ async def topshiriq_holat(conn, uid: int, topshiriq_id: int,
 async def topshiriqlar_royxati(conn, uid: int, holat: str = None,
                                  agent_id: int = None) -> List[dict]:
     """Topshiriqlar ro'yxati."""
-    query = "SELECT t.*, k.nom as klient_nomi FROM topshiriqlar t LEFT JOIN klientlar k ON k.id=t.klient_id WHERE t.user_id=$1"
+    query = "SELECT t.*, k.ism as klient_nomi FROM topshiriqlar t LEFT JOIN klientlar k ON k.id=t.klient_id WHERE t.user_id=$1"
     params = [uid]
     idx = 2
     if holat:
@@ -289,29 +289,32 @@ async def kunlik_kassa_hisoblash(conn, uid: int, sana: str = None) -> dict:
     if not sana:
         sana = date.today().isoformat()
 
-    # Sotuvlardan kirimlar
+    # Sotuvlardan kirimlar — hozircha tolov_turi yo'q, hammasi naqd deb olinadi
     kirim = await conn.fetchrow("""
         SELECT
-            COALESCE(SUM(CASE WHEN tolov_turi='naqd' THEN tolangan END), 0) AS naqd,
-            COALESCE(SUM(CASE WHEN tolov_turi IN ('karta','click','payme') THEN tolangan END), 0) AS karta,
+            COALESCE(SUM(tolangan), 0) AS naqd,
             COALESCE(SUM(tolangan), 0) AS jami_tolangan
-        FROM sotuvlar WHERE user_id=$1 AND sana::date=$2::date
+        FROM sotuv_sessiyalar
+        WHERE user_id = $1
+          AND (sana AT TIME ZONE 'Asia/Tashkent')::date = $2::date
     """, uid, sana) or {}
 
-    # Qarz yig'ildi
+    # Qarz yig'ildi — qarzlar.tolangan davr ichida yangilangan
     qarz_kirim = await conn.fetchval("""
-        SELECT COALESCE(SUM(summa), 0) FROM qarz_tolovlar
-        WHERE user_id=$1 AND sana::date=$2::date
+        SELECT COALESCE(SUM(tolangan), 0) FROM qarzlar
+        WHERE user_id = $1 AND yopildi
+          AND (yangilangan AT TIME ZONE 'Asia/Tashkent')::date = $2::date
     """, uid, sana) or Decimal("0")
 
-    # Xarajatlar
+    # Xarajatlar — admin_uid va bekor_qilingan filtri
     xarajat = await conn.fetchval("""
         SELECT COALESCE(SUM(summa), 0) FROM xarajatlar
-        WHERE user_id=$1 AND sana::date=$2::date
+        WHERE admin_uid = $1 AND NOT bekor_qilingan
+          AND (sana AT TIME ZONE 'Asia/Tashkent')::date = $2::date
     """, uid, sana) or Decimal("0")
 
     naqd = Decimal(str(kirim.get("naqd", 0)))
-    karta = Decimal(str(kirim.get("karta", 0)))
+    karta = Decimal("0")  # tolov_turi kiritilgandan keyin ishlaydi
     yakuniy = naqd + Decimal(str(qarz_kirim)) - Decimal(str(xarajat))
 
     # Saqlash

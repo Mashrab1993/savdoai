@@ -197,14 +197,17 @@ def export_csv(ustunlar: List[str], qatorlar: List[List[Any]]) -> bytes:
 async def export_sotuvlar(conn, uid: int, sana_dan: str, sana_gacha: str, fmt: str = "excel") -> bytes:
     """Sotuv hisoboti eksport."""
     rows = await conn.fetch("""
-        SELECT s.id, s.sana::text, k.nom AS klient, s.jami, s.tolangan, s.qarz, s.holat
-        FROM sotuvlar s LEFT JOIN klientlar k ON k.id=s.klient_id
-        WHERE s.user_id=$1 AND s.sana BETWEEN $2::date AND $3::date
+        SELECT s.id, s.sana::text, COALESCE(k.ism, s.klient_ismi, 'Mijoz') AS klient,
+               s.jami, s.tolangan, s.qarz
+        FROM sotuv_sessiyalar s
+        LEFT JOIN klientlar k ON k.id = s.klient_id
+        WHERE s.user_id = $1
+          AND (s.sana AT TIME ZONE 'Asia/Tashkent')::date BETWEEN $2::date AND $3::date
         ORDER BY s.sana DESC
     """, uid, sana_dan, sana_gacha)
 
-    ustunlar = ["ID", "Sana", "Klient", "Jami", "To'langan", "Qarz", "Holat"]
-    qatorlar = [[r["id"], r["sana"], r["klient"] or "—", r["jami"], r["tolangan"], r["qarz"], r["holat"]] for r in rows]
+    ustunlar = ["ID", "Sana", "Klient", "Jami", "To'langan", "Qarz"]
+    qatorlar = [[r["id"], r["sana"], r["klient"], r["jami"], r["tolangan"], r["qarz"]] for r in rows]
 
     if fmt == "csv":
         return export_csv(ustunlar, qatorlar)
@@ -216,14 +219,19 @@ async def export_sotuvlar(conn, uid: int, sana_dan: str, sana_gacha: str, fmt: s
 async def export_klientlar(conn, uid: int, fmt: str = "excel") -> bytes:
     """Klient ro'yxati eksport."""
     rows = await conn.fetch("""
-        SELECT k.id, k.nom, k.telefon, k.manzil, k.kategoriya,
-            COALESCE((SELECT SUM(qarz) FROM sotuvlar WHERE klient_id=k.id AND qarz>0), 0) AS qarz,
-            (SELECT COUNT(*) FROM sotuvlar WHERE klient_id=k.id) AS sotuv_soni
-        FROM klientlar k WHERE k.user_id=$1 AND k.faol=TRUE ORDER BY k.nom
+        SELECT k.id, k.ism, k.telefon, k.manzil, k.kategoriya,
+            COALESCE((SELECT SUM(qolgan) FROM qarzlar
+                      WHERE klient_id = k.id AND NOT yopildi), 0) AS qarz,
+            (SELECT COUNT(*) FROM sotuv_sessiyalar
+             WHERE klient_id = k.id) AS sotuv_soni
+        FROM klientlar k
+        WHERE k.user_id = $1
+        ORDER BY k.ism
     """, uid)
 
     ustunlar = ["ID", "Nomi", "Telefon", "Manzil", "Kategoriya", "Qarz", "Sotuv soni"]
-    qatorlar = [[r["id"], r["nom"], r["telefon"] or "", r["manzil"] or "", r["kategoriya"] or "", r["qarz"], r["sotuv_soni"]] for r in rows]
+    qatorlar = [[r["id"], r["ism"], r["telefon"] or "", r["manzil"] or "",
+                 r["kategoriya"] or "", r["qarz"], r["sotuv_soni"]] for r in rows]
 
     if fmt == "csv":
         return export_csv(ustunlar, qatorlar)
@@ -233,8 +241,13 @@ async def export_klientlar(conn, uid: int, fmt: str = "excel") -> bytes:
 async def export_tovarlar(conn, uid: int, fmt: str = "excel") -> bytes:
     """Tovar ro'yxati eksport."""
     rows = await conn.fetch("""
-        SELECT id, nomi, shtrix_kod, kategoriya, birlik, sotuv_narx, tan_narx, qoldiq
-        FROM tovarlar WHERE user_id=$1 AND faol=TRUE ORDER BY nomi
+        SELECT id, nomi, shtrix_kod, kategoriya, birlik,
+               sotish_narxi AS sotuv_narx,
+               olish_narxi  AS tan_narx,
+               qoldiq
+        FROM tovarlar
+        WHERE user_id = $1
+        ORDER BY nomi
     """, uid)
 
     ustunlar = ["ID", "Nomi", "Barcode", "Kategoriya", "Birlik", "Sotuv narx", "Tan narx", "Qoldiq"]

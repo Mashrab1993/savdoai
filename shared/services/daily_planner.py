@@ -46,9 +46,9 @@ async def kunlik_reja(conn, uid: int) -> dict:
 
     # ═══ 1. QARZ ESLATMALARI (eng muhim) ═══
     qarzlar = await conn.fetch("""
-        SELECT s.id, s.qarz, s.sana, k.nom, k.telefon, k.id AS klient_id,
+        SELECT s.id, s.qarz, s.sana, k.ism, k.telefon, k.id AS klient_id,
                EXTRACT(DAY FROM NOW() - s.sana) AS kechikkan_kun
-        FROM sotuvlar s
+        FROM sotuv_sessiyalar s
         JOIN klientlar k ON k.id = s.klient_id
         WHERE s.user_id=$1 AND s.qarz > 0
         ORDER BY s.sana ASC
@@ -71,13 +71,13 @@ async def kunlik_reja(conn, uid: int) -> dict:
 
     # ═══ 2. SOTIB OLMAGAN KLIENTLAR (churn xavfi) ═══
     yoq_klientlar = await conn.fetch("""
-        SELECT k.id, k.nom, k.telefon,
+        SELECT k.id, k.ism, k.telefon,
                MAX(s.sana) AS oxirgi_sotuv,
                EXTRACT(DAY FROM NOW() - MAX(s.sana)) AS kun_soni
         FROM klientlar k
-        JOIN sotuvlar s ON s.klient_id = k.id AND s.user_id = k.user_id
+        JOIN sotuv_sessiyalar s ON s.klient_id = k.id AND s.user_id = k.user_id
         WHERE k.user_id=$1
-        GROUP BY k.id, k.nom, k.telefon
+        GROUP BY k.id, k.ism, k.telefon
         HAVING MAX(s.sana) < NOW() - INTERVAL '7 days'
             AND MAX(s.sana) > NOW() - INTERVAL '60 days'
         ORDER BY MAX(s.sana) ASC
@@ -119,7 +119,7 @@ async def kunlik_reja(conn, uid: int) -> dict:
             COUNT(*) AS soni,
             COALESCE(SUM(jami), 0) AS summa,
             COALESCE(AVG(jami), 0) AS ortacha
-        FROM sotuvlar
+        FROM sotuv_sessiyalar
         WHERE user_id=$1
             AND EXTRACT(DOW FROM sana) = $2
             AND sana >= NOW() - INTERVAL '30 days'

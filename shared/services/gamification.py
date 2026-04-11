@@ -101,17 +101,17 @@ async def gamification_yangilash(conn, uid: int) -> dict:
         SELECT
             COUNT(*) AS sotuv_soni,
             COALESCE(SUM(jami), 0) AS jami_summa,
-            (SELECT COUNT(DISTINCT klient_id) FROM sotuvlar WHERE user_id=$1) AS klient_soni,
-            (SELECT COUNT(*) FROM sotuvlar WHERE user_id=$1
+            (SELECT COUNT(DISTINCT klient_id) FROM sotuv_sessiyalar WHERE user_id=$1) AS klient_soni,
+            (SELECT COUNT(*) FROM sotuv_sessiyalar WHERE user_id=$1
              AND EXTRACT(HOUR FROM sana) < 9) AS erta_sotuv,
-            (SELECT COUNT(*) FROM sotuvlar WHERE user_id=$1
+            (SELECT COUNT(*) FROM sotuv_sessiyalar WHERE user_id=$1
              AND EXTRACT(HOUR FROM sana) >= 20) AS kech_sotuv
-        FROM sotuvlar WHERE user_id=$1
+        FROM sotuv_sessiyalar WHERE user_id=$1
     """, uid)
 
     # Streak hisoblash
     streak_rows = await conn.fetch("""
-        SELECT DISTINCT sana::date AS kun FROM sotuvlar
+        SELECT DISTINCT sana::date AS kun FROM sotuv_sessiyalar
         WHERE user_id=$1 AND sana >= NOW() - INTERVAL '60 days'
         ORDER BY kun DESC
     """, uid)
@@ -212,7 +212,7 @@ async def leaderboard(conn, davr: str = "hafta", limit: int = 20) -> List[dict]:
             COALESCE(g.daraja, 1) AS daraja,
             COALESCE(g.streak_kun, 0) AS streak
         FROM users u
-        LEFT JOIN sotuvlar s ON s.user_id=u.id AND s.sana >= NOW() - INTERVAL '{interval}'
+        LEFT JOIN sotuv_sessiyalar s ON s.user_id=u.id AND s.sana >= NOW() - INTERVAL '{interval}'
         LEFT JOIN gamification g ON g.user_id=u.id
         GROUP BY u.id, u.ism, u.telegram_username, g.daraja, g.streak_kun
         HAVING COUNT(s.id) > 0

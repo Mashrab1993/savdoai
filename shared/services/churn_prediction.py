@@ -42,47 +42,43 @@ async def churn_tahlil(conn, uid: int) -> List[dict]:
         [{klient_id, nom, risk_skor, signal_tafsilot, tavsiya, harakat}]
     """
     # Klientlar va ularning sotuv statistikasi
+    # Schema: sotuv_sessiyalar (ss) + chiqimlar (ch) + klientlar (k.ism)
     klientlar = await conn.fetch("""
         WITH klient_stats AS (
             SELECT
                 k.id AS klient_id,
-                k.nom,
+                k.ism AS nom,
                 k.telefon,
-                -- Recency
-                EXTRACT(DAY FROM NOW() - MAX(s.sana)) AS oxirgi_sotuv_kun,
-                -- Frequency
-                COUNT(CASE WHEN s.sana >= NOW() - INTERVAL '30 days' THEN 1 END) AS oy1_soni,
-                COUNT(CASE WHEN s.sana >= NOW() - INTERVAL '60 days'
-                           AND s.sana < NOW() - INTERVAL '30 days' THEN 1 END) AS oy2_soni,
-                COUNT(CASE WHEN s.sana >= NOW() - INTERVAL '90 days'
-                           AND s.sana < NOW() - INTERVAL '60 days' THEN 1 END) AS oy3_soni,
-                -- Monetary
-                COALESCE(SUM(CASE WHEN s.sana >= NOW() - INTERVAL '30 days'
-                            THEN s.jami END), 0) AS oy1_summa,
-                COALESCE(SUM(CASE WHEN s.sana >= NOW() - INTERVAL '60 days'
-                            AND s.sana < NOW() - INTERVAL '30 days'
-                            THEN s.jami END), 0) AS oy2_summa,
-                COALESCE(SUM(CASE WHEN s.sana >= NOW() - INTERVAL '90 days'
-                            AND s.sana < NOW() - INTERVAL '60 days'
-                            THEN s.jami END), 0) AS oy3_summa,
-                -- Basket (tovar xilma-xilligi)
-                COUNT(DISTINCT CASE WHEN s.sana >= NOW() - INTERVAL '30 days'
-                      THEN c.tovar_id END) AS oy1_tovar_xil,
-                COUNT(DISTINCT CASE WHEN s.sana >= NOW() - INTERVAL '60 days'
-                      AND s.sana < NOW() - INTERVAL '30 days'
-                      THEN c.tovar_id END) AS oy2_tovar_xil,
-                -- Payment delay
-                COALESCE(AVG(CASE WHEN s.sana >= NOW() - INTERVAL '90 days'
-                      AND s.qarz > 0 THEN EXTRACT(DAY FROM NOW() - s.sana) END), 0) AS ort_qarz_kun,
-                COALESCE(SUM(s.qarz), 0) AS jami_qarz
+                EXTRACT(DAY FROM NOW() - MAX(ss.sana)) AS oxirgi_sotuv_kun,
+                COUNT(CASE WHEN ss.sana >= NOW() - INTERVAL '30 days' THEN 1 END) AS oy1_soni,
+                COUNT(CASE WHEN ss.sana >= NOW() - INTERVAL '60 days'
+                           AND ss.sana < NOW() - INTERVAL '30 days' THEN 1 END) AS oy2_soni,
+                COUNT(CASE WHEN ss.sana >= NOW() - INTERVAL '90 days'
+                           AND ss.sana < NOW() - INTERVAL '60 days' THEN 1 END) AS oy3_soni,
+                COALESCE(SUM(CASE WHEN ss.sana >= NOW() - INTERVAL '30 days'
+                             THEN ss.jami END), 0) AS oy1_summa,
+                COALESCE(SUM(CASE WHEN ss.sana >= NOW() - INTERVAL '60 days'
+                             AND ss.sana < NOW() - INTERVAL '30 days'
+                             THEN ss.jami END), 0) AS oy2_summa,
+                COALESCE(SUM(CASE WHEN ss.sana >= NOW() - INTERVAL '90 days'
+                             AND ss.sana < NOW() - INTERVAL '60 days'
+                             THEN ss.jami END), 0) AS oy3_summa,
+                COUNT(DISTINCT CASE WHEN ss.sana >= NOW() - INTERVAL '30 days'
+                      THEN ch.tovar_id END) AS oy1_tovar_xil,
+                COUNT(DISTINCT CASE WHEN ss.sana >= NOW() - INTERVAL '60 days'
+                      AND ss.sana < NOW() - INTERVAL '30 days'
+                      THEN ch.tovar_id END) AS oy2_tovar_xil,
+                COALESCE(AVG(CASE WHEN ss.sana >= NOW() - INTERVAL '90 days'
+                      AND ss.qarz > 0 THEN EXTRACT(DAY FROM NOW() - ss.sana) END), 0) AS ort_qarz_kun,
+                COALESCE(SUM(ss.qarz), 0) AS jami_qarz
             FROM klientlar k
-            LEFT JOIN sotuvlar s ON s.klient_id = k.id AND s.user_id = k.user_id
-            LEFT JOIN sotuv_tafsilot c ON c.sotuv_id = s.id
+            LEFT JOIN sotuv_sessiyalar ss ON ss.klient_id = k.id AND ss.user_id = k.user_id
+            LEFT JOIN chiqimlar ch ON ch.sessiya_id = ss.id
             WHERE k.user_id = $1
-                AND EXISTS (SELECT 1 FROM sotuvlar s2
-                            WHERE s2.klient_id = k.id AND s2.user_id = $1
-                            AND s2.sana >= NOW() - INTERVAL '180 days')
-            GROUP BY k.id, k.nom, k.telefon
+              AND EXISTS (SELECT 1 FROM sotuv_sessiyalar ss2
+                          WHERE ss2.klient_id = k.id AND ss2.user_id = $1
+                            AND ss2.sana >= NOW() - INTERVAL '180 days')
+            GROUP BY k.id, k.ism, k.telefon
         )
         SELECT * FROM klient_stats
         ORDER BY oxirgi_sotuv_kun DESC NULLS LAST

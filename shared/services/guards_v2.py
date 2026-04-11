@@ -37,46 +37,44 @@ async def qoldiq_qaytarish(conn, uid: int, sotuv_id: int) -> dict:
     Returns:
         {"qaytarilgan": soni, "tovarlar": [...]}
     """
-    # Sotuv tafsilotlarini olish
+    # Sotuv qatorlarini (chiqimlar) olish
     tafsilotlar = await conn.fetch("""
-        SELECT st.tovar_id, st.miqdor, st.narx, t.nomi
-        FROM sotuv_tafsilot st
-        JOIN tovarlar t ON t.id = st.tovar_id
-        WHERE st.sotuv_id = $1
-    """, sotuv_id)
+        SELECT ch.tovar_id, ch.miqdor, ch.sotish_narxi AS narx, ch.tovar_nomi AS nomi
+        FROM chiqimlar ch
+        WHERE ch.sessiya_id = $1 AND ch.user_id = $2
+    """, sotuv_id, uid)
 
     if not tafsilotlar:
         return {"qaytarilgan": 0, "tovarlar": []}
 
     qaytarilgan = []
     for row in tafsilotlar:
-        # Qoldiqni qaytarish
-        await conn.execute("""
-            UPDATE tovarlar
-            SET qoldiq = COALESCE(qoldiq, 0) + $1
-            WHERE id = $2 AND user_id = $3
-        """, row["miqdor"], row["tovar_id"], uid)
+        # Qoldiqni qaytarish (faqat tovar_id bor bo'lsa)
+        if row["tovar_id"]:
+            await conn.execute("""
+                UPDATE tovarlar
+                SET qoldiq = COALESCE(qoldiq, 0) + $1
+                WHERE id = $2 AND user_id = $3
+            """, row["miqdor"], row["tovar_id"], uid)
 
         qaytarilgan.append({
             "tovar_id": row["tovar_id"],
-            "nomi": row["nomi"],
-            "miqdor": float(row["miqdor"]),
+            "nomi":     row["nomi"],
+            "miqdor":   float(row["miqdor"]),
         })
 
-        log.info("Qoldiq qaytarildi: tovar=%s miqdor=%s sotuv=%s",
+        log.info("Qoldiq qaytarildi: tovar=%s miqdor=%s sessiya=%s",
                  row["nomi"], row["miqdor"], sotuv_id)
 
-    # Sotuv holatini yangilash
-    await conn.execute("""
-        UPDATE sotuvlar SET holat = 'bekor', bekor_vaqti = NOW()
-        WHERE id = $1 AND user_id = $2
-    """, sotuv_id, uid)
-
-    # Audit log
-    await conn.execute("""
-        INSERT INTO audit_log (user_id, amal, jadval, yozuv_id, eski_qiymat, yangi_qiymat)
-        VALUES ($1, 'bekor_qilish', 'sotuvlar', $2, NULL, $3)
-    """, uid, sotuv_id, f"Qoldiq qaytarildi: {len(qaytarilgan)} tovar")
+    # Audit log (sotuv_sessiyalar bekor qilish uchun holat ustuni yo'q —
+    # shuning uchun faqat audit_log yozuvi qoldi)
+    try:
+        await conn.execute("""
+            INSERT INTO audit_log (user_id, amal, jadval, yozuv_id, eski_qiymat, yangi_qiymat)
+            VALUES ($1, 'bekor_qilish', 'sotuv_sessiyalar', $2, NULL, $3)
+        """, uid, sotuv_id, f"Qoldiq qaytarildi: {len(qaytarilgan)} tovar")
+    except Exception as e:
+        log.debug("audit_log yozib bo'lmadi: %s", e)
 
     return {"qaytarilgan": len(qaytarilgan), "tovarlar": qaytarilgan}
 
