@@ -1,21 +1,57 @@
 "use client"
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 import { AdminLayout } from "@/components/layout/admin-layout"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
-import { Receipt, Save, X } from "lucide-react"
+import { Receipt, Save, X, AlertCircle, Check } from "lucide-react"
 
 export default function ExpenseCreatePage() {
+  const router = useRouter()
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState("")
+  const [success, setSuccess] = useState(false)
   const [form, setForm] = useState({
     fond: "operatsion",
     kategoriya: "ijara",
     summa: "",
     valyuta: "UZS",
-    kassa: "asosiy",
+    kassa: "naqd",
     sana: new Date().toISOString().split("T")[0],
     izoh: "",
   })
+
+  async function handleSave() {
+    const summa = Number(form.summa)
+    if (!summa || summa <= 0) { setError("Summa kiriting"); return }
+    setError(""); setSaving(true)
+    try {
+      const token = typeof window !== "undefined" ? localStorage.getItem("auth_token") : ""
+      const base  = process.env.NEXT_PUBLIC_API_URL || ""
+      const res = await fetch(`${base}/api/v1/kassa/operatsiya`, {
+        method:  "POST",
+        headers: {
+          "Content-Type":  "application/json",
+          Authorization:   `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          tur:        "chiqim",
+          summa,
+          usul:       form.kassa === "karta" ? "karta" : "naqd",
+          tavsif:     form.izoh || `${form.fond}: ${form.kategoriya}`,
+          kategoriya: form.kategoriya,
+        }),
+      })
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      setSuccess(true)
+      setTimeout(() => router.push("/cash"), 1200)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e))
+    } finally {
+      setSaving(false)
+    }
+  }
 
   return (
     <AdminLayout>
@@ -88,9 +124,27 @@ export default function ExpenseCreatePage() {
             <Textarea value={form.izoh} onChange={e => setForm({...form, izoh: e.target.value})} placeholder="Xarajat haqida ma'lumot..." rows={3} />
           </div>
 
+          {success && (
+            <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-emerald-700 flex items-center gap-2 text-sm">
+              <Check className="w-4 h-4" /> Muvaffaqiyatli saqlandi! Kassa sahifasiga yo&apos;naltirilmoqda...
+            </div>
+          )}
+          {error && (
+            <div className="bg-red-50 border border-red-200 rounded-xl p-3 text-red-700 flex items-center gap-2 text-sm">
+              <AlertCircle className="w-4 h-4" /> {error}
+            </div>
+          )}
+
           <div className="flex gap-3 pt-4">
-            <Button variant="outline" className="flex-1"><X className="w-4 h-4 mr-1" /> Bekor</Button>
-            <Button className="flex-1 bg-emerald-600 hover:bg-emerald-700"><Save className="w-4 h-4 mr-1" /> Saqlash</Button>
+            <Button variant="outline" className="flex-1" onClick={() => router.push("/cash")}>
+              <X className="w-4 h-4 mr-1" /> Bekor
+            </Button>
+            <Button className="flex-1"
+                    onClick={handleSave}
+                    disabled={saving || !form.summa}>
+              <Save className="w-4 h-4 mr-1" />
+              {saving ? "Saqlanmoqda..." : "Saqlash"}
+            </Button>
           </div>
         </div>
       </div>
