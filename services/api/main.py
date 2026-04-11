@@ -182,6 +182,7 @@ class SotuvSo_rov(BaseModel):
 
 
 class KirimSo_rov(BaseModel):
+    tovar_id:       Optional[int] = None
     tovar_nomi:     str   = Field(..., min_length=1)
     miqdor:         float = Field(..., gt=0)
     narx:           float = Field(0, ge=0)
@@ -189,6 +190,7 @@ class KirimSo_rov(BaseModel):
     birlik:         str   = Field("dona")
     kategoriya:     str   = Field("Boshqa")
     manba:          Optional[str] = None
+    izoh:           Optional[str] = None
 
 
 class QarzTolashSo_rov(BaseModel):
@@ -1261,7 +1263,13 @@ async def sotuv_saqlash(data: SotuvSo_rov, request: Request, uid: int = Depends(
 
 @app.post("/api/v1/kirim", tags=["Sotuv"])
 async def kirim_saqlash(data: KirimSo_rov, uid: int = Depends(get_uid)):
-    """Tovar kirimini saqlash"""
+    """Tovar kirimini saqlash va avtomatik ombor qoldig'ini oshirish.
+
+    1. kirimlar jadvaliga yozuv qo'shiladi (tarix uchun)
+    2. tovarlar jadvalida qoldiq avtomatik oshiriladi
+    3. Agar tovar mavjud bo'lmasa, yangi yaratiladi
+    4. Olish narxi yangilanadi (moving average emas — oxirgi narx)
+    """
     from shared.utils.hisob import kirim_validatsiya
     from shared.cache.redis_cache import user_cache_tozala
 
@@ -1274,22 +1282,128 @@ async def kirim_saqlash(data: KirimSo_rov, uid: int = Depends(get_uid)):
         raise HTTPException(400, "So'rov ma'lumotlari noto'g'ri")
 
     async with rls_conn(uid) as c:
-        kirim_id = await c.fetchval("""
-            INSERT INTO kirimlar
-                (user_id, tovar_nomi, kategoriya, miqdor, birlik, narx, jami, manba)
-            VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING id
-        """, uid,
-            data.tovar_nomi,
-            data.kategoriya,
-            data.miqdor,
-            data.birlik,
-            data.narx,
-            data.jami,
-            data.manba,
-        )
+        async with c.transaction():
+            kirim_id = await c.fetchval("""
+                INSERT INTO kirimlar
+                    (user_id, tovar_id, tovar_nomi, kategoriya, miqdor,
+                     birlik, narx, jami, manba, izoh)
+                VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING id
+            """, uid,
+                getattr(data, "tovar_id", None),
+                data.tovar_nomi,
+                data.kategoriya,
+                data.miqdor,
+                data.birlik,
+                data.narx,
+                data.jami,
+                data.manba,
+                getattr(data, "izoh", None),
+            )
+
+            # Tovar qoldig'ini avtomatik oshirish
+            tovar_id = getattr(data, "tovar_id", None)
+            if tovar_id:
+                await c.execute("""
+                    UPDATE tovarlar
+                    SET qoldiq = COALESCE(qoldiq, 0) + $1,
+                        olish_narxi = CASE WHEN $2 > 0 THEN $2 ELSE olish_narxi END,
+                        yangilangan = NOW()
+                    WHERE id = $3 AND user_id = $4
+                """, data.miqdor, data.narx, tovar_id, uid)
+            else:
+                # tovar_id berilmagan bo'lsa, nom bo'yicha yangilash (upsert)
+                await c.execute("""
+                    INSERT INTO tovarlar
+                        (user_id, nomi, kategoriya, birlik, olish_narxi, qoldiq)
+                    VALUES ($1, $2, $3, $4, $5, $6)
+                    ON CONFLICT (user_id, lower(nomi)) DO UPDATE SET
+                        qoldiq      = COALESCE(tovarlar.qoldiq, 0) + EXCLUDED.qoldiq,
+                        olish_narxi = CASE WHEN EXCLUDED.olish_narxi > 0
+                                           THEN EXCLUDED.olish_narxi
+                                           ELSE tovarlar.olish_narxi END,
+                        yangilangan = NOW()
+                """, uid, data.tovar_nomi, data.kategoriya,
+                    data.birlik, data.narx, data.miqdor)
 
     await user_cache_tozala(uid)
     return {"kirim_id": kirim_id, "status": "saqlandi"}
+
+
+@app.get("/api/v1/kirimlar", tags=["Sotuv"])
+async def kirimlar_royxati(
+    limit: int = 50, offset: int = 0,
+    sana_dan: Optional[str] = None,
+    sana_gacha: Optional[str] = None,
+    qidiruv: Optional[str] = None,
+    kategoriya: Optional[str] = None,
+    uid: int = Depends(get_uid),
+):
+    """Kirimlar ro'yxati — sana/kategoriya/qidiruv filtrlari bilan."""
+    limit = min(limit, 500)
+    where = ["user_id = $1"]
+    params: list = [uid]
+    if sana_dan:
+        params.append(sana_dan)
+        where.append(f"sana >= ${len(params)}::timestamptz")
+    if sana_gacha:
+        params.append(sana_gacha)
+        where.append(f"sana < ${len(params)}::timestamptz + interval '1 day'")
+    if kategoriya:
+        params.append(kategoriya)
+        where.append(f"kategoriya = ${len(params)}")
+    if qidiruv:
+        params.append(f"%{qidiruv}%")
+        where.append(
+            f"(tovar_nomi ILIKE ${len(params)} OR manba ILIKE ${len(params)})"
+        )
+    params.append(limit); params.append(offset)
+    where_sql = " AND ".join(where)
+
+    async with rls_conn(uid) as c:
+        rows = await c.fetch(f"""
+            SELECT id, tovar_id, tovar_nomi, kategoriya,
+                   miqdor, birlik, narx, jami, manba, izoh, sana
+            FROM kirimlar
+            WHERE {where_sql}
+            ORDER BY sana DESC
+            LIMIT ${len(params)-1} OFFSET ${len(params)}
+        """, *params)
+
+        stats = await c.fetchrow(f"""
+            SELECT COUNT(*)                  AS soni,
+                   COALESCE(SUM(jami), 0)    AS jami_summa,
+                   COALESCE(SUM(miqdor), 0)  AS jami_miqdor,
+                   COUNT(DISTINCT tovar_id) FILTER (WHERE tovar_id IS NOT NULL)
+                       AS turli_tovar
+            FROM kirimlar
+            WHERE {where_sql}
+        """, *params[:-2])
+
+    return {
+        "items": [dict(r) for r in rows],
+        "stats": dict(stats) if stats else {},
+    }
+
+
+@app.delete("/api/v1/kirim/{kirim_id}", tags=["Sotuv"])
+async def kirim_ochir(kirim_id: int, uid: int = Depends(get_uid)):
+    """Kirimni o'chirish va avtomatik qoldiqni kamaytirish."""
+    async with rls_conn(uid) as c:
+        async with c.transaction():
+            kirim = await c.fetchrow(
+                "SELECT tovar_id, miqdor FROM kirimlar WHERE id=$1 AND user_id=$2",
+                kirim_id, uid)
+            if not kirim:
+                raise HTTPException(404, "Kirim topilmadi")
+            if kirim["tovar_id"]:
+                await c.execute(
+                    "UPDATE tovarlar SET qoldiq = GREATEST(0, qoldiq - $1) "
+                    "WHERE id = $2 AND user_id = $3",
+                    kirim["miqdor"], kirim["tovar_id"], uid)
+            await c.execute(
+                "DELETE FROM kirimlar WHERE id=$1 AND user_id=$2",
+                kirim_id, uid)
+    return {"id": kirim_id, "status": "ochirildi"}
 
 
 # ════════════════════════════════════════════════════════════

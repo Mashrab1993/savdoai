@@ -428,6 +428,130 @@ async def tovar_tarix(tovar_id: int, limit: int = 20, uid: int = Depends(get_uid
     }
 
 
+@router.get("/tovar/shablon/excel")
+async def tovar_shablon_excel(uid: int = Depends(get_uid)):
+    """Tovar import qilish uchun shablon Excel fayli.
+
+    28 ta ustun: SalesDoc-compatible hamma maydonlar.
+    """
+    import io as _io, base64 as _b64
+    from openpyxl import Workbook
+    from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+    from openpyxl.worksheet.datavalidation import DataValidation
+
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Tovarlar"
+
+    headers = [
+        # Asosiy
+        ("nomi",             "Tovar nomi",        30,  True),
+        ("kategoriya",       "Kategoriya",        18,  False),
+        ("birlik",           "Birlik",            10,  False),
+        ("olish_narxi",      "Olish narxi",       14,  False),
+        ("sotish_narxi",     "Sotish narxi",      14,  False),
+        ("min_sotish_narxi", "Min sotish",        14,  False),
+        ("qoldiq",           "Qoldiq",            12,  False),
+        ("min_qoldiq",       "Min qoldiq",        12,  False),
+        # Identifikatsiya
+        ("brend",            "Brend",             18,  False),
+        ("ishlab_chiqaruvchi", "Ishlab chiqaruvchi", 22, False),
+        ("podkategoriya",    "Podkategoriya",     18,  False),
+        ("guruh",            "Guruh",             15,  False),
+        ("segment",          "Segment",           14,  False),
+        ("savdo_yonalishi",  "Savdo yo'nalishi",  16,  False),
+        ("shtrix_kod",       "Shtrix kod (EAN)",  18,  False),
+        ("gtin",             "GTIN",              15,  False),
+        ("artikul",          "Artikul",           14,  False),
+        ("sap_kod",          "SAP kod",           14,  False),
+        ("kod",              "Ichki kod",         14,  False),
+        ("ikpu_kod",         "IKPU kod",          16,  False),
+        # O'lchamlar
+        ("hajm",             "Hajm (l)",          10,  False),
+        ("ogirlik",          "Og'irlik (kg)",     12,  False),
+        ("blokda_soni",      "Blokda",            10,  False),
+        ("korobkada_soni",   "Korobkada",         12,  False),
+        ("saralash",         "Saralash",          10,  False),
+        ("yaroqlilik_muddati", "Yaroq. muddat (kun)", 16, False),
+        # Tavsif
+        ("tavsif",           "Tavsif",            30,  False),
+    ]
+
+    header_fill     = PatternFill(start_color="0A819C", end_color="0A819C", fill_type="solid")
+    header_font     = Font(bold=True, color="FFFFFF", size=11)
+    required_fill   = PatternFill(start_color="FFECB3", end_color="FFECB3", fill_type="solid")
+    thin = Side(style="thin", color="888888")
+    border = Border(left=thin, right=thin, top=thin, bottom=thin)
+
+    for i, (key, label, width, required) in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=i, value=label + (" *" if required else ""))
+        cell.fill = required_fill if required else header_fill
+        cell.font = Font(bold=True, color="000000" if required else "FFFFFF", size=11)
+        cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+        cell.border = border
+        ws.column_dimensions[chr(64 + i) if i < 27 else "A" + chr(64 + i - 26)].width = width
+
+    ws.row_dimensions[1].height = 32
+    ws.freeze_panes = "A2"
+
+    # Namunaviy qator (2-qator)
+    example = [
+        "Ariel Color 3kg", "Maishiy kimyo", "dona",
+        32000, 42000, 40000, 50, 10,
+        "Procter & Gamble", "P&G", "Kir yuvish", "Kukun", "Premium", "B2C",
+        "4015600123456", "04015600123456", "PG-ARI-3", "1001234", "INT-001", "05031000001",
+        3, 3, 6, 12, 500, 730,
+        "Avtomatik kir mashinasi uchun konsentrat kukun",
+    ]
+    for col, v in enumerate(example, 1):
+        cell = ws.cell(row=2, column=col, value=v)
+        cell.border = border
+        cell.font = Font(italic=True, color="666666", size=10)
+        if col in (4, 5, 6, 7, 8, 21, 22, 23, 24, 25, 26):
+            cell.alignment = Alignment(horizontal="right")
+
+    # Izoh sahifasi
+    info_ws = wb.create_sheet("Yo'riqnoma")
+    info_lines = [
+        ("SavdoAI Tovar Import — Yo'riqnoma", True),
+        ("", False),
+        ("1-qator: Ustun sarlavhalari — o'zgartirmang!", False),
+        ("2-qator: Namunaviy qator — o'chirib yuboring", False),
+        ("3-qatordan boshlab: o'z tovarlaringizni kiriting", False),
+        ("", False),
+        ("Majburiy ustunlar (*):", True),
+        ("• nomi — tovar nomi", False),
+        ("", False),
+        ("Ixtiyoriy ustunlar: Qolganlarini istalgancha to'ldiring.", False),
+        ("", False),
+        ("Import qilish:", True),
+        ("1. Bu Excel faylni to'ldiring", False),
+        ("2. SavdoAI web panel → /products → Import tugmasini bosing", False),
+        ("3. Faylni tanlang va yuklang", False),
+        ("4. Tizim avtomatik tovarlarni qo'shadi va duplicate bo'lsa yangilaydi", False),
+        ("", False),
+        ("Shakllar:", True),
+        ("• Narxlar — raqam (masalan: 42000)", False),
+        ("• Qoldiq — son (masalan: 50 yoki 50.5)", False),
+        ("• Shtrix kod — EAN-13 format (13 raqam)", False),
+        ("• IKPU kod — 11 raqam (O'zbekiston soliq)", False),
+        ("", False),
+        ("Yordam: @savdoai_mashrab_bot /yordam", False),
+    ]
+    for idx, (text, bold) in enumerate(info_lines, 1):
+        cell = info_ws.cell(row=idx, column=1, value=text)
+        if bold:
+            cell.font = Font(bold=True, size=12, color="0A819C")
+    info_ws.column_dimensions["A"].width = 80
+
+    buf = _io.BytesIO()
+    wb.save(buf); buf.seek(0)
+    return {
+        "filename": "SavdoAI_Tovar_Shablon.xlsx",
+        "content_base64": _b64.b64encode(buf.getvalue()).decode(),
+    }
+
+
 @router.get("/tovar/export/excel")
 async def tovar_excel_export(uid: int = Depends(get_uid)):
     """Tovarlar ro'yxatini Excel faylga export qilish"""

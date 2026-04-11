@@ -263,6 +263,27 @@ export default function ProductsPage() {
               className="gap-2"
               onClick={async () => {
                 try {
+                  const r = await productService.shablonExcel()
+                  const bytes = Uint8Array.from(atob(r.content_base64), c => c.charCodeAt(0))
+                  const blob  = new Blob([bytes], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" })
+                  const url   = URL.createObjectURL(blob)
+                  const a     = document.createElement("a")
+                  a.href      = url
+                  a.download  = r.filename || "shablon.xlsx"
+                  a.click()
+                  URL.revokeObjectURL(url)
+                } catch { /* silent */ }
+              }}
+              title={locale === "uz" ? "Import uchun shablon yuklab olish" : "Скачать шаблон для импорта"}
+            >
+              <Download className="w-4 h-4" />
+              {locale === "uz" ? "Shablon" : "Шаблон"}
+            </Button>
+            <Button
+              variant="outline"
+              className="gap-2"
+              onClick={async () => {
+                try {
                   const result = await productService.exportExcel()
                   const bytes = Uint8Array.from(atob(result.content_base64), c => c.charCodeAt(0))
                   const blob = new Blob([bytes], {

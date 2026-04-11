@@ -109,6 +109,45 @@ export const productService = {
     api.get<{ filename: string; content_base64: string; tovar_soni: number }>(
       "/api/v1/tovar/export/excel"
     ),
+  shablonExcel: () =>
+    api.get<{ filename: string; content_base64: string }>(
+      "/api/v1/tovar/shablon/excel"
+    ),
+}
+
+// ── Kirimlar (stock-in) ───────────────────────────────────────────────────────
+export const kirimService = {
+  list: (params?: {
+    sana_dan?: string; sana_gacha?: string;
+    qidiruv?: string; kategoriya?: string;
+    limit?: number; offset?: number;
+  }) => {
+    const q = new URLSearchParams()
+    if (params?.sana_dan)   q.set("sana_dan",   params.sana_dan)
+    if (params?.sana_gacha) q.set("sana_gacha", params.sana_gacha)
+    if (params?.qidiruv)    q.set("qidiruv",    params.qidiruv)
+    if (params?.kategoriya) q.set("kategoriya", params.kategoriya)
+    if (params?.limit)      q.set("limit",      String(params.limit))
+    if (params?.offset)     q.set("offset",     String(params.offset))
+    const qs = q.toString()
+    return api.get<{
+      items: Array<Record<string, unknown>>;
+      stats: { soni?: number; jami_summa?: number; jami_miqdor?: number; turli_tovar?: number };
+    }>(`/api/v1/kirimlar${qs ? `?${qs}` : ""}`)
+  },
+  create: (data: {
+    tovar_id?: number;
+    tovar_nomi: string;
+    kategoriya?: string;
+    birlik?: string;
+    miqdor: number;
+    narx: number;
+    jami?: number;
+    manba?: string;
+    izoh?: string;
+  }) => api.post<{ kirim_id: number; status: string }>("/api/v1/kirim", data),
+  remove: (id: number) =>
+    api.delete<{ id: number; status: string }>(`/api/v1/kirim/${id}`),
 }
 
 // ── Debts ─────────────────────────────────────────────────────────────────────
