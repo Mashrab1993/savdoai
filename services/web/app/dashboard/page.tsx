@@ -2,6 +2,7 @@
 
 import { AdminLayout } from "@/components/layout/admin-layout"
 import KpiGridPremium from "@/components/dashboard/kpi-grid-premium"
+import AgentKpiBoard, { type AgentKpi } from "@/components/dashboard/agent-kpi-board"
 import {
   Users, Package, FileText,
   TrendingUp, AlertCircle,
@@ -102,6 +103,23 @@ export default function DashboardPage() {
                   </Link>
                 </div>
               </div>
+            )}
+
+            {/* Agent KPI leaderboard — pulls from statsExtra.agentlar if backend provides it */}
+            {Array.isArray((statsExtra as any)?.agentlar) && (statsExtra as any).agentlar.length > 0 && (
+              <AgentKpiBoard
+                agents={((statsExtra as any).agentlar as any[]).map<AgentKpi>(a => ({
+                  id:           a.id ?? a.agent_id ?? a.ism,
+                  ism:          a.ism || a.name || "—",
+                  reja:         Number(a.reja || 0),
+                  tashrif_soni: Number(a.tashrif_soni || a.visited || 0),
+                  rejali_summa: Number(a.rejali_summa || a.on_plan_summa || 0),
+                  rejali_soni:  Number(a.rejali_soni  || a.on_plan_soni  || 0),
+                  ofplan_summa: Number(a.ofplan_summa || a.off_plan_summa || 0),
+                  ofplan_soni:  Number(a.ofplan_soni  || a.off_plan_soni  || 0),
+                  qaytarish:    Number(a.qaytarish || 0),
+                }))}
+              />
             )}
 
             {/* Premium KPI grid (v0.dev → GPT-5.4 audit → Claude fix pipeline) */}
