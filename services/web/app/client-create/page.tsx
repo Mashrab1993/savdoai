@@ -1,12 +1,18 @@
 "use client"
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 import { AdminLayout } from "@/components/layout/admin-layout"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
-import { User, Save, X, MapPin } from "lucide-react"
+import { User, Save, X, MapPin, AlertCircle, Check } from "lucide-react"
+import { clientService } from "@/lib/api/services"
 
 export default function ClientCreatePage() {
+  const router = useRouter()
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState("")
+  const [success, setSuccess] = useState(false)
   const [form, setForm] = useState({
     nomi: "", firm: "", inn: "",
     telefon: "", email: "",
@@ -15,6 +21,27 @@ export default function ClientCreatePage() {
     kontaktPerson: "", kreditLimit: 0,
     izoh: "",
   })
+
+  async function handleSave() {
+    if (!form.nomi.trim()) { setError("Ism majburiy"); return }
+    setError(""); setSaving(true)
+    try {
+      await clientService.create({
+        ism:          form.nomi.trim(),
+        telefon:      form.telefon.trim() || undefined,
+        manzil:       form.manzil.trim() || undefined,
+        inn:          form.inn.trim() || undefined,
+        kredit_limit: Number(form.kreditLimit) || 0,
+        eslatma:      form.izoh.trim() || undefined,
+      })
+      setSuccess(true)
+      setTimeout(() => router.push("/clients"), 1200)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e))
+    } finally {
+      setSaving(false)
+    }
+  }
 
   return (
     <AdminLayout>
@@ -104,9 +131,27 @@ export default function ClientCreatePage() {
             <Textarea value={form.izoh} onChange={e => setForm({...form, izoh: e.target.value})} rows={2} placeholder="Qo'shimcha ma'lumot..." />
           </div>
 
+          {success && (
+            <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-emerald-700 flex items-center gap-2 text-sm">
+              <Check className="w-4 h-4" /> Muvaffaqiyatli saqlandi!
+            </div>
+          )}
+          {error && (
+            <div className="bg-red-50 border border-red-200 rounded-xl p-3 text-red-700 flex items-center gap-2 text-sm">
+              <AlertCircle className="w-4 h-4" /> {error}
+            </div>
+          )}
+
           <div className="flex gap-3 pt-4">
-            <Button variant="outline" className="flex-1"><X className="w-4 h-4 mr-1" /> Bekor</Button>
-            <Button className="flex-1 bg-emerald-600 hover:bg-emerald-700"><Save className="w-4 h-4 mr-1" /> Saqlash</Button>
+            <Button variant="outline" className="flex-1" onClick={() => router.push("/clients")}>
+              <X className="w-4 h-4 mr-1" /> Bekor
+            </Button>
+            <Button className="flex-1"
+                    onClick={handleSave}
+                    disabled={saving || !form.nomi.trim()}>
+              <Save className="w-4 h-4 mr-1" />
+              {saving ? "Saqlanmoqda..." : "Saqlash"}
+            </Button>
           </div>
         </div>
       </div>

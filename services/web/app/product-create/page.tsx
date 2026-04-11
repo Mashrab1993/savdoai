@@ -1,13 +1,19 @@
 "use client"
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 import { AdminLayout } from "@/components/layout/admin-layout"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Package, Save, X, Image as ImageIcon, Upload } from "lucide-react"
+import { Package, Save, X, Image as ImageIcon, Upload, AlertCircle, Check } from "lucide-react"
+import { productService } from "@/lib/api/services"
 
 export default function ProductCreatePage() {
+  const router = useRouter()
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState("")
+  const [success, setSuccess] = useState(false)
   const [form, setForm] = useState({
     nomi: "", kategoriya: "kosmetika", podkategoriya: "",
     brend: "", segment: "", ishlab_chiqaruvchi: "",
@@ -20,6 +26,46 @@ export default function ProductCreatePage() {
     saralash: 500, yaroqlilik_muddati: 0,
     tavsif: "", faol: true,
   })
+
+  async function handleSave() {
+    if (!form.nomi.trim()) { setError("Tovar nomi majburiy"); return }
+    setError(""); setSaving(true)
+    try {
+      const payload: Record<string, unknown> = {
+        nomi:               form.nomi.trim(),
+        kategoriya:         form.kategoriya || "Boshqa",
+        birlik:             form.birlik    || "dona",
+        olish_narxi:        Number(form.olish_narxi) || 0,
+        sotish_narxi:       Number(form.sotish_narxi) || 0,
+        qoldiq:             Number(form.qoldiq) || 0,
+        min_qoldiq:         Number(form.min_qoldiq) || 0,
+        brend:              form.brend || undefined,
+        podkategoriya:      form.podkategoriya || undefined,
+        ishlab_chiqaruvchi: form.ishlab_chiqaruvchi || undefined,
+        segment:            form.segment || undefined,
+        shtrix_kod:         form.shtrix_kod || undefined,
+        artikul:            form.artikul || undefined,
+        sap_kod:            form.sap_kod || undefined,
+        ikpu_kod:           form.ikpu_kod || undefined,
+        gtin:               form.gtin || undefined,
+        hajm:               Number(form.hajm) || undefined,
+        ogirlik:            Number(form.ogirlik) || undefined,
+        blokda_soni:        Number(form.blokda_soni) || undefined,
+        korobkada_soni:     Number(form.korobkada_soni) || undefined,
+        saralash:           Number(form.saralash) || undefined,
+        yaroqlilik_muddati: Number(form.yaroqlilik_muddati) || undefined,
+        tavsif:             form.tavsif || undefined,
+      }
+      Object.keys(payload).forEach(k => payload[k] === undefined && delete payload[k])
+      await productService.create(payload as Parameters<typeof productService.create>[0])
+      setSuccess(true)
+      setTimeout(() => router.push("/products"), 1200)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e))
+    } finally {
+      setSaving(false)
+    }
+  }
 
   return (
     <AdminLayout>
@@ -190,9 +236,27 @@ export default function ProductCreatePage() {
           </TabsContent>
         </Tabs>
 
+        {success && (
+          <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-emerald-700 flex items-center gap-2 text-sm">
+            <Check className="w-4 h-4" /> Muvaffaqiyatli saqlandi!
+          </div>
+        )}
+        {error && (
+          <div className="bg-red-50 border border-red-200 rounded-xl p-3 text-red-700 flex items-center gap-2 text-sm">
+            <AlertCircle className="w-4 h-4" /> {error}
+          </div>
+        )}
+
         <div className="flex gap-3">
-          <Button variant="outline" className="flex-1"><X className="w-4 h-4 mr-1" /> Bekor</Button>
-          <Button className="flex-1 bg-emerald-600 hover:bg-emerald-700"><Save className="w-4 h-4 mr-1" /> Tovar saqlash</Button>
+          <Button variant="outline" className="flex-1" onClick={() => router.push("/products")}>
+            <X className="w-4 h-4 mr-1" /> Bekor
+          </Button>
+          <Button className="flex-1"
+                  onClick={handleSave}
+                  disabled={saving || !form.nomi.trim()}>
+            <Save className="w-4 h-4 mr-1" />
+            {saving ? "Saqlanmoqda..." : "Tovar saqlash"}
+          </Button>
         </div>
       </div>
     </AdminLayout>
