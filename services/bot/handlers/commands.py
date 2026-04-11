@@ -1694,6 +1694,91 @@ async def cmd_yetkazildi(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(f"❌ Xato: {e}")
 
 
+async def cmd_sotuv_detail(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    """/sotuv <id> — Bitta sotuv tafsiloti (tovarlar, holat, sana)."""
+    if not await faol_tekshir(update):
+        return
+    text = update.message.text or ""
+    args = text.split()
+    if len(args) < 2 or not args[1].isdigit():
+        await update.message.reply_text(
+            "📋 *Sotuv tafsiloti*\n\n"
+            "Ishlatilishi: `/sotuv <id>`\n"
+            "Masalan: `/sotuv 42`",
+            parse_mode=ParseMode.MARKDOWN
+        )
+        return
+
+    sess_id = int(args[1])
+    uid = update.effective_user.id
+    try:
+        async with db._P().acquire() as c:
+            sess = await c.fetchrow("""
+                SELECT ss.id, ss.klient_ismi, ss.jami, ss.tolangan, ss.qarz,
+                       ss.holat, ss.izoh, ss.sana, ss.otgruzka_vaqti,
+                       ss.yetkazildi_vaqti, ss.bekor_vaqti, ss.bekor_sabab,
+                       COALESCE(k.telefon, '') AS telefon,
+                       COALESCE(k.manzil, '')  AS manzil
+                FROM sotuv_sessiyalar ss
+                LEFT JOIN klientlar k ON k.id = ss.klient_id
+                WHERE ss.id = $1 AND ss.user_id = $2
+            """, sess_id, uid)
+            if not sess:
+                await update.message.reply_text(f"❌ Sotuv #{sess_id} topilmadi.")
+                return
+            tovarlar = await c.fetch("""
+                SELECT tovar_nomi, miqdor, birlik, sotish_narxi, jami
+                FROM chiqimlar WHERE sessiya_id = $1 ORDER BY id
+            """, sess_id)
+
+        holat_emoji = {
+            "yangi": "🔵", "tasdiqlangan": "🟡", "otgruzka": "🟣",
+            "yetkazildi": "🟢", "bekor": "🔴"
+        }.get(sess["holat"], "⚪")
+
+        parts = [
+            f"📋 *SOTUV #{sess_id}*",
+            f"━━━━━━━━━━━━━━━━━━",
+            f"{holat_emoji} Holat: *{sess['holat'].upper()}*",
+            f"👤 Mijoz: *{sess['klient_ismi'] or 'Mijoz'}*",
+        ]
+        if sess["telefon"]:
+            parts.append(f"📞 {sess['telefon']}")
+        if sess["manzil"]:
+            parts.append(f"📍 {sess['manzil']}")
+        parts.append(f"📅 {sess['sana'].strftime('%d.%m.%Y %H:%M')}")
+        parts.append("")
+
+        if tovarlar:
+            parts.append(f"*Tovarlar ({len(tovarlar)} ta):*")
+            for t in tovarlar[:15]:
+                parts.append(
+                    f"  • {t['tovar_nomi'][:25]}\n"
+                    f"    {float(t['miqdor']):.0f} {t['birlik']} × {pul(t['sotish_narxi'])} = {pul(t['jami'])}"
+                )
+            if len(tovarlar) > 15:
+                parts.append(f"  _+{len(tovarlar) - 15} ta yana_")
+
+        parts.append("")
+        parts.append(f"💰 JAMI: *{pul(sess['jami'])}*")
+        parts.append(f"✅ To'landi: {pul(sess['tolangan'])}")
+        if float(sess['qarz']) > 0:
+            parts.append(f"⚠️ Qarz: *{pul(sess['qarz'])}*")
+
+        if sess["bekor_sabab"]:
+            parts.append(f"\n_Bekor sabab: {sess['bekor_sabab']}_")
+        if sess["izoh"]:
+            parts.append(f"\n📝 {sess['izoh']}")
+
+        text = "\n".join(parts)
+        if len(text) > 4000:
+            text = text[:3990] + "..."
+        await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
+    except Exception as e:
+        log.error("sotuv_detail: %s", e, exc_info=True)
+        await update.message.reply_text(f"❌ Xato: {e}")
+
+
 async def cmd_bekor_sotuv(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     """/bekor_sotuv <id> [sabab] — Sotuvni bekor qilish + qoldiqni qaytarish."""
     if not await faol_tekshir(update):
