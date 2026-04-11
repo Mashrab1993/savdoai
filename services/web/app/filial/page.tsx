@@ -18,11 +18,11 @@ export default function FilialPage() {
   const h = { "Content-Type": "application/json", Authorization: `Bearer ${typeof window !== "undefined" ? localStorage.getItem("auth_token") : ""}` }
 
   useEffect(() => {
-    fetch(`${API}/api/filial`, { headers: h }).then(r => r.ok ? r.json() : []).then(setFiliallar).finally(() => setLoading(false))
+    fetch(`${API}/api/v1/filial`, { headers: h }).then(r => r.ok ? r.json() : []).then(setFiliallar).finally(() => setLoading(false))
   }, [])
 
   const create = async () => {
-    const res = await fetch(`${API}/api/filial`, { method: "POST", headers: h, body: JSON.stringify(form) })
+    const res = await fetch(`${API}/api/v1/filial`, { method: "POST", headers: h, body: JSON.stringify(form) })
     if (res.ok) {
       const d = await res.json()
       setFiliallar(p => [...p, { id: d.id, ...form }])
@@ -32,7 +32,7 @@ export default function FilialPage() {
 
   const loadQoldiq = async (fid: number) => {
     setSelectedFilial(filiallar.find(f => f.id === fid))
-    const res = await fetch(`${API}/api/filial/${fid}/qoldiq`, { headers: h })
+    const res = await fetch(`${API}/api/v1/filial/${fid}/tovarlar`, { headers: h })
     if (res.ok) setQoldiqlar(await res.json())
   }
 
