@@ -1,0 +1,200 @@
+"use client"
+import { useState } from "react"
+import { AdminLayout } from "@/components/layout/admin-layout"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Package, Save, X, Image as ImageIcon, Upload } from "lucide-react"
+
+export default function ProductCreatePage() {
+  const [form, setForm] = useState({
+    nomi: "", kategoriya: "kosmetika", podkategoriya: "",
+    brend: "", segment: "", ishlab_chiqaruvchi: "",
+    birlik: "dona", hajm: 1, ogirlik: 1,
+    blokda_soni: 1, korobkada_soni: 1,
+    olish_narxi: 0, sotish_narxi: 0,
+    qoldiq: 0, min_qoldiq: 5,
+    shtrix_kod: "", artikul: "", sap_kod: "",
+    ikpu_kod: "", gtin: "",
+    saralash: 500, yaroqlilik_muddati: 0,
+    tavsif: "", faol: true,
+  })
+
+  return (
+    <AdminLayout>
+      <div className="max-w-4xl mx-auto p-4 sm:p-6 space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold flex items-center gap-2">
+            <Package className="w-7 h-7 text-emerald-600" />
+            Yangi tovar
+          </h1>
+          <p className="text-sm text-muted-foreground mt-1">SalesDoc darajasida — barcha maydonlar bilan</p>
+        </div>
+
+        <Tabs defaultValue="basic">
+          <TabsList>
+            <TabsTrigger value="basic">Asosiy</TabsTrigger>
+            <TabsTrigger value="extra">Qo'shimcha</TabsTrigger>
+            <TabsTrigger value="ikpu">IKPU</TabsTrigger>
+            <TabsTrigger value="photo">Foto</TabsTrigger>
+            <TabsTrigger value="package">Quti</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="basic" className="space-y-4">
+            <div className="bg-white dark:bg-gray-900 rounded-xl border p-6 space-y-4">
+              <div>
+                <label className="text-sm font-medium">Tovar nomi *</label>
+                <Input value={form.nomi} onChange={e => setForm({...form, nomi: e.target.value})} placeholder="Tovar nomi" />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium">Kategoriya *</label>
+                  <select value={form.kategoriya} onChange={e => setForm({...form, kategoriya: e.target.value})} className="w-full border rounded-lg px-3 py-2 text-sm">
+                    <option value="kosmetika">Kosmetika</option>
+                    <option value="parfyumeriya">Parfyumeriya</option>
+                    <option value="maishiy_kimyo">Maishiy kimyo</option>
+                    <option value="oziq_ovqat">Oziq-ovqat</option>
+                    <option value="gigiyena">Gigiyena</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-sm font-medium">Podkategoriya</label>
+                  <Input value={form.podkategoriya} onChange={e => setForm({...form, podkategoriya: e.target.value})} />
+                </div>
+              </div>
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <label className="text-sm font-medium">Brend</label>
+                  <Input value={form.brend} onChange={e => setForm({...form, brend: e.target.value})} />
+                </div>
+                <div>
+                  <label className="text-sm font-medium">Segment</label>
+                  <Input value={form.segment} onChange={e => setForm({...form, segment: e.target.value})} />
+                </div>
+                <div>
+                  <label className="text-sm font-medium">Ishlab chiqaruvchi</label>
+                  <Input value={form.ishlab_chiqaruvchi} onChange={e => setForm({...form, ishlab_chiqaruvchi: e.target.value})} />
+                </div>
+              </div>
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <label className="text-sm font-medium">Birlik</label>
+                  <select value={form.birlik} onChange={e => setForm({...form, birlik: e.target.value})} className="w-full border rounded-lg px-3 py-2 text-sm">
+                    <option value="dona">Dona</option>
+                    <option value="kg">Kg</option>
+                    <option value="l">Litr</option>
+                    <option value="m">Metr</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-sm font-medium">Hajm</label>
+                  <Input type="number" value={form.hajm} onChange={e => setForm({...form, hajm: Number(e.target.value)})} />
+                </div>
+                <div>
+                  <label className="text-sm font-medium">Og'irlik (kg)</label>
+                  <Input type="number" value={form.ogirlik} onChange={e => setForm({...form, ogirlik: Number(e.target.value)})} />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium">Olish narxi *</label>
+                  <Input type="number" value={form.olish_narxi} onChange={e => setForm({...form, olish_narxi: Number(e.target.value)})} />
+                </div>
+                <div>
+                  <label className="text-sm font-medium">Sotish narxi *</label>
+                  <Input type="number" value={form.sotish_narxi} onChange={e => setForm({...form, sotish_narxi: Number(e.target.value)})} />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium">Qoldiq</label>
+                  <Input type="number" value={form.qoldiq} onChange={e => setForm({...form, qoldiq: Number(e.target.value)})} />
+                </div>
+                <div>
+                  <label className="text-sm font-medium">Min qoldiq</label>
+                  <Input type="number" value={form.min_qoldiq} onChange={e => setForm({...form, min_qoldiq: Number(e.target.value)})} />
+                </div>
+              </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="extra" className="space-y-4">
+            <div className="bg-white dark:bg-gray-900 rounded-xl border p-6 space-y-4">
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <label className="text-sm font-medium">Shtrix kod</label>
+                  <Input value={form.shtrix_kod} onChange={e => setForm({...form, shtrix_kod: e.target.value})} />
+                </div>
+                <div>
+                  <label className="text-sm font-medium">Artikul</label>
+                  <Input value={form.artikul} onChange={e => setForm({...form, artikul: e.target.value})} />
+                </div>
+                <div>
+                  <label className="text-sm font-medium">SAP kod</label>
+                  <Input value={form.sap_kod} onChange={e => setForm({...form, sap_kod: e.target.value})} />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium">Saralash</label>
+                  <Input type="number" value={form.saralash} onChange={e => setForm({...form, saralash: Number(e.target.value)})} />
+                </div>
+                <div>
+                  <label className="text-sm font-medium">Yaroqlilik muddati (kun)</label>
+                  <Input type="number" value={form.yaroqlilik_muddati} onChange={e => setForm({...form, yaroqlilik_muddati: Number(e.target.value)})} />
+                </div>
+              </div>
+              <div>
+                <label className="text-sm font-medium">Tavsif</label>
+                <Textarea value={form.tavsif} onChange={e => setForm({...form, tavsif: e.target.value})} rows={3} />
+              </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="ikpu" className="space-y-4">
+            <div className="bg-white dark:bg-gray-900 rounded-xl border p-6 space-y-4">
+              <div>
+                <label className="text-sm font-medium">IKPU kod</label>
+                <Input value={form.ikpu_kod} onChange={e => setForm({...form, ikpu_kod: e.target.value})} />
+              </div>
+              <div>
+                <label className="text-sm font-medium">GTIN kod</label>
+                <Input value={form.gtin} onChange={e => setForm({...form, gtin: e.target.value})} />
+              </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="photo" className="space-y-4">
+            <div className="bg-white dark:bg-gray-900 rounded-xl border p-6">
+              <div className="border-2 border-dashed rounded-lg p-10 text-center">
+                <ImageIcon className="w-12 h-12 mx-auto text-gray-300 mb-3" />
+                <Button variant="outline"><Upload className="w-4 h-4 mr-1" /> Rasm yuklash</Button>
+              </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="package" className="space-y-4">
+            <div className="bg-white dark:bg-gray-900 rounded-xl border p-6 space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium">Blokda soni</label>
+                  <Input type="number" value={form.blokda_soni} onChange={e => setForm({...form, blokda_soni: Number(e.target.value)})} />
+                </div>
+                <div>
+                  <label className="text-sm font-medium">Korobkada soni</label>
+                  <Input type="number" value={form.korobkada_soni} onChange={e => setForm({...form, korobkada_soni: Number(e.target.value)})} />
+                </div>
+              </div>
+            </div>
+          </TabsContent>
+        </Tabs>
+
+        <div className="flex gap-3">
+          <Button variant="outline" className="flex-1"><X className="w-4 h-4 mr-1" /> Bekor</Button>
+          <Button className="flex-1 bg-emerald-600 hover:bg-emerald-700"><Save className="w-4 h-4 mr-1" /> Tovar saqlash</Button>
+        </div>
+      </div>
+    </AdminLayout>
+  )
+}
