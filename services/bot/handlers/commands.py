@@ -1429,6 +1429,123 @@ async def cmd_prognoz(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         await msg.edit_text("❌ Prognoz xatosi.")
 
 
+async def cmd_rfm(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    """RFM segmentatsiya — SalesDoc-style. Klientlarni 5 segmentga ajratadi:
+    Champions / Loyal / Potential / At Risk / Lost.
+    R=oxirgi xarid qachon, F=necha marta, M=qancha pul.
+    """
+    if not await faol_tekshir(update):
+        return
+    uid = update.effective_user.id
+    msg = await update.message.reply_text("📊 RFM segmentatsiya hisoblanmoqda...")
+
+    try:
+        async with db._P().acquire() as c:
+            rows = await c.fetch("""
+                SELECT k.id, k.ism,
+                       COUNT(ss.id)               AS freq,
+                       COALESCE(SUM(ss.jami), 0)  AS monetary,
+                       MAX(ss.sana)               AS oxirgi,
+                       COALESCE(SUM(ss.qarz), 0)  AS qarz
+                FROM klientlar k
+                LEFT JOIN sotuv_sessiyalar ss ON ss.klient_id = k.id
+                WHERE k.user_id = $1
+                GROUP BY k.id, k.ism
+                HAVING COUNT(ss.id) > 0
+                ORDER BY monetary DESC
+            """, uid)
+
+        if not rows:
+            await msg.edit_text("📊 RFM uchun klientlar topilmadi.")
+            return
+
+        from datetime import datetime, timezone
+        now = datetime.now(timezone.utc)
+
+        clients = []
+        for r in rows:
+            oxirgi = r["oxirgi"]
+            days   = max(1, (now - oxirgi).days) if oxirgi else 999
+            clients.append({
+                "id":       r["id"],
+                "ism":      r["ism"],
+                "recency":  days,
+                "freq":     int(r["freq"]),
+                "monetary": float(r["monetary"]),
+                "qarz":     float(r["qarz"]),
+            })
+
+        # Score 1-5 quintiles
+        def quintile_score(vals: list, reverse: bool = False) -> dict:
+            if not vals:
+                return {}
+            sorted_v = sorted(vals, reverse=reverse)
+            n = len(sorted_v)
+            result = {}
+            for i, v in enumerate(sorted_v):
+                # Kvintil (1..5)
+                result[v] = min(5, max(1, int(5 * (i + 1) / n + 0.0001)))
+            return result
+
+        r_map = quintile_score([c["recency"]  for c in clients], reverse=True)
+        f_map = quintile_score([c["freq"]     for c in clients])
+        m_map = quintile_score([c["monetary"] for c in clients])
+
+        segments = {"Champions": [], "Loyal": [], "Potential": [], "At Risk": [], "Lost": []}
+        for c in clients:
+            r = r_map[c["recency"]]
+            f = f_map[c["freq"]]
+            m = m_map[c["monetary"]]
+            c["R"], c["F"], c["M"] = r, f, m
+            score = r + f + m
+            if score >= 13:   seg = "Champions"
+            elif score >= 10: seg = "Loyal"
+            elif score >= 7:  seg = "Potential"
+            elif score >= 5:  seg = "At Risk"
+            else:             seg = "Lost"
+            segments[seg].append(c)
+
+        icons = {"Champions": "🏆", "Loyal": "💚", "Potential": "🌱",
+                 "At Risk": "⚠️", "Lost": "💀"}
+        tavsiyalar = {
+            "Champions": "VIP — shaxsiy hurmat, maxsus takliflar",
+            "Loyal":     "Obunaga taklif qiling, bonus bering",
+            "Potential": "Chegirma bering, faollashtiring",
+            "At Risk":   "Qo'ng'iroq qiling, yo'qotmang",
+            "Lost":      "Yangi ofer yoki unuting",
+        }
+
+        parts = ["📊 *RFM SEGMENTATSIYA*\n━━━━━━━━━━━━━━━━━━━━"]
+        parts.append(f"👥 Jami klient: *{len(clients)}*\n")
+
+        for seg_name in ["Champions", "Loyal", "Potential", "At Risk", "Lost"]:
+            segc = segments[seg_name]
+            if not segc:
+                continue
+            segc.sort(key=lambda c: -c["monetary"])
+            parts.append(f"{icons[seg_name]} *{seg_name}* — {len(segc)} ta")
+            parts.append(f"  _{tavsiyalar[seg_name]}_")
+            for c in segc[:5]:
+                parts.append(
+                    f"  • {c['ism'][:18]} · R{c['R']}F{c['F']}M{c['M']} · "
+                    f"{pul(c['monetary'])} · {c['recency']}k"
+                )
+            if len(segc) > 5:
+                parts.append(f"  … +{len(segc) - 5} ta yana")
+            parts.append("")
+
+        parts.append("_R=Recency · F=Frequency · M=Monetary (1=past, 5=yuqori)_")
+
+        matn = "\n".join(parts)
+        if len(matn) > 4000:
+            matn = matn[:3990] + "\n..."
+        await msg.edit_text(matn, parse_mode=ParseMode.MARKDOWN)
+
+    except Exception as e:
+        log.error("rfm: %s", e, exc_info=True)
+        await msg.edit_text(f"❌ RFM xatosi: {e}")
+
+
 async def cmd_raqobat(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     """Raqobatchi narx monitoring."""
     if not await faol_tekshir(update):
