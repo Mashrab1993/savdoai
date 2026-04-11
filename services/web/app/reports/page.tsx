@@ -17,6 +17,8 @@ import { useApi } from "@/hooks/use-api"
 import { getPublicApiBaseUrl } from "@/lib/api/base-url"
 import { reportService, dashboardService, foydaService } from "@/lib/api/services"
 import PnLReport from "@/components/dashboard/pnl-report"
+import SalesPivotTable from "@/components/dashboard/sales-pivot-table"
+import NotificationStream from "@/components/dashboard/notification-stream"
 import { normalizeDashboard } from "@/lib/api/normalizers"
 import { PageLoading, PageError } from "@/components/shared/page-states"
 import type { ReportEntry } from "@/lib/api/types"
@@ -194,6 +196,23 @@ export default function ReportsPage() {
               operatsion_xarajatlar: foydaData.xarajatlar ?? 0,
               sof_foyda:            foydaData.toza_foyda ?? 0,
             }}
+          />
+        )}
+
+        {/* Top products pivot — from foyda.top_foyda */}
+        {foydaData && foydaData.top_foyda && foydaData.top_foyda.length > 0 && (
+          <SalesPivotTable
+            dimension="kategoriya"
+            title={locale === "uz" ? "Eng foydali tovarlar" : "Самые прибыльные товары"}
+            subtitle={locale === "uz"
+              ? `Oxirgi ${foydaData.kunlar} kun ichida`
+              : `Последние ${foydaData.kunlar} дн.`}
+            rows={foydaData.top_foyda.map(t => ({
+              key: t.nomi,
+              jami: Number(t.foyda || 0),
+              soni: 0,
+              miqdor: Number(t.miqdor || 0),
+            }))}
           />
         )}
 
