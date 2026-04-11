@@ -114,25 +114,29 @@ export default function DashboardPage() {
                   title={d.totalRevenue[locale]}
                   value={`${fmt(stats.totalRevenue)} so'm`}
                   icon={DollarSign}
-                  iconColor="text-primary"
+                  gradient="emerald"
+                  delay={0.00}
                 />
                 <KpiCard
                   title={locale === "uz" ? "Faol mijozlar" : "Активных клиентов"}
                   value={String(stats.activeClients)}
                   icon={Users}
-                  iconColor="text-purple-500"
+                  gradient="violet"
+                  delay={0.05}
                 />
                 <KpiCard
                   title={d.totalDebt[locale]}
                   value={`${fmt(stats.totalDebt)} so'm`}
                   icon={CreditCard}
-                  iconColor="text-yellow-500"
+                  gradient="amber"
+                  delay={0.10}
                 />
                 <KpiCard
                   title={locale === "uz" ? "Muddati o'tgan qarzlar" : "Просроченных долгов"}
                   value={String(stats.overdueCount)}
                   icon={AlertCircle}
-                  iconColor="text-destructive"
+                  gradient="rose"
+                  delay={0.15}
                 />
               </div>
             </div>
@@ -169,7 +173,7 @@ export default function DashboardPage() {
                     color: "text-primary",
                   },
                 ].map(({ label, value, icon: Icon, color }) => (
-                  <div key={label} className="bg-card border border-border rounded-lg p-3 flex items-center gap-3 hover:border-border/70 transition-colors">
+                  <div key={label} className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl p-3 flex items-center gap-3 hover:shadow-md hover:-translate-y-0.5 transition-all duration-300">
                     <div className={`p-2 rounded-lg bg-secondary shrink-0 ${color}`}>
                       <Icon className="w-4 h-4" />
                     </div>
@@ -194,7 +198,7 @@ export default function DashboardPage() {
                     { label: locale === "uz" ? "Hafta" : "Неделя", soni: statsExtra.hafta.soni, jami: statsExtra.hafta.jami, color: "border-blue-500" },
                     { label: locale === "uz" ? "Oy" : "Месяц", soni: statsExtra.oy.soni, jami: statsExtra.oy.jami, color: "border-purple-500" },
                   ].map(p => (
-                    <div key={p.label} className={`bg-card border-l-4 ${p.color} border border-border rounded-lg p-4`}>
+                    <div key={p.label} className={`bg-card/60 backdrop-blur-xl border-l-4 ${p.color} border border-border/60 rounded-2xl p-4 hover:shadow-lg hover:shadow-black/5 hover:-translate-y-0.5 transition-all duration-300`}>
                       <p className="text-xs text-muted-foreground">{p.label}</p>
                       <p className="text-xl font-bold text-foreground mt-1">{fmt(p.jami)} so'm</p>
                       <p className="text-xs text-muted-foreground mt-0.5">{p.soni} {locale === "uz" ? "ta sotuv" : "продаж"}</p>
@@ -205,7 +209,8 @@ export default function DashboardPage() {
             )}
 
             {/* Revenue Chart */}
-            <div className="bg-card border border-border rounded-xl p-5">
+            <div className="relative overflow-hidden bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl p-5 shadow-sm hover:shadow-lg hover:shadow-black/5 transition-all">
+              <div aria-hidden className="pointer-events-none absolute -top-20 -right-20 h-60 w-60 rounded-full bg-gradient-to-br from-emerald-500/10 via-cyan-500/5 to-transparent blur-3xl" />
               <div className="flex items-center justify-between mb-4">
                 <div>
                   <h3 className="font-semibold text-foreground text-sm">{d.revenueChart[locale]}</h3>
@@ -253,7 +258,7 @@ export default function DashboardPage() {
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
                 {/* Top 5 Tovar */}
                 {topData.top_tovar && topData.top_tovar.length > 0 && (
-                  <div className="bg-card border border-border rounded-xl p-5">
+                  <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl p-5 shadow-sm hover:shadow-lg hover:shadow-black/5 transition-all">
                     <h3 className="font-semibold text-foreground text-sm mb-1">
                       {locale === "uz" ? "Top tovarlar" : "Топ товары"}
                     </h3>
@@ -278,7 +283,7 @@ export default function DashboardPage() {
 
                 {/* Top 5 Klient */}
                 {topData.top_klient && topData.top_klient.length > 0 && (
-                  <div className="bg-card border border-border rounded-xl p-5">
+                  <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl p-5 shadow-sm hover:shadow-lg hover:shadow-black/5 transition-all">
                     <h3 className="font-semibold text-foreground text-sm mb-1">
                       {locale === "uz" ? "Top mijozlar" : "Топ клиенты"}
                     </h3>
@@ -303,7 +308,7 @@ export default function DashboardPage() {
 
                 {/* 7 kunlik trend */}
                 {topData.kunlik_trend && topData.kunlik_trend.length > 0 && (
-                  <div className="bg-card border border-border rounded-xl p-5">
+                  <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl p-5 shadow-sm hover:shadow-lg hover:shadow-black/5 transition-all">
                     <h3 className="font-semibold text-foreground text-sm mb-1">
                       {locale === "uz" ? "7 kunlik trend" : "Тренд за 7 дней"}
                     </h3>

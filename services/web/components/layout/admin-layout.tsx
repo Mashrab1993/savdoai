@@ -7,6 +7,7 @@ import { Sidebar } from "./sidebar"
 import { TopHeader } from "./top-header"
 import { Menu, X, LayoutDashboard, ShoppingCart, Users, Package, CreditCard } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { AuroraBg } from "@/components/ui/aurora-bg"
 import { cn } from "@/lib/utils"
 
 function MobileBottomNav() {
@@ -19,7 +20,7 @@ function MobileBottomNav() {
     { href: "/debts",     icon: CreditCard,       label: "Qarz" },
   ]
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-30 md:hidden bg-card border-t border-border">
+    <nav className="fixed bottom-0 left-0 right-0 z-30 md:hidden bg-card/70 backdrop-blur-xl border-t border-border/60">
       <div className="flex items-center justify-around h-14">
         {items.map(item => {
           const active = pathname === item.href || pathname.startsWith(item.href + "/")
@@ -48,9 +49,10 @@ export function AdminLayout({ children, title = "SavdoAI" }: AdminLayoutProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   return (
-    <div className="flex h-screen bg-background overflow-hidden">
+    <div className="relative flex h-screen bg-background overflow-hidden">
+      <AuroraBg />
       {/* Desktop Sidebar */}
-      <div className="hidden md:block md:w-60 md:border-r md:border-border md:bg-sidebar">
+      <div className="hidden md:block md:w-60 md:border-r md:border-border/60 md:bg-sidebar/70 md:backdrop-blur-xl">
         <Sidebar />
       </div>
 
@@ -81,7 +83,7 @@ export function AdminLayout({ children, title = "SavdoAI" }: AdminLayoutProps) {
       {/* Main Content */}
       <div className="flex flex-col flex-1 min-w-0">
         <TopHeader title={title} onMenuClick={() => setMobileMenuOpen(!mobileMenuOpen)} />
-        <main className="flex-1 overflow-y-auto bg-background pb-16 md:pb-0">
+        <main className="flex-1 overflow-y-auto pb-16 md:pb-0">
           <div className="p-4 md:p-6 max-w-7xl mx-auto w-full">
             {children}
           </div>
