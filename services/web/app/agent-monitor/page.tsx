@@ -15,7 +15,7 @@ export default function AgentMonitorPage() {
       try {
         // Live dashboard — bugungi ma'lumotlar
         const [liveRes, syncRes] = await Promise.all([
-          fetch(`${API}/live`, { headers: h }).then(r => r.ok ? r.json() : null),
+          fetch(`${API}/live-dashboard`, { headers: h }).then(r => r.ok ? r.json() : null),
           fetch(`${API}/config/sync-log?limit=20`, { headers: h }).then(r => r.ok ? r.json() : []),
         ])
 

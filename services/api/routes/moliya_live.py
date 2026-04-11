@@ -57,7 +57,9 @@ async def kpi(kunlar: int = 30, uid: int = Depends(get_uid)):
 # ═══════════════════════════════════════════════════════
 #  LIVE DASHBOARD
 # ═══════════════════════════════════════════════════════
-live_router = APIRouter(prefix="/live", tags=["live"])
+# prefix changed from /live → /live-dashboard to avoid collision with
+# monitoring router's /live kubernetes liveness probe
+live_router = APIRouter(prefix="/live-dashboard", tags=["live"])
 
 
 @live_router.get("")
