@@ -5,6 +5,8 @@ import { LocaleProvider } from '@/lib/locale-context'
 import { AuthProvider } from '@/lib/auth/auth-context'
 import { RouteGuard } from '@/lib/auth/route-guard'
 import { LangSync } from '@/components/lang-sync'
+import { SWRegister } from '@/components/shared/sw-register'
+import { OfflineBanner } from '@/components/shared/offline-banner'
 import './globals.css'
 
 export const metadata: Metadata = {
@@ -38,11 +40,13 @@ export default function RootLayout({
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
           <LocaleProvider>
             <LangSync />
+            <SWRegister />
             <AuthProvider>
               <RouteGuard>
                 {children}
               </RouteGuard>
             </AuthProvider>
+            <OfflineBanner />
           </LocaleProvider>
           <Analytics />
         </ThemeProvider>
