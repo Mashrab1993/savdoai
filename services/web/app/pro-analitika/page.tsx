@@ -156,7 +156,7 @@ export default function AnalytikaPage() {
                   <div className="flex items-center gap-3">
                     <span className="text-xl">{k.emoji}</span>
                     <div>
-                      <div className="font-semibold text-sm">{k.nom}</div>
+                      <div className="font-semibold text-sm">{(k.nom || k.ism || "") || k.ism || k.klient_nomi || k.klient_ismi}</div>
                       <div className="text-xs text-gray-500">{k.telefon}</div>
                     </div>
                   </div>

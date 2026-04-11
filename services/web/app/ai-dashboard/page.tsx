@@ -145,7 +145,7 @@ export default function AIDashboard() {
                     <span className="text-xs font-bold text-emerald-600">{i + 1}</span>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="text-sm font-medium truncate">{k.nom}</div>
+                    <div className="text-sm font-medium truncate">{(k.nom || k.ism || "") || k.ism || k.klient_nomi || k.klient_ismi}</div>
                     <div className="text-xs text-gray-500">{k.sotuv_soni} ta sotuv</div>
                   </div>
                   <div className="text-sm font-bold text-emerald-600">{k.summa_fmt || k.summa}</div>
