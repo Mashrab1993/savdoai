@@ -2223,6 +2223,151 @@ async def savdolar_royxati(
     }
 
 
+@app.post("/api/v1/nakladnoy/excel", tags=["Sotuv"])
+async def nakladnoy_excel_batch(
+    payload: dict,
+    uid: int = Depends(get_uid),
+):
+    """Tanlangan buyurtmalar uchun multi-sheet nakladnoy Excel (SalesDoc 3.1 format)."""
+    import io, base64
+    from openpyxl import Workbook
+    from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+
+    sessiya_ids = payload.get("sessiya_ids") or []
+    if not sessiya_ids:
+        raise HTTPException(400, "sessiya_ids kerak")
+
+    async with rls_conn(uid) as c:
+        sessiyalar = await c.fetch("""
+            SELECT ss.id, ss.klient_ismi, ss.jami, ss.tolangan, ss.qarz,
+                   ss.izoh, ss.sana,
+                   COALESCE(k.telefon, '') AS telefon,
+                   COALESCE(k.manzil, '')  AS manzil,
+                   COALESCE(k.ism, ss.klient_ismi, 'Mijoz') AS klient_nomi
+            FROM sotuv_sessiyalar ss
+            LEFT JOIN klientlar k ON k.id = ss.klient_id
+            WHERE ss.user_id = $1 AND ss.id = ANY($2::bigint[])
+            ORDER BY ss.id
+        """, uid, sessiya_ids)
+
+        if not sessiyalar:
+            raise HTTPException(404, "Buyurtmalar topilmadi")
+
+        # Har bir sessiya uchun tovarlarni birdaniga olish
+        chiqimlar_map: dict = {}
+        for ss_id in [s["id"] for s in sessiyalar]:
+            rows = await c.fetch("""
+                SELECT tovar_nomi, kategoriya, miqdor, birlik,
+                       sotish_narxi, chegirma_foiz, jami
+                FROM chiqimlar
+                WHERE sessiya_id = $1 AND user_id = $2
+                ORDER BY id
+            """, ss_id, uid)
+            chiqimlar_map[ss_id] = [dict(r) for r in rows]
+
+    wb = Workbook()
+    # Default sheet ni olib tashlash (birinchi nakladnoy bilan o'rnini oladi)
+    default_sheet = wb.active
+    first = True
+
+    header_fill = PatternFill(start_color="0A819C", end_color="0A819C", fill_type="solid")
+    header_font = Font(bold=True, color="FFFFFF", size=11)
+    title_font  = Font(bold=True, size=14, color="1B5E20")
+    thin = Side(style="thin", color="888888")
+    border = Border(left=thin, right=thin, top=thin, bottom=thin)
+
+    for s in sessiyalar:
+        name = f"Nak#{s['id']}"[:28]
+        if first:
+            ws = default_sheet
+            ws.title = name
+            first = False
+        else:
+            ws = wb.create_sheet(title=name)
+
+        # Title row
+        ws.merge_cells("A1:F1")
+        tcell = ws.cell(row=1, column=1, value=f"НАКЛАДНАЯ № {s['id']}")
+        tcell.font = title_font
+        tcell.alignment = Alignment(horizontal="center")
+        ws.row_dimensions[1].height = 24
+
+        sana_str = s["sana"].strftime("%d.%m.%Y %H:%M") if s.get("sana") else ""
+
+        # Header info (2-5 qatorlar)
+        info = [
+            ("Sana:",    sana_str),
+            ("Mijoz:",   s["klient_nomi"]),
+            ("Telefon:", s["telefon"]),
+            ("Manzil:",  s["manzil"]),
+            ("Izoh:",    s["izoh"] or ""),
+        ]
+        for i, (k, v) in enumerate(info, 2):
+            c_k = ws.cell(row=i, column=1, value=k)
+            c_k.font = Font(bold=True)
+            ws.merge_cells(start_row=i, start_column=2, end_row=i, end_column=6)
+            ws.cell(row=i, column=2, value=v)
+
+        # Tovar jadvali (7-qatordan boshlab)
+        headers = ["№", "Tovar", "Kategoriya", "Miqdor", "Narx", "Jami"]
+        widths  = [5, 35, 18, 10, 14, 16]
+        start_row = 8
+        for col, (h, w) in enumerate(zip(headers, widths), 1):
+            cell = ws.cell(row=start_row, column=col, value=h)
+            cell.fill = header_fill
+            cell.font = header_font
+            cell.alignment = Alignment(horizontal="center")
+            cell.border = border
+            ws.column_dimensions[chr(64 + col)].width = w
+
+        chs = chiqimlar_map.get(s["id"], [])
+        total = 0.0
+        for idx, ch in enumerate(chs, start_row + 1):
+            vals = [
+                idx - start_row,
+                ch["tovar_nomi"],
+                ch["kategoriya"],
+                f"{float(ch['miqdor']):.0f} {ch['birlik'] or ''}",
+                float(ch["sotish_narxi"] or 0),
+                float(ch["jami"] or 0),
+            ]
+            for col, v in enumerate(vals, 1):
+                cell = ws.cell(row=idx, column=col, value=v)
+                cell.border = border
+                if col in (5, 6):
+                    cell.number_format = '#,##0'
+                    cell.alignment = Alignment(horizontal="right")
+            total += float(ch["jami"] or 0)
+
+        # Total row
+        total_row = start_row + len(chs) + 1
+        ws.merge_cells(start_row=total_row, start_column=1, end_row=total_row, end_column=5)
+        c_tot = ws.cell(row=total_row, column=1, value="JAMI:")
+        c_tot.font = Font(bold=True, size=12)
+        c_tot.alignment = Alignment(horizontal="right")
+        c_sum = ws.cell(row=total_row, column=6, value=total)
+        c_sum.font = Font(bold=True, size=12, color="1B5E20")
+        c_sum.number_format = '#,##0'
+        c_sum.fill = PatternFill(start_color="E8F5E9", end_color="E8F5E9", fill_type="solid")
+
+        # Imzo joyi
+        sig_row = total_row + 3
+        ws.cell(row=sig_row, column=1, value="Отпустил: ____________________").font = Font(size=10)
+        ws.cell(row=sig_row, column=4, value="Принял: ____________________").font = Font(size=10)
+
+        # Footer
+        ws.cell(row=sig_row + 2, column=1,
+                value=f"Сгенерировано: SavdoAI | {sana_str}").font = Font(size=8, italic=True, color="999999")
+
+    buf = io.BytesIO()
+    wb.save(buf); buf.seek(0)
+    return {
+        "filename": f"Nakladnoy_3.1_x{len(sessiyalar)}.xlsx",
+        "content_base64": base64.b64encode(buf.getvalue()).decode(),
+        "soni": len(sessiyalar),
+    }
+
+
 @app.get("/api/v1/savdolar/excel", tags=["Sotuv"])
 async def savdolar_excel(
     sana_dan: Optional[str] = None,

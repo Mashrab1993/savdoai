@@ -24,6 +24,69 @@ export default function NakladnoyPage() {
   const [date, setDate] = useState(new Date().toISOString().split("T")[0])
   const [search, setSearch] = useState("")
   const [selected, setSelected] = useState<number[]>([])
+  const [exporting, setExporting] = useState(false)
+
+  async function handleExport() {
+    if (selected.length === 0) return
+    setExporting(true)
+    try {
+      const token = typeof window !== "undefined" ? localStorage.getItem("auth_token") : ""
+      const base  = process.env.NEXT_PUBLIC_API_URL || ""
+      const res = await fetch(`${base}/api/v1/nakladnoy/excel`, {
+        method: "POST",
+        headers: {
+          "Content-Type":  "application/json",
+          Authorization:   `Bearer ${token}`,
+        },
+        body: JSON.stringify({ sessiya_ids: selected }),
+      })
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      const result = await res.json()
+      const bytes = Uint8Array.from(atob(result.content_base64), c => c.charCodeAt(0))
+      const blob  = new Blob([bytes], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" })
+      const url   = URL.createObjectURL(blob)
+      const a     = document.createElement("a")
+      a.href      = url
+      a.download  = result.filename || "nakladnoy.xlsx"
+      a.click()
+      URL.revokeObjectURL(url)
+    } catch (e) {
+      alert(e instanceof Error ? e.message : String(e))
+    } finally {
+      setExporting(false)
+    }
+  }
+
+  async function handleSingleExport(id: number) {
+    setSelected([id])
+    // Wait for state to apply
+    await new Promise(r => setTimeout(r, 10))
+    // Use the selected-id directly instead of state
+    setExporting(true)
+    try {
+      const token = typeof window !== "undefined" ? localStorage.getItem("auth_token") : ""
+      const base  = process.env.NEXT_PUBLIC_API_URL || ""
+      const res = await fetch(`${base}/api/v1/nakladnoy/excel`, {
+        method:  "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body:    JSON.stringify({ sessiya_ids: [id] }),
+      })
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      const result = await res.json()
+      const bytes = Uint8Array.from(atob(result.content_base64), c => c.charCodeAt(0))
+      const blob  = new Blob([bytes], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" })
+      const url   = URL.createObjectURL(blob)
+      const a     = document.createElement("a")
+      a.href      = url
+      a.download  = result.filename || `nakladnoy_${id}.xlsx`
+      a.click()
+      URL.revokeObjectURL(url)
+    } catch (e) {
+      alert(e instanceof Error ? e.message : String(e))
+    } finally {
+      setExporting(false)
+    }
+  }
 
   const { data: rawOrders, loading } = useApi(async () => {
     const token = localStorage.getItem("auth_token")
@@ -69,8 +132,13 @@ export default function NakladnoyPage() {
           </div>
           <div className="flex gap-2">
             <Input type="date" value={date} onChange={e => setDate(e.target.value)} className="w-44" />
-            <Button className="bg-emerald-600 hover:bg-emerald-700" disabled={selected.length === 0}>
-              <Download className="w-4 h-4 mr-1" /> {selected.length || "0"} ta nakladnoy
+            <Button
+              className="bg-emerald-600 hover:bg-emerald-700"
+              disabled={selected.length === 0 || exporting}
+              onClick={handleExport}
+            >
+              <Download className="w-4 h-4 mr-1" />
+              {exporting ? "..." : `${selected.length || "0"} ta nakladnoy`}
             </Button>
           </div>
         </div>
@@ -155,9 +223,15 @@ export default function NakladnoyPage() {
                     <TableCell className="text-center"><Badge>{o.status || "Yangi"}</Badge></TableCell>
                     <TableCell>
                       <div className="flex gap-1">
-                        <Button variant="ghost" size="sm" title="Ko'rish"><Eye className="w-3 h-3" /></Button>
-                        <Button variant="ghost" size="sm" title="Chop etish"><Printer className="w-3 h-3" /></Button>
-                        <Button variant="ghost" size="sm" title="PDF"><Download className="w-3 h-3" /></Button>
+                        <Button variant="ghost" size="sm" title="Excel"
+                                onClick={() => handleSingleExport(o.id)}
+                                disabled={exporting}>
+                          <Download className="w-3 h-3" />
+                        </Button>
+                        <Button variant="ghost" size="sm" title="Chop etish"
+                                onClick={() => window.print()}>
+                          <Printer className="w-3 h-3" />
+                        </Button>
                       </div>
                     </TableCell>
                   </TableRow>
