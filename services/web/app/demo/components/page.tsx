@@ -18,6 +18,7 @@ import WarehouseTransferBoard from "@/components/dashboard/warehouse-transfer-bo
 import CashboxBalance from "@/components/dashboard/cashbox-balance"
 import DebtorsList from "@/components/dashboard/debtors-list"
 import AgentRouteCard from "@/components/dashboard/agent-route-card"
+import SupplierBalance from "@/components/dashboard/supplier-balance"
 import { useLocale } from "@/lib/locale-context"
 
 // ─── Synthetic data ─────────────────────────────────────────
@@ -194,6 +195,15 @@ const ROUTE_STOPS = [
   { id: 7, klient_ismi: "Universal Jomboy",          manzil: "Jomboy tumani",            planned_order: 2_500_000,                            holat: "kutilmoqda"       as const },
 ]
 
+const SUPPLIERS = [
+  { id: 1, nomi: "Procter & Gamble UZ",    telefon: "+998 71 200 10 01", kategoriya: "Kimyo",    balans: 85_400_000, jami_xarid: 1_240_000_000, aktiv_buyurtma: 3, oxirgi_kirim: new Date(Date.now() - 45 * 86400e3).toISOString(), kredit_muddat_kun: 30 },
+  { id: 2, nomi: "Coca-Cola Uzbekistan",   telefon: "+998 71 200 10 02", kategoriya: "Ichimlik", balans: 42_800_000, jami_xarid: 680_000_000,  aktiv_buyurtma: 2, oxirgi_kirim: new Date(Date.now() - 12 * 86400e3).toISOString(), kredit_muddat_kun: 14 },
+  { id: 3, nomi: "Nestle Uzbekistan",      telefon: "+998 71 200 10 03", kategoriya: "Ichimlik", balans: 18_200_000, jami_xarid: 320_000_000,  aktiv_buyurtma: 1, oxirgi_kirim: new Date(Date.now() - 7 * 86400e3).toISOString(),  kredit_muddat_kun: 14 },
+  { id: 4, nomi: "Mars UZ",                telefon: "+998 71 200 10 04", kategoriya: "Shirinlik", balans: 0,          jami_xarid: 145_000_000,  aktiv_buyurtma: 0, oxirgi_kirim: new Date(Date.now() - 20 * 86400e3).toISOString() },
+  { id: 5, nomi: "Non Uy",                  telefon: "+998 90 111 22 33", kategoriya: "Non",       balans: -1_200_000, jami_xarid: 48_000_000,   aktiv_buyurtma: 1, oxirgi_kirim: new Date(Date.now() - 1 * 86400e3).toISOString(),  kredit_muddat_kun: 7 },
+  { id: 6, nomi: "Milk Gold",               telefon: "+998 90 444 55 66", kategoriya: "Sut",       balans: 5_800_000,  jami_xarid: 92_000_000,   aktiv_buyurtma: 2, oxirgi_kirim: new Date(Date.now() - 3 * 86400e3).toISOString(),  kredit_muddat_kun: 14 },
+]
+
 // ─── Page ───────────────────────────────────────────────────
 
 export default function DemoComponentsPage() {
@@ -307,6 +317,14 @@ export default function DemoComponentsPage() {
             agent={{ id: 1, ism: "Sayitqulov Mashrab" }}
             stops={ROUTE_STOPS}
           />
+        </section>
+
+        {/* 12. Supplier balance */}
+        <section>
+          <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+            12. SupplierBalance
+          </p>
+          <SupplierBalance suppliers={SUPPLIERS} />
         </section>
       </div>
     </AdminLayout>
