@@ -1292,7 +1292,7 @@ async def cmd_crm(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         if tarix:
             parts.append(f"\n📋 *Oxirgi {len(tarix)} ta sotuv:*")
             for t in tarix:
-                parts.append(f"  • {str(t['sana'])[:10]} — {pul(t.get('jami_summa', 0))}")
+                parts.append(f"  • {str(t['sana'])[:10]} — {pul(t.get('jami', 0) or t.get('jami_summa', 0))}")
 
         await update.message.reply_text("\n".join(parts), parse_mode=ParseMode.MARKDOWN)
 
