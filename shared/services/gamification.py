@@ -205,7 +205,7 @@ async def leaderboard(conn, davr: str = "hafta", limit: int = 20) -> List[dict]:
     rows = await conn.fetch(f"""
         SELECT
             u.id AS user_id,
-            COALESCE(u.ism, u.telegram_username, 'User#' || u.id) AS nom,
+            COALESCE(u.ism, u.username, 'User#' || u.id) AS nom,
             COUNT(s.id) AS sotuv_soni,
             COALESCE(SUM(s.jami), 0) AS jami_summa,
             COUNT(DISTINCT s.klient_id) AS klient_soni,
@@ -214,7 +214,7 @@ async def leaderboard(conn, davr: str = "hafta", limit: int = 20) -> List[dict]:
         FROM users u
         LEFT JOIN sotuv_sessiyalar s ON s.user_id=u.id AND s.sana >= NOW() - INTERVAL '{interval}'
         LEFT JOIN gamification g ON g.user_id=u.id
-        GROUP BY u.id, u.ism, u.telegram_username, g.daraja, g.streak_kun
+        GROUP BY u.id, u.ism, u.username, g.daraja, g.streak_kun
         HAVING COUNT(s.id) > 0
         ORDER BY COALESCE(SUM(s.jami), 0) DESC
         LIMIT $1
