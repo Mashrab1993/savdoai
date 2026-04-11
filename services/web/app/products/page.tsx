@@ -158,8 +158,37 @@ export default function ProductsPage() {
 
   async function handleImportExcel(file: File) {
     try {
+      const fname = file.name.toLowerCase()
+
+      // Excel (.xlsx) — upload as base64 to new backend endpoint
+      if (fname.endsWith(".xlsx") || fname.endsWith(".xls")) {
+        const buf = await file.arrayBuffer()
+        const bytes = new Uint8Array(buf)
+        // base64 encode
+        let binary = ""
+        for (let i = 0; i < bytes.byteLength; i++) {
+          binary += String.fromCharCode(bytes[i])
+        }
+        const base64 = btoa(binary)
+
+        const token = typeof window !== "undefined" ? localStorage.getItem("auth_token") : ""
+        const baseUrl = process.env.NEXT_PUBLIC_API_URL || ""
+        const res = await fetch(`${baseUrl}/api/v1/tovar/import/excel?file_base64=${encodeURIComponent(base64)}`, {
+          method:  "POST",
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        if (!res.ok) throw new Error(`HTTP ${res.status}`)
+        const result = await res.json()
+        alert(locale === "uz"
+          ? `${result.jami} ta tovar: ${result.yaratildi} yaratildi, ${result.yangilandi} yangilandi${
+              result.xatolar?.length ? `\nXatolar: ${result.xatolar.length}` : ""}`
+          : `${result.jami} товаров: ${result.yaratildi} создано, ${result.yangilandi} обновлено`)
+        refetch()
+        return
+      }
+
+      // CSV fallback
       const text = await file.text()
-      // CSV parse (oddiy Excel → CSV export qilingan fayl)
       const lines = text.split("\n").filter(l => l.trim())
       if (lines.length < 2) { alert(locale === "uz" ? "Fayl bo'sh" : "Файл пуст"); return }
       const headers = lines[0].split(/[,;\t]/).map(h => h.trim().toLowerCase())
@@ -247,7 +276,7 @@ export default function ProductsPage() {
               onClick={() => {
                 const input = document.createElement("input")
                 input.type = "file"
-                input.accept = ".csv,.tsv,.txt"
+                input.accept = ".csv,.tsv,.txt,.xlsx,.xls"
                 input.onchange = (e) => {
                   const file = (e.target as HTMLInputElement).files?.[0]
                   if (file) handleImportExcel(file)

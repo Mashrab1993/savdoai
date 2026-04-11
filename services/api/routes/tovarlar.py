@@ -624,6 +624,178 @@ async def tovar_excel_export(uid: int = Depends(get_uid)):
     }
 
 
+@router.post("/tovar/import/excel")
+async def tovar_import_excel(
+    file_base64: str,
+    uid: int = Depends(get_uid),
+):
+    """Excel faylidan tovarlarni import qilish.
+
+    Shablondan (GET /tovar/shablon/excel) yuklab olingan formatdagi
+    27 ustunli xlsx faylni qabul qiladi. Birinchi 1-qator sarlavha,
+    2-qator namuna (o'chiriladi), 3-qatordan boshlab real tovarlar.
+    """
+    import io as _io, base64 as _b64
+    try:
+        from openpyxl import load_workbook
+    except ImportError:
+        raise HTTPException(500, "openpyxl mavjud emas")
+
+    try:
+        content = _b64.b64decode(file_base64)
+        wb = load_workbook(_io.BytesIO(content), data_only=True)
+    except Exception as e:
+        raise HTTPException(400, f"Fayl o'qilmadi: {e}")
+
+    ws = wb.active
+    if not ws:
+        raise HTTPException(400, "Bo'sh Excel fayli")
+
+    # 2-qatordan boshlab (1-qator sarlavha)
+    rows = list(ws.iter_rows(min_row=2, values_only=True))
+    if not rows:
+        raise HTTPException(400, "Tovarlar topilmadi")
+
+    # Shablon ustun tartibi (GET /tovar/shablon/excel bilan mos)
+    fields = [
+        "nomi", "kategoriya", "birlik",
+        "olish_narxi", "sotish_narxi", "min_sotish_narxi",
+        "qoldiq", "min_qoldiq",
+        "brend", "ishlab_chiqaruvchi", "podkategoriya", "guruh",
+        "segment", "savdo_yonalishi",
+        "shtrix_kod", "gtin", "artikul", "sap_kod", "kod", "ikpu_kod",
+        "hajm", "ogirlik", "blokda_soni", "korobkada_soni",
+        "saralash", "yaroqlilik_muddati",
+        "tavsif",
+    ]
+
+    yaratildi = yangilandi = 0
+    xatolar: list[str] = []
+
+    def _num(v, default=0):
+        if v is None or v == "":
+            return default
+        try:
+            return float(v)
+        except Exception:
+            return default
+
+    def _str(v):
+        if v is None:
+            return ""
+        return str(v).strip()
+
+    async with rls_conn(uid) as c:
+        for ridx, row in enumerate(rows, 2):
+            # Namuna qatorini o'tkazib yuborish (italic, grey)
+            if ridx == 2 and row and "Ariel" in str(row[0] or ""):
+                continue
+
+            d = dict(zip(fields, row))
+            nomi = _str(d.get("nomi"))
+            if not nomi:
+                continue
+
+            try:
+                result = await c.fetchrow("""
+                    INSERT INTO tovarlar (
+                        user_id, nomi, kategoriya, birlik,
+                        olish_narxi, sotish_narxi, min_sotish_narxi, qoldiq, min_qoldiq,
+                        brend, ishlab_chiqaruvchi, podkategoriya, guruh,
+                        segment, savdo_yonalishi,
+                        shtrix_kod, gtin, artikul, sap_kod, kod, ikpu_kod,
+                        hajm, ogirlik, blokda_soni, korobkada_soni,
+                        saralash, yaroqlilik_muddati, tavsif
+                    )
+                    VALUES (
+                        $1, $2, COALESCE($3, 'Boshqa'), COALESCE($4, 'dona'),
+                        $5, $6, $7, $8, $9,
+                        $10, $11, $12, $13, $14, $15,
+                        $16, $17, $18, $19, $20, $21,
+                        COALESCE($22, 1), COALESCE($23, 1),
+                        COALESCE($24, 1), COALESCE($25, 1),
+                        COALESCE($26, 500), COALESCE($27, 0),
+                        $28
+                    )
+                    ON CONFLICT (user_id, lower(nomi)) DO UPDATE SET
+                        kategoriya       = EXCLUDED.kategoriya,
+                        birlik           = EXCLUDED.birlik,
+                        olish_narxi      = CASE WHEN EXCLUDED.olish_narxi > 0
+                                            THEN EXCLUDED.olish_narxi ELSE tovarlar.olish_narxi END,
+                        sotish_narxi     = CASE WHEN EXCLUDED.sotish_narxi > 0
+                                            THEN EXCLUDED.sotish_narxi ELSE tovarlar.sotish_narxi END,
+                        min_sotish_narxi = COALESCE(NULLIF(EXCLUDED.min_sotish_narxi, 0), tovarlar.min_sotish_narxi),
+                        min_qoldiq       = COALESCE(NULLIF(EXCLUDED.min_qoldiq, 0), tovarlar.min_qoldiq),
+                        brend            = COALESCE(NULLIF(EXCLUDED.brend, ''), tovarlar.brend),
+                        ishlab_chiqaruvchi = COALESCE(NULLIF(EXCLUDED.ishlab_chiqaruvchi, ''), tovarlar.ishlab_chiqaruvchi),
+                        podkategoriya    = COALESCE(NULLIF(EXCLUDED.podkategoriya, ''), tovarlar.podkategoriya),
+                        guruh            = COALESCE(NULLIF(EXCLUDED.guruh, ''), tovarlar.guruh),
+                        segment          = COALESCE(NULLIF(EXCLUDED.segment, ''), tovarlar.segment),
+                        savdo_yonalishi  = COALESCE(NULLIF(EXCLUDED.savdo_yonalishi, ''), tovarlar.savdo_yonalishi),
+                        shtrix_kod       = COALESCE(NULLIF(EXCLUDED.shtrix_kod, ''), tovarlar.shtrix_kod),
+                        gtin             = COALESCE(NULLIF(EXCLUDED.gtin, ''), tovarlar.gtin),
+                        artikul          = COALESCE(NULLIF(EXCLUDED.artikul, ''), tovarlar.artikul),
+                        sap_kod          = COALESCE(NULLIF(EXCLUDED.sap_kod, ''), tovarlar.sap_kod),
+                        kod              = COALESCE(NULLIF(EXCLUDED.kod, ''), tovarlar.kod),
+                        ikpu_kod         = COALESCE(NULLIF(EXCLUDED.ikpu_kod, ''), tovarlar.ikpu_kod),
+                        hajm             = EXCLUDED.hajm,
+                        ogirlik          = EXCLUDED.ogirlik,
+                        blokda_soni      = EXCLUDED.blokda_soni,
+                        korobkada_soni   = EXCLUDED.korobkada_soni,
+                        saralash         = EXCLUDED.saralash,
+                        yaroqlilik_muddati = EXCLUDED.yaroqlilik_muddati,
+                        tavsif           = COALESCE(NULLIF(EXCLUDED.tavsif, ''), tovarlar.tavsif),
+                        yangilangan      = NOW()
+                    RETURNING (xmax = 0) AS yangi
+                """,
+                    uid, nomi,
+                    _str(d.get("kategoriya")) or "Boshqa",
+                    _str(d.get("birlik")) or "dona",
+                    _num(d.get("olish_narxi")),
+                    _num(d.get("sotish_narxi")),
+                    _num(d.get("min_sotish_narxi")),
+                    _num(d.get("qoldiq")),
+                    _num(d.get("min_qoldiq")),
+                    _str(d.get("brend")),
+                    _str(d.get("ishlab_chiqaruvchi")),
+                    _str(d.get("podkategoriya")),
+                    _str(d.get("guruh")),
+                    _str(d.get("segment")),
+                    _str(d.get("savdo_yonalishi")),
+                    _str(d.get("shtrix_kod")),
+                    _str(d.get("gtin")),
+                    _str(d.get("artikul")),
+                    _str(d.get("sap_kod")),
+                    _str(d.get("kod")),
+                    _str(d.get("ikpu_kod")),
+                    _num(d.get("hajm"), default=1),
+                    _num(d.get("ogirlik"), default=1),
+                    int(_num(d.get("blokda_soni"), default=1)),
+                    int(_num(d.get("korobkada_soni"), default=1)),
+                    int(_num(d.get("saralash"), default=500)),
+                    int(_num(d.get("yaroqlilik_muddati"), default=0)),
+                    _str(d.get("tavsif")),
+                )
+                if result and result["yangi"]:
+                    yaratildi += 1
+                else:
+                    yangilandi += 1
+            except Exception as e:
+                xatolar.append(f"Qator #{ridx}: {nomi[:30]}: {str(e)[:80]}")
+                if len(xatolar) >= 20:
+                    break
+
+    from shared.cache.redis_cache import user_cache_tozala
+    await user_cache_tozala(uid)
+
+    return {
+        "jami":       yaratildi + yangilandi,
+        "yaratildi":  yaratildi,
+        "yangilandi": yangilandi,
+        "xatolar":    xatolar[:20],
+    }
+
+
 @router.post("/tovar/import")
 async def tovar_import(data: TovarImportSorov, request: Request,
                        uid: int = Depends(get_uid)):
