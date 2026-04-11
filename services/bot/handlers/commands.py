@@ -1546,6 +1546,55 @@ async def cmd_rfm(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         await msg.edit_text(f"❌ RFM xatosi: {e}")
 
 
+async def cmd_ombor_qiymati(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    """/ombor_qiymati — Ombor umumiy qiymati (olish + bozor + foyda prognozi)."""
+    if not await faol_tekshir(update):
+        return
+    uid = update.effective_user.id
+    try:
+        async with db._P().acquire() as c:
+            row = await c.fetchrow("""
+                SELECT
+                    COUNT(*)                                    AS jami_tovar,
+                    COALESCE(SUM(qoldiq * olish_narxi), 0)      AS ombor_qiymati,
+                    COALESCE(SUM(qoldiq * sotish_narxi), 0)     AS bozor_qiymati,
+                    COALESCE(SUM(qoldiq), 0)                    AS jami_qoldiq,
+                    COUNT(*) FILTER (WHERE qoldiq <= 0)         AS tugagan,
+                    COUNT(*) FILTER (WHERE min_qoldiq > 0 AND qoldiq <= min_qoldiq
+                                     AND qoldiq > 0)            AS kam
+                FROM tovarlar WHERE user_id = $1
+            """, uid)
+
+        if not row or row["jami_tovar"] == 0:
+            await update.message.reply_text("🏭 Omborda tovar yo'q.")
+            return
+
+        ombor  = float(row["ombor_qiymati"] or 0)
+        bozor  = float(row["bozor_qiymati"] or 0)
+        foyda  = bozor - ombor
+        margin = (foyda / ombor * 100) if ombor > 0 else 0
+
+        text = (
+            "🏭 *OMBOR QIYMATI*\n"
+            "━━━━━━━━━━━━━━━━━━\n\n"
+            f"📦 Jami tovar: *{row['jami_tovar']} ta*\n"
+            f"🔢 Jami qoldiq: *{float(row['jami_qoldiq']):,.0f}*\n\n"
+            f"💰 Ombor qiymati: *{pul(ombor)} so'm*\n"
+            f"🏷 Bozor qiymati: *{pul(bozor)} so'm*\n"
+            f"💹 Potentsial foyda: *{pul(foyda)} so'm* ({margin:.1f}%)\n\n"
+            "⚠️ *Ogohlantirishlar:*\n"
+            f"  • Tugagan tovar: *{row['tugagan']}* ta\n"
+            f"  • Kam qoldiq:    *{row['kam']}* ta\n"
+        )
+        if row["tugagan"] or row["kam"]:
+            text += "\n💡 /prognoz buyrug'i orqali to'liq tahlil oling"
+
+        await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
+    except Exception as e:
+        log.error("ombor_qiymati: %s", e, exc_info=True)
+        await update.message.reply_text(f"❌ Xato: {e}")
+
+
 async def cmd_top_tovar(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     """/top_tovar [kun] — Top 10 eng ko'p sotilayotgan tovarlar.
 
