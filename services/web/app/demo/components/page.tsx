@@ -15,6 +15,7 @@ import ProductStockGrid from "@/components/dashboard/product-stock-grid"
 import PnLReport from "@/components/dashboard/pnl-report"
 import Client360View from "@/components/dashboard/client-360-view"
 import WarehouseTransferBoard from "@/components/dashboard/warehouse-transfer-board"
+import CashboxBalance from "@/components/dashboard/cashbox-balance"
 import { useLocale } from "@/lib/locale-context"
 
 // ─── Synthetic data ─────────────────────────────────────────
@@ -154,6 +155,24 @@ const TRANSFERS = [
   { id: 97,  dan_filial_id: 3, dan_filial_nomi: "Urgut filiali",   ga_filial_id: 1, ga_filial_nomi: "Markaz ombor",     tovar_nomi: "Snickers 50g",           miqdor: 96,   birlik: "dona", holat: "bekor"        as const, yaratilgan: new Date(Date.now() - 2 * 86400e3).toISOString(), izoh: "Buyurtma bekor qilindi" },
 ]
 
+const CASHBOX = {
+  naqd:         42_580_000,
+  karta:        18_920_000,
+  hisob:        125_400_000,
+  jami:         186_900_000,
+  bugun_kirim:  28_450_000,
+  bugun_chiqim: 12_180_000,
+  sof_oqim_prev: 14_200_000,
+  ops: [
+    { id: 1, turi: "kirim"    as const, usul: "karta" as const, summa: 5_480_000, izoh: "Supermarket Registon zakazi #4819", sana: new Date(Date.now() - 15 * 60e3).toISOString() },
+    { id: 2, turi: "kirim"    as const, usul: "naqd"  as const, summa: 2_480_000, izoh: "Do'kon Buyuk Ipak Yo'li",            sana: new Date(Date.now() - 45 * 60e3).toISOString() },
+    { id: 3, turi: "chiqim"   as const, usul: "naqd"  as const, summa: 1_800_000, izoh: "Yetkazib beruvchi - Sut Mahsulot",   sana: new Date(Date.now() - 2 * 3600e3).toISOString() },
+    { id: 4, turi: "kirim"    as const, usul: "hisob" as const, summa: 12_000_000, izoh: "Oylik to'lov - optom",             sana: new Date(Date.now() - 3 * 3600e3).toISOString() },
+    { id: 5, turi: "chiqim"   as const, usul: "naqd"  as const, summa: 4_200_000, izoh: "Benzin + logistika",                sana: new Date(Date.now() - 5 * 3600e3).toISOString() },
+    { id: 6, turi: "tuzatish" as const, usul: "naqd"  as const, summa: 180_000,   izoh: "Kassa inventarizatsiyasi",           sana: new Date(Date.now() - 22 * 3600e3).toISOString() },
+  ],
+}
+
 // ─── Page ───────────────────────────────────────────────────
 
 export default function DemoComponentsPage() {
@@ -240,6 +259,14 @@ export default function DemoComponentsPage() {
             onApprove={(id) => alert(`Tasdiqlandi: #${id}`)}
             onCancel={(id) => alert(`Bekor qilindi: #${id}`)}
           />
+        </section>
+
+        {/* 9. Cashbox balance */}
+        <section>
+          <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+            9. CashboxBalance
+          </p>
+          <CashboxBalance data={CASHBOX} />
         </section>
       </div>
     </AdminLayout>
