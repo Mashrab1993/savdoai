@@ -493,6 +493,13 @@ except Exception as e:
     log.warning("⚠️ Pro Features yuklanmadi: %s", e)
 
 try:
+    from services.api.routes.ai_extras import router as ai_extras_router
+    app.include_router(ai_extras_router)
+    log.info("✅ AI Extras (GPT-5, DeepSeek, Grok) endpoint ulandi")
+except Exception as e:
+    log.warning("⚠️ AI Extras yuklanmadi: %s", e)
+
+try:
     from services.api.routes.sd_agent_gaps import router as sd_router
     app.include_router(sd_router, tags=["SD Agent"])
     log.info("✅ SD Agent (blok, tara, almashtirish) ulandi")
