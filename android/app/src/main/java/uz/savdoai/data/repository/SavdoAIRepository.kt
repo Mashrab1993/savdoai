@@ -79,14 +79,25 @@ class SavdoAIRepository(private val context: Context) {
     fun qarzdorlar(): Flow<List<KlientEntity>> = klientDao.qarzdorlar()
     suspend fun getKlientById(id: Int): KlientEntity? = klientDao.getById(id)
 
+    @Suppress("UNCHECKED_CAST")
     suspend fun syncKlientlar(): Result<Int> = runCatching {
         val response = ApiClient.get().getKlientlar()
         if (response.isSuccessful) {
-            val items = response.body()?.map { r ->
-                KlientEntity(id = r.id, nom = r.nom, telefon = r.telefon,
-                    manzil = r.manzil, kategoriya = r.kategoriya,
-                    latitude = r.latitude, longitude = r.longitude, qarz = r.qarz ?: 0.0)
-            } ?: emptyList()
+            // Backend returns {total, items: [...]} — extract items
+            val body = response.body()
+            val raw = (body?.get("items") as? List<Map<String, Any>>) ?: emptyList()
+            val items = raw.map { r ->
+                KlientEntity(
+                    id         = (r["id"] as? Number)?.toInt() ?: 0,
+                    nom        = (r["ism"] as? String) ?: "",
+                    telefon    = r["telefon"] as? String,
+                    manzil     = r["manzil"] as? String,
+                    kategoriya = r["kategoriya"] as? String,
+                    latitude   = null,  // klientlar has no GPS columns
+                    longitude  = null,
+                    qarz       = ((r["aktiv_qarz"] as? Number)?.toDouble()) ?: 0.0
+                )
+            }
             klientDao.insertAll(items)
             Log.d(TAG, "Klientlar synced: ${items.size}")
             items.size
@@ -132,16 +143,18 @@ class SavdoAIRepository(private val context: Context) {
             tovarDao.qoldiqKamaytir(t.tovar_id, t.miqdor)
         }
 
-        // 3. Sync queue ga qo'shish
+        // 3. Sync queue ga qo'shish — backend model fields
         val data = JSONObject().apply {
             put("buyurtma_id", buyurtmaId)
-            put("klient_id", klientId)
+            put("klient", klientNomi)
             put("jami_summa", jami)
             put("tolangan", tolangan)
+            put("qarz", qarz)
             put("izoh", izoh ?: "")
-            put("tovarlar", tovarlar.map {
-                mapOf("tovar_id" to it.tovar_id, "nomi" to it.tovar_nomi,
-                    "miqdor" to it.miqdor, "narx" to it.narx, "summa" to it.summa)
+            put("tovarlar_json", tovarlar.map {
+                mapOf("nomi" to it.tovar_nomi, "miqdor" to it.miqdor,
+                    "birlik" to "dona", "narx" to it.narx,
+                    "kategoriya" to "Boshqa")
             }.toString())
         }
         syncQueueDao.insert(SyncQueueEntity(turi = "buyurtma", data_json = data.toString()))
@@ -226,13 +239,36 @@ class SavdoAIRepository(private val context: Context) {
 
     private suspend fun sendBuyurtma(item: SyncQueueEntity): Boolean {
         val json = JSONObject(item.data_json)
-        val klientId = json.getInt("klient_id")
-        // Simplified — in production, parse tovarlar from JSON
+        val klientNomi = json.optString("klient", "")
+        val jamiSumma  = json.optDouble("jami_summa", 0.0)
+        val tolangan   = json.optDouble("tolangan", 0.0)
+        val qarz       = json.optDouble("qarz", jamiSumma - tolangan)
+
+        // Parse tovarlar from JSON string
+        val tovarlar = mutableListOf<uz.savdoai.data.api.TovarItem>()
+        try {
+            val arr = org.json.JSONArray(json.optString("tovarlar_json", "[]"))
+            for (i in 0 until arr.length()) {
+                val t = arr.getJSONObject(i)
+                tovarlar.add(uz.savdoai.data.api.TovarItem(
+                    nomi       = t.optString("nomi", ""),
+                    miqdor     = t.optDouble("miqdor", 0.0),
+                    birlik     = t.optString("birlik", "dona"),
+                    narx       = t.optDouble("narx", 0.0),
+                    kategoriya = t.optString("kategoriya", "Boshqa"),
+                ))
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "tovarlar_json parse: ${e.message}")
+        }
+
         val response = ApiClient.get().createSotuv(SotuvCreateRequest(
-            klient_id = klientId,
-            tovarlar = emptyList(), // TODO: parse from JSON
-            tolangan = json.optDouble("tolangan", 0.0),
-            izoh = json.optString("izoh")
+            klient     = klientNomi.ifEmpty { null },
+            tovarlar   = tovarlar,
+            jami_summa = jamiSumma,
+            tolangan   = tolangan,
+            qarz       = qarz,
+            izoh       = json.optString("izoh").ifEmpty { null }
         ))
         return response.isSuccessful
     }
