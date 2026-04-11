@@ -2,7 +2,6 @@
 
 import { useState } from "react"
 import { AdminLayout } from "@/components/layout/admin-layout"
-import { StatusBadge } from "@/components/ui/status-badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -12,12 +11,9 @@ import {
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select"
-import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
-} from "@/components/ui/table"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { Search, Plus, Pencil, Trash2, Users, DollarSign, AlertCircle, Eye } from "lucide-react"
+import { Search, Plus, Users, DollarSign, AlertCircle } from "lucide-react"
 import { PageHeader } from "@/components/ui/page-header"
+import ClientDirectoryTable, { type ClientRowData } from "@/components/dashboard/client-directory-table"
 import { useLocale } from "@/lib/locale-context"
 import { translations } from "@/lib/i18n"
 import { useApi } from "@/hooks/use-api"
@@ -206,94 +202,23 @@ export default function ClientsPage() {
           </Button>
         </div>
 
-        {/* Table */}
-        <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl shadow-sm overflow-hidden">
-          <Table>
-            <TableHeader>
-              <TableRow className="border-b border-border">
-                <TableHead>{L.client[locale]}</TableHead>
-                <TableHead>{locale === "uz" ? "Manzil" : "Адрес"}</TableHead>
-                <TableHead>{translations.fields.phone[locale]}</TableHead>
-                <TableHead>{translations.fields.status[locale]}</TableHead>
-                <TableHead className="text-right">{L.purchases[locale]}</TableHead>
-                <TableHead className="text-right">{L.debt[locale]}</TableHead>
-                <TableHead className="text-right">{translations.fields.actions[locale]}</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filtered.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={7} className="text-center py-12 text-muted-foreground">
-                    {L.noClients[locale]}
-                  </TableCell>
-                </TableRow>
-              ) : (
-                filtered.map(client => (
-                  <TableRow key={client.id} className="border-b border-border hover:bg-secondary/50 transition-colors">
-                    <TableCell>
-                      <div className="flex items-center gap-3">
-                        <Avatar className="h-8 w-8">
-                          <AvatarFallback className="text-xs bg-primary/10 text-primary font-medium">
-                            {(client.name || "?").split(" ").map(n => n?.[0] ?? "").join("").slice(0, 2) || "?"}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <p className="font-medium text-foreground text-sm">{client.name}</p>
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-sm text-muted-foreground">{client.address || "—"}</TableCell>
-                    <TableCell className="text-sm text-muted-foreground">{client.phone || "—"}</TableCell>
-                    <TableCell><StatusBadge status={client.status} /></TableCell>
-                    <TableCell className="text-right text-sm font-medium text-foreground">{fmt(client.totalPurchases)}</TableCell>
-                    <TableCell className="text-right text-sm">
-                      <span className={client.totalDebt > 0 ? "text-destructive font-medium" : "text-muted-foreground"}>
-                        {fmt(client.totalDebt)}
-                      </span>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-1">
-                        <Button variant="ghost" size="icon" className="h-7 w-7"
-                          title={locale === "uz" ? "Tarix" : "История"}
-                          onClick={() => openTarix(Number(client.id))}>
-                          <Eye className="w-3.5 h-3.5" />
-                        </Button>
-                        <Button variant="ghost" size="icon" className="h-7 w-7"
-                          onClick={() => {
-                            setForm({
-                              name: client.name,
-                              phone: client.phone,
-                              address: client.address || "",
-                              creditLimit: String(client.creditLimit || 0),
-                            })
-                            setEditingClientId(Number(client.id))
-                            setModalOpen(true)
-                          }}>
-                          <Pencil className="w-3.5 h-3.5" />
-                        </Button>
-                        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive"
-                          onClick={async () => {
-                            if (!confirm(locale === "uz"
-                              ? `"${client.name}" ni o'chirishni tasdiqlaysizmi?`
-                              : `Удалить "${client.name}"?`)) return
-                            try {
-                              await clientService.remove(Number(client.id))
-                              refetch()
-                            } catch (err) {
-                              const msg = err instanceof ApiResponseError ? err.detail : String(err)
-                              alert(msg)
-                            }
-                          }}>
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </div>
+        {/* Premium client directory (v0.dev → GPT-5 pipeline) */}
+        <ClientDirectoryTable
+          clients={filtered.map<ClientRowData>(c => ({
+            id:            Number(c.id),
+            ism:           c.name,
+            telefon:       c.phone || undefined,
+            manzil:        c.address || undefined,
+            kategoriya:    undefined,
+            kredit_limit:  c.creditLimit || 0,
+            joriy_qarz:    c.totalDebt || 0,
+            oxirgi_sotuv:  undefined,
+            jami_xaridlar: c.totalPurchases || 0,
+            xarid_soni:    0,
+            faol:          c.status === "active",
+          }))}
+          onClientClick={id => openTarix(id)}
+        />
         </>}
       </div>
 
