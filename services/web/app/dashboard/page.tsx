@@ -1,9 +1,9 @@
 "use client"
 
 import { AdminLayout } from "@/components/layout/admin-layout"
-import { KpiCard } from "@/components/ui/kpi-card"
+import KpiGridPremium from "@/components/dashboard/kpi-grid-premium"
 import {
-  DollarSign, Users, Package, CreditCard, FileText,
+  Users, Package, FileText,
   TrendingUp, AlertCircle,
   Landmark, GraduationCap, Hourglass,
 } from "lucide-react"
@@ -104,42 +104,29 @@ export default function DashboardPage() {
               </div>
             )}
 
-            {/* Primary KPIs */}
-            <div>
-              <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-3">
-                {locale === "uz" ? "Asosiy ko'rsatkichlar" : "Ключевые показатели"}
-              </p>
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                <KpiCard
-                  title={d.totalRevenue[locale]}
-                  value={`${fmt(stats.totalRevenue)} so'm`}
-                  icon={DollarSign}
-                  gradient="emerald"
-                  delay={0.00}
-                />
-                <KpiCard
-                  title={locale === "uz" ? "Faol mijozlar" : "Активных клиентов"}
-                  value={String(stats.activeClients)}
-                  icon={Users}
-                  gradient="violet"
-                  delay={0.05}
-                />
-                <KpiCard
-                  title={d.totalDebt[locale]}
-                  value={`${fmt(stats.totalDebt)} so'm`}
-                  icon={CreditCard}
-                  gradient="amber"
-                  delay={0.10}
-                />
-                <KpiCard
-                  title={locale === "uz" ? "Muddati o'tgan qarzlar" : "Просроченных долгов"}
-                  value={String(stats.overdueCount)}
-                  icon={AlertCircle}
-                  gradient="rose"
-                  delay={0.15}
-                />
-              </div>
-            </div>
+            {/* Premium KPI grid (v0.dev → GPT-5.4 audit → Claude fix pipeline) */}
+            <KpiGridPremium
+              stats={{
+                bugungiSotuv:    statsExtra?.bugun?.jami ?? 0,
+                haftalikDaromad: statsExtra?.hafta?.jami ?? 0,
+                oylikFoyda:      statsExtra?.oy?.jami ?? 0,
+                faolMijozlar:    stats.activeClients,
+                qarzlar:         stats.totalDebt,
+                otgruzka:        0,
+                yetkazildi:      0,
+                kamQoldiq:       statsExtra?.kam_qoldiq_soni ?? 0,
+              }}
+              deltas={{
+                bugungiSotuv:    0,
+                haftalikDaromad: 0,
+                oylikFoyda:      0,
+                faolMijozlar:    0,
+                qarzlar:         0,
+                otgruzka:        0,
+                yetkazildi:      0,
+                kamQoldiq:       0,
+              }}
+            />
 
             {/* Secondary Metrics */}
             <div>
