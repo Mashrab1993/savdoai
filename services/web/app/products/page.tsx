@@ -232,7 +232,7 @@ export default function ProductsPage() {
             { label: L.lowStock[locale], value: lowStock, icon: AlertTriangle, color: "text-yellow-500" },
             { label: L.outOfStock[locale], value: outOfStock, icon: XCircle, color: "text-destructive" },
           ].map(s => (
-            <div key={s.label} className="bg-card border border-border rounded-xl p-4 flex items-center gap-3 hover:border-border/70 transition-colors">
+            <div key={s.label} className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl shadow-sm p-4 flex items-center gap-3 hover:border-border/70 transition-colors">
               <div className={`p-2 rounded-lg bg-secondary ${s.color} shrink-0`}><s.icon className="w-4 h-4" /></div>
               <div className="min-w-0">
                 <p className="text-xs text-muted-foreground truncate">{s.label}</p>
@@ -334,7 +334,7 @@ export default function ProductsPage() {
         </div>
 
         {/* Table */}
-        <div className="bg-card border border-border rounded-xl overflow-hidden">
+        <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl shadow-sm overflow-hidden">
           <Table>
             <TableHeader>
               <TableRow>

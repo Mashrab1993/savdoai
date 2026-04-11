@@ -188,7 +188,7 @@ export default function CashPage() {
             </div>
           </div>
 
-          <div className="bg-card border border-border rounded-xl p-4 flex items-center gap-3 hover:border-border/70 transition-colors">
+          <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl shadow-sm p-4 flex items-center gap-3 hover:border-border/70 transition-colors">
             <div className="p-2 rounded-lg bg-green-100 dark:bg-green-900/30 shrink-0">
               <TrendingUp className="w-4 h-4 text-green-600 dark:text-green-400" />
             </div>
@@ -198,7 +198,7 @@ export default function CashPage() {
             </div>
           </div>
 
-          <div className="bg-card border border-border rounded-xl p-4 flex items-center gap-3 hover:border-border/70 transition-colors">
+          <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl shadow-sm p-4 flex items-center gap-3 hover:border-border/70 transition-colors">
             <div className="p-2 rounded-lg bg-red-100 dark:bg-red-900/30 shrink-0">
               <TrendingDown className="w-4 h-4 text-destructive" />
             </div>
@@ -208,7 +208,7 @@ export default function CashPage() {
             </div>
           </div>
 
-          <div className="bg-card border border-border rounded-xl p-4 flex items-center gap-3 hover:border-border/70 transition-colors">
+          <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl shadow-sm p-4 flex items-center gap-3 hover:border-border/70 transition-colors">
             <div className="p-2 rounded-lg bg-secondary shrink-0">
               <Landmark className="w-4 h-4 text-primary" />
             </div>
@@ -226,7 +226,7 @@ export default function CashPage() {
 
           {/* Chart + list (2/3) */}
           <div className="lg:col-span-2 space-y-4">
-            <div className="bg-card border border-border rounded-xl p-5">
+            <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl shadow-sm p-5">
               <div className="flex items-center justify-between mb-4">
                 <div>
                   <h3 className="font-semibold text-sm text-foreground">{L.chartTitle[locale]}</h3>
@@ -323,7 +323,7 @@ export default function CashPage() {
             {/* Transaction list grouped by date */}
             <div className="space-y-4">
               {sortedDates.length === 0 ? (
-                <div className="bg-card border border-border rounded-xl p-10 text-center text-sm text-muted-foreground">
+                <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl shadow-sm p-10 text-center text-sm text-muted-foreground">
                   {L.noTransactions[locale]}
                 </div>
               ) : sortedDates.map(date => {
@@ -331,7 +331,7 @@ export default function CashPage() {
                 const dayIncome = dayTxs.filter(t => t.type === "income").reduce((s, t) => s + t.amount, 0)
                 const dayOutcome = dayTxs.filter(t => t.type === "outcome").reduce((s, t) => s + t.amount, 0)
                 return (
-                  <div key={date} className="bg-card border border-border rounded-xl overflow-hidden">
+                  <div key={date} className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl shadow-sm overflow-hidden">
                     <div className="flex items-center justify-between px-4 py-2.5 border-b border-border bg-secondary/50">
                       <p className="text-sm font-semibold text-foreground">
                         {dateLabels[date] ?? date}
@@ -388,7 +388,7 @@ export default function CashPage() {
 
           {/* Quick-add sidebar (1/3) */}
           <div className="space-y-4">
-            <div className="bg-card border border-border rounded-xl p-5 space-y-4">
+            <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl shadow-sm p-5 space-y-4">
               <h3 className="font-semibold text-sm text-foreground">{L.quickOp[locale]}</h3>
 
               <div className="grid grid-cols-2 gap-2">
@@ -455,7 +455,7 @@ export default function CashPage() {
             </div>
 
             {/* Balance summary */}
-            <div className="bg-card border border-border rounded-xl p-4 space-y-3">
+            <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl shadow-sm p-4 space-y-3">
               <h4 className="text-sm font-semibold text-foreground">{L.monthSummary[locale]}</h4>
               {[
                 { label: L.totalIncome[locale],  value: fmtFull(monthlyIncome),                    color: "text-green-600 dark:text-green-400" },

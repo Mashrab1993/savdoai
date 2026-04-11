@@ -172,7 +172,7 @@ export default function ReportsPage() {
         {/* KPI Cards */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {kpiCards.map(s => (
-            <div key={s.label} className="bg-card border border-border rounded-xl p-4 flex items-center gap-3 hover:border-border/70 transition-colors">
+            <div key={s.label} className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl shadow-sm p-4 flex items-center gap-3 hover:border-border/70 transition-colors">
               <div className={`p-2 rounded-lg bg-secondary ${s.color} shrink-0`}><s.icon className="w-4 h-4" /></div>
               <div className="min-w-0">
                 <p className="text-xs text-muted-foreground truncate">{s.label}</p>
@@ -186,7 +186,7 @@ export default function ReportsPage() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
 
           {/* Bar chart: income by period */}
-          <div className="bg-card border border-border rounded-xl p-5">
+          <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl shadow-sm p-5">
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h3 className="font-semibold text-foreground text-sm">{L.monthlyRevenue[locale]}</h3>
@@ -219,7 +219,7 @@ export default function ReportsPage() {
           </div>
 
           {/* Line chart: income vs outcome */}
-          <div className="bg-card border border-border rounded-xl p-5">
+          <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl shadow-sm p-5">
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h3 className="font-semibold text-foreground text-sm">{L.revenueVsExp[locale]}</h3>
@@ -255,7 +255,7 @@ export default function ReportsPage() {
         </div>
 
         {/* Summary table */}
-        <div className="bg-card border border-border rounded-xl p-5">
+        <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl shadow-sm p-5">
           <h3 className="font-semibold text-foreground text-sm mb-4">
             {locale === "uz" ? "Davr bo'yicha jami" : "Итоги по периодам"}
           </h3>

@@ -146,21 +146,21 @@ export default function ClientsPage() {
         {!loading && !error && <>
         {/* Summary cards */}
         <div className="grid grid-cols-3 gap-4">
-          <div className="bg-card border border-border rounded-xl p-4 flex items-center gap-3 hover:border-border/70 transition-colors">
+          <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl shadow-sm p-4 flex items-center gap-3 hover:border-border/70 transition-colors">
             <div className="p-2 rounded-lg bg-secondary text-primary shrink-0"><Users className="w-4 h-4" /></div>
             <div className="min-w-0">
               <p className="text-xs text-muted-foreground truncate">{L.totalClients[locale]}</p>
               <p className="text-xl font-bold text-foreground truncate">{clients.length}</p>
             </div>
           </div>
-          <div className="bg-card border border-border rounded-xl p-4 flex items-center gap-3 hover:border-border/70 transition-colors">
+          <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl shadow-sm p-4 flex items-center gap-3 hover:border-border/70 transition-colors">
             <div className="p-2 rounded-lg bg-secondary text-green-500 shrink-0"><DollarSign className="w-4 h-4" /></div>
             <div className="min-w-0">
               <p className="text-xs text-muted-foreground truncate">{L.totalRevenue[locale]}</p>
               <p className="text-xl font-bold text-foreground truncate">{fmt(totalRevenue)}</p>
             </div>
           </div>
-          <div className="bg-card border border-border rounded-xl p-4 flex items-center gap-3 hover:border-border/70 transition-colors">
+          <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl shadow-sm p-4 flex items-center gap-3 hover:border-border/70 transition-colors">
             <div className="p-2 rounded-lg bg-secondary text-destructive shrink-0"><AlertCircle className="w-4 h-4" /></div>
             <div className="min-w-0">
               <p className="text-xs text-muted-foreground truncate">{L.outstandingDebt[locale]}</p>
@@ -194,7 +194,7 @@ export default function ClientsPage() {
         </div>
 
         {/* Table */}
-        <div className="bg-card border border-border rounded-xl overflow-hidden">
+        <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl shadow-sm overflow-hidden">
           <Table>
             <TableHeader>
               <TableRow className="border-b border-border">
@@ -366,7 +366,7 @@ export default function ClientsPage() {
                   </p>
                   <div className="space-y-1.5">
                     {tarixData.sotuvlar.map((s) => (
-                      <div key={s.id} className="flex justify-between items-center bg-card border border-border rounded-lg px-3 py-2">
+                      <div key={s.id} className="flex justify-between items-center bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl px-3 py-2">
                         <div>
                           <p className="text-sm font-medium">{fmt(s.jami ?? 0)}</p>
                           <p className="text-[10px] text-muted-foreground">
@@ -390,7 +390,7 @@ export default function ClientsPage() {
                   </p>
                   <div className="space-y-1.5">
                     {tarixData.qarzlar.map((q) => (
-                      <div key={q.id} className="flex justify-between items-center bg-card border border-border rounded-lg px-3 py-2">
+                      <div key={q.id} className="flex justify-between items-center bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl px-3 py-2">
                         <div>
                           <p className="text-sm font-medium">{fmt(q.qolgan ?? 0)}</p>
                           <p className="text-[10px] text-muted-foreground">

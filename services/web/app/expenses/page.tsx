@@ -159,7 +159,7 @@ export default function ExpensesPage() {
             { label: L.pendingApprovals[locale], value: String(pendingCount), icon: Clock,        color: "text-primary",    bg: "bg-secondary" },
             { label: L.totalCategories[locale],  value: String(categoryData.length), icon: Tag,  color: "text-purple-500", bg: "bg-secondary" },
           ].map(s => (
-            <div key={s.label} className="bg-card border border-border rounded-xl p-4 flex items-center gap-3 hover:border-border/70 transition-colors">
+            <div key={s.label} className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl shadow-sm p-4 flex items-center gap-3 hover:border-border/70 transition-colors">
               <div className={cn("p-2 rounded-lg shrink-0", s.bg, s.color)}>
                 <s.icon className="w-4 h-4" />
               </div>
@@ -227,7 +227,7 @@ export default function ExpensesPage() {
               </div>
             )}
 
-            <div className="bg-card border border-border rounded-xl overflow-hidden">
+            <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl shadow-sm overflow-hidden">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -310,7 +310,7 @@ export default function ExpensesPage() {
 
           {/* Pie chart sidebar (1/3 width) */}
           <div className="space-y-4">
-            <div className="bg-card border border-border rounded-xl p-5">
+            <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl shadow-sm p-5">
               <h3 className="font-semibold text-sm text-foreground mb-1">
                 {locale === "uz" ? "Kategoriya bo'yicha" : "По категориям"}
               </h3>
@@ -351,7 +351,7 @@ export default function ExpensesPage() {
 
             {/* Pending list */}
             {pendingCount > 0 && (
-              <div className="bg-card border border-border rounded-xl p-4">
+              <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl shadow-sm p-4">
                 <h3 className="font-semibold text-sm text-foreground mb-3 flex items-center gap-2">
                   <Clock className="w-4 h-4 text-yellow-500" />
                   {locale === "uz" ? "Kutilayotgan tasdiqlar" : "Ожидают подтверждения"}

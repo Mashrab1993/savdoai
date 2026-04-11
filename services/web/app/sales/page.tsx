@@ -178,7 +178,7 @@ export default function SalesPage() {
               autoFocus
             />
             {filteredProducts.length > 0 && (
-              <div className="absolute z-20 mt-1 w-full bg-card border border-border rounded-lg shadow-lg max-h-64 overflow-y-auto">
+              <div className="absolute z-20 mt-1 w-full bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl shadow-lg max-h-64 overflow-y-auto">
                 {filteredProducts.map(p => (
                   <button
                     key={p.id}
@@ -202,7 +202,7 @@ export default function SalesPage() {
           </div>
 
           {/* Savat jadvali */}
-          <div className="bg-card border border-border rounded-xl overflow-hidden">
+          <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl shadow-sm overflow-hidden">
             <div className="px-4 py-3 border-b border-border flex items-center gap-2">
               <ShoppingCart className="w-4 h-4 text-muted-foreground" />
               <span className="text-sm font-semibold">{t.cart} ({cart.length})</span>
@@ -278,7 +278,7 @@ export default function SalesPage() {
         {/* O'ng: Klient + To'lov */}
         <div className="space-y-4">
           {/* Klient */}
-          <div className="bg-card border border-border rounded-xl p-4 space-y-3">
+          <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl shadow-sm p-4 space-y-3">
             <div className="flex items-center gap-2">
               <User className="w-4 h-4 text-muted-foreground" />
               <span className="text-sm font-semibold">{t.client}</span>
@@ -293,7 +293,7 @@ export default function SalesPage() {
                 }}
               />
               {filteredClients.length > 0 && !klient && (
-                <div className="absolute z-10 mt-1 w-full bg-card border border-border rounded-lg shadow-lg max-h-40 overflow-y-auto">
+                <div className="absolute z-10 mt-1 w-full bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl shadow-lg max-h-40 overflow-y-auto">
                   {filteredClients.map(c => (
                     <button key={c}
                       className="w-full px-3 py-2 text-left text-sm hover:bg-secondary/70"
@@ -314,7 +314,7 @@ export default function SalesPage() {
           </div>
 
           {/* To'lov */}
-          <div className="bg-card border border-border rounded-xl p-4 space-y-3">
+          <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl shadow-sm p-4 space-y-3">
             <div className="flex justify-between items-center">
               <span className="text-sm text-muted-foreground">{t.total}</span>
               <span className="text-xl font-bold text-foreground">{fmt(jamiSumma)}</span>

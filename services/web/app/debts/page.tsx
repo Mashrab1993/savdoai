@@ -91,7 +91,7 @@ export default function DebtsPage() {
 
         {/* Summary Cards — Better visual hierarchy */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-card border border-border rounded-lg p-4 flex items-center gap-3">
+          <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl p-4 flex items-center gap-3">
             <div className="p-2.5 rounded-lg bg-secondary text-primary"><CreditCard className="w-4 h-4" /></div>
             <div className="flex-1 min-w-0">
               <p className="text-xs text-muted-foreground mb-1">{translations.fields.amount[locale]}</p>
@@ -146,7 +146,7 @@ export default function DebtsPage() {
         </div>
 
         {/* Table */}
-        <div className="bg-card border border-border rounded-lg overflow-hidden">
+        <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl overflow-hidden">
           <Table>
             <TableHeader>
               <TableRow>
