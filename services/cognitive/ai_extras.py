@@ -132,7 +132,8 @@ grok = ChatProvider(
     api_key=XAI_KEY,
 )
 
-# v0.dev — OpenAI-uyg'un endpoint orqali ishlaydi (Vercel Platform API)
+# v0.dev — OpenAI emas, o'zining REST API'siga ega. Ushbu ChatProvider
+# faqat ready flag uchun — haqiqiy ishni generate_ui() pastda qiladi.
 v0 = ChatProvider(
     name="v0.dev",
     base_url="https://api.v0.dev/v1",
@@ -141,6 +142,61 @@ v0 = ChatProvider(
 )
 
 _PROVIDERS = [gpt5, deepseek, grok, v0]
+
+
+# ── v0.dev dedicated client (chat-based, not chat/completions) ─────
+class _V0Client:
+    """
+    v0.dev Platform API uses POST /v1/chats with {message, system}.
+    Response: {id, messages: [{role, content}, ...]} where the last
+    assistant message contains the generated tsx inside a code block.
+    """
+
+    BASE = "https://api.v0.dev/v1"
+
+    @property
+    def ready(self) -> bool:
+        return bool(V0_KEY)
+
+    async def generate(
+        self,
+        prompt: str,
+        *,
+        system: str = "",
+        project_id: Optional[str] = None,
+        model: str = "",
+    ) -> Optional[dict]:
+        if not V0_KEY:
+            return None
+        body: dict = {"message": prompt}
+        if system:
+            body["system"] = system
+        if project_id:
+            body["projectId"] = project_id
+        if model:
+            body["modelConfiguration"] = {"modelId": model}
+
+        headers = {
+            "Authorization": f"Bearer {V0_KEY}",
+            "Content-Type":  "application/json",
+        }
+        async with httpx.AsyncClient(timeout=HTTP_TIMEOUT) as cli:
+            r = await cli.post(f"{self.BASE}/chats", json=body, headers=headers)
+            if r.status_code >= 400:
+                log.warning("v0 chat create: %s %s", r.status_code, r.text[:200])
+                return None
+            return r.json()
+
+
+_v0_client = _V0Client()
+
+
+def _extract_tsx(raw_content: str) -> str:
+    """Pull the tsx code block out of an assistant message body."""
+    import re
+    m = re.search(r"```(?:tsx|typescript|jsx|javascript)?\n(.*?)```",
+                  raw_content, re.DOTALL)
+    return m.group(1).strip() if m else raw_content.strip()
 
 
 def active_providers() -> list[str]:
@@ -261,29 +317,38 @@ async def cheap_batch(
         return None
 
 
-async def generate_ui(prompt: str, *, max_tokens: int = 4000) -> Optional[str]:
+async def generate_ui(prompt: str) -> Optional[str]:
     """
-    v0.dev API — matn → React + Tailwind + shadcn/ui komponent.
+    v0.dev Platform API — matn → React + Tailwind + shadcn/ui komponent.
 
-    Bizning web stek allaqachon Next.js + shadcn/ui + Tailwind bo'lgani
-    uchun v0 qaytargan kod 1:1 mos keladi — komponentni
-    services/web/components/ga joylashtirish kifoya.
+    Bizning web stek Next.js + shadcn/ui + Tailwind + framer-motion
+    bo'lgani uchun v0 qaytargan tsx kod 1:1 mos keladi — komponentni
+    services/web/components/'ga joylashtirish kifoya.
+
+    Returns:
+        tsx code only (code block stripped), or None on error.
     """
-    if not v0.ready:
+    if not _v0_client.ready:
         return None
 
     system = (
         "You are v0 by Vercel. Generate a single React component using "
-        "TypeScript, Tailwind CSS and shadcn/ui. Use lucide-react icons. "
-        "Include framer-motion animations where appropriate. Return ONLY "
-        "the code inside a ```tsx code block — no explanation."
+        "TypeScript, Tailwind CSS v4, shadcn/ui (import from @/components/ui/*), "
+        "lucide-react icons, and framer-motion animations where appropriate. "
+        "The target project already has these installed. Return ONLY the "
+        "component inside a ```tsx code block. No prose, no imports for "
+        "packages that aren't already in the project."
     )
     try:
-        return await v0.chat(
-            system, prompt,
-            temperature=0.4,
-            max_tokens=max_tokens,
-        )
+        result = await _v0_client.generate(prompt, system=system)
+        if not result:
+            return None
+        # The assistant reply is the last message with role='assistant'
+        messages = result.get("messages") or []
+        for m in reversed(messages):
+            if m.get("role") == "assistant":
+                return _extract_tsx(m.get("content") or "")
+        return None
     except Exception as e:
         log.warning("v0 generate_ui: %s", e)
         return None
