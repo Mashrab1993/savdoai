@@ -22,6 +22,7 @@ import SupplierBalance from "@/components/dashboard/supplier-balance"
 import PhotoReportGrid from "@/components/dashboard/photo-report-grid"
 import SalesPivotTable from "@/components/dashboard/sales-pivot-table"
 import NotificationStream from "@/components/dashboard/notification-stream"
+import SalesHeatmap from "@/components/dashboard/sales-heatmap"
 import { useLocale } from "@/lib/locale-context"
 
 // ─── Synthetic data ─────────────────────────────────────────
@@ -244,6 +245,25 @@ const STREAM = [
   { id: 11, type: "xarajat"     as const, title: "Xarajat ro'yxatga olindi",       summa: 1_800_000,  agent: "Admin",                                                   vaqt: new Date(Date.now() - 3 * 3600e3).toISOString(),  body: "Benzin + logistika" },
 ]
 
+// 7 days × 24 hours — realistic Samarqand FMCG pattern
+// (busy 9-12 morning, lunch dip, 15-19 afternoon peak, weekend reduced)
+const HEATMAP: number[][] = [
+  // Mon
+  [0,0,0,0,0,0,1,3,8,14,18,12,5,8,14,22,25,22,18,10,4,1,0,0],
+  // Tue
+  [0,0,0,0,0,0,2,4,9,16,20,14,6,9,16,24,28,24,19,12,5,1,0,0],
+  // Wed
+  [0,0,0,0,0,0,2,5,11,18,22,15,7,10,18,26,30,25,20,13,5,2,0,0],
+  // Thu
+  [0,0,0,0,0,0,2,5,10,17,21,14,6,9,17,24,27,23,18,11,5,1,0,0],
+  // Fri
+  [0,0,0,0,0,0,3,6,12,19,24,18,7,11,20,28,32,28,22,14,6,2,0,0],
+  // Sat
+  [0,0,0,0,0,0,1,2,6,12,18,20,12,15,22,26,28,24,16,9,4,1,0,0],
+  // Sun
+  [0,0,0,0,0,0,0,1,3, 8,12,15,10,12,18,20,18,14, 8,4,1,0,0,0],
+]
+
 // ─── Page ───────────────────────────────────────────────────
 
 export default function DemoComponentsPage() {
@@ -393,6 +413,14 @@ export default function DemoComponentsPage() {
             15. NotificationStream
           </p>
           <NotificationStream events={STREAM} live />
+        </section>
+
+        {/* 16. Sales heatmap */}
+        <section>
+          <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+            16. SalesHeatmap
+          </p>
+          <SalesHeatmap matrix={HEATMAP} metric="soni" />
         </section>
       </div>
     </AdminLayout>
