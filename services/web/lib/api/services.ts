@@ -298,9 +298,11 @@ export interface NotificationItem {
   soni?: number
 }
 
-// Backend router mounted at /bildirishnoma (not /api/v1)
+// Aggregate notifications endpoint in main.py (/api/v1/bildirishnomalar)
+// Returns {items: [...], jami: n} — data-driven (qarz/kam_qoldiq/pending_xarajat)
+// Different from /bildirishnoma router which is real notification table
 export const notificationService = {
-  list: () => api.get<{ items: NotificationItem[]; jami: number }>("/bildirishnoma?limit=50"),
+  list: () => api.get<{ items: NotificationItem[]; jami: number }>("/api/v1/bildirishnomalar"),
 }
 
 // ── Prices ────────────────────────────────────────────────────────────────────
