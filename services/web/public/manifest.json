@@ -1,12 +1,16 @@
 {
   "name": "SavdoAI — Biznes boshqaruv",
   "short_name": "SavdoAI",
-  "description": "Savdo boshqaruv tizimi — mijozlar, tovarlar, qarzlar, hisobotlar",
+  "description": "Savdo boshqaruv tizimi — mijozlar, tovarlar, qarzlar, hisobotlar. Offline ishlaydi.",
   "start_url": "/dashboard",
+  "scope": "/",
   "display": "standalone",
-  "background_color": "#0f0f23",
-  "theme_color": "#1a56db",
+  "display_override": ["window-controls-overlay", "standalone"],
+  "background_color": "#0B0F14",
+  "theme_color": "#059669",
   "orientation": "any",
+  "lang": "uz",
+  "dir": "ltr",
   "icons": [
     {
       "src": "/icon.svg",
@@ -21,5 +25,29 @@
       "purpose": "any maskable"
     }
   ],
-  "categories": ["business", "finance", "productivity"]
+  "shortcuts": [
+    {
+      "name": "Yangi sotuv",
+      "short_name": "Sotuv",
+      "url": "/order-create",
+      "description": "Tezkor sotuv yaratish"
+    },
+    {
+      "name": "Klientlar",
+      "short_name": "Klient",
+      "url": "/clients"
+    },
+    {
+      "name": "Tovarlar",
+      "short_name": "Tovar",
+      "url": "/products"
+    },
+    {
+      "name": "Qarzlar",
+      "short_name": "Qarz",
+      "url": "/debts"
+    }
+  ],
+  "categories": ["business", "finance", "productivity"],
+  "prefer_related_applications": false
 }
