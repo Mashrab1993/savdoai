@@ -108,8 +108,9 @@ async def hisobot_foyda(kunlar: int = 30, uid: int = Depends(get_uid)):
         xarajat = await c.fetchval("""
             SELECT COALESCE(SUM(summa), 0)
             FROM xarajatlar
-            WHERE admin_uid=$1 AND tasdiqlangan=TRUE
-              AND vaqt >= NOW() - make_interval(days => $2)
+            WHERE admin_uid = $1
+              AND NOT bekor_qilingan
+              AND sana >= NOW() - make_interval(days => $2)
         """, uid, kunlar)
 
         top_foyda = await c.fetch("""

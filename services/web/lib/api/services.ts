@@ -52,6 +52,22 @@ export const dashboardService = {
     return flattenWeeklyReport(raw)
   },
   monthly: async (): Promise<ReportEntry[]> => {
+    // /hisobot/oylik-trend returns proper time-series;
+    // fall back to /hisobot/oylik flatten if trend is empty.
+    try {
+      type TrendRow = { oy: string; oy_nomi: string; soni: number; sotuv: number; foyda: number }
+      const rows = await api.get<TrendRow[]>("/api/v1/hisobot/oylik-trend?oylar=6")
+      if (Array.isArray(rows) && rows.length > 0) {
+        return rows.map(r => ({
+          month:    r.oy,
+          label:    r.oy_nomi,
+          revenue:  Number(r.sotuv || 0),
+          income:   Number(r.sotuv || 0),
+          expenses: Number((r.sotuv || 0) - (r.foyda || 0)),
+          outcome:  Number((r.sotuv || 0) - (r.foyda || 0)),
+        }))
+      }
+    } catch { /* fall through */ }
     const raw = await api.get<MonthlyReportResponse>("/api/v1/hisobot/oylik")
     return flattenMonthlyReport(raw)
   },
@@ -161,6 +177,21 @@ function flattenMonthlyReport(raw: MonthlyReportResponse): ReportEntry[] {
 
 export const reportService = {
   daily: async (): Promise<ReportEntry[]> => {
+    // /hisobot/kunlik-trend returns proper per-day buckets (30 days)
+    try {
+      type Row = { sana: string; kun: string; soni: number; sotuv: number; tolangan: number; qarz: number }
+      const rows = await api.get<Row[]>("/api/v1/hisobot/kunlik-trend?kunlar=30")
+      if (Array.isArray(rows) && rows.length > 0) {
+        return rows.map(r => ({
+          date:     r.sana,
+          label:    r.kun,
+          revenue:  Number(r.sotuv || 0),
+          income:   Number(r.sotuv || 0),
+          expenses: Number(r.qarz || 0),
+          outcome:  Number(r.qarz || 0),
+        }))
+      }
+    } catch { /* fall through */ }
     const raw = await api.get<DailyReportResponse>("/api/v1/hisobot/kunlik")
     return flattenDailyReport(raw)
   },
@@ -169,6 +200,20 @@ export const reportService = {
     return flattenWeeklyReport(raw)
   },
   monthly: async (): Promise<ReportEntry[]> => {
+    try {
+      type Row = { oy: string; oy_nomi: string; soni: number; sotuv: number; foyda: number }
+      const rows = await api.get<Row[]>("/api/v1/hisobot/oylik-trend?oylar=6")
+      if (Array.isArray(rows) && rows.length > 0) {
+        return rows.map(r => ({
+          month:    r.oy,
+          label:    r.oy_nomi,
+          revenue:  Number(r.sotuv || 0),
+          income:   Number(r.sotuv || 0),
+          expenses: Number((r.sotuv || 0) - (r.foyda || 0)),
+          outcome:  Number((r.sotuv || 0) - (r.foyda || 0)),
+        }))
+      }
+    } catch { /* fall through */ }
     const raw = await api.get<MonthlyReportResponse>("/api/v1/hisobot/oylik")
     return flattenMonthlyReport(raw)
   },
