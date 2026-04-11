@@ -199,6 +199,50 @@ async def admin_statistika(uid: int = Depends(get_uid)):
 #  REPORTS — SalesDoc-level reporting
 # ════════════════════════════════════════════════════════════
 
+@router.get("/hisobot/oylik-trend")
+async def hisobot_oylik_trend(oylar: int = 6, uid: int = Depends(get_uid)):
+    """Oxirgi N oylik sotuv trend — dashboard grafigi uchun."""
+    async with rls_conn(uid) as c:
+        rows = await c.fetch("""
+            SELECT
+                to_char(date_trunc('month', ss.sana), 'YYYY-MM') AS oy,
+                to_char(date_trunc('month', ss.sana), 'Mon')     AS oy_nomi,
+                COUNT(*)                                         AS soni,
+                COALESCE(SUM(ss.jami), 0)                        AS sotuv,
+                COALESCE(SUM(
+                    (SELECT SUM(ch.jami - ch.miqdor * ch.olish_narxi)
+                     FROM chiqimlar ch WHERE ch.sessiya_id = ss.id)
+                ), 0)                                            AS foyda
+            FROM sotuv_sessiyalar ss
+            WHERE user_id = $1
+              AND ss.sana >= NOW() - make_interval(months => $2)
+            GROUP BY 1, 2
+            ORDER BY 1
+        """, uid, oylar)
+    return [dict(r) for r in rows]
+
+
+@router.get("/hisobot/kunlik-trend")
+async def hisobot_kunlik_trend(kunlar: int = 30, uid: int = Depends(get_uid)):
+    """Oxirgi N kunlik sotuv — dashboard grafigi uchun (real-time)."""
+    async with rls_conn(uid) as c:
+        rows = await c.fetch("""
+            SELECT
+                to_char((ss.sana AT TIME ZONE 'Asia/Tashkent')::date, 'YYYY-MM-DD') AS sana,
+                to_char((ss.sana AT TIME ZONE 'Asia/Tashkent')::date, 'DD')         AS kun,
+                COUNT(*)                    AS soni,
+                COALESCE(SUM(ss.jami), 0)   AS sotuv,
+                COALESCE(SUM(ss.tolangan), 0) AS tolangan,
+                COALESCE(SUM(ss.qarz), 0)   AS qarz
+            FROM sotuv_sessiyalar ss
+            WHERE user_id = $1
+              AND ss.sana >= NOW() - make_interval(days => $2)
+            GROUP BY 1, 2
+            ORDER BY 1
+        """, uid, kunlar)
+    return [dict(r) for r in rows]
+
+
 @router.get("/photo-reports")
 async def photo_reports(
     sana_dan: Optional[str] = None,
