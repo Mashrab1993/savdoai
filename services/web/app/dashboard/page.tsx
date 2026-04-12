@@ -3,6 +3,7 @@
 import { AdminLayout } from "@/components/layout/admin-layout"
 import KpiGridPremium from "@/components/dashboard/kpi-grid-premium"
 import AgentKpiBoard, { type AgentKpi } from "@/components/dashboard/agent-kpi-board"
+import SalesHeatmap from "@/components/dashboard/sales-heatmap"
 import {
   Users, Package, FileText,
   TrendingUp, AlertCircle,
@@ -351,8 +352,22 @@ export default function DashboardPage() {
               </div>
             )}
 
+            {/* Sales activity heatmap — shows synthetic pattern until backend provides real hourly aggregate */}
+            <SalesHeatmap
+              matrix={[
+                [0,0,0,0,0,0,1,3,8,14,18,12,5,8,14,22,25,22,18,10,4,1,0,0],
+                [0,0,0,0,0,0,2,4,9,16,20,14,6,9,16,24,28,24,19,12,5,1,0,0],
+                [0,0,0,0,0,0,2,5,11,18,22,15,7,10,18,26,30,25,20,13,5,2,0,0],
+                [0,0,0,0,0,0,2,5,10,17,21,14,6,9,17,24,27,23,18,11,5,1,0,0],
+                [0,0,0,0,0,0,3,6,12,19,24,18,7,11,20,28,32,28,22,14,6,2,0,0],
+                [0,0,0,0,0,0,1,2,6,12,18,20,12,15,22,26,28,24,16,9,4,1,0,0],
+                [0,0,0,0,0,0,0,1,3,8,12,15,10,12,18,20,18,14,8,4,1,0,0,0],
+              ]}
+              metric="soni"
+            />
+
             {/* Quick Actions */}
-            <div className="bg-card border border-border rounded-xl p-5">
+            <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl p-5">
               <div className="flex items-center justify-between mb-3">
                 <h3 className="font-semibold text-foreground text-sm">
                   {locale === "uz" ? "Tez o'tish" : "Быстрый переход"}
