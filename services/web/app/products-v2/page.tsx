@@ -67,10 +67,10 @@ export default function ProductsV2Page() {
       <div className="space-y-4">
         {/* Stats */}
         <div className="flex gap-3 overflow-x-auto pb-1">
-          <div className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-gray-900 rounded-lg border text-sm whitespace-nowrap">
+          <div className="flex items-center gap-2 px-3 py-2 bg-card dark:bg-card rounded-lg border text-sm whitespace-nowrap">
             <Package className="w-4 h-4 text-blue-500" />
             <span className="font-medium">{stats.jami}</span>
-            <span className="text-gray-400">jami</span>
+            <span className="text-muted-foreground">jami</span>
           </div>
           {stats.kamQoldiq > 0 && (
             <div className="flex items-center gap-2 px-3 py-2 bg-amber-50 dark:bg-amber-900/10 rounded-lg border border-amber-200 text-sm whitespace-nowrap">
@@ -91,12 +91,12 @@ export default function ProductsV2Page() {
         {/* Filters */}
         <div className="flex flex-wrap gap-2">
           <div className="flex-1 min-w-48 relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input placeholder="Tovar qidirish..." value={search} onChange={e => setSearch(e.target.value)}
               className="pl-9" />
           </div>
 
-          <div className="flex gap-1 bg-gray-100 dark:bg-gray-800 p-0.5 rounded-lg">
+          <div className="flex gap-1 bg-muted dark:bg-muted p-0.5 rounded-lg">
             {[
               { val: "all", label: "Barchasi" },
               { val: "ok", label: "🟢 Bor" },
@@ -105,16 +105,16 @@ export default function ProductsV2Page() {
             ].map(s => (
               <button key={s.val} onClick={() => setStockFilter(s.val as StockStatus)}
                 className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
-                  stockFilter === s.val ? "bg-white dark:bg-gray-700 shadow-sm" : "text-gray-500"
+                  stockFilter === s.val ? "bg-card dark:bg-muted shadow-sm" : "text-muted-foreground"
                 }`}>{s.label}</button>
             ))}
           </div>
 
-          <div className="flex gap-1 bg-gray-100 dark:bg-gray-800 p-0.5 rounded-lg">
-            <button onClick={() => setViewMode("grid")} className={`p-1.5 rounded-md ${viewMode === "grid" ? "bg-white dark:bg-gray-700 shadow-sm" : "text-gray-400"}`}>
+          <div className="flex gap-1 bg-muted dark:bg-muted p-0.5 rounded-lg">
+            <button onClick={() => setViewMode("grid")} className={`p-1.5 rounded-md ${viewMode === "grid" ? "bg-card dark:bg-muted shadow-sm" : "text-muted-foreground"}`}>
               <Grid3X3 className="w-4 h-4" />
             </button>
-            <button onClick={() => setViewMode("list")} className={`p-1.5 rounded-md ${viewMode === "list" ? "bg-white dark:bg-gray-700 shadow-sm" : "text-gray-400"}`}>
+            <button onClick={() => setViewMode("list")} className={`p-1.5 rounded-md ${viewMode === "list" ? "bg-card dark:bg-muted shadow-sm" : "text-muted-foreground"}`}>
               <List className="w-4 h-4" />
             </button>
           </div>
@@ -126,7 +126,7 @@ export default function ProductsV2Page() {
             {kategoriyalar.map(k => (
               <button key={k} onClick={() => setSelectedKat(k)}
                 className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${
-                  selectedKat === k ? "bg-emerald-600 text-white" : "bg-gray-100 dark:bg-gray-800 text-gray-600"
+                  selectedKat === k ? "bg-emerald-600 text-white" : "bg-muted dark:bg-muted text-muted-foreground"
                 }`}>{k === "all" ? "Barchasi" : k}</button>
             ))}
           </div>
@@ -136,17 +136,17 @@ export default function ProductsV2Page() {
         {viewMode === "grid" && (
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
             {filtered.map((p: any) => (
-              <div key={p.id} className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden hover:shadow-md transition-shadow">
+              <div key={p.id} className="bg-card dark:bg-card rounded-xl border border-border dark:border-border overflow-hidden hover:shadow-md transition-shadow">
                 {/* Photo placeholder */}
                 <div className="h-24 bg-gradient-to-br from-gray-100 to-gray-50 dark:from-gray-800 dark:to-gray-900 flex items-center justify-center">
                   {p.foto_url
                     ? <img src={p.foto_url} alt="" className="h-full w-full object-cover" />
-                    : <Package className="w-8 h-8 text-gray-300" />
+                    : <Package className="w-8 h-8 text-muted-foreground/50" />
                   }
                 </div>
                 <div className="p-3">
                   <div className="text-sm font-medium truncate">{p.nomi}</div>
-                  <div className="text-xs text-gray-400 mt-0.5">{p.kategoriya || "—"}</div>
+                  <div className="text-xs text-muted-foreground mt-0.5">{p.kategoriya || "—"}</div>
                   <div className="flex items-center justify-between mt-2">
                     <span className="text-sm font-bold text-emerald-600">{formatCurrency(p.sotuv_narx || 0)}</span>
                     <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full ${stockColor(p.qoldiq)}`}>
@@ -161,10 +161,10 @@ export default function ProductsV2Page() {
 
         {/* List View */}
         {viewMode === "list" && (
-          <div className="bg-white dark:bg-gray-900 rounded-xl border overflow-hidden">
+          <div className="bg-card dark:bg-card rounded-xl border overflow-hidden">
             <table className="w-full text-sm">
               <thead>
-                <tr className="bg-gray-50 dark:bg-gray-800 text-left text-xs text-gray-500">
+                <tr className="bg-muted/50 dark:bg-muted text-left text-xs text-muted-foreground">
                   <th className="px-4 py-3">Tovar</th>
                   <th className="px-4 py-3">Kategoriya</th>
                   <th className="px-4 py-3 text-right">Narx</th>
@@ -174,9 +174,9 @@ export default function ProductsV2Page() {
               </thead>
               <tbody>
                 {filtered.map((p: any) => (
-                  <tr key={p.id} className="border-t border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50">
+                  <tr key={p.id} className="border-t border-border/60 dark:border-border hover:bg-muted/50 dark:hover:bg-muted/50">
                     <td className="px-4 py-2.5 font-medium">{p.nomi}</td>
-                    <td className="px-4 py-2.5 text-xs text-gray-500">{p.kategoriya || "—"}</td>
+                    <td className="px-4 py-2.5 text-xs text-muted-foreground">{p.kategoriya || "—"}</td>
                     <td className="px-4 py-2.5 text-right font-medium text-emerald-600">{formatCurrency(p.sotuv_narx || 0)}</td>
                     <td className="px-4 py-2.5 text-right">{p.qoldiq}</td>
                     <td className="px-4 py-2.5">
@@ -192,8 +192,8 @@ export default function ProductsV2Page() {
         )}
 
         {filtered.length === 0 && !loading && (
-          <div className="text-center py-16 text-gray-400">
-            <Package className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+          <div className="text-center py-16 text-muted-foreground">
+            <Package className="w-12 h-12 mx-auto mb-3 text-muted-foreground/50" />
             <div className="text-sm">Tovar topilmadi</div>
           </div>
         )}

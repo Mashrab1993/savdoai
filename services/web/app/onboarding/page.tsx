@@ -95,10 +95,10 @@ export default function OnboardingPage() {
         {/* Progress */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-xs text-gray-500">{step + 1} / {STEPS.length}</span>
-            <span className="text-xs text-gray-500">{Math.round(progress)}%</span>
+            <span className="text-xs text-muted-foreground">{step + 1} / {STEPS.length}</span>
+            <span className="text-xs text-muted-foreground">{Math.round(progress)}%</span>
           </div>
-          <div className="h-1.5 bg-gray-200 dark:bg-gray-800 rounded-full overflow-hidden">
+          <div className="h-1.5 bg-muted dark:bg-muted rounded-full overflow-hidden">
             <div className="h-full bg-emerald-500 rounded-full transition-all duration-500" style={{ width: `${progress}%` }} />
           </div>
           {/* Step dots */}
@@ -107,7 +107,7 @@ export default function OnboardingPage() {
               <div key={s.id} className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
                 i < step ? "bg-emerald-500 text-white" :
                 i === step ? `bg-${current.color}-500 text-white scale-110 shadow-lg` :
-                "bg-gray-200 dark:bg-gray-700 text-gray-400"
+                "bg-muted dark:bg-muted text-muted-foreground"
               }`}>
                 {completed.has(s.id) ? <CheckCircle2 className="w-4 h-4" /> : i + 1}
               </div>
@@ -116,15 +116,15 @@ export default function OnboardingPage() {
         </div>
 
         {/* Card */}
-        <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-800 p-8 text-center">
+        <div className="bg-card dark:bg-card rounded-2xl shadow-xl border border-border dark:border-border p-8 text-center">
           <div className={`w-16 h-16 rounded-2xl bg-${current.color}-100 dark:bg-${current.color}-900/30 flex items-center justify-center mx-auto mb-6`}>
             <Icon className={`w-8 h-8 text-${current.color}-600`} />
           </div>
 
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-3">
+          <h2 className="text-xl font-bold text-foreground dark:text-white mb-3">
             {current.title}
           </h2>
-          <p className="text-sm text-gray-500 mb-6 leading-relaxed">
+          <p className="text-sm text-muted-foreground mb-6 leading-relaxed">
             {current.description}
           </p>
 
@@ -154,7 +154,7 @@ export default function OnboardingPage() {
 
           {!isFirst && !isLast && (
             <button onClick={() => { localStorage.setItem("onboarding_done", "true"); router.push("/dashboard") }}
-              className="text-xs text-gray-400 mt-4 hover:text-gray-600">
+              className="text-xs text-muted-foreground mt-4 hover:text-muted-foreground">
               O&apos;tkazib yuborish
             </button>
           )}

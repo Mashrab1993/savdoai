@@ -201,7 +201,7 @@ export default function WarehousesPage() {
                       {formatCurrency(Number(f.ombor_qiymat || 0))}
                     </TableCell>
                     <TableCell className="text-center">
-                      <Badge className={f.faol ? "bg-emerald-100 text-emerald-800" : "bg-gray-100 text-gray-700"}>
+                      <Badge className={f.faol ? "bg-emerald-100 text-emerald-800" : "bg-muted text-foreground"}>
                         {f.faol ? "Faol" : "Nofaol"}
                       </Badge>
                     </TableCell>

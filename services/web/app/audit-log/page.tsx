@@ -159,7 +159,7 @@ export default function AuditLogPage() {
                   </TableCell>
                 </TableRow>
               ) : filtered.map(l => {
-                const meta = ACTIONS[l.amal] || { label: l.amal, color: "bg-gray-100 text-gray-800", icon: ScrollText }
+                const meta = ACTIONS[l.amal] || { label: l.amal, color: "bg-muted text-foreground", icon: ScrollText }
                 const Icon = meta.icon
                 return (
                   <TableRow key={l.id}>

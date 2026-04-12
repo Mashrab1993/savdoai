@@ -209,7 +209,7 @@ export default function SuppliersPage() {
                     {formatCurrency(Number(s.jami_xarid))}
                   </TableCell>
                   <TableCell className="text-center">
-                    <Badge className={s.faol ? "bg-emerald-100 text-emerald-800" : "bg-gray-100 text-gray-700"}>
+                    <Badge className={s.faol ? "bg-emerald-100 text-emerald-800" : "bg-muted text-foreground"}>
                       {s.faol ? "Faol" : "Nofaol"}
                     </Badge>
                   </TableCell>

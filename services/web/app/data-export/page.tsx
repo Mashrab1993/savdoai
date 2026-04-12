@@ -133,7 +133,7 @@ export default function DataExportPage() {
         </div>
 
         {/* Date range */}
-        <div className="bg-white dark:bg-gray-900 rounded-xl border p-4">
+        <div className="bg-card dark:bg-card rounded-xl border p-4">
           <h2 className="font-bold mb-3 flex items-center gap-2">
             <Calendar className="w-4 h-4" /> Davr (ixtiyoriy)
           </h2>

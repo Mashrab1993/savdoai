@@ -309,7 +309,7 @@ export default function SettingsPage() {
                       >
                         <div className={cn(
                           "w-8 h-5 rounded border",
-                          t === "light" ? "bg-white border-border" :
+                          t === "light" ? "bg-card border-border" :
                           t === "dark"  ? "bg-slate-800 border-slate-700" :
                           "bg-gradient-to-r from-white to-slate-800 border-border"
                         )} />

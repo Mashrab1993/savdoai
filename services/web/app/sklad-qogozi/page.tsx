@@ -114,7 +114,7 @@ export default function SkladQogoziPage() {
               disabled={loading}
               variant="secondary"
               size="lg"
-              className="bg-white text-emerald-600 hover:bg-emerald-50"
+              className="bg-card text-emerald-600 hover:bg-emerald-50"
             >
               {loading ? (
                 <><div className="animate-spin h-4 w-4 border-b-2 border-emerald-600 rounded-full mr-2" /> Yaratilmoqda...</>
