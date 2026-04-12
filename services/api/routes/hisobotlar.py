@@ -519,6 +519,79 @@ async def hisobot_oylik_trend(oylar: int = 6, uid: int = Depends(get_uid)):
     return [dict(r) for r in rows]
 
 
+@router.get("/hisobot/top-klientlar")
+async def hisobot_top_klientlar(kunlar: int = 30, limit: int = 20, uid: int = Depends(get_uid)):
+    """
+    Top N klientlar — SalesDoc /report/customer analogi.
+
+    Oxirgi N kun ichida eng ko'p xarid qilgan klientlar.
+    SalesPivotTable komponentiga to'g'ridan-to'g'ri mos keladi.
+    """
+    async with rls_conn(uid) as c:
+        rows = await c.fetch("""
+            SELECT
+                k.ism AS key,
+                COALESCE(SUM(ss.jami), 0)    AS jami,
+                COUNT(ss.id)                  AS soni,
+                COALESCE(SUM(
+                    (SELECT SUM(ch.miqdor) FROM chiqimlar ch WHERE ch.sessiya_id = ss.id)
+                ), 0)                         AS miqdor
+            FROM sotuv_sessiyalar ss
+            JOIN klientlar k ON k.id = ss.klient_id
+            WHERE ss.user_id = $1
+              AND ss.sana >= NOW() - make_interval(days => $2)
+              AND COALESCE(ss.holat, 'yangi') != 'bekor'
+              AND ss.klient_id IS NOT NULL
+            GROUP BY k.ism
+            ORDER BY SUM(ss.jami) DESC
+            LIMIT $3
+        """, uid, kunlar, limit)
+    return [
+        {
+            "key":    r["key"],
+            "jami":   float(r["jami"]),
+            "soni":   int(r["soni"]),
+            "miqdor": float(r["miqdor"]),
+        }
+        for r in rows
+    ]
+
+
+@router.get("/hisobot/top-tovarlar")
+async def hisobot_top_tovarlar(kunlar: int = 30, limit: int = 20, uid: int = Depends(get_uid)):
+    """
+    Top N tovarlar — SalesDoc /report/volumeReport analogi.
+
+    Oxirgi N kun ichida eng ko'p sotilgan tovarlar.
+    SalesPivotTable komponentiga mos.
+    """
+    async with rls_conn(uid) as c:
+        rows = await c.fetch("""
+            SELECT
+                c.tovar_nomi AS key,
+                COALESCE(SUM(c.jami), 0)   AS jami,
+                COUNT(DISTINCT c.sessiya_id) AS soni,
+                COALESCE(SUM(c.miqdor), 0) AS miqdor
+            FROM chiqimlar c
+            JOIN sotuv_sessiyalar ss ON ss.id = c.sessiya_id
+            WHERE ss.user_id = $1
+              AND ss.sana >= NOW() - make_interval(days => $2)
+              AND COALESCE(ss.holat, 'yangi') != 'bekor'
+            GROUP BY c.tovar_nomi
+            ORDER BY SUM(c.jami) DESC
+            LIMIT $3
+        """, uid, kunlar, limit)
+    return [
+        {
+            "key":    r["key"],
+            "jami":   float(r["jami"]),
+            "soni":   int(r["soni"]),
+            "miqdor": float(r["miqdor"]),
+        }
+        for r in rows
+    ]
+
+
 @router.get("/hisobot/kunlik-trend")
 async def hisobot_kunlik_trend(kunlar: int = 30, uid: int = Depends(get_uid)):
     """Oxirgi N kunlik sotuv — dashboard grafigi uchun (real-time)."""
