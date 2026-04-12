@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
+import { MapPin } from "lucide-react"
 import { PageHeader } from "@/components/ui/page-header"
 
 export default function TashrifPage() {
@@ -68,8 +69,14 @@ export default function TashrifPage() {
 
   return (
     <div className="max-w-4xl mx-auto p-4 sm:p-6">
-      <h1 className="text-2xl font-bold mb-1">📍 Tashriflar</h1>
-      <p className="text-sm text-muted-foreground mb-6">Check-in/out va tashrif boshqaruvi</p>
+      <div className="mb-6">
+        <PageHeader
+          icon={MapPin}
+          gradient="cyan"
+          title="Tashriflar"
+          subtitle="Check-in/out va tashrif boshqaruvi"
+        />
+      </div>
 
       {/* Check-in formasi */}
       <div className="bg-card rounded-xl border p-4 mb-6">

@@ -121,16 +121,14 @@ export default function NakladnoyPage() {
   return (
     <AdminLayout>
       <div className="max-w-7xl mx-auto p-4 sm:p-6 space-y-6">
+        <PageHeader
+          icon={FileText}
+          gradient="blue"
+          title="Nakladnoylar (Накладные 3.1)"
+          subtitle="Buyurtmalardan avtomatik nakladnoy generatsiya"
+        />
         <div className="flex items-center justify-between flex-wrap gap-4">
-          <div>
-            <h1 className="text-2xl font-bold flex items-center gap-2">
-              <FileText className="w-7 h-7 text-emerald-600" />
-              Nakladnoylar (Накладные 3.1)
-            </h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              Buyurtmalardan avtomatik nakladnoy generatsiya — SalesDoc formatida
-            </p>
-          </div>
+          <div></div>
           <div className="flex gap-2">
             <Input type="date" value={date} onChange={e => setDate(e.target.value)} className="w-44" />
             <Button
