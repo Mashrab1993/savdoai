@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/dialog"
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts"
 import { Plus, ArrowUpCircle, ArrowDownCircle, Trash2, Search, Landmark, TrendingUp, TrendingDown, ArrowUpRight, ArrowDownRight } from "lucide-react"
+import CashboxBalance from "@/components/dashboard/cashbox-balance"
 import { cn } from "@/lib/utils"
 import { useApi } from "@/hooks/use-api"
 import { cashService } from "@/lib/api/services"
@@ -162,7 +163,27 @@ export default function CashPage() {
       <div className="space-y-5">
         {loading && <PageLoading />}
         {error && !loading && <PageError message={error} onRetry={() => { refetchStats(); refetchHistory() }} />}
-        {!loading && !error && <>
+        {!loading && !error && stats && <>
+        {/* Premium CashboxBalance */}
+        <CashboxBalance
+          data={{
+            naqd:         stats.balance,
+            karta:        0,
+            hisob:        0,
+            jami:         stats.balance,
+            bugun_kirim:  stats.todayIncome,
+            bugun_chiqim: stats.todayOutcome,
+            ops:          transactions.slice(0, 8).map(t => ({
+              id:    Number(t.id),
+              turi:  t.type === "income" ? "kirim" as const : "chiqim" as const,
+              usul:  (t.method === "karta" ? "karta" : t.method === "hisob" ? "hisob" : "naqd") as "naqd" | "karta" | "hisob",
+              summa: t.amount,
+              izoh:  t.note || undefined,
+              sana:  t.date,
+            })),
+          }}
+        />
+
         {/* KPI cards */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {/* Balance */}
