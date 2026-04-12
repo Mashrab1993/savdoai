@@ -101,13 +101,12 @@ export default function MaterialReportPage() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold flex items-center gap-2">
-              <BarChart3 className="w-7 h-7 text-emerald-600" />
-              Material hisoboti
-            </h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              Tovar harakati: kirim, chiqim, qoldiq (SalesDoc uslubida)
-            </p>
+            <PageHeader
+          icon={BarChart3}
+          gradient="amber"
+          title="Material hisobot"
+          subtitle="Tovar harakati: kirim, chiqim, qoldiq (SalesDoc uslubida)"
+        />
           </div>
           <Button variant="outline" size="sm">
             <Download className="w-4 h-4 mr-1" /> Excel export

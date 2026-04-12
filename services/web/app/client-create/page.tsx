@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { User, Save, X, MapPin, AlertCircle, Check } from "lucide-react"
+import { UserPlus } from "lucide-react"
 import { PageHeader } from "@/components/ui/page-header"
 import { clientService } from "@/lib/api/services"
 
@@ -48,11 +49,12 @@ export default function ClientCreatePage() {
     <AdminLayout>
       <div className="max-w-3xl mx-auto p-4 sm:p-6 space-y-6">
         <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <User className="w-7 h-7 text-emerald-600" />
-            Yangi mijoz
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1">Mijoz ma'lumotlarini kiritish</p>
+          <PageHeader
+          icon={UserPlus}
+          gradient="emerald"
+          title="Yangi klient"
+          subtitle="Mijoz ma'lumotlarini kiritish"
+        />
         </div>
 
         <div className="bg-card rounded-xl border p-6 space-y-4">

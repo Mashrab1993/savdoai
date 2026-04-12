@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
+import { Link } from "lucide-react"
 import { PageHeader } from "@/components/ui/page-header"
 
 const EVENT_ICONS: Record<string, string> = {
@@ -56,8 +57,12 @@ export default function WebhookPage() {
     <div className="max-w-4xl mx-auto p-4 sm:p-6">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold">🔗 Webhook Integratsiya</h1>
-          <p className="text-sm text-muted-foreground mt-1">Tashqi tizimlar bilan bog&apos;lanish (1C, Telegram, Google Sheets...)</p>
+          <PageHeader
+          icon={Link}
+          gradient="blue"
+          title="Webhook"
+          subtitle="Tashqi tizimlar bilan bog'lanish (1C, Telegram, Google Sheets...)"
+        />
         </div>
         <button onClick={() => setShowForm(!showForm)} className="px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700">
           {showForm ? "Bekor" : "+ Yangi webhook"}

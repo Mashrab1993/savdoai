@@ -22,11 +22,12 @@ export default function ApiKeysPage() {
       <div className="max-w-5xl mx-auto p-4 sm:p-6 space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold flex items-center gap-2">
-              <Key className="w-7 h-7 text-emerald-600" />
-              API kalitlari
-            </h1>
-            <p className="text-sm text-muted-foreground mt-1">Tashqi tizimlar uchun API kalitlar</p>
+            <PageHeader
+          icon={Key}
+          gradient="amber"
+          title="API kalitlar"
+          subtitle="Tashqi tizimlar uchun API kalitlar"
+        />
           </div>
           <Button className="bg-emerald-600 hover:bg-emerald-700">
             <Plus className="w-4 h-4 mr-1" /> Yangi kalit

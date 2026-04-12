@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Database, Download, Upload, Calendar, Check, FileText, ShieldCheck } from "lucide-react"
+import { HardDrive } from "lucide-react"
 import { PageHeader } from "@/components/ui/page-header"
 
 const BACKUP_GROUPS = [
@@ -34,13 +35,12 @@ export default function BackupPage() {
     <AdminLayout>
       <div className="max-w-5xl mx-auto p-4 sm:p-6 space-y-6">
         <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <Database className="w-7 h-7 text-emerald-600" />
-            Backup va eksport
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Ma'lumotlarni Excel/CSV formatda yuklab olish
-          </p>
+          <PageHeader
+          icon={HardDrive}
+          gradient="violet"
+          title="Zaxira nusxa"
+          subtitle="Ma'lumotlarni Excel/CSV formatda yuklab olish"
+        />
         </div>
 
         {/* Stats */}

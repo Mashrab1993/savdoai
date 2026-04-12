@@ -65,11 +65,12 @@ export default function AllReportsPage() {
     <AdminLayout>
       <div className="max-w-6xl mx-auto p-4 sm:p-6 space-y-6">
         <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <BarChart3 className="w-7 h-7 text-emerald-600" />
-            Barcha hisobotlar
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1">25+ turdagi hisobot va tahlil</p>
+          <PageHeader
+          icon={BarChart3}
+          gradient="blue"
+          title="Barcha hisobotlar"
+          subtitle="25+ turdagi hisobot va tahlil"
+        />
         </div>
 
         {REPORT_CATEGORIES.map((cat, ci) => (

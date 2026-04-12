@@ -28,11 +28,12 @@ export default function BillingPage() {
     <AdminLayout>
       <div className="max-w-6xl mx-auto p-4 sm:p-6 space-y-6">
         <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <CreditCard className="w-7 h-7 text-emerald-600" />
-            Tarif va to'lov
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1">Joriy tarif, balans va to'lov tarixi</p>
+          <PageHeader
+          icon={CreditCard}
+          gradient="amber"
+          title="Billing"
+          subtitle="Joriy tarif, balans va to'lov tarixi"
+        />
         </div>
 
         {/* Current Status */}

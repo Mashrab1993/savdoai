@@ -26,13 +26,12 @@ export default function OnlineOrdersPage() {
       <div className="max-w-7xl mx-auto p-4 sm:p-6 space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold flex items-center gap-2">
-              <Globe className="w-7 h-7 text-emerald-600" />
-              Onlayn buyurtmalar
-            </h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              Telegram bot va web orqali kelgan buyurtmalar
-            </p>
+            <PageHeader
+          icon={Globe}
+          gradient="blue"
+          title="Onlayn buyurtmalar"
+          subtitle="Telegram bot va web orqali kelgan buyurtmalar"
+        />
           </div>
         </div>
 

@@ -58,13 +58,12 @@ export default function PriceListPage() {
       <div className="max-w-7xl mx-auto p-4 sm:p-6 space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold flex items-center gap-2">
-              <FileText className="w-7 h-7 text-emerald-600" />
-              Prays-list (narx ro'yxati)
-            </h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              Tovarlar va narxlar — narx turi bo'yicha
-            </p>
+            <PageHeader
+          icon={FileText}
+          gradient="blue"
+          title="Prays-list"
+          subtitle="Tovarlar va narxlar — narx turi bo'yicha"
+        />
           </div>
           <div className="flex gap-2">
             <Button variant="outline" size="sm"><Printer className="w-4 h-4 mr-1" /> Chop etish</Button>

@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { ClipboardList, Download, Calendar, FileSpreadsheet, Truck } from "lucide-react"
+import { FileText } from "lucide-react"
 import { PageHeader } from "@/components/ui/page-header"
 import { formatCurrency } from "@/lib/format"
 
@@ -33,13 +34,12 @@ export default function ReestrPage() {
       <div className="max-w-6xl mx-auto p-4 sm:p-6 space-y-6">
         <div className="flex items-center justify-between flex-wrap gap-4">
           <div>
-            <h1 className="text-2xl font-bold flex items-center gap-2">
-              <ClipboardList className="w-7 h-7 text-emerald-600" />
-              Reestr (Реестр 3.0)
-            </h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              Kunlik buyurtmalar reestri — kassa va boshqaruv uchun
-            </p>
+            <PageHeader
+          icon={FileText}
+          gradient="blue"
+          title="Reestr"
+          subtitle="Kunlik buyurtmalar reestri — kassa va boshqaruv uchun"
+        />
           </div>
           <div className="flex gap-2">
             <Input type="date" value={date} onChange={e => setDate(e.target.value)} className="w-44" />

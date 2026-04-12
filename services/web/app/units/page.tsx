@@ -31,11 +31,12 @@ export default function UnitsPage() {
       <div className="max-w-4xl mx-auto p-4 sm:p-6 space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold flex items-center gap-2">
-              <Ruler className="w-7 h-7 text-emerald-600" />
-              O'lchov birliklari
-            </h1>
-            <p className="text-sm text-muted-foreground mt-1">Tovarlar uchun o'lchov birliklari</p>
+            <PageHeader
+          icon={Ruler}
+          gradient="amber"
+          title="Birliklar"
+          subtitle="Tovarlar uchun o'lchov birliklari"
+        />
           </div>
           <Button onClick={() => setShowAdd(true)} className="bg-emerald-600 hover:bg-emerald-700">
             <Plus className="w-4 h-4 mr-1" /> Yangi

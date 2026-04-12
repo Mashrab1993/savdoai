@@ -22,11 +22,12 @@ export default function DataImportPage() {
     <AdminLayout>
       <div className="max-w-5xl mx-auto p-4 sm:p-6 space-y-6">
         <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <Upload className="w-7 h-7 text-emerald-600" />
-            Ma'lumot import
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1">Excel/CSV fayllardan ma'lumot yuklash</p>
+          <PageHeader
+          icon={Upload}
+          gradient="blue"
+          title="Import"
+          subtitle="Excel/CSV fayllardan ma'lumot yuklash"
+        />
         </div>
 
         {/* Type Selection */}

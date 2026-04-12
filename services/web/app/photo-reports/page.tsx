@@ -70,13 +70,12 @@ export default function PhotoReportsPage() {
       <div className="max-w-7xl mx-auto p-4 sm:p-6 space-y-5">
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
-            <h1 className="text-2xl font-bold flex items-center gap-2">
-              <Camera className="w-7 h-7 text-purple-600" />
-              Foto hisobotlar
-            </h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              Agentlar tomonidan yuklangan check-in/check-out rasmlari
-            </p>
+            <PageHeader
+          icon={Camera}
+          gradient="violet"
+          title="Foto hisobotlar"
+          subtitle="Agentlar tomonidan yuklangan check-in/check-out rasmlari"
+        />
           </div>
           <div className="flex gap-2 flex-wrap">
             <Input type="date" value={sanaDan}   onChange={e => setSanaDan(e.target.value)}   className="w-40" />

@@ -88,13 +88,12 @@ export default function PriceTypesPage() {
       <div className="max-w-5xl mx-auto p-4 sm:p-6 space-y-5">
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
-            <h1 className="text-2xl font-bold flex items-center gap-2">
-              <Tag className="w-7 h-7 text-emerald-600" />
-              Narx guruhlari
-            </h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              Klient kategoriyalari uchun maxsus narxlar — Opt/Roznitsa/VIP
-            </p>
+            <PageHeader
+          icon={Tag}
+          gradient="amber"
+          title="Narx turlari"
+          subtitle="Klient kategoriyalari uchun maxsus narxlar — Opt/Roznitsa/VIP"
+        />
           </div>
           <Button onClick={() => setShowAdd(true)}>
             <Plus className="w-4 h-4 mr-1" /> Yangi guruh

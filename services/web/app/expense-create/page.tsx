@@ -58,11 +58,12 @@ export default function ExpenseCreatePage() {
     <AdminLayout>
       <div className="max-w-2xl mx-auto p-4 sm:p-6 space-y-6">
         <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <Receipt className="w-7 h-7 text-emerald-600" />
-            Yangi xarajat
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1">Xarajatni qayd etish</p>
+          <PageHeader
+          icon={Receipt}
+          gradient="rose"
+          title="Yangi xarajat"
+          subtitle="Xarajatni qayd etish"
+        />
         </div>
 
         <div className="bg-card rounded-xl border p-6 space-y-4">

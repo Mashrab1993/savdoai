@@ -25,11 +25,12 @@ export default function SmsTemplatesPage() {
       <div className="max-w-5xl mx-auto p-4 sm:p-6 space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold flex items-center gap-2">
-              <MessageSquare className="w-7 h-7 text-emerald-600" />
-              SMS shablonlar
-            </h1>
-            <p className="text-sm text-muted-foreground mt-1">Avtomatik xabarlar uchun matn shablonlari</p>
+            <PageHeader
+          icon={MessageSquare}
+          gradient="cyan"
+          title="SMS shablonlar"
+          subtitle="Avtomatik xabarlar uchun matn shablonlari"
+        />
           </div>
           <Button onClick={() => setShowAdd(true)} className="bg-emerald-600 hover:bg-emerald-700">
             <Plus className="w-4 h-4 mr-1" /> Yangi shablon

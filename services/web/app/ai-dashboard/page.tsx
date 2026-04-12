@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect, type ReactNode } from "react";
+import { Brain } from "lucide-react"
 import { PageHeader } from "@/components/ui/page-header"
 
 function Card({ children, className = "" }: { children: ReactNode; className?: string }) {
@@ -67,8 +68,12 @@ export default function AIDashboard() {
     <div className="max-w-6xl mx-auto p-4 sm:p-6">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-foreground dark:text-white">🧠 AI Dashboard</h1>
-          <p className="text-sm text-muted-foreground mt-1">Real-time biznes tahlili va AI tavsiyalar</p>
+          <PageHeader
+          icon={Brain}
+          gradient="violet"
+          title="AI Dashboard"
+          subtitle="Real-time biznes tahlili va AI tavsiyalar"
+        />
         </div>
         <div className="text-xs text-muted-foreground bg-muted/50 dark:bg-muted px-3 py-1.5 rounded-full">
           Yangilangan: {new Date().toLocaleTimeString("uz")}

@@ -16,11 +16,12 @@ export default function PrintHistoryPage() {
     <AdminLayout>
       <div className="max-w-6xl mx-auto p-4 sm:p-6 space-y-6">
         <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <Printer className="w-7 h-7 text-emerald-600" />
-            Chop etish tarixi
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1">Barcha chop etilgan hujjatlar tarixi</p>
+          <PageHeader
+          icon={Printer}
+          gradient="blue"
+          title="Chop tarixi"
+          subtitle="Barcha chop etilgan hujjatlar tarixi"
+        />
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">

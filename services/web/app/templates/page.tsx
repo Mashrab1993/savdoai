@@ -36,11 +36,12 @@ export default function TemplatesPage() {
       <div className="max-w-6xl mx-auto p-4 sm:p-6 space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold flex items-center gap-2">
-              <FileText className="w-7 h-7 text-emerald-600" />
-              Hujjat shablonlari
-            </h1>
-            <p className="text-sm text-muted-foreground mt-1">Faktura, nakladnoy, hisobot va prays-list shablonlari</p>
+            <PageHeader
+          icon={FileText}
+          gradient="blue"
+          title="Shablonlar"
+          subtitle="Faktura, nakladnoy, hisobot va prays-list shablonlari"
+        />
           </div>
           <Button className="bg-emerald-600 hover:bg-emerald-700">
             <Plus className="w-4 h-4 mr-1" /> Yangi shablon

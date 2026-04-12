@@ -25,8 +25,12 @@ export default function PlanningPage() {
       <div className="max-w-7xl mx-auto p-4 sm:p-6 space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold flex items-center gap-2"><Target className="w-7 h-7 text-emerald-600" /> Rejalashtirish</h1>
-            <p className="text-sm text-muted-foreground mt-1">Agent rejalari va bajarilish — SalesDoc uslubida</p>
+            <PageHeader
+          icon={Target}
+          gradient="emerald"
+          title="Rejalashtirish"
+          subtitle="Agent rejalari va bajarilish — SalesDoc uslubida"
+        />
           </div>
           <div className="flex gap-2">
             <Button variant="outline" size="sm"><Upload className="w-4 h-4 mr-1" /> Excel import</Button>

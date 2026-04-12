@@ -27,11 +27,12 @@ export default function TagsPage() {
       <div className="max-w-4xl mx-auto p-4 sm:p-6 space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold flex items-center gap-2">
-              <Tag className="w-7 h-7 text-emerald-600" />
-              Teglar (Yorliqlar)
-            </h1>
-            <p className="text-sm text-muted-foreground mt-1">Mijoz va tovarlarni belgilash uchun teglar</p>
+            <PageHeader
+          icon={Tag}
+          gradient="amber"
+          title="Teglar"
+          subtitle="Mijoz va tovarlarni belgilash uchun teglar"
+        />
           </div>
           <Button onClick={() => setShowAdd(true)} className="bg-emerald-600 hover:bg-emerald-700">
             <Plus className="w-4 h-4 mr-1" /> Yangi teg

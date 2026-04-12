@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { ClipboardCheck, Camera, BarChart3, Users, Eye, MapPin, Package } from "lucide-react"
+import { Shield } from "lucide-react"
 import { PageHeader } from "@/components/ui/page-header"
 
 export default function AuditDashboardPage() {
@@ -16,8 +17,12 @@ export default function AuditDashboardPage() {
     <AdminLayout>
       <div className="max-w-7xl mx-auto p-4 sm:p-6 space-y-6">
         <div className="flex items-center justify-between">
-          <div><h1 className="text-2xl font-bold flex items-center gap-2"><ClipboardCheck className="w-7 h-7 text-emerald-600" /> Audit Dashboard</h1>
-            <p className="text-sm text-muted-foreground mt-1">Kunlik agent faoliyati auditi — SalesDoc uslubida</p></div>
+          <div><PageHeader
+          icon={Shield}
+          gradient="blue"
+          title="Audit Dashboard"
+          subtitle="Kunlik agent faoliyati auditi — SalesDoc uslubida"
+        /></div>
           <Input type="date" value={date} onChange={e => setDate(e.target.value)} className="w-44" />
         </div>
 

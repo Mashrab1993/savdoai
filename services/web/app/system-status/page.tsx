@@ -55,11 +55,12 @@ export default function SystemStatusPage() {
       <div className="max-w-5xl mx-auto p-4 sm:p-6 space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold flex items-center gap-2">
-              <Activity className="w-7 h-7 text-emerald-600" />
-              Tizim holati
-            </h1>
-            <p className="text-sm text-muted-foreground mt-1">Barcha xizmatlar holati va statistika</p>
+            <PageHeader
+          icon={Activity}
+          gradient="emerald"
+          title="Tizim holati"
+          subtitle="Barcha xizmatlar holati va statistika"
+        />
           </div>
           <Button variant="outline" size="sm" onClick={checkStatus}>
             <RefreshCw className="w-4 h-4 mr-1" /> Yangilash

@@ -41,13 +41,12 @@ export default function SupervisorDashboardPage() {
       <div className="max-w-7xl mx-auto p-4 sm:p-6 space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold flex items-center gap-2">
-              <Shield className="w-7 h-7 text-purple-600" />
-              Supervisor Dashboard
-            </h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              Sotuv tahlili — kategoriya, guruh, brend, yo'nalish bo'yicha
-            </p>
+            <PageHeader
+          icon={BarChart3}
+          gradient="emerald"
+          title="Supervisor panel"
+          subtitle="Sotuv tahlili — kategoriya, guruh, brend, yo'nalish bo'yicha"
+        />
           </div>
         </div>
 

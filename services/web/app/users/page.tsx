@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { UserCog, Plus, Pencil, Trash2, Search, Shield, Eye, EyeOff } from "lucide-react"
+import { Users } from "lucide-react"
 import { PageHeader } from "@/components/ui/page-header"
 
 const ROLES = [
@@ -33,11 +34,12 @@ export default function UsersPage() {
       <div className="max-w-6xl mx-auto p-4 sm:p-6 space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold flex items-center gap-2">
-              <UserCog className="w-7 h-7 text-emerald-600" />
-              Foydalanuvchilar
-            </h1>
-            <p className="text-sm text-muted-foreground mt-1">Tizim foydalanuvchilari va huquqlar</p>
+            <PageHeader
+          icon={Users}
+          gradient="violet"
+          title="Foydalanuvchilar"
+          subtitle="Tizim foydalanuvchilari va huquqlar"
+        />
           </div>
           <Button onClick={() => setShowAdd(true)} className="bg-emerald-600 hover:bg-emerald-700">
             <Plus className="w-4 h-4 mr-1" /> Yangi foydalanuvchi

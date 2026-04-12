@@ -19,8 +19,12 @@ export default function TerritoriesPage() {
     <AdminLayout>
       <div className="max-w-5xl mx-auto p-4 sm:p-6 space-y-6">
         <div className="flex items-center justify-between">
-          <div><h1 className="text-2xl font-bold flex items-center gap-2"><MapPin className="w-7 h-7 text-emerald-600" /> Territoriyalar</h1>
-            <p className="text-sm text-muted-foreground mt-1">Hududlar, viloyatlar, tumanlar</p></div>
+          <div><PageHeader
+          icon={MapPin}
+          gradient="cyan"
+          title="Territoriyalar"
+          subtitle="Hududlar, viloyatlar, tumanlar"
+        /></div>
           <Button onClick={() => setShowAdd(true)} className="bg-emerald-600 hover:bg-emerald-700"><Plus className="w-4 h-4 mr-1" /> Yangi</Button>
         </div>
         <div className="relative"><Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" /><Input placeholder="Qidirish..." value={search} onChange={e => setSearch(e.target.value)} className="pl-10" /></div>

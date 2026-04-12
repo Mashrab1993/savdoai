@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Banknote, Plus, TrendingUp, TrendingDown, Wallet, Eye } from "lucide-react"
+import { Landmark } from "lucide-react"
 import { PageHeader } from "@/components/ui/page-header"
 import { formatCurrency } from "@/lib/format"
 
@@ -27,11 +28,12 @@ export default function CashboxesPage() {
       <div className="max-w-5xl mx-auto p-4 sm:p-6 space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold flex items-center gap-2">
-              <Wallet className="w-7 h-7 text-emerald-600" />
-              Kassalar
-            </h1>
-            <p className="text-sm text-muted-foreground mt-1">Barcha kassalar va balanslar</p>
+            <PageHeader
+          icon={Landmark}
+          gradient="cyan"
+          title="Kassalar"
+          subtitle="Barcha kassalar va balanslar"
+        />
           </div>
           <Button onClick={() => setShowAdd(true)} className="bg-emerald-600 hover:bg-emerald-700">
             <Plus className="w-4 h-4 mr-1" /> Yangi kassa

@@ -31,11 +31,12 @@ export default function ProfilePage() {
     <AdminLayout>
       <div className="max-w-4xl mx-auto p-4 sm:p-6 space-y-6">
         <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <Building2 className="w-7 h-7 text-emerald-600" />
-            Kompaniya profili
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1">Kompaniya ma'lumotlari va sozlamalar</p>
+          <PageHeader
+          icon={User}
+          gradient="violet"
+          title="Profil"
+          subtitle="Kompaniya ma'lumotlari va sozlamalar"
+        />
         </div>
 
         <Tabs defaultValue="company">

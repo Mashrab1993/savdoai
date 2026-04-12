@@ -26,11 +26,12 @@ export default function HelpPage() {
     <AdminLayout>
       <div className="max-w-4xl mx-auto p-4 sm:p-6 space-y-6">
         <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <HelpCircle className="w-7 h-7 text-emerald-600" />
-            Yordam markazi
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1">Tez-tez so'raladigan savollar va yordam</p>
+          <PageHeader
+          icon={HelpCircle}
+          gradient="blue"
+          title="Yordam"
+          subtitle="Tez-tez so'raladigan savollar va yordam"
+        />
         </div>
 
         {/* Search */}

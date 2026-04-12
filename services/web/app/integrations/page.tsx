@@ -36,13 +36,12 @@ export default function IntegrationsPage() {
     <AdminLayout>
       <div className="max-w-6xl mx-auto p-4 sm:p-6 space-y-6">
         <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <Plug className="w-7 h-7 text-emerald-600" />
-            Integratsiyalar
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Tashqi xizmatlar va API integratsiyalari
-          </p>
+          <PageHeader
+          icon={Plug}
+          gradient="violet"
+          title="Integratsiyalar"
+          subtitle="Tashqi xizmatlar va API integratsiyalari"
+        />
         </div>
 
         {/* Filter */}

@@ -1,6 +1,7 @@
 "use client"
 import { AdminLayout } from "@/components/layout/admin-layout"
 import { Wallet, TrendingUp, TrendingDown, ArrowRight } from "lucide-react"
+import { Landmark } from "lucide-react"
 import { PageHeader } from "@/components/ui/page-header"
 import { formatCurrency } from "@/lib/format"
 
@@ -16,11 +17,12 @@ export default function CashboxDashboardPage() {
     <AdminLayout>
       <div className="max-w-6xl mx-auto p-4 sm:p-6 space-y-6">
         <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <Wallet className="w-7 h-7 text-emerald-600" />
-            Kassa dashboard
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1">Pul oqimi va kassa holati</p>
+          <PageHeader
+          icon={Landmark}
+          gradient="cyan"
+          title="Kassa dashboard"
+          subtitle="Pul oqimi va kassa holati"
+        />
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">

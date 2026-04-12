@@ -23,11 +23,12 @@ export default function PrintersPage() {
       <div className="max-w-5xl mx-auto p-4 sm:p-6 space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold flex items-center gap-2">
-              <Printer className="w-7 h-7 text-emerald-600" />
-              Printerlar
-            </h1>
-            <p className="text-sm text-muted-foreground mt-1">Chek, faktura va nakladnoy chop etish printerlari</p>
+            <PageHeader
+          icon={Printer}
+          gradient="violet"
+          title="Printerlar"
+          subtitle="Chek, faktura va nakladnoy chop etish printerlari"
+        />
           </div>
           <Button onClick={() => setShowAdd(true)} className="bg-emerald-600 hover:bg-emerald-700">
             <Plus className="w-4 h-4 mr-1" /> Yangi printer

@@ -41,8 +41,12 @@ export default function PriceHistoryPage() {
     <AdminLayout>
       <div className="max-w-7xl mx-auto p-4 sm:p-6 space-y-6">
         <div className="flex items-center justify-between">
-          <div><h1 className="text-2xl font-bold flex items-center gap-2"><History className="w-7 h-7 text-emerald-600" /> Narx tarixi</h1>
-            <p className="text-sm text-muted-foreground mt-1">Narx o'zgarishlari tarixi</p></div>
+          <div><PageHeader
+          icon={TrendingUp}
+          gradient="amber"
+          title="Narx tarixi"
+          subtitle="Narx o'zgarishlari tarixi"
+        /></div>
           <Button variant="outline" size="sm"><Download className="w-4 h-4 mr-1" /> Excel</Button>
         </div>
         <div className="flex gap-3"><div className="relative flex-1"><Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" /><Input placeholder="Tovar qidirish..." value={search} onChange={e => setSearch(e.target.value)} className="pl-10" /></div>
