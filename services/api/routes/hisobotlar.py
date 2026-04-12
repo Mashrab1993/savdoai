@@ -200,6 +200,128 @@ async def admin_statistika(uid: int = Depends(get_uid)):
 #  REPORTS — SalesDoc-level reporting
 # ════════════════════════════════════════════════════════════
 
+@router.get("/hisobot/pnl")
+async def hisobot_pnl(kunlar: int = 30, uid: int = Depends(get_uid)):
+    """
+    P&L (foyda-zarar) hisoboti — PnLReport komponentiga to'g'ridan
+    to'g'ri mos format.
+
+    Response:
+      {
+        "davr_nomi": "Oxirgi 30 kun",
+        "tushum": 528640000,
+        "tannarx": 356400000,
+        "yalpi_foyda": 172240000,
+        "operatsion_xarajatlar": 62180000,
+        "sof_foyda": 110060000,
+        "qaytarishlar": 2150000,
+        "xarajat_kategoriyalar": [...],
+        "prev": { "tushum": ..., "sof_foyda": ... }
+      }
+    """
+    async with rls_conn(uid) as c:
+        # Current period
+        sotuv = await c.fetchrow("""
+            SELECT
+                COALESCE(SUM(ss.jami), 0)               AS tushum,
+                COALESCE(SUM(
+                    (SELECT SUM(ch.miqdor * ch.olish_narxi)
+                     FROM chiqimlar ch WHERE ch.sessiya_id = ss.id)
+                ), 0)                                    AS tannarx
+            FROM sotuv_sessiyalar ss
+            WHERE user_id = $1
+              AND sana >= NOW() - make_interval(days => $2)
+              AND COALESCE(holat, 'yangi') != 'bekor'
+        """, uid, kunlar)
+
+        xarajat = await c.fetchval("""
+            SELECT COALESCE(SUM(summa), 0)
+            FROM xarajatlar
+            WHERE admin_uid = $1
+              AND sana >= NOW() - make_interval(days => $2)
+              AND COALESCE(bekor_qilingan, FALSE) = FALSE
+        """, uid, kunlar) or 0
+
+        try:
+            qaytarish = await c.fetchval("""
+                SELECT COALESCE(SUM(summa), 0)
+                FROM qaytarishlar
+                WHERE user_id = $1
+                  AND sana >= NOW() - make_interval(days => $2)
+            """, uid, kunlar) or 0
+        except Exception:
+            qaytarish = 0
+
+        # Xarajat kategoriyalar breakdown
+        try:
+            xar_kat = await c.fetch("""
+                SELECT
+                    COALESCE(kategoriya_nomi, 'Boshqa') AS nomi,
+                    SUM(summa)                          AS summa
+                FROM xarajatlar
+                WHERE admin_uid = $1
+                  AND sana >= NOW() - make_interval(days => $2)
+                  AND COALESCE(bekor_qilingan, FALSE) = FALSE
+                GROUP BY kategoriya_nomi
+                ORDER BY SUM(summa) DESC
+            """, uid, kunlar)
+        except Exception:
+            xar_kat = []
+
+        # Previous period (for delta)
+        prev_sotuv = await c.fetchrow("""
+            SELECT
+                COALESCE(SUM(ss.jami), 0) AS tushum,
+                COALESCE(SUM(
+                    (SELECT SUM(ch.miqdor * ch.olish_narxi)
+                     FROM chiqimlar ch WHERE ch.sessiya_id = ss.id)
+                ), 0) AS tannarx
+            FROM sotuv_sessiyalar ss
+            WHERE user_id = $1
+              AND sana >= NOW() - make_interval(days => $2)
+              AND sana < NOW() - make_interval(days => $3)
+              AND COALESCE(holat, 'yangi') != 'bekor'
+        """, uid, kunlar * 2, kunlar)
+
+        prev_xarajat = await c.fetchval("""
+            SELECT COALESCE(SUM(summa), 0)
+            FROM xarajatlar
+            WHERE admin_uid = $1
+              AND sana >= NOW() - make_interval(days => $2)
+              AND sana < NOW() - make_interval(days => $3)
+              AND COALESCE(bekor_qilingan, FALSE) = FALSE
+        """, uid, kunlar * 2, kunlar) or 0
+
+    tushum = float(sotuv["tushum"])
+    tannarx = float(sotuv["tannarx"])
+    yalpi = tushum - tannarx
+    op_x = float(xarajat)
+    sof = yalpi - op_x - float(qaytarish)
+
+    prev_tushum = float(prev_sotuv["tushum"])
+    prev_tannarx = float(prev_sotuv["tannarx"])
+    prev_yalpi = prev_tushum - prev_tannarx
+    prev_sof = prev_yalpi - float(prev_xarajat)
+
+    return {
+        "davr_nomi": f"Oxirgi {kunlar} kun",
+        "tushum": tushum,
+        "tannarx": tannarx,
+        "yalpi_foyda": yalpi,
+        "operatsion_xarajatlar": op_x,
+        "sof_foyda": sof,
+        "qaytarishlar": float(qaytarish),
+        "xarajat_kategoriyalar": [
+            {"nomi": str(r["nomi"]), "summa": float(r["summa"])}
+            for r in xar_kat
+        ],
+        "prev": {
+            "tushum": prev_tushum,
+            "sof_foyda": prev_sof,
+        },
+    }
+
+
 @router.get("/hisobot/heatmap")
 async def hisobot_heatmap(kunlar: int = 30, uid: int = Depends(get_uid)):
     """

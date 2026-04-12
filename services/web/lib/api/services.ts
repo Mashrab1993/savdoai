@@ -473,6 +473,23 @@ export const heatmapService = {
   get: (kunlar = 30) => api.get<HeatmapResponse>(`/api/v1/hisobot/heatmap?kunlar=${kunlar}`),
 }
 
+// ── P&L Report ────────────────────────────────────────────────────────────────
+export interface PnLResponse {
+  davr_nomi: string
+  tushum: number
+  tannarx: number
+  yalpi_foyda: number
+  operatsion_xarajatlar: number
+  sof_foyda: number
+  qaytarishlar?: number
+  xarajat_kategoriyalar?: Array<{ nomi: string; summa: number }>
+  prev?: { tushum: number; sof_foyda: number }
+}
+
+export const pnlService = {
+  get: (kunlar = 30) => api.get<PnLResponse>(`/api/v1/hisobot/pnl?kunlar=${kunlar}`),
+}
+
 // ── Foyda Tahlili ─────────────────────────────────────────────────────────────
 export interface FoydaResponse {
   kunlar: number
