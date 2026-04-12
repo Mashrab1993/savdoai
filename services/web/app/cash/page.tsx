@@ -178,7 +178,7 @@ export default function CashPage() {
               turi:  t.type === "income" ? "kirim" as const : "chiqim" as const,
               usul:  (t.method === "karta" ? "karta" : t.method === "hisob" ? "hisob" : "naqd") as "naqd" | "karta" | "hisob",
               summa: t.amount,
-              izoh:  t.note || undefined,
+              izoh:  t.description || undefined,
               sana:  t.date,
             })),
           }}

@@ -187,8 +187,9 @@ export default function TransfersPage() {
           />
         )}
 
-        {/* Legacy table (hidden when premium board renders) */}
-        {!loading && items.length === 0 && <div className="bg-card border rounded-xl overflow-x-auto">
+        {/* Legacy table (shown only when no transfers exist) */}
+        {!loading && items.length === 0 && (
+          <div className="bg-card border rounded-xl overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
@@ -246,6 +247,7 @@ export default function TransfersPage() {
             </TableBody>
           </Table>
         </div>
+        )}
 
         <Dialog open={showAdd} onOpenChange={setShowAdd}>
           <DialogContent>
