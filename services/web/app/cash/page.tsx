@@ -165,6 +165,12 @@ export default function CashPage() {
         {loading && <PageLoading />}
         {error && !loading && <PageError message={error} onRetry={() => { refetchStats(); refetchHistory() }} />}
         {!loading && !error && stats && <>
+        <PageHeader
+          icon={Landmark}
+          gradient="cyan"
+          title={L.title[locale]}
+          subtitle={locale === "uz" ? "Kassa balansi va tranzaksiyalar" : "Баланс кассы и транзакции"}
+        />
         {/* Premium CashboxBalance */}
         <CashboxBalance
           data={{

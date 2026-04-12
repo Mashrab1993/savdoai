@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/table"
 import { Search, Plus, Pencil, Trash2, Package, AlertTriangle, XCircle, Download, Upload, Eye } from "lucide-react"
 import ProductStockGrid, { type ProductCardData } from "@/components/dashboard/product-stock-grid"
+import { PageHeader } from "@/components/ui/page-header"
 import { useLocale } from "@/lib/locale-context"
 import { translations } from "@/lib/i18n"
 import { formatCurrency } from "@/lib/format"
@@ -226,6 +227,17 @@ export default function ProductsPage() {
         {loading && <PageLoading />}
         {error && !loading && <PageError message={error} onRetry={refetch} />}
         {!loading && !error && <>
+        <PageHeader
+          icon={Package}
+          gradient="amber"
+          title={L.title[locale]}
+          subtitle={locale === "uz" ? `${products.length} ta tovar` : `${products.length} товаров`}
+          action={
+            <Button onClick={() => setAddModalOpen(true)} className="gap-2">
+              <Plus className="w-4 h-4" /> {locale === "uz" ? "Yangi tovar" : "Новый товар"}
+            </Button>
+          }
+        />
         {/* Summary */}
         <div className="grid grid-cols-3 gap-4">
           {[
