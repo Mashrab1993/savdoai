@@ -115,10 +115,10 @@ export function CommandPalette() {
   if (!open) {
     return (
       <button onClick={() => setOpen(true)}
-        className="flex items-center gap-2 px-3 py-1.5 text-xs text-gray-400 bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
+        className="flex items-center gap-2 px-3 py-1.5 text-xs text-muted-foreground bg-muted rounded-lg hover:bg-muted transition-colors">
         <Search className="w-3.5 h-3.5" />
         <span>Qidirish...</span>
-        <kbd className="hidden sm:inline text-[10px] bg-gray-200 dark:bg-gray-700 px-1.5 py-0.5 rounded">⌘K</kbd>
+        <kbd className="hidden sm:inline text-[10px] bg-muted px-1.5 py-0.5 rounded">⌘K</kbd>
       </button>
     )
   }
@@ -130,10 +130,10 @@ export function CommandPalette() {
 
       {/* Palette */}
       <div className="absolute top-[20%] left-1/2 -translate-x-1/2 w-full max-w-lg">
-        <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+        <div className="bg-card rounded-2xl shadow-2xl border border-border overflow-hidden">
           {/* Search input */}
-          <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-100 dark:border-gray-800">
-            <Search className="w-5 h-5 text-gray-400" />
+          <div className="flex items-center gap-3 px-4 py-3 border-b border-border/60">
+            <Search className="w-5 h-5 text-muted-foreground" />
             <input
               ref={inputRef}
               type="text"
@@ -141,16 +141,16 @@ export function CommandPalette() {
               onChange={e => setQuery(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="Sahifa, funksiya yoki klient qidiring..."
-              className="flex-1 bg-transparent text-sm outline-none text-gray-900 dark:text-white placeholder-gray-400"
+              className="flex-1 bg-transparent text-sm outline-none text-foreground placeholder-muted-foreground"
             />
-            <kbd className="text-[10px] text-gray-400 bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded">ESC</kbd>
+            <kbd className="text-[10px] text-muted-foreground bg-muted px-2 py-0.5 rounded">ESC</kbd>
           </div>
 
           {/* Results */}
           <div className="max-h-80 overflow-y-auto py-2">
             {Object.entries(grouped).map(([category, items]) => (
               <div key={category}>
-                <div className="px-4 py-1.5 text-[10px] font-semibold text-gray-400 uppercase tracking-wider">{category}</div>
+                <div className="px-4 py-1.5 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">{category}</div>
                 {items.map((cmd, i) => {
                   const globalIdx = filtered.indexOf(cmd)
                   const Icon = cmd.icon
@@ -159,11 +159,11 @@ export function CommandPalette() {
                       onClick={cmd.action}
                       onMouseEnter={() => setSelectedIndex(globalIdx)}
                       className={`w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors ${
-                        globalIdx === selectedIndex ? "bg-emerald-50 dark:bg-emerald-900/20" : "hover:bg-gray-50 dark:hover:bg-gray-800/50"
+                        globalIdx === selectedIndex ? "bg-primary/10" : "hover:bg-muted/50"
                       }`}>
-                      <Icon className={`w-4 h-4 flex-shrink-0 ${globalIdx === selectedIndex ? "text-emerald-600" : "text-gray-400"}`} />
+                      <Icon className={`w-4 h-4 flex-shrink-0 ${globalIdx === selectedIndex ? "text-primary" : "text-muted-foreground"}`} />
                       <div className="flex-1 min-w-0">
-                        <div className="text-sm font-medium text-gray-900 dark:text-white">{cmd.label}</div>
+                        <div className="text-sm font-medium text-foreground">{cmd.label}</div>
                         {cmd.description && <div className="text-[11px] text-gray-500 truncate">{cmd.description}</div>}
                       </div>
                       {globalIdx === selectedIndex && (
@@ -175,7 +175,7 @@ export function CommandPalette() {
               </div>
             ))}
             {filtered.length === 0 && (
-              <div className="text-center py-8 text-sm text-gray-400">
+              <div className="text-center py-8 text-sm text-muted-foreground">
                 &quot;{query}&quot; topilmadi
               </div>
             )}
