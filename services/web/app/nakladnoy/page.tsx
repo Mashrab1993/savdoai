@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { FileText, Download, Search, Calendar, Truck, User, Eye, Printer, Package } from "lucide-react"
+import { PageHeader } from "@/components/ui/page-header"
 import { formatCurrency } from "@/lib/format"
 
 interface Order {

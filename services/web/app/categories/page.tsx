@@ -12,6 +12,7 @@ import {
 import {
   Tag, Folder, Package, Building, Award, Search, AlertCircle,
 } from "lucide-react"
+import { PageHeader } from "@/components/ui/page-header"
 
 type Facets = {
   jami?: number

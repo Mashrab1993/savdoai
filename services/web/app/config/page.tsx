@@ -1,5 +1,7 @@
 "use client";
 
+import { PageHeader } from "@/components/ui/page-header"
+import { Settings } from "lucide-react"
 import { useState, useEffect, useCallback } from "react";
 
 // ═══════════════════════════════════════════════════════════
@@ -200,12 +202,12 @@ export default function ConfigPage() {
   return (
     <div className="max-w-6xl mx-auto p-4 sm:p-6">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-foreground dark:text-white">
-          ⚙️ Server konfiguratsiya
-        </h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          Ilovani masofadan boshqaring — har bir sozlama real-time qo&apos;llaniladi
-        </p>
+        <PageHeader
+          icon={Settings}
+          gradient="blue"
+          title="Server konfiguratsiya"
+          subtitle="Ilovani masofadan boshqaring — har bir sozlama real-time qo'llaniladi"
+        />
       </div>
 
       <div className="flex flex-col lg:flex-row gap-4">

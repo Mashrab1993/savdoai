@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
+import { PageHeader } from "@/components/ui/page-header"
 
 export default function TashrifPage() {
   const [tashriflar, setTashriflar] = useState<any[]>([]);

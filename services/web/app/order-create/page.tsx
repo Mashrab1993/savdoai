@@ -17,6 +17,7 @@ import {
   ShoppingCart, Save, X, Plus, Search, User, Trash2, Package,
   CreditCard, AlertCircle, Check,
 } from "lucide-react"
+import { PageHeader } from "@/components/ui/page-header"
 import { formatCurrency } from "@/lib/format"
 import { productService, clientService, savdoService } from "@/lib/api/services"
 

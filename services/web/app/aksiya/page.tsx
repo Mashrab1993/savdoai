@@ -1,5 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
+import { Gift } from "lucide-react"
+import { PageHeader } from "@/components/ui/page-header"
 
 const TURLAR: Record<string, { label: string; icon: string }> = {
   foiz_chegirma: { label: "Foiz chegirma", icon: "%" },
@@ -41,14 +43,18 @@ export default function AksiyaPage() {
 
   return (
     <div className="max-w-4xl mx-auto p-4 sm:p-6">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold">🎁 Aksiyalar</h1>
-          <p className="text-sm text-muted-foreground mt-1">Chegirmalar va aksiyalarni boshqaring</p>
-        </div>
-        <button onClick={() => setShowForm(!showForm)} className="px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700">
-          {showForm ? "Bekor qilish" : "+ Yangi aksiya"}
-        </button>
+      <div className="mb-6">
+        <PageHeader
+          icon={Gift}
+          gradient="rose"
+          title="Aksiyalar"
+          subtitle="Chegirmalar va aksiyalarni boshqaring"
+          action={
+            <button onClick={() => setShowForm(!showForm)} className="px-4 py-2 bg-primary text-primary-foreground rounded-xl text-sm font-medium hover:bg-primary/90">
+              {showForm ? "Bekor qilish" : "+ Yangi aksiya"}
+            </button>
+          }
+        />
       </div>
 
       {showForm && (
