@@ -131,4 +131,36 @@
   body {
     @apply bg-background text-foreground;
   }
+
+  /* Premium scrollbar — thin, rounded, semi-transparent */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: oklch(0.5 0 0 / 0.2);
+    border-radius: 999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: oklch(0.5 0 0 / 0.35);
+  }
+  .dark ::-webkit-scrollbar-thumb {
+    background: oklch(0.7 0 0 / 0.2);
+  }
+  .dark ::-webkit-scrollbar-thumb:hover {
+    background: oklch(0.7 0 0 / 0.35);
+  }
+
+  /* Smooth scrolling globally */
+  html {
+    scroll-behavior: smooth;
+  }
+
+  /* Selection color */
+  ::selection {
+    background: oklch(0.48 0.19 264 / 0.2);
+  }
 }
