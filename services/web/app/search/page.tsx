@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Search, Package, Users, ArrowRight, Loader2 } from "lucide-react"
+import { PageHeader } from "@/components/ui/page-header"
 import Link from "next/link"
 import { searchService } from "@/lib/api/services"
 import { cn } from "@/lib/utils"
@@ -56,7 +57,13 @@ export default function SearchPage() {
 
   return (
     <AdminLayout title={t.title}>
-      <div className="max-w-2xl mx-auto space-y-6">
+      <div className="max-w-2xl mx-auto space-y-5">
+        <PageHeader
+          icon={Search}
+          gradient="blue"
+          title={t.title}
+          subtitle={locale === "uz" ? "Tovar va klient qidirish" : "Поиск товаров и клиентов"}
+        />
         {/* Search bar */}
         <div className="relative">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
@@ -94,7 +101,7 @@ export default function SearchPage() {
                 <div className="space-y-2">
                   {results.tovarlar.map(tv => (
                     <Link key={tv.id} href="/products">
-                      <div className="flex items-center justify-between bg-card border border-border rounded-lg px-4 py-3 hover:bg-secondary/50 transition-colors cursor-pointer">
+                      <div className="flex items-center justify-between bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl px-4 py-3 hover:bg-secondary/50 transition-colors cursor-pointer">
                         <div>
                           <p className="text-sm font-medium text-foreground">{tv.nomi}</p>
                           <p className="text-xs text-muted-foreground">{tv.kategoriya}</p>
@@ -122,7 +129,7 @@ export default function SearchPage() {
                 <div className="space-y-2">
                   {results.klientlar.map(kl => (
                     <Link key={kl.id} href="/clients">
-                      <div className="flex items-center justify-between bg-card border border-border rounded-lg px-4 py-3 hover:bg-secondary/50 transition-colors cursor-pointer">
+                      <div className="flex items-center justify-between bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl px-4 py-3 hover:bg-secondary/50 transition-colors cursor-pointer">
                         <div>
                           <p className="text-sm font-medium text-foreground">{kl.ism}</p>
                           <p className="text-xs text-muted-foreground">{kl.telefon || "—"}</p>
