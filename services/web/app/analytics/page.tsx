@@ -3,7 +3,7 @@
 import { AdminLayout } from "@/components/layout/admin-layout"
 import { Brain, AlertTriangle, TrendingUp, Info, Rocket } from "lucide-react"
 import { useApi } from "@/hooks/use-api"
-import { advisorService, foydaService } from "@/lib/api/services"
+import { advisorService, pnlService } from "@/lib/api/services"
 import { PageLoading, PageError } from "@/components/shared/page-states"
 import { PageHeader } from "@/components/ui/page-header"
 import { useLocale } from "@/lib/locale-context"
@@ -27,8 +27,8 @@ const TURI_META: Record<string, {
 export default function AnalyticsPage() {
   const { locale } = useLocale()
   const { data, loading, error, refetch } = useApi(() => advisorService.get())
-  const foydaFetcher = useCallback(() => foydaService.get(30), [])
-  const { data: foydaData } = useApi(foydaFetcher)
+  const pnlFetcher = useCallback(() => pnlService.get(30), [])
+  const { data: pnlData } = useApi(pnlFetcher)
 
   const insightlar = data?.insightlar || []
 
@@ -55,19 +55,8 @@ export default function AnalyticsPage() {
 
         {!loading && !error && (
           <>
-            {/* P&L Report */}
-            {foydaData && (
-              <PnLReport
-                data={{
-                  davr_nomi: locale === "uz" ? `Oxirgi ${foydaData.kunlar} kun` : `Последние ${foydaData.kunlar} дн.`,
-                  tushum: foydaData.brutto_sotuv ?? 0,
-                  tannarx: foydaData.tannarx ?? 0,
-                  yalpi_foyda: foydaData.sof_foyda ?? 0,
-                  operatsion_xarajatlar: foydaData.xarajatlar ?? 0,
-                  sof_foyda: foydaData.toza_foyda ?? 0,
-                }}
-              />
-            )}
+            {/* P&L Report — dedicated endpoint */}
+            {pnlData && <PnLReport data={pnlData} />}
 
             {/* AI Insights */}
             {insightlar.length === 0 ? (
