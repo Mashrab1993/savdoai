@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Building2, Plus, Package, MapPin, Phone, Star } from "lucide-react"
+import { PageHeader } from "@/components/ui/page-header"
 
 export default function FilialPage() {
   const [filiallar, setFiliallar] = useState<any[]>([])
