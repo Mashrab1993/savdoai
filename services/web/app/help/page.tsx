@@ -46,7 +46,7 @@ export default function HelpPage() {
             { icon: MessageSquare, label: "Chat", color: "emerald" },
             { icon: Phone, label: "Qo'ng'iroq", color: "purple" },
           ].map((l, i) => (
-            <button key={i} className="bg-white dark:bg-gray-900 rounded-xl border p-4 hover:shadow-md transition text-center">
+            <button key={i} className="bg-card rounded-xl border p-4 hover:shadow-md transition text-center">
               <l.icon className={`w-8 h-8 mx-auto text-${l.color}-600 mb-2`} />
               <div className="font-medium text-sm">{l.label}</div>
             </button>
@@ -58,10 +58,10 @@ export default function HelpPage() {
           <h2 className="text-lg font-bold mb-3">Tez-tez so'raladigan savollar</h2>
           <div className="space-y-2">
             {filtered.map((f, i) => (
-              <div key={i} className="bg-white dark:bg-gray-900 rounded-xl border overflow-hidden">
+              <div key={i} className="bg-card rounded-xl border overflow-hidden">
                 <button
                   onClick={() => setOpenIdx(openIdx === i ? null : i)}
-                  className="w-full p-4 text-left flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-800"
+                  className="w-full p-4 text-left flex items-center justify-between hover:bg-muted/50 dark:hover:bg-muted"
                 >
                   <div className="flex items-center gap-3">
                     <Badge variant="secondary" className="text-xs">{f.category}</Badge>
@@ -70,7 +70,7 @@ export default function HelpPage() {
                   <ChevronRight className={`w-4 h-4 transition-transform ${openIdx === i ? "rotate-90" : ""}`} />
                 </button>
                 {openIdx === i && (
-                  <div className="p-4 border-t bg-gray-50 dark:bg-gray-800 text-sm">
+                  <div className="p-4 border-t bg-muted/50 dark:bg-muted text-sm">
                     {f.a}
                   </div>
                 )}

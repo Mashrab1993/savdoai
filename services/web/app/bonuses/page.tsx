@@ -55,7 +55,7 @@ export default function BonusesPage() {
         {/* Bonus Types Grid */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
           {BONUS_TYPES.map(t => (
-            <div key={t.key} className="bg-white dark:bg-gray-900 rounded-xl border p-4 hover:border-emerald-300 cursor-pointer transition" onClick={() => { setForm({ ...form, turi: t.key }); setShowAdd(true) }}>
+            <div key={t.key} className="bg-card rounded-xl border p-4 hover:border-emerald-300 cursor-pointer transition" onClick={() => { setForm({ ...form, turi: t.key }); setShowAdd(true) }}>
               <div className="text-2xl mb-2">{t.icon}</div>
               <div className="text-sm font-medium">{t.label}</div>
             </div>
@@ -65,7 +65,7 @@ export default function BonusesPage() {
         {/* Active Bonuses */}
         <div>
           <h2 className="text-lg font-bold mb-3">Faol bonuslar</h2>
-          <div className="bg-white dark:bg-gray-900 rounded-xl border overflow-x-auto">
+          <div className="bg-card rounded-xl border overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>

@@ -34,7 +34,7 @@ export default function PrintersPage() {
         </div>
 
         <div className="grid grid-cols-3 gap-4">
-          <div className="bg-white dark:bg-gray-900 rounded-xl border p-4">
+          <div className="bg-card rounded-xl border p-4">
             <div className="text-sm text-muted-foreground">Jami</div>
             <div className="text-2xl font-bold mt-1">{printers.length}</div>
           </div>
@@ -48,7 +48,7 @@ export default function PrintersPage() {
           </div>
         </div>
 
-        <div className="bg-white dark:bg-gray-900 rounded-xl border">
+        <div className="bg-card rounded-xl border">
           <Table>
             <TableHeader>
               <TableRow>

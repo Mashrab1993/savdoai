@@ -50,7 +50,7 @@ export default function ExpensesCategoriesPage() {
                 <button
                   key={f.id}
                   onClick={() => setSelectedFund(f.id)}
-                  className={`w-full bg-white dark:bg-gray-900 rounded-lg border p-3 text-left hover:shadow-md transition ${selectedFund === f.id ? "border-emerald-500" : ""}`}
+                  className={`w-full bg-card rounded-lg border p-3 text-left hover:shadow-md transition ${selectedFund === f.id ? "border-emerald-500" : ""}`}
                 >
                   <div className="flex items-center gap-2">
                     <span className="text-2xl">{f.icon}</span>
@@ -67,10 +67,10 @@ export default function ExpensesCategoriesPage() {
           {/* Categories */}
           <div className="md:col-span-2">
             <h2 className="font-bold mb-3">Xarajat moddalari</h2>
-            <div className="bg-white dark:bg-gray-900 rounded-xl border p-4">
+            <div className="bg-card rounded-xl border p-4">
               <div className="space-y-2">
                 {(CATEGORIES.find(c => c.fund === selectedFund)?.items || []).map((cat, i) => (
-                  <div key={i} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800">
+                  <div key={i} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 dark:hover:bg-muted">
                     <div className="flex items-center gap-2">
                       <Folder className="w-4 h-4 text-emerald-600" />
                       <span className="font-medium text-sm">{cat}</span>

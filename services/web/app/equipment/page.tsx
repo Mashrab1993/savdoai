@@ -38,7 +38,7 @@ export default function EquipmentPage() {
 
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
           {TYPES.map(t => (
-            <div key={t.key} className="bg-white dark:bg-gray-900 rounded-xl border p-4 text-center hover:shadow-md transition">
+            <div key={t.key} className="bg-card rounded-xl border p-4 text-center hover:shadow-md transition">
               <t.icon className="w-8 h-8 mx-auto text-emerald-600 mb-2" />
               <div className="text-sm font-medium">{t.label}</div>
               <div className="text-2xl font-bold mt-1">0</div>
@@ -51,7 +51,7 @@ export default function EquipmentPage() {
           <Input placeholder="Uskuna yoki mijoz qidirish..." value={search} onChange={e => setSearch(e.target.value)} className="pl-10" />
         </div>
 
-        <div className="bg-white dark:bg-gray-900 rounded-xl border overflow-x-auto">
+        <div className="bg-card rounded-xl border overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>

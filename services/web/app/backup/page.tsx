@@ -44,7 +44,7 @@ export default function BackupPage() {
 
         {/* Stats */}
         <div className="grid grid-cols-3 gap-4">
-          <div className="bg-white dark:bg-gray-900 rounded-xl border p-4">
+          <div className="bg-card rounded-xl border p-4">
             <div className="text-sm text-muted-foreground">Jami guruhlar</div>
             <div className="text-2xl font-bold mt-1">{BACKUP_GROUPS.length}</div>
           </div>
@@ -59,11 +59,11 @@ export default function BackupPage() {
         </div>
 
         {/* Backup Groups */}
-        <div className="bg-white dark:bg-gray-900 rounded-xl border p-4">
+        <div className="bg-card rounded-xl border p-4">
           <h2 className="font-bold mb-3">Ma'lumot guruhlari</h2>
           <div className="space-y-2">
             {BACKUP_GROUPS.map(g => (
-              <label key={g.key} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer">
+              <label key={g.key} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 dark:hover:bg-muted cursor-pointer">
                 <div className="flex items-center gap-3">
                   <input
                     type="checkbox"
@@ -83,7 +83,7 @@ export default function BackupPage() {
         </div>
 
         {/* Date Range */}
-        <div className="bg-white dark:bg-gray-900 rounded-xl border p-4 space-y-3">
+        <div className="bg-card rounded-xl border p-4 space-y-3">
           <h2 className="font-bold">Davr (ixtiyoriy)</h2>
           <div className="grid grid-cols-2 gap-4">
             <div>
@@ -98,7 +98,7 @@ export default function BackupPage() {
         </div>
 
         {/* Format Selection */}
-        <div className="bg-white dark:bg-gray-900 rounded-xl border p-4">
+        <div className="bg-card rounded-xl border p-4">
           <h2 className="font-bold mb-3">Format</h2>
           <div className="flex gap-3">
             <button onClick={() => setFormat("excel")} className={`flex-1 p-4 border rounded-lg ${format === "excel" ? "border-emerald-500 bg-emerald-50" : ""}`}>

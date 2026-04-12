@@ -48,7 +48,7 @@ export default function SmsTemplatesPage() {
         {/* Templates */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {templates.map(t => (
-            <div key={t.id} className="bg-white dark:bg-gray-900 rounded-xl border p-4">
+            <div key={t.id} className="bg-card rounded-xl border p-4">
               <div className="flex items-start justify-between mb-3">
                 <div>
                   <div className="font-bold">{t.nomi}</div>
@@ -60,7 +60,7 @@ export default function SmsTemplatesPage() {
                   <Button variant="ghost" size="sm" className="text-red-500"><Trash2 className="w-3 h-3" /></Button>
                 </div>
               </div>
-              <div className="text-sm bg-gray-50 dark:bg-gray-800 rounded p-3 mb-3 leading-relaxed">
+              <div className="text-sm bg-muted/50 dark:bg-muted rounded p-3 mb-3 leading-relaxed">
                 {t.matn}
               </div>
               <Button variant="outline" size="sm" className="w-full">

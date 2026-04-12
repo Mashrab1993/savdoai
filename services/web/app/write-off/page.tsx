@@ -26,7 +26,7 @@ export default function WriteOffPage() {
           </div>
         </div>
         <div className="relative"><Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" /><Input placeholder="Qidirish..." value={search} onChange={e => setSearch(e.target.value)} className="pl-10" /></div>
-        <div className="bg-white dark:bg-gray-900 rounded-xl border overflow-x-auto">
+        <div className="bg-card rounded-xl border overflow-x-auto">
           <Table>
             <TableHeader><TableRow>
               <TableHead>#</TableHead><TableHead>Sana</TableHead><TableHead>Sklad</TableHead>

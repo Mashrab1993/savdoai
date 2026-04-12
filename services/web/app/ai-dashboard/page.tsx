@@ -2,13 +2,13 @@
 import { useState, useEffect, type ReactNode } from "react";
 
 function Card({ children, className = "" }: { children: ReactNode; className?: string }) {
-  return <div className={`bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-4 ${className}`}>{children}</div>;
+  return <div className={`bg-card rounded-xl border border-border dark:border-border p-4 ${className}`}>{children}</div>;
 }
 function Stat({ label, value, icon, trend, color = "emerald" }: { label: string; value: string | number; icon: string; trend?: number; color?: string }) {
   return (
     <Card>
       <div className="flex items-center justify-between mb-2">
-        <span className="text-xs font-medium text-gray-500">{label}</span>
+        <span className="text-xs font-medium text-muted-foreground">{label}</span>
         <span className="text-lg">{icon}</span>
       </div>
       <div className={`text-2xl font-bold text-${color}-600`}>{value}</div>
@@ -47,7 +47,7 @@ export default function AIDashboard() {
     <div className="flex items-center justify-center h-96">
       <div className="text-center">
         <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-emerald-500 mx-auto mb-3" />
-        <div className="text-sm text-gray-500">AI tahlil qilmoqda...</div>
+        <div className="text-sm text-muted-foreground">AI tahlil qilmoqda...</div>
       </div>
     </div>
   );
@@ -66,10 +66,10 @@ export default function AIDashboard() {
     <div className="max-w-6xl mx-auto p-4 sm:p-6">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">🧠 AI Dashboard</h1>
-          <p className="text-sm text-gray-500 mt-1">Real-time biznes tahlili va AI tavsiyalar</p>
+          <h1 className="text-2xl font-bold text-foreground dark:text-white">🧠 AI Dashboard</h1>
+          <p className="text-sm text-muted-foreground mt-1">Real-time biznes tahlili va AI tavsiyalar</p>
         </div>
-        <div className="text-xs text-gray-400 bg-gray-50 dark:bg-gray-800 px-3 py-1.5 rounded-full">
+        <div className="text-xs text-muted-foreground bg-muted/50 dark:bg-muted px-3 py-1.5 rounded-full">
           Yangilangan: {new Date().toLocaleTimeString("uz")}
         </div>
       </div>
@@ -79,7 +79,7 @@ export default function AIDashboard() {
         {tabs.map(t => (
           <button key={t.id} onClick={() => setTab(t.id)}
             className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all ${
-              tab === t.id ? "bg-emerald-600 text-white" : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400"
+              tab === t.id ? "bg-emerald-600 text-white" : "bg-muted dark:bg-muted text-muted-foreground dark:text-muted-foreground"
             }`}>{t.label}</button>
         ))}
       </div>
@@ -102,15 +102,15 @@ export default function AIDashboard() {
               <div className="space-y-2">
                 {(hafta.kunlik || []).map((k: any, i: number) => (
                   <div key={i} className="flex items-center gap-2">
-                    <span className="text-xs text-gray-500 w-8">{k.kun}</span>
-                    <div className="flex-1 bg-gray-100 dark:bg-gray-800 rounded-full h-5 overflow-hidden">
+                    <span className="text-xs text-muted-foreground w-8">{k.kun}</span>
+                    <div className="flex-1 bg-muted dark:bg-muted rounded-full h-5 overflow-hidden">
                       <div className="bg-emerald-500 h-full rounded-full transition-all"
                         style={{ width: `${Math.min(100, (k.summa / (hafta.max || 1)) * 100)}%` }} />
                     </div>
                     <span className="text-xs font-medium w-20 text-right">{k.summa_fmt || k.summa}</span>
                   </div>
                 ))}
-                {!(hafta.kunlik?.length) && <div className="text-sm text-gray-400 py-4 text-center">Ma&apos;lumot yo&apos;q</div>}
+                {!(hafta.kunlik?.length) && <div className="text-sm text-muted-foreground py-4 text-center">Ma&apos;lumot yo&apos;q</div>}
               </div>
             </Card>
 
@@ -119,18 +119,18 @@ export default function AIDashboard() {
               <h3 className="text-sm font-semibold mb-3">🏆 Top 5 tovar (bu oy)</h3>
               <div className="space-y-2">
                 {(oy.top_tovarlar || []).slice(0, 5).map((t: any, i: number) => (
-                  <div key={i} className="flex items-center justify-between py-1.5 border-b border-gray-50 dark:border-gray-800 last:border-0">
+                  <div key={i} className="flex items-center justify-between py-1.5 border-b border-gray-50 dark:border-border last:border-0">
                     <div className="flex items-center gap-2">
-                      <span className="text-xs font-bold text-gray-400 w-5">{i + 1}.</span>
+                      <span className="text-xs font-bold text-muted-foreground w-5">{i + 1}.</span>
                       <span className="text-sm">{t.nomi}</span>
                     </div>
                     <div className="text-right">
                       <div className="text-sm font-bold">{t.summa_fmt || t.summa}</div>
-                      <div className="text-xs text-gray-400">{t.miqdor} dona</div>
+                      <div className="text-xs text-muted-foreground">{t.miqdor} dona</div>
                     </div>
                   </div>
                 ))}
-                {!(oy.top_tovarlar?.length) && <div className="text-sm text-gray-400 py-4 text-center">Ma&apos;lumot yo&apos;q</div>}
+                {!(oy.top_tovarlar?.length) && <div className="text-sm text-muted-foreground py-4 text-center">Ma&apos;lumot yo&apos;q</div>}
               </div>
             </Card>
           </div>
@@ -140,13 +140,13 @@ export default function AIDashboard() {
             <h3 className="text-sm font-semibold mb-3">👥 Top klientlar (bu oy)</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {(oy.top_klientlar || []).slice(0, 6).map((k: any, i: number) => (
-                <div key={i} className="flex items-center gap-3 p-3 rounded-lg bg-gray-50 dark:bg-gray-800">
+                <div key={i} className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 dark:bg-muted">
                   <div className="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-900 flex items-center justify-center">
                     <span className="text-xs font-bold text-emerald-600">{i + 1}</span>
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="text-sm font-medium truncate">{(k.nom || k.ism || "") || k.ism || k.klient_nomi || k.klient_ismi}</div>
-                    <div className="text-xs text-gray-500">{k.sotuv_soni} ta sotuv</div>
+                    <div className="text-xs text-muted-foreground">{k.sotuv_soni} ta sotuv</div>
                   </div>
                   <div className="text-sm font-bold text-emerald-600">{k.summa_fmt || k.summa}</div>
                 </div>
@@ -163,7 +163,7 @@ export default function AIDashboard() {
             <Card className="text-center py-12">
               <div className="text-4xl mb-3">🧠</div>
               <div className="text-lg font-semibold mb-1">AI tahlil</div>
-              <div className="text-sm text-gray-500">Yetarli ma&apos;lumot to&apos;planganda AI tavsiyalar paydo bo&apos;ladi</div>
+              <div className="text-sm text-muted-foreground">Yetarli ma&apos;lumot to&apos;planganda AI tavsiyalar paydo bo&apos;ladi</div>
             </Card>
           )}
           {insights.map((ins, i) => (
@@ -176,7 +176,7 @@ export default function AIDashboard() {
                 <span className="text-2xl">{ins.emoji || "💡"}</span>
                 <div className="flex-1">
                   <div className="font-semibold text-sm">{ins.sarlavha}</div>
-                  <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">{ins.tavsif}</div>
+                  <div className="text-sm text-muted-foreground dark:text-muted-foreground mt-1">{ins.tavsif}</div>
                   {ins.tavsiya && (
                     <div className="mt-2 text-sm text-emerald-600 dark:text-emerald-400 font-medium">
                       💡 {ins.tavsiya}
@@ -212,9 +212,9 @@ export default function AIDashboard() {
                     <span className="text-xl">{m.icon}</span>
                     <span className="text-sm font-semibold">{m.label}</span>
                   </div>
-                  <span className="text-xs text-gray-500">{yoqilgan}/{jami} faol</span>
+                  <span className="text-xs text-muted-foreground">{yoqilgan}/{jami} faol</span>
                 </div>
-                <div className="mt-2 bg-gray-100 dark:bg-gray-800 rounded-full h-2 overflow-hidden">
+                <div className="mt-2 bg-muted dark:bg-muted rounded-full h-2 overflow-hidden">
                   <div className="bg-emerald-500 h-full rounded-full"
                     style={{ width: `${jami > 0 ? (yoqilgan / jami) * 100 : 0}%` }} />
                 </div>

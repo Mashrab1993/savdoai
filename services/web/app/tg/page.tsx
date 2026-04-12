@@ -145,12 +145,12 @@ export default function TelegramMiniAppPage() {
           </div>
           <div className="flex gap-2 justify-center">
             <Button variant="outline" size="sm" onClick={retry}
-                    className="gap-1.5 border-white/20 text-white hover:bg-white/10">
+                    className="gap-1.5 border-white/20 text-white hover:bg-card/10">
               <RefreshCw className="w-3.5 h-3.5" />
               Qayta urinish
             </Button>
             <Button variant="outline" size="sm" onClick={() => router.push("/login")}
-                    className="border-white/20 text-white hover:bg-white/10">
+                    className="border-white/20 text-white hover:bg-card/10">
               Login sahifasi
             </Button>
           </div>

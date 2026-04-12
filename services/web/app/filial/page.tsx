@@ -42,7 +42,7 @@ export default function FilialPage() {
     <AdminLayout title="🏢 Filiallar">
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <p className="text-sm text-gray-500">Smartup multi-filial analogi — ko&apos;p filial boshqaruvi</p>
+          <p className="text-sm text-muted-foreground">Smartup multi-filial analogi — ko&apos;p filial boshqaruvi</p>
           <Button onClick={() => setShowCreate(true)} className="bg-emerald-600 hover:bg-emerald-700">
             <Plus className="w-4 h-4 mr-1" /> Yangi filial
           </Button>
@@ -51,12 +51,12 @@ export default function FilialPage() {
         {selectedFilial ? (
           <div className="space-y-4">
             <Button variant="outline" onClick={() => setSelectedFilial(null)}>← Orqaga</Button>
-            <div className="bg-white dark:bg-gray-900 rounded-xl border p-5">
+            <div className="bg-card rounded-xl border p-5">
               <div className="flex items-center gap-3 mb-4">
                 <span className="text-3xl">{turiEmoji[selectedFilial.turi] || "🏪"}</span>
                 <div>
                   <h2 className="text-lg font-bold">{selectedFilial.nomi}</h2>
-                  <p className="text-xs text-gray-500">{selectedFilial.manzil} • {selectedFilial.telefon}</p>
+                  <p className="text-xs text-muted-foreground">{selectedFilial.manzil} • {selectedFilial.telefon}</p>
                 </div>
                 {selectedFilial.bosh_filial && <span className="px-2 py-0.5 bg-amber-100 text-amber-700 rounded-full text-[10px] font-bold">⭐ Bosh filial</span>}
               </div>
@@ -65,7 +65,7 @@ export default function FilialPage() {
               {qoldiqlar.length > 0 ? (
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
-                    <thead><tr className="text-xs text-gray-500 text-left bg-gray-50 dark:bg-gray-800">
+                    <thead><tr className="text-xs text-muted-foreground text-left bg-muted/50 dark:bg-muted">
                       <th className="px-3 py-2">Tovar</th><th className="px-3 py-2 text-right">Qoldiq</th><th className="px-3 py-2 text-right">Min</th>
                     </tr></thead>
                     <tbody>
@@ -73,35 +73,35 @@ export default function FilialPage() {
                         <tr key={i} className="border-t border-gray-50">
                           <td className="px-3 py-2">{q.tovar_nomi}</td>
                           <td className={`px-3 py-2 text-right font-medium ${Number(q.qoldiq) <= Number(q.min_qoldiq) ? "text-red-600" : ""}`}>{q.qoldiq}</td>
-                          <td className="px-3 py-2 text-right text-gray-400">{q.min_qoldiq}</td>
+                          <td className="px-3 py-2 text-right text-muted-foreground">{q.min_qoldiq}</td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
                 </div>
-              ) : <p className="text-sm text-gray-400 py-4 text-center">Qoldiq ma&apos;lumotlari yo&apos;q</p>}
+              ) : <p className="text-sm text-muted-foreground py-4 text-center">Qoldiq ma&apos;lumotlari yo&apos;q</p>}
             </div>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {filiallar.map((f: any) => (
               <div key={f.id} onClick={() => loadQoldiq(f.id)}
-                className="bg-white dark:bg-gray-900 rounded-xl border p-4 cursor-pointer hover:shadow-md transition-shadow">
+                className="bg-card rounded-xl border p-4 cursor-pointer hover:shadow-md transition-shadow">
                 <div className="flex items-center gap-3 mb-2">
                   <span className="text-2xl">{turiEmoji[f.turi] || "🏪"}</span>
                   <div className="flex-1">
                     <div className="text-sm font-semibold flex items-center gap-1">
                       {f.nomi} {f.bosh_filial && <Star className="w-3 h-3 text-amber-500 fill-amber-500" />}
                     </div>
-                    <div className="text-xs text-gray-500">{f.manzil || "—"}</div>
+                    <div className="text-xs text-muted-foreground">{f.manzil || "—"}</div>
                   </div>
                 </div>
-                {f.telefon && <div className="text-xs text-gray-400 flex items-center gap-1"><Phone className="w-3 h-3" /> {f.telefon}</div>}
+                {f.telefon && <div className="text-xs text-muted-foreground flex items-center gap-1"><Phone className="w-3 h-3" /> {f.telefon}</div>}
               </div>
             ))}
             {filiallar.length === 0 && !loading && (
-              <div className="col-span-full text-center py-16 text-gray-400">
-                <Building2 className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+              <div className="col-span-full text-center py-16 text-muted-foreground">
+                <Building2 className="w-12 h-12 mx-auto mb-3 text-muted-foreground/50" />
                 <p className="text-sm">Filiallar yo&apos;q — birinchisini qo&apos;shing</p>
               </div>
             )}

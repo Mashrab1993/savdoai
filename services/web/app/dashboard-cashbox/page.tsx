@@ -34,7 +34,7 @@ export default function CashboxDashboardPage() {
         </div>
 
         <div className="grid grid-cols-2 gap-6">
-          <div className="bg-white dark:bg-gray-900 rounded-xl border p-6">
+          <div className="bg-card rounded-xl border p-6">
             <h2 className="font-bold mb-4">To'lov turlari bo'yicha</h2>
             <div className="space-y-3">
               {[
@@ -55,7 +55,7 @@ export default function CashboxDashboardPage() {
             </div>
           </div>
 
-          <div className="bg-white dark:bg-gray-900 rounded-xl border p-6">
+          <div className="bg-card rounded-xl border p-6">
             <h2 className="font-bold mb-4">Kassalar holati</h2>
             <div className="space-y-3">
               {[
@@ -64,7 +64,7 @@ export default function CashboxDashboardPage() {
                 { name: "Bank hisob", balans: 45700000 },
                 { name: "Click hisobi", balans: 850000 },
               ].map((k, i) => (
-                <div key={i} className="flex items-center justify-between p-2 hover:bg-gray-50 rounded-lg">
+                <div key={i} className="flex items-center justify-between p-2 hover:bg-muted/50 rounded-lg">
                   <span className="text-sm">{k.name}</span>
                   <span className="font-mono font-bold text-emerald-700">{formatCurrency(k.balans)}</span>
                 </div>

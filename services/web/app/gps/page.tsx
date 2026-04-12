@@ -92,7 +92,7 @@ export default function GpsPage() {
 
         {/* Stats */}
         <div className="grid grid-cols-3 gap-4">
-          <div className="bg-white dark:bg-gray-900 rounded-xl border p-4">
+          <div className="bg-card rounded-xl border p-4">
             <div className="text-sm text-muted-foreground">Jami agentlar</div>
             <div className="text-2xl font-bold mt-1">{agents.length}</div>
           </div>
@@ -113,15 +113,15 @@ export default function GpsPage() {
         {/* Map placeholder + Agent list */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Map Area */}
-          <div className="lg:col-span-2 bg-white dark:bg-gray-900 rounded-xl border overflow-hidden">
+          <div className="lg:col-span-2 bg-card rounded-xl border overflow-hidden">
             <div className="bg-gradient-to-br from-blue-50 to-emerald-50 dark:from-gray-800 dark:to-gray-900 h-96 flex items-center justify-center">
               <div className="text-center">
                 <MapPin className="w-16 h-16 mx-auto text-emerald-300 mb-4" />
-                <p className="text-lg font-medium text-gray-500">Xarita integratsiyasi</p>
-                <p className="text-sm text-gray-400 mt-1">
+                <p className="text-lg font-medium text-muted-foreground">Xarita integratsiyasi</p>
+                <p className="text-sm text-muted-foreground mt-1">
                   {agents.length} ta agent, {onlineCount} ta online
                 </p>
-                <p className="text-xs text-gray-400 mt-2">
+                <p className="text-xs text-muted-foreground mt-2">
                   Yandex/Google Maps integratsiya qo'shilmoqda
                 </p>
               </div>
@@ -129,7 +129,7 @@ export default function GpsPage() {
           </div>
 
           {/* Agent List */}
-          <div className="bg-white dark:bg-gray-900 rounded-xl border overflow-hidden">
+          <div className="bg-card rounded-xl border overflow-hidden">
             <div className="p-4 border-b">
               <h3 className="font-bold">Agentlar</h3>
             </div>
@@ -147,7 +147,7 @@ export default function GpsPage() {
                 agents.map((agent) => (
                   <div
                     key={agent.id}
-                    className={`flex items-center justify-between p-3 border-b cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 ${
+                    className={`flex items-center justify-between p-3 border-b cursor-pointer hover:bg-muted/50 dark:hover:bg-muted ${
                       selectedAgent?.id === agent.id ? "bg-emerald-50 dark:bg-emerald-900/20" : ""
                     }`}
                     onClick={() => setSelectedAgent(agent)}
@@ -184,7 +184,7 @@ export default function GpsPage() {
 
         {/* Selected Agent Detail */}
         {selectedAgent && (
-          <div className="bg-white dark:bg-gray-900 rounded-xl border p-4">
+          <div className="bg-card rounded-xl border p-4">
             <h3 className="font-bold mb-3 flex items-center gap-2">
               <Navigation className="w-5 h-5 text-emerald-600" />
               {selectedAgent.ism} — batafsil

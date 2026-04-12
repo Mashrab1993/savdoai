@@ -43,7 +43,7 @@ export default function ApiKeysPage() {
           </div>
         </div>
 
-        <div className="bg-white dark:bg-gray-900 rounded-xl border overflow-x-auto">
+        <div className="bg-card rounded-xl border overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
@@ -61,7 +61,7 @@ export default function ApiKeysPage() {
                   <TableCell className="font-medium">{k.nomi}</TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
-                      <code className="text-xs font-mono bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">
+                      <code className="text-xs font-mono bg-muted dark:bg-muted px-2 py-1 rounded">
                         {showKey[k.id] ? "sk_live_abc123def456ghi789" : k.key}
                       </code>
                       <button onClick={() => setShowKey(s => ({ ...s, [k.id]: !s[k.id] }))}>

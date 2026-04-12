@@ -29,10 +29,10 @@ export default function FeedbackPage() {
         {/* Stats */}
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
           {[5, 4, 3, 2, 1].map(stars => (
-            <div key={stars} className="bg-white dark:bg-gray-900 rounded-xl border p-4 text-center">
+            <div key={stars} className="bg-card rounded-xl border p-4 text-center">
               <div className="flex justify-center gap-0.5 mb-1">
                 {[1, 2, 3, 4, 5].map(s => (
-                  <Star key={s} className={`w-3 h-3 ${s <= stars ? "text-yellow-500 fill-yellow-500" : "text-gray-300"}`} />
+                  <Star key={s} className={`w-3 h-3 ${s <= stars ? "text-yellow-500 fill-yellow-500" : "text-muted-foreground/50"}`} />
                 ))}
               </div>
               <div className="text-2xl font-bold">0</div>
@@ -46,7 +46,7 @@ export default function FeedbackPage() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input placeholder="Mijoz yoki agent qidirish..." value={search} onChange={e => setSearch(e.target.value)} className="pl-10" />
           </div>
-          <select value={filterRating} onChange={e => setFilterRating(Number(e.target.value))} className="border rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-900">
+          <select value={filterRating} onChange={e => setFilterRating(Number(e.target.value))} className="border rounded-lg px-3 py-2 text-sm bg-card">
             <option value={0}>Barcha baholar</option>
             <option value={5}>5 yulduzcha</option>
             <option value={4}>4 yulduzcha</option>
@@ -56,7 +56,7 @@ export default function FeedbackPage() {
           </select>
         </div>
 
-        <div className="bg-white dark:bg-gray-900 rounded-xl border overflow-x-auto">
+        <div className="bg-card rounded-xl border overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
@@ -83,7 +83,7 @@ export default function FeedbackPage() {
                   <TableCell>{f.agent}</TableCell>
                   <TableCell className="text-center">
                     <div className="flex justify-center gap-0.5">
-                      {[1,2,3,4,5].map(s => <Star key={s} className={`w-3 h-3 ${s <= f.baho ? "text-yellow-500 fill-yellow-500" : "text-gray-300"}`} />)}
+                      {[1,2,3,4,5].map(s => <Star key={s} className={`w-3 h-3 ${s <= f.baho ? "text-yellow-500 fill-yellow-500" : "text-muted-foreground/50"}`} />)}
                     </div>
                   </TableCell>
                   <TableCell className="text-sm">{f.izoh}</TableCell>

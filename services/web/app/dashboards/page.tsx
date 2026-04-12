@@ -29,12 +29,12 @@ export default function DashboardsPage() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {DASHBOARDS.map(d => (
-            <Link key={d.href} href={d.href} className="bg-white dark:bg-gray-900 rounded-xl border p-6 hover:shadow-md hover:border-emerald-300 transition group">
+            <Link key={d.href} href={d.href} className="bg-card rounded-xl border p-6 hover:shadow-md hover:border-emerald-300 transition group">
               <div className="flex items-start justify-between mb-4">
                 <div className={`p-3 bg-${d.color}-50 rounded-xl`}>
                   <d.icon className={`w-7 h-7 text-${d.color}-600`} />
                 </div>
-                <ArrowRight className="w-5 h-5 text-gray-300 group-hover:text-emerald-600 transition" />
+                <ArrowRight className="w-5 h-5 text-muted-foreground/50 group-hover:text-emerald-600 transition" />
               </div>
               <div className="font-bold text-lg">{d.label}</div>
               <div className="text-sm text-muted-foreground mt-1">{d.desc}</div>

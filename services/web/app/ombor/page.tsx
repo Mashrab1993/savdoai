@@ -99,7 +99,7 @@ export default function OmborPage() {
   }
 
   const SortIcon = ({ field }: { field: SortField }) => (
-    <ArrowUpDown className={`inline w-3 h-3 ml-1 ${sortField === field ? "text-emerald-600" : "text-gray-400"}`} />
+    <ArrowUpDown className={`inline w-3 h-3 ml-1 ${sortField === field ? "text-emerald-600" : "text-muted-foreground"}`} />
   )
 
   return (
@@ -128,7 +128,7 @@ export default function OmborPage() {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          <div className="bg-white dark:bg-gray-900 rounded-xl border p-4 cursor-pointer hover:shadow-md transition"
+          <div className="bg-card rounded-xl border p-4 cursor-pointer hover:shadow-md transition"
                onClick={() => setFilter("all")}>
             <div className="text-sm text-muted-foreground">Jami tovarlar</div>
             <div className="text-2xl font-bold mt-1">{stats.jami}</div>
@@ -165,7 +165,7 @@ export default function OmborPage() {
             <select
               value={kategoriya}
               onChange={e => setKategoriya(e.target.value)}
-              className="border rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-900"
+              className="border rounded-lg px-3 py-2 text-sm bg-card"
             >
               <option value="all">Barcha kategoriyalar</option>
               {kategoriyalar.map(k => (
@@ -175,7 +175,7 @@ export default function OmborPage() {
             <select
               value={kunlar}
               onChange={e => setKunlar(Number(e.target.value))}
-              className="border rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-900"
+              className="border rounded-lg px-3 py-2 text-sm bg-card"
             >
               <option value={7}>7 kunlik prognoz</option>
               <option value={14}>14 kunlik prognoz</option>
@@ -193,7 +193,7 @@ export default function OmborPage() {
         ) : error ? (
           <div className="text-center p-10 text-red-500">Xatolik: {String(error)}</div>
         ) : (
-          <div className="bg-white dark:bg-gray-900 rounded-xl border overflow-x-auto">
+          <div className="bg-card rounded-xl border overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>

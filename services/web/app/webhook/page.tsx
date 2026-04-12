@@ -56,7 +56,7 @@ export default function WebhookPage() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold">🔗 Webhook Integratsiya</h1>
-          <p className="text-sm text-gray-500 mt-1">Tashqi tizimlar bilan bog&apos;lanish (1C, Telegram, Google Sheets...)</p>
+          <p className="text-sm text-muted-foreground mt-1">Tashqi tizimlar bilan bog&apos;lanish (1C, Telegram, Google Sheets...)</p>
         </div>
         <button onClick={() => setShowForm(!showForm)} className="px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700">
           {showForm ? "Bekor" : "+ Yangi webhook"}
@@ -64,7 +64,7 @@ export default function WebhookPage() {
       </div>
 
       {showForm && (
-        <div className="bg-white dark:bg-gray-900 rounded-xl border p-5 mb-6 space-y-4">
+        <div className="bg-card rounded-xl border p-5 mb-6 space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="text-sm font-medium">Nomi</label>
@@ -84,7 +84,7 @@ export default function WebhookPage() {
               {Object.entries(eventlar).map(([key, label]: [string, any]) => (
                 <button key={key} onClick={() => toggleEvent(key)}
                   className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-left transition-all ${
-                    form.eventlar.includes(key) ? "bg-emerald-50 border-emerald-300 border text-emerald-700" : "bg-gray-50 dark:bg-gray-800 border border-transparent text-gray-600"
+                    form.eventlar.includes(key) ? "bg-emerald-50 border-emerald-300 border text-emerald-700" : "bg-muted/50 dark:bg-muted border border-transparent text-muted-foreground"
                   }`}>
                   <span>{EVENT_ICONS[key] || "📌"}</span>
                   <span>{label}</span>
@@ -102,25 +102,25 @@ export default function WebhookPage() {
 
       <div className="space-y-3">
         {webhooklar.map((w: any) => (
-          <div key={w.id} className="bg-white dark:bg-gray-900 rounded-xl border p-4">
+          <div key={w.id} className="bg-card rounded-xl border p-4">
             <div className="flex items-center justify-between mb-2">
               <div>
                 <div className="font-medium text-sm">{w.nomi}</div>
-                <div className="text-xs text-gray-500 font-mono">{w.url}</div>
+                <div className="text-xs text-muted-foreground font-mono">{w.url}</div>
               </div>
               <div className="flex items-center gap-2">
                 <button onClick={() => test(w.id)} className="px-3 py-1 bg-blue-100 text-blue-700 rounded text-xs font-medium">Test</button>
                 <span className={`w-2.5 h-2.5 rounded-full ${w.faol ? "bg-emerald-500" : "bg-gray-300"}`} />
               </div>
             </div>
-            <div className="flex items-center gap-4 text-xs text-gray-500">
+            <div className="flex items-center gap-4 text-xs text-muted-foreground">
               <span>✅ {w.muvaffaqiyatli_soni || 0} muvaffaqiyatli</span>
               <span>❌ {w.xato_soni || 0} xato</span>
               <span>📌 {(w.eventlar || []).length} event</span>
             </div>
             <div className="flex flex-wrap gap-1 mt-2">
               {(w.eventlar || []).map((e: any) => (
-                <span key={e} className="px-2 py-0.5 bg-gray-100 dark:bg-gray-800 rounded text-[10px]">
+                <span key={e} className="px-2 py-0.5 bg-muted dark:bg-muted rounded text-[10px]">
                   {EVENT_ICONS[e] || "📌"} {e}
                 </span>
               ))}
@@ -128,7 +128,7 @@ export default function WebhookPage() {
           </div>
         ))}
         {webhooklar.length === 0 && (
-          <div className="text-center py-16 text-gray-400">
+          <div className="text-center py-16 text-muted-foreground">
             <div className="text-4xl mb-3">🔗</div>
             <div className="text-sm">Hali webhook yo&apos;q — tashqi tizimlar bilan bog&apos;laning!</div>
           </div>

@@ -34,7 +34,7 @@ export default function DataImportPage() {
             <button
               key={t.key}
               onClick={() => setSelectedType(t.key)}
-              className={`bg-white dark:bg-gray-900 rounded-xl border-2 p-4 hover:shadow-md transition ${selectedType === t.key ? "border-emerald-500" : ""}`}
+              className={`bg-card rounded-xl border-2 p-4 hover:shadow-md transition ${selectedType === t.key ? "border-emerald-500" : ""}`}
             >
               <t.icon className="w-8 h-8 mx-auto text-emerald-600 mb-2" />
               <div className="font-bold">{t.label}</div>
@@ -44,13 +44,13 @@ export default function DataImportPage() {
         </div>
 
         {/* Upload Area */}
-        <div className="bg-white dark:bg-gray-900 rounded-xl border p-6">
+        <div className="bg-card rounded-xl border p-6">
           <h2 className="font-bold mb-4">Fayl yuklash</h2>
 
           <div className="border-2 border-dashed rounded-xl p-10 text-center hover:border-emerald-500 transition cursor-pointer">
             <input type="file" accept=".xlsx,.csv" onChange={e => setFile(e.target.files?.[0] || null)} className="hidden" id="file-upload" />
             <label htmlFor="file-upload" className="cursor-pointer">
-              <Upload className="w-12 h-12 mx-auto text-gray-300 mb-3" />
+              <Upload className="w-12 h-12 mx-auto text-muted-foreground/50 mb-3" />
               {file ? (
                 <div>
                   <div className="font-bold">{file.name}</div>

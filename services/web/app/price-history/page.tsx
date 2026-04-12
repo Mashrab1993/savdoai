@@ -48,7 +48,7 @@ export default function PriceHistoryPage() {
           <Input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} className="w-40" />
           <Input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} className="w-40" /></div>
         {loading ? <div className="flex justify-center p-20"><div className="animate-spin h-8 w-8 border-b-2 border-emerald-500 rounded-full" /></div> : (
-          <div className="bg-white dark:bg-gray-900 rounded-xl border overflow-x-auto">
+          <div className="bg-card rounded-xl border overflow-x-auto">
             <Table><TableHeader><TableRow>
               <TableHead>#</TableHead><TableHead>Tovar</TableHead><TableHead>Kategoriya</TableHead>
               <TableHead className="text-center">Olish narxi</TableHead><TableHead className="text-center">Sotish narxi</TableHead>
@@ -69,7 +69,7 @@ export default function PriceHistoryPage() {
                     </span>
                   </TableCell>
                   <TableCell className="text-center">
-                    {p.ozgarish > 0 ? <TrendingUp className="w-4 h-4 text-emerald-500 mx-auto" /> : p.ozgarish < 0 ? <TrendingDown className="w-4 h-4 text-red-500 mx-auto" /> : <Minus className="w-4 h-4 text-gray-400 mx-auto" />}
+                    {p.ozgarish > 0 ? <TrendingUp className="w-4 h-4 text-emerald-500 mx-auto" /> : p.ozgarish < 0 ? <TrendingDown className="w-4 h-4 text-red-500 mx-auto" /> : <Minus className="w-4 h-4 text-muted-foreground mx-auto" />}
                   </TableCell>
                   <TableCell className="text-sm text-muted-foreground">{p.sana}</TableCell>
                 </TableRow>

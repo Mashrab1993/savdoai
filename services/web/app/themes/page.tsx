@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge"
 import { Palette, Sun, Moon, Monitor, Check } from "lucide-react"
 
 const THEMES = [
-  { key: "light", label: "Yorug'", icon: Sun, preview: "bg-white border" },
+  { key: "light", label: "Yorug'", icon: Sun, preview: "bg-card border" },
   { key: "dark", label: "Qorong'u", icon: Moon, preview: "bg-gray-900 border-gray-700" },
   { key: "system", label: "Tizim", icon: Monitor, preview: "bg-gradient-to-r from-white to-gray-900" },
 ]
@@ -42,7 +42,7 @@ export default function ThemesPage() {
               <button
                 key={t.key}
                 onClick={() => setSelectedTheme(t.key)}
-                className={`p-6 rounded-xl border-2 transition ${selectedTheme === t.key ? "border-emerald-500" : "border-transparent hover:border-gray-300"}`}
+                className={`p-6 rounded-xl border-2 transition ${selectedTheme === t.key ? "border-emerald-500" : "border-transparent hover:border-border"}`}
               >
                 <div className={`h-24 rounded-lg mb-3 ${t.preview}`} />
                 <div className="flex items-center justify-center gap-2">
@@ -62,7 +62,7 @@ export default function ThemesPage() {
               <button
                 key={c.name}
                 onClick={() => setSelectedColor(c.name)}
-                className={`p-4 rounded-xl border-2 transition ${selectedColor === c.name ? "border-gray-400" : "border-transparent hover:border-gray-300"}`}
+                className={`p-4 rounded-xl border-2 transition ${selectedColor === c.name ? "border-gray-400" : "border-transparent hover:border-border"}`}
               >
                 <div className={`w-full h-12 rounded-lg ${c.color} mb-2`} />
                 <div className="text-xs font-medium text-center">{c.label}</div>
@@ -72,7 +72,7 @@ export default function ThemesPage() {
           </div>
         </div>
 
-        <div className="bg-white dark:bg-gray-900 rounded-xl border p-6">
+        <div className="bg-card rounded-xl border p-6">
           <h2 className="font-bold mb-3">Tilni tanlash</h2>
           <div className="grid grid-cols-3 gap-3">
             <button className="p-4 border rounded-lg text-center hover:border-emerald-500">

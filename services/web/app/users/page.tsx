@@ -46,7 +46,7 @@ export default function UsersPage() {
         {/* Roles overview */}
         <div className="grid grid-cols-3 sm:grid-cols-5 gap-3">
           {ROLES.slice(0, 5).map(r => (
-            <div key={r.key} className="bg-white dark:bg-gray-900 rounded-xl border p-3 text-center">
+            <div key={r.key} className="bg-card rounded-xl border p-3 text-center">
               <Shield className="w-6 h-6 mx-auto mb-1 text-emerald-600" />
               <div className="text-xs font-medium">{r.label}</div>
               <div className="text-lg font-bold">0</div>
@@ -59,7 +59,7 @@ export default function UsersPage() {
           <Input placeholder="Qidirish..." value={search} onChange={e => setSearch(e.target.value)} className="pl-10" />
         </div>
 
-        <div className="bg-white dark:bg-gray-900 rounded-xl border">
+        <div className="bg-card rounded-xl border">
           <Table>
             <TableHeader>
               <TableRow>
@@ -89,7 +89,7 @@ export default function UsersPage() {
                   <TableCell>{u.email}</TableCell>
                   <TableCell>{u.telefon}</TableCell>
                   <TableCell className="text-center">
-                    <Badge className={ROLES.find(r => r.key === u.rol)?.color || "bg-gray-100 text-gray-600"}>
+                    <Badge className={ROLES.find(r => r.key === u.rol)?.color || "bg-muted text-muted-foreground"}>
                       {ROLES.find(r => r.key === u.rol)?.label || u.rol}
                     </Badge>
                   </TableCell>

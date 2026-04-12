@@ -76,10 +76,10 @@ export default function AllReportsPage() {
             <h2 className="text-lg font-bold mb-3">{cat.label}</h2>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               {cat.items.map((item, i) => (
-                <Link key={i} href={item.href} className="bg-white dark:bg-gray-900 rounded-xl border p-4 hover:shadow-md hover:border-emerald-300 transition group">
+                <Link key={i} href={item.href} className="bg-card rounded-xl border p-4 hover:shadow-md hover:border-emerald-300 transition group">
                   <div className="flex items-center justify-between mb-2">
                     <item.icon className="w-6 h-6 text-emerald-600" />
-                    <ArrowRight className="w-4 h-4 text-gray-300 group-hover:text-emerald-600 transition" />
+                    <ArrowRight className="w-4 h-4 text-muted-foreground/50 group-hover:text-emerald-600 transition" />
                   </div>
                   <div className="text-sm font-medium">{item.label}</div>
                 </Link>

@@ -54,7 +54,7 @@ export default function ClientCreatePage() {
           <p className="text-sm text-muted-foreground mt-1">Mijoz ma'lumotlarini kiritish</p>
         </div>
 
-        <div className="bg-white dark:bg-gray-900 rounded-xl border p-6 space-y-4">
+        <div className="bg-card rounded-xl border p-6 space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="text-sm font-medium">Mijoz nomi *</label>

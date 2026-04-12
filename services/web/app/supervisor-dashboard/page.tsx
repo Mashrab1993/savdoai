@@ -51,10 +51,10 @@ export default function SupervisorDashboardPage() {
         </div>
 
         {/* Filters */}
-        <div className="bg-white dark:bg-gray-900 rounded-xl border p-4">
+        <div className="bg-card rounded-xl border p-4">
           <div className="flex items-center gap-3 flex-wrap">
             <Filter className="w-4 h-4 text-muted-foreground" />
-            <select value={status} onChange={e => setStatus(e.target.value)} className="border rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-900">
+            <select value={status} onChange={e => setStatus(e.target.value)} className="border rounded-lg px-3 py-2 text-sm bg-card">
               <option value="all">Barcha statuslar</option>
               <option value="new">Yangi</option>
               <option value="shipped">Otgruzhen</option>
@@ -69,19 +69,19 @@ export default function SupervisorDashboardPage() {
 
         {/* Stats */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          <div className="bg-white dark:bg-gray-900 rounded-xl border p-4">
+          <div className="bg-card rounded-xl border p-4">
             <div className="text-sm text-muted-foreground">Jami summa</div>
             <div className="text-2xl font-bold mt-1 text-purple-700">{formatCurrency(total)}</div>
           </div>
-          <div className="bg-white dark:bg-gray-900 rounded-xl border p-4">
+          <div className="bg-card rounded-xl border p-4">
             <div className="text-sm text-muted-foreground">Jami buyurtmalar</div>
             <div className="text-2xl font-bold mt-1">0</div>
           </div>
-          <div className="bg-white dark:bg-gray-900 rounded-xl border p-4">
+          <div className="bg-card rounded-xl border p-4">
             <div className="text-sm text-muted-foreground">AKB (faol mijozlar)</div>
             <div className="text-2xl font-bold mt-1 text-emerald-700">0</div>
           </div>
-          <div className="bg-white dark:bg-gray-900 rounded-xl border p-4">
+          <div className="bg-card rounded-xl border p-4">
             <div className="text-sm text-muted-foreground">O'rtacha chek</div>
             <div className="text-2xl font-bold mt-1">{formatCurrency(0)}</div>
           </div>
@@ -99,7 +99,7 @@ export default function SupervisorDashboardPage() {
 
           {SECTIONS.map(s => (
             <TabsContent key={s.key} value={s.key}>
-              <div className="bg-white dark:bg-gray-900 rounded-xl border overflow-x-auto">
+              <div className="bg-card rounded-xl border overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow className="bg-purple-50 dark:bg-purple-900/20">
@@ -125,7 +125,7 @@ export default function SupervisorDashboardPage() {
                         <TableCell className="font-medium">{r.nomi}</TableCell>
                         <TableCell className="text-center">
                           <div className="flex items-center justify-center gap-2">
-                            <div className="w-16 h-2 bg-gray-200 rounded-full overflow-hidden">
+                            <div className="w-16 h-2 bg-muted rounded-full overflow-hidden">
                               <div className="h-full bg-purple-500 rounded-full" style={{ width: `${r.ulush}%` }} />
                             </div>
                             <span className="font-mono text-xs">{r.ulush.toFixed(1)}%</span>
@@ -153,7 +153,7 @@ export default function SupervisorDashboardPage() {
             { label: "Akt sverka", href: "/sverka", icon: Shield },
             { label: "Audit", href: "/audit-dashboard", icon: Building2 },
           ].map(l => (
-            <a key={l.label} href={l.href} className="bg-white dark:bg-gray-900 rounded-xl border p-4 hover:border-purple-300 hover:shadow-md transition flex items-center gap-3">
+            <a key={l.label} href={l.href} className="bg-card rounded-xl border p-4 hover:border-purple-300 hover:shadow-md transition flex items-center gap-3">
               <l.icon className="w-6 h-6 text-purple-600" />
               <span className="text-sm font-medium">{l.label}</span>
             </a>

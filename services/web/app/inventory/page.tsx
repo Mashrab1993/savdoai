@@ -62,7 +62,7 @@ export default function InventoryPage() {
 
         {/* Stats */}
         <div className="grid grid-cols-4 gap-4">
-          <div className="bg-white dark:bg-gray-900 rounded-xl border p-4">
+          <div className="bg-card rounded-xl border p-4">
             <div className="text-sm text-muted-foreground">Jami tovarlar</div>
             <div className="text-2xl font-bold mt-1">{stats.total}</div>
           </div>
@@ -74,9 +74,9 @@ export default function InventoryPage() {
             <div className="text-sm text-yellow-600 flex items-center gap-1"><AlertCircle className="w-3 h-3" /> Mos kelmadi</div>
             <div className="text-2xl font-bold mt-1 text-yellow-700">{stats.mismatched}</div>
           </div>
-          <div className="bg-gray-50 rounded-xl border p-4">
-            <div className="text-sm text-gray-600">Sanalmagan</div>
-            <div className="text-2xl font-bold mt-1 text-gray-700">{stats.missing}</div>
+          <div className="bg-muted/50 rounded-xl border p-4">
+            <div className="text-sm text-muted-foreground">Sanalmagan</div>
+            <div className="text-2xl font-bold mt-1 text-foreground">{stats.missing}</div>
           </div>
         </div>
 
@@ -92,7 +92,7 @@ export default function InventoryPage() {
             <div className="animate-spin h-8 w-8 border-b-2 border-emerald-500 rounded-full" />
           </div>
         ) : (
-          <div className="bg-white dark:bg-gray-900 rounded-xl border overflow-x-auto">
+          <div className="bg-card rounded-xl border overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>

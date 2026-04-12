@@ -30,21 +30,21 @@ export default function AktSverkiPage() {
   return (
     <AdminLayout title="📋 Akt sverki">
       <div className="max-w-3xl mx-auto space-y-4">
-        <p className="text-sm text-gray-500">Klient bilan solishtirish akti — SD Agent client/revise analogi</p>
+        <p className="text-sm text-muted-foreground">Klient bilan solishtirish akti — SD Agent client/revise analogi</p>
 
         {/* Form */}
-        <div className="bg-white dark:bg-gray-900 rounded-xl border p-5 space-y-4">
+        <div className="bg-card rounded-xl border p-5 space-y-4">
           <div className="grid grid-cols-3 gap-3">
             <div>
-              <label className="text-xs font-medium text-gray-500">Klient ID</label>
+              <label className="text-xs font-medium text-muted-foreground">Klient ID</label>
               <Input type="number" value={klientId} onChange={e => setKlientId(e.target.value)} placeholder="Klient ID" />
             </div>
             <div>
-              <label className="text-xs font-medium text-gray-500">Boshlanish</label>
+              <label className="text-xs font-medium text-muted-foreground">Boshlanish</label>
               <Input type="date" value={danSana} onChange={e => setDanSana(e.target.value)} />
             </div>
             <div>
-              <label className="text-xs font-medium text-gray-500">Tugash</label>
+              <label className="text-xs font-medium text-muted-foreground">Tugash</label>
               <Input type="date" value={gachaSana} onChange={e => setGachaSana(e.target.value)} />
             </div>
           </div>
@@ -55,11 +55,11 @@ export default function AktSverkiPage() {
 
         {/* Result */}
         {result && (
-          <div className="bg-white dark:bg-gray-900 rounded-xl border overflow-hidden">
+          <div className="bg-card rounded-xl border overflow-hidden">
             <div className="p-4 bg-blue-50 dark:bg-blue-900/10 border-b flex items-center justify-between">
               <div>
                 <h3 className="font-bold">📋 Akt sverki #{result.akt_id}</h3>
-                <p className="text-xs text-gray-500">{danSana} — {gachaSana}</p>
+                <p className="text-xs text-muted-foreground">{danSana} — {gachaSana}</p>
               </div>
               <Button variant="outline" size="sm"><Printer className="w-3 h-3 mr-1" /> Chop etish</Button>
             </div>
@@ -73,7 +73,7 @@ export default function AktSverkiPage() {
                 { label: "Qaytarishlar", value: result.jami_qaytarish, color: "text-red-500" },
               ].map((row, i) => (
                 <div key={i} className="flex justify-between px-4 py-3">
-                  <span className="text-sm text-gray-600">{row.label}</span>
+                  <span className="text-sm text-muted-foreground">{row.label}</span>
                   <span className={`text-sm font-medium ${row.color}`}>{formatCurrencyFull(N(row.value))}</span>
                 </div>
               ))}
@@ -88,11 +88,11 @@ export default function AktSverkiPage() {
             {/* Tafsilotlar */}
             {result.tafsilotlar?.length > 0 && (
               <div className="border-t">
-                <div className="px-4 py-2 bg-gray-50 dark:bg-gray-800 text-xs font-semibold text-gray-500">
+                <div className="px-4 py-2 bg-muted/50 dark:bg-muted text-xs font-semibold text-muted-foreground">
                   SOTUVLAR TAFSILOTI ({result.sotuvlar_soni} ta)
                 </div>
                 <table className="w-full text-sm">
-                  <thead><tr className="text-xs text-gray-500 text-left">
+                  <thead><tr className="text-xs text-muted-foreground text-left">
                     <th className="px-4 py-2">Sana</th><th className="px-4 py-2">Jami</th>
                     <th className="px-4 py-2">To&apos;langan</th><th className="px-4 py-2">Qarz</th>
                   </tr></thead>

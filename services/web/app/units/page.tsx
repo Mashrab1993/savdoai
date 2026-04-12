@@ -41,7 +41,7 @@ export default function UnitsPage() {
           </Button>
         </div>
 
-        <div className="bg-white dark:bg-gray-900 rounded-xl border">
+        <div className="bg-card rounded-xl border">
           <Table>
             <TableHeader>
               <TableRow>

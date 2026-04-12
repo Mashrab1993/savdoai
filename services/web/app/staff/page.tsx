@@ -107,7 +107,7 @@ export default function StaffPage() {
           {/* Table for each tab */}
           {(["agent", "expeditor", "supervisor"] as StaffRole[]).map(role => (
             <TabsContent key={role} value={role}>
-              <div className="bg-white dark:bg-gray-900 rounded-xl border overflow-x-auto">
+              <div className="bg-card rounded-xl border overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -157,7 +157,7 @@ export default function StaffPage() {
                           </TableCell>
                         )}
                         <TableCell className="text-center">
-                          <Badge className={s.faol ? "bg-emerald-100 text-emerald-800" : "bg-gray-100 text-gray-600"}>
+                          <Badge className={s.faol ? "bg-emerald-100 text-emerald-800" : "bg-muted text-muted-foreground"}>
                             {s.faol ? "Faol" : "Nofaol"}
                           </Badge>
                         </TableCell>

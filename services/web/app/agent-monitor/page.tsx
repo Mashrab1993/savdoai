@@ -54,23 +54,23 @@ export default function AgentMonitorPage() {
   return (
     <AdminLayout title="📡 Agent Monitor">
       <div className="space-y-4">
-        <p className="text-sm text-gray-500">Real-time agent faoliyatini kuzatish</p>
+        <p className="text-sm text-muted-foreground">Real-time agent faoliyatini kuzatish</p>
 
         {/* Summary */}
         <div className="grid grid-cols-3 gap-3">
-          <div className="bg-white dark:bg-gray-900 rounded-xl border p-4 text-center">
+          <div className="bg-card rounded-xl border p-4 text-center">
             <div className="text-2xl font-bold text-emerald-600">{agents.filter(a => a.muvaffaqiyatli).length}</div>
-            <div className="text-xs text-gray-500">🟢 Online</div>
+            <div className="text-xs text-muted-foreground">🟢 Online</div>
           </div>
-          <div className="bg-white dark:bg-gray-900 rounded-xl border p-4 text-center">
+          <div className="bg-card rounded-xl border p-4 text-center">
             <div className="text-2xl font-bold">{agents.length}</div>
-            <div className="text-xs text-gray-500">Jami agent</div>
+            <div className="text-xs text-muted-foreground">Jami agent</div>
           </div>
-          <div className="bg-white dark:bg-gray-900 rounded-xl border p-4 text-center">
+          <div className="bg-card rounded-xl border p-4 text-center">
             <div className="text-2xl font-bold text-amber-600">
               {agents.filter(a => (a.batareya || 0) < 20).length}
             </div>
-            <div className="text-xs text-gray-500">🔋 Kam batareya</div>
+            <div className="text-xs text-muted-foreground">🔋 Kam batareya</div>
           </div>
         </div>
 
@@ -79,26 +79,26 @@ export default function AgentMonitorPage() {
           {agents.map(a => {
             const online = a.oxirgi_sync && (Date.now() - new Date(a.oxirgi_sync).getTime()) < 30 * 60000
             return (
-              <div key={a.id} className={`bg-white dark:bg-gray-900 rounded-xl border p-4 ${
-                online ? "border-emerald-200" : "border-gray-200 opacity-70"
+              <div key={a.id} className={`bg-card rounded-xl border p-4 ${
+                online ? "border-emerald-200" : "border-border opacity-70"
               }`}>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                      online ? "bg-emerald-100" : "bg-gray-100"
+                      online ? "bg-emerald-100" : "bg-muted"
                     }`}>
                       <div className={`w-3 h-3 rounded-full ${online ? "bg-emerald-500 animate-pulse" : "bg-gray-400"}`} />
                     </div>
                     <div>
                       <div className="text-sm font-semibold">Agent #{a.id}</div>
-                      <div className="text-xs text-gray-500">{a.qurilma}</div>
+                      <div className="text-xs text-muted-foreground">{a.qurilma}</div>
                     </div>
                   </div>
                   <div className="text-right">
-                    <div className="text-xs text-gray-400">{sinceMinutes(a.oxirgi_sync)}</div>
+                    <div className="text-xs text-muted-foreground">{sinceMinutes(a.oxirgi_sync)}</div>
                   </div>
                 </div>
-                <div className="flex gap-4 mt-2 text-xs text-gray-500">
+                <div className="flex gap-4 mt-2 text-xs text-muted-foreground">
                   <span className="flex items-center gap-1">
                     <Wifi className="w-3 h-3" /> {a.tarmoq}
                   </span>
@@ -113,8 +113,8 @@ export default function AgentMonitorPage() {
             )
           })}
           {agents.length === 0 && !loading && (
-            <div className="text-center py-16 text-gray-400">
-              <MapPin className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+            <div className="text-center py-16 text-muted-foreground">
+              <MapPin className="w-12 h-12 mx-auto mb-3 text-muted-foreground/50" />
               <p className="text-sm">Agent ma&apos;lumotlari yo&apos;q</p>
             </div>
           )}

@@ -55,7 +55,7 @@ export default function ClientCategoriesPage() {
           <TabsContent value="category">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {DEFAULT_CATEGORIES.map(c => (
-                <div key={c.id} className="bg-white dark:bg-gray-900 rounded-xl border p-4 hover:shadow-md transition">
+                <div key={c.id} className="bg-card rounded-xl border p-4 hover:shadow-md transition">
                   <div className="flex items-start justify-between mb-3">
                     <c.icon className={`w-8 h-8 text-${c.color}-600`} />
                     <Badge className="bg-emerald-100 text-emerald-800">Faol</Badge>
@@ -71,7 +71,7 @@ export default function ClientCategoriesPage() {
           </TabsContent>
 
           <TabsContent value="type">
-            <div className="bg-white dark:bg-gray-900 rounded-xl border">
+            <div className="bg-card rounded-xl border">
               <Table>
                 <TableHeader><TableRow><TableHead>ID</TableHead><TableHead>Nomi</TableHead><TableHead className="text-center">Mijozlar</TableHead><TableHead className="text-center">Holat</TableHead><TableHead className="w-24"></TableHead></TableRow></TableHeader>
                 <TableBody>{DEFAULT_TYPES.map(t => (
@@ -88,7 +88,7 @@ export default function ClientCategoriesPage() {
           </TabsContent>
 
           <TabsContent value="channel">
-            <div className="bg-white dark:bg-gray-900 rounded-xl border p-10 text-center text-muted-foreground">
+            <div className="bg-card rounded-xl border p-10 text-center text-muted-foreground">
               <Store className="w-12 h-12 mx-auto mb-3 opacity-30" />
               Savdo kanallari hali sozlanmagan
             </div>

@@ -58,7 +58,7 @@ export default function NotificationsSettingsPage() {
             { icon: Smartphone, label: "SMS", color: "emerald" },
             { icon: Bell, label: "Push", color: "orange" },
           ].map((c, i) => (
-            <div key={i} className="bg-white dark:bg-gray-900 rounded-xl border p-4 text-center">
+            <div key={i} className="bg-card rounded-xl border p-4 text-center">
               <c.icon className={`w-8 h-8 mx-auto text-${c.color}-600 mb-2`} />
               <div className="font-bold">{c.label}</div>
               <Badge className="bg-emerald-100 text-emerald-800 text-xs mt-1">Faol</Badge>
@@ -67,7 +67,7 @@ export default function NotificationsSettingsPage() {
         </div>
 
         {/* Settings Table */}
-        <div className="bg-white dark:bg-gray-900 rounded-xl border overflow-x-auto">
+        <div className="bg-card rounded-xl border overflow-x-auto">
           <table className="w-full">
             <thead>
               <tr className="border-b">
@@ -80,7 +80,7 @@ export default function NotificationsSettingsPage() {
             </thead>
             <tbody>
               {settings.map(s => (
-                <tr key={s.id} className="border-b hover:bg-gray-50 dark:hover:bg-gray-800">
+                <tr key={s.id} className="border-b hover:bg-muted/50 dark:hover:bg-muted">
                   <td className="p-4">
                     <div className="font-medium">{s.label}</div>
                     <div className="text-xs text-muted-foreground">{s.desc}</div>

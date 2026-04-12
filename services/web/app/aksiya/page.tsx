@@ -44,7 +44,7 @@ export default function AksiyaPage() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold">🎁 Aksiyalar</h1>
-          <p className="text-sm text-gray-500 mt-1">Chegirmalar va aksiyalarni boshqaring</p>
+          <p className="text-sm text-muted-foreground mt-1">Chegirmalar va aksiyalarni boshqaring</p>
         </div>
         <button onClick={() => setShowForm(!showForm)} className="px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700">
           {showForm ? "Bekor qilish" : "+ Yangi aksiya"}
@@ -52,7 +52,7 @@ export default function AksiyaPage() {
       </div>
 
       {showForm && (
-        <div className="bg-white dark:bg-gray-900 rounded-xl border p-5 mb-6 space-y-4">
+        <div className="bg-card rounded-xl border p-5 mb-6 space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="text-sm font-medium">Nomi</label>
@@ -112,21 +112,21 @@ export default function AksiyaPage() {
 
       <div className="space-y-3">
         {aksiyalar.map((a: any) => (
-          <div key={a.id} className={`flex items-center justify-between p-4 rounded-xl border ${a.faol ? "bg-white dark:bg-gray-900" : "bg-gray-50 dark:bg-gray-950 opacity-60"}`}>
+          <div key={a.id} className={`flex items-center justify-between p-4 rounded-xl border ${a.faol ? "bg-card" : "bg-muted/50 dark:bg-gray-950 opacity-60"}`}>
             <div className="flex items-center gap-3">
               <span className="text-2xl">{TURLAR[a.turi]?.icon || "📋"}</span>
               <div>
                 <div className="font-medium">{a.nomi}</div>
-                <div className="text-xs text-gray-500">{TURLAR[a.turi]?.label} {a.chegirma_foiz > 0 ? `• ${a.chegirma_foiz}%` : ""} {a.min_summa > 0 ? `• min ${a.min_summa}` : ""}</div>
+                <div className="text-xs text-muted-foreground">{TURLAR[a.turi]?.label} {a.chegirma_foiz > 0 ? `• ${a.chegirma_foiz}%` : ""} {a.min_summa > 0 ? `• min ${a.min_summa}` : ""}</div>
               </div>
             </div>
             <button onClick={() => toggle(a.id, a.faol)}
               className={`w-11 h-6 rounded-full transition-colors relative ${a.faol ? "bg-emerald-500" : "bg-gray-300"}`}>
-              <div className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${a.faol ? "translate-x-5" : ""}`} />
+              <div className={`absolute top-0.5 left-0.5 w-5 h-5 bg-card rounded-full shadow transition-transform ${a.faol ? "translate-x-5" : ""}`} />
             </button>
           </div>
         ))}
-        {aksiyalar.length === 0 && <div className="text-center py-12 text-gray-400">Hali aksiyalar yo&apos;q</div>}
+        {aksiyalar.length === 0 && <div className="text-center py-12 text-muted-foreground">Hali aksiyalar yo&apos;q</div>}
       </div>
     </div>
   );

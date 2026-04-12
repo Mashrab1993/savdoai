@@ -52,7 +52,7 @@ export default function TemplatesPage() {
             <button
               key={c.key}
               onClick={() => setFilter(c.key)}
-              className={`px-3 py-1.5 rounded-md text-xs font-medium ${filter === c.key ? "bg-emerald-100 text-emerald-700" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}
+              className={`px-3 py-1.5 rounded-md text-xs font-medium ${filter === c.key ? "bg-emerald-100 text-emerald-700" : "bg-muted text-muted-foreground hover:bg-muted"}`}
             >{c.label}</button>
           ))}
         </div>
@@ -60,7 +60,7 @@ export default function TemplatesPage() {
         {/* Templates Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {filtered.map(t => (
-            <div key={t.id} className="bg-white dark:bg-gray-900 rounded-xl border p-4 hover:shadow-md transition">
+            <div key={t.id} className="bg-card rounded-xl border p-4 hover:shadow-md transition">
               <div className="flex items-start justify-between mb-3">
                 <div className="p-2 bg-emerald-50 rounded-lg">
                   <t.icon className="w-6 h-6 text-emerald-600" />

@@ -37,7 +37,7 @@ export default function OnlineOrdersPage() {
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {Object.entries(STATUS_MAP).map(([k, s]) => (
-            <button key={k} onClick={() => setFilter(Number(k))} className="bg-white dark:bg-gray-900 rounded-xl border p-4 hover:shadow-md transition">
+            <button key={k} onClick={() => setFilter(Number(k))} className="bg-card rounded-xl border p-4 hover:shadow-md transition">
               <div className="text-sm text-muted-foreground">{s.label}</div>
               <div className="text-2xl font-bold mt-1">0</div>
             </button>
@@ -52,7 +52,7 @@ export default function OnlineOrdersPage() {
           <Button onClick={() => setFilter(0)} variant={filter === 0 ? "default" : "outline"}>Barchasi</Button>
         </div>
 
-        <div className="bg-white dark:bg-gray-900 rounded-xl border overflow-x-auto">
+        <div className="bg-card rounded-xl border overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
@@ -85,7 +85,7 @@ export default function OnlineOrdersPage() {
                   <TableCell className="text-center font-mono font-bold">{formatCurrency(o.summa)}</TableCell>
                   <TableCell><Badge variant="secondary">{o.tolov}</Badge></TableCell>
                   <TableCell className="text-center">
-                    <Badge className={STATUS_MAP[o.holat]?.color || "bg-gray-100"}>{STATUS_MAP[o.holat]?.label || "-"}</Badge>
+                    <Badge className={STATUS_MAP[o.holat]?.color || "bg-muted"}>{STATUS_MAP[o.holat]?.label || "-"}</Badge>
                   </TableCell>
                   <TableCell className="text-sm text-muted-foreground">{o.sana}</TableCell>
                   <TableCell>

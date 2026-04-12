@@ -36,7 +36,7 @@ export default function AgentRoutesPage() {
           <Button variant="outline"><Filter className="w-4 h-4 mr-1" /> Filter</Button>
         </div>
 
-        <div className="bg-white dark:bg-gray-900 rounded-xl border overflow-x-auto">
+        <div className="bg-card rounded-xl border overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>

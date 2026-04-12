@@ -79,7 +79,7 @@ export default function PriceListPage() {
               key={p.key}
               onClick={() => setSelectedType(p.key)}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
-                selectedType === p.key ? p.color : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                selectedType === p.key ? p.color : "bg-muted text-muted-foreground hover:bg-muted"
               }`}
             >
               {p.label}
@@ -89,7 +89,7 @@ export default function PriceListPage() {
 
         {/* Stats */}
         <div className="grid grid-cols-3 gap-4">
-          <div className="bg-white dark:bg-gray-900 rounded-xl border p-4">
+          <div className="bg-card rounded-xl border p-4">
             <div className="text-sm text-muted-foreground">Tovarlar soni</div>
             <div className="text-2xl font-bold mt-1">{items.length}</div>
           </div>
@@ -117,7 +117,7 @@ export default function PriceListPage() {
             <div className="animate-spin h-8 w-8 border-b-2 border-emerald-500 rounded-full" />
           </div>
         ) : (
-          <div className="bg-white dark:bg-gray-900 rounded-xl border overflow-x-auto">
+          <div className="bg-card rounded-xl border overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>

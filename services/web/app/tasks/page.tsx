@@ -11,7 +11,7 @@ const HOLAT_RANG: Record<string, string> = {
   yangi: "border-blue-300 bg-blue-50",
   jarayonda: "border-amber-300 bg-amber-50",
   bajarildi: "border-emerald-300 bg-emerald-50",
-  bekor: "border-gray-300 bg-gray-50 opacity-50",
+  bekor: "border-border bg-muted/50 opacity-50",
 }
 const MUHIMLIK_EMOJI: Record<string, string> = { kritik: "🔴", yuqori: "🟠", oddiy: "🟡", past: "⚪" }
 const TURI_EMOJI: Record<string, string> = { umumiy: "📋", sotuv: "💰", qarz_yigish: "💳", foto: "📸", tashrif: "📍", ombor: "📦" }
@@ -65,7 +65,7 @@ export default function TasksPage() {
             ].map(f => (
               <button key={f.val} onClick={() => setFilter(f.val)}
                 className={`px-3 py-1.5 rounded-lg text-xs font-medium ${
-                  filter === f.val ? "bg-emerald-600 text-white" : "bg-gray-100 dark:bg-gray-800 text-gray-600"
+                  filter === f.val ? "bg-emerald-600 text-white" : "bg-muted dark:bg-muted text-muted-foreground"
                 }`}>{f.label}</button>
             ))}
           </div>
@@ -77,7 +77,7 @@ export default function TasksPage() {
         {/* Task cards */}
         <div className="space-y-2">
           {tasks.map((t: any) => (
-            <div key={t.id} className={`p-4 rounded-xl border-l-4 bg-white dark:bg-gray-900 border ${HOLAT_RANG[t.holat] || ""}`}>
+            <div key={t.id} className={`p-4 rounded-xl border-l-4 bg-card border ${HOLAT_RANG[t.holat] || ""}`}>
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
@@ -85,8 +85,8 @@ export default function TasksPage() {
                     <span>{TURI_EMOJI[t.turi] || "📋"}</span>
                     <span className="text-sm font-semibold">{t.sarlavha}</span>
                   </div>
-                  {t.tavsif && <p className="text-xs text-gray-500 mb-1">{t.tavsif}</p>}
-                  <div className="flex gap-3 text-[10px] text-gray-400">
+                  {t.tavsif && <p className="text-xs text-muted-foreground mb-1">{t.tavsif}</p>}
+                  <div className="flex gap-3 text-[10px] text-muted-foreground">
                     {t.klient_nomi && <span>👤 {t.klient_nomi}</span>}
                     {t.muddat && <span>📅 {t.muddat}</span>}
                     <span>🕐 {t.yaratilgan ? new Date(t.yaratilgan).toLocaleDateString("uz") : ""}</span>
@@ -106,7 +106,7 @@ export default function TasksPage() {
             </div>
           ))}
           {tasks.length === 0 && !loading && (
-            <div className="text-center py-16 text-gray-400 text-sm">Topshiriqlar yo&apos;q</div>
+            <div className="text-center py-16 text-muted-foreground text-sm">Topshiriqlar yo&apos;q</div>
           )}
         </div>
       </div>

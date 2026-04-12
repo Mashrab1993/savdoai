@@ -28,14 +28,14 @@ export default function AuditDashboardPage() {
             { label: "Foto hisobotlar", value: 0, icon: Camera, color: "text-purple-600" },
             { label: "SKU audit", value: 0, icon: BarChart3, color: "text-orange-600" },
           ].map((s, i) => (
-            <div key={i} className="bg-white dark:bg-gray-900 rounded-xl border p-4">
+            <div key={i} className="bg-card rounded-xl border p-4">
               <div className={`text-sm ${s.color} flex items-center gap-1`}><s.icon className="w-4 h-4" /> {s.label}</div>
               <div className="text-2xl font-bold mt-1">{s.value}</div>
             </div>
           ))}
         </div>
 
-        <div className="bg-white dark:bg-gray-900 rounded-xl border overflow-x-auto">
+        <div className="bg-card rounded-xl border overflow-x-auto">
           <Table><TableHeader><TableRow>
             <TableHead>Agent</TableHead>
             <TableHead className="text-center">Reja vizit</TableHead>

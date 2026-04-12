@@ -39,9 +39,9 @@ export default function CalendarPage() {
           <>
             {/* Stats */}
             <div className="flex gap-3">
-              <div className="bg-white dark:bg-gray-900 rounded-xl border px-4 py-3 text-center flex-1">
+              <div className="bg-card rounded-xl border px-4 py-3 text-center flex-1">
                 <div className="text-xl font-bold">{bugun.jami}</div>
-                <div className="text-[10px] text-gray-500">Jami klient</div>
+                <div className="text-[10px] text-muted-foreground">Jami klient</div>
               </div>
               <div className="bg-emerald-50 dark:bg-emerald-900/10 rounded-xl border border-emerald-200 px-4 py-3 text-center flex-1">
                 <div className="text-xl font-bold text-emerald-600">{bugun.checkin_qilindi}</div>
@@ -56,7 +56,7 @@ export default function CalendarPage() {
             {/* Client list */}
             <div className="space-y-2">
               {(bugun.klientlar || []).map((k: any, i: number) => (
-                <div key={i} className={`bg-white dark:bg-gray-900 rounded-xl border p-4 ${
+                <div key={i} className={`bg-card rounded-xl border p-4 ${
                   k.checkin_qilindi ? "border-emerald-200 bg-emerald-50/30" : ""
                 }`}>
                   <div className="flex items-center justify-between">
@@ -71,7 +71,7 @@ export default function CalendarPage() {
                       </div>
                       <div>
                         <div className="text-sm font-semibold">{(k.nom || k.ism || "") || k.ism || k.klient_nomi || k.klient_ismi}</div>
-                        <div className="text-xs text-gray-500 flex items-center gap-2">
+                        <div className="text-xs text-muted-foreground flex items-center gap-2">
                           {k.telefon && <span className="flex items-center gap-0.5"><Phone className="w-3 h-3" />{k.telefon}</span>}
                           {k.manzil && <span>{k.manzil}</span>}
                         </div>
@@ -87,8 +87,8 @@ export default function CalendarPage() {
                 </div>
               ))}
               {(!bugun.klientlar?.length) && (
-                <div className="text-center py-16 text-gray-400 text-sm">
-                  <Calendar className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                <div className="text-center py-16 text-muted-foreground text-sm">
+                  <Calendar className="w-12 h-12 mx-auto mb-3 text-muted-foreground/50" />
                   Bugun uchun tashrif jadvali yo&apos;q
                 </div>
               )}
@@ -99,23 +99,23 @@ export default function CalendarPage() {
         {tab === "hafta" && hafta && (
           <div className="grid grid-cols-7 gap-2">
             {(hafta.hafta || []).map((h: any, i: number) => (
-              <div key={i} className={`bg-white dark:bg-gray-900 rounded-xl border p-3 text-center ${
+              <div key={i} className={`bg-card rounded-xl border p-3 text-center ${
                 i === todayIdx ? "ring-2 ring-emerald-500 border-emerald-300" : ""
               }`}>
-                <div className={`text-xs font-bold mb-2 ${i === todayIdx ? "text-emerald-600" : "text-gray-500"}`}>
+                <div className={`text-xs font-bold mb-2 ${i === todayIdx ? "text-emerald-600" : "text-muted-foreground"}`}>
                   {KUNLAR[i]}
                 </div>
-                <div className={`text-2xl font-bold mb-1 ${h.klient_soni > 0 ? "text-blue-600" : "text-gray-300"}`}>
+                <div className={`text-2xl font-bold mb-1 ${h.klient_soni > 0 ? "text-blue-600" : "text-muted-foreground/50"}`}>
                   {h.klient_soni}
                 </div>
-                <div className="text-[9px] text-gray-400">klient</div>
+                <div className="text-[9px] text-muted-foreground">klient</div>
                 {h.klientlar?.length > 0 && (
                   <div className="mt-2 space-y-0.5">
                     {h.klientlar.slice(0, 3).map((n: string, j: number) => (
-                      <div key={j} className="text-[9px] text-gray-500 truncate">{n}</div>
+                      <div key={j} className="text-[9px] text-muted-foreground truncate">{n}</div>
                     ))}
                     {h.klientlar.length > 3 && (
-                      <div className="text-[9px] text-gray-400">+{h.klientlar.length - 3}</div>
+                      <div className="text-[9px] text-muted-foreground">+{h.klientlar.length - 3}</div>
                     )}
                   </div>
                 )}

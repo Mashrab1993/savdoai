@@ -145,7 +145,7 @@ export default function NakladnoyPage() {
 
         {/* Stats */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          <div className="bg-white dark:bg-gray-900 rounded-xl border p-4">
+          <div className="bg-card rounded-xl border p-4">
             <div className="text-sm text-muted-foreground flex items-center gap-1">
               <Truck className="w-3 h-3" /> Bugungi nakladnoy
             </div>
@@ -179,7 +179,7 @@ export default function NakladnoyPage() {
             <div className="animate-spin h-8 w-8 border-b-2 border-emerald-500 rounded-full" />
           </div>
         ) : (
-          <div className="bg-white dark:bg-gray-900 rounded-xl border overflow-x-auto">
+          <div className="bg-card rounded-xl border overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>

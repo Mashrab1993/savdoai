@@ -53,7 +53,7 @@ function Sparkline({ data, color = "#10b981" }: { data: number[]; color?: string
 // ═══════════════════════════════════════════════════════════
 function StatCard({ icon: Icon, label, value, trend, sparkData, color = "emerald", pulse = false }: any) {
   return (
-    <div className={`relative bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-4 overflow-hidden ${pulse ? "ring-2 ring-emerald-400 ring-opacity-50" : ""}`}>
+    <div className={`relative bg-card rounded-xl border border-border dark:border-border p-4 overflow-hidden ${pulse ? "ring-2 ring-emerald-400 ring-opacity-50" : ""}`}>
       {pulse && <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />}
       <div className="flex items-center justify-between mb-2">
         <div className={`p-2 rounded-lg bg-${color}-50 dark:bg-${color}-900/20`}>
@@ -61,11 +61,11 @@ function StatCard({ icon: Icon, label, value, trend, sparkData, color = "emerald
         </div>
         {sparkData && <Sparkline data={sparkData} color={color === "emerald" ? "#10b981" : color === "blue" ? "#3b82f6" : "#f59e0b"} />}
       </div>
-      <div className="text-2xl font-bold text-gray-900 dark:text-white">
+      <div className="text-2xl font-bold text-foreground dark:text-white">
         <AnimatedNumber value={typeof value === "number" ? value : Number(value) || 0} />
       </div>
       <div className="flex items-center justify-between mt-1">
-        <span className="text-xs text-gray-500">{label}</span>
+        <span className="text-xs text-muted-foreground">{label}</span>
         {trend !== undefined && trend !== null && (
           <span className={`text-xs font-medium flex items-center gap-0.5 ${trend >= 0 ? "text-emerald-600" : "text-red-500"}`}>
             {trend >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
@@ -82,11 +82,11 @@ function StatCard({ icon: Icon, label, value, trend, sparkData, color = "emerald
 // ═══════════════════════════════════════════════════════════
 function ActivityItem({ emoji, text, time, summa, isNew = false }: any) {
   return (
-    <div className={`flex items-center gap-3 py-2.5 px-3 rounded-lg transition-all ${isNew ? "bg-emerald-50 dark:bg-emerald-900/10 animate-pulse" : "hover:bg-gray-50 dark:hover:bg-gray-800/50"}`}>
+    <div className={`flex items-center gap-3 py-2.5 px-3 rounded-lg transition-all ${isNew ? "bg-emerald-50 dark:bg-emerald-900/10 animate-pulse" : "hover:bg-muted/50 dark:hover:bg-muted/50"}`}>
       <span className="text-lg flex-shrink-0">{emoji}</span>
       <div className="flex-1 min-w-0">
         <div className="text-sm font-medium truncate">{text}</div>
-        <div className="text-[11px] text-gray-400">{time}</div>
+        <div className="text-[11px] text-muted-foreground">{time}</div>
       </div>
       {summa && <span className="text-sm font-bold text-emerald-600 flex-shrink-0">{summa}</span>}
     </div>
@@ -156,12 +156,12 @@ export default function LiveDashboardPage() {
               <div className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse" />
               <span className="text-sm font-bold text-red-600 uppercase tracking-wide">LIVE</span>
             </div>
-            <span className="text-sm text-gray-500">
+            <span className="text-sm text-muted-foreground">
               {now.toLocaleTimeString("uz-UZ")}
             </span>
           </div>
           {reja && (
-            <div className="flex items-center gap-2 text-xs text-gray-500 bg-gray-50 dark:bg-gray-800 px-3 py-1.5 rounded-full">
+            <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/50 dark:bg-muted px-3 py-1.5 rounded-full">
               <Target className="w-3 h-3" />
               <span>Bugungi reja: {reja.vazifalar_soni || 0} vazifa</span>
             </div>
@@ -197,13 +197,13 @@ export default function LiveDashboardPage() {
 
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
           {/* Live Activity Feed */}
-          <div className="lg:col-span-3 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800">
-            <div className="flex items-center justify-between p-4 border-b border-gray-100 dark:border-gray-800">
+          <div className="lg:col-span-3 bg-card rounded-xl border border-border dark:border-border">
+            <div className="flex items-center justify-between p-4 border-b border-border/60 dark:border-border">
               <div className="flex items-center gap-2">
                 <Activity className="w-4 h-4 text-emerald-600" />
                 <h3 className="text-sm font-semibold">Jonli oqim</h3>
               </div>
-              <span className="text-[10px] text-gray-400">{sotuvlar.length} ta</span>
+              <span className="text-[10px] text-muted-foreground">{sotuvlar.length} ta</span>
             </div>
             <div className="max-h-96 overflow-y-auto divide-y divide-gray-50 dark:divide-gray-800">
               {sotuvlar.map((s: any, i: number) => (
@@ -217,7 +217,7 @@ export default function LiveDashboardPage() {
                 />
               ))}
               {sotuvlar.length === 0 && (
-                <div className="text-center py-12 text-gray-400 text-sm">
+                <div className="text-center py-12 text-muted-foreground text-sm">
                   Bugun hali sotuv yo&apos;q
                 </div>
               )}
@@ -225,18 +225,18 @@ export default function LiveDashboardPage() {
           </div>
 
           {/* Daily Plan sidebar */}
-          <div className="lg:col-span-2 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800">
-            <div className="flex items-center gap-2 p-4 border-b border-gray-100 dark:border-gray-800">
+          <div className="lg:col-span-2 bg-card rounded-xl border border-border dark:border-border">
+            <div className="flex items-center gap-2 p-4 border-b border-border/60 dark:border-border">
               <Clock className="w-4 h-4 text-blue-600" />
               <h3 className="text-sm font-semibold">Bugungi reja</h3>
             </div>
             <div className="max-h-96 overflow-y-auto">
               {(reja?.vazifalar || []).map((v: any, i: number) => (
-                <div key={i} className="flex items-start gap-3 p-3 border-b border-gray-50 dark:border-gray-800 last:border-0">
+                <div key={i} className="flex items-start gap-3 p-3 border-b border-gray-50 dark:border-border last:border-0">
                   <span className="text-lg flex-shrink-0 mt-0.5">{v.emoji}</span>
                   <div className="flex-1 min-w-0">
                     <div className="text-sm font-medium">{v.sarlavha}</div>
-                    <div className="text-[11px] text-gray-500 mt-0.5">{v.tafsilot}</div>
+                    <div className="text-[11px] text-muted-foreground mt-0.5">{v.tafsilot}</div>
                   </div>
                   {v.summa && (
                     <span className="text-xs font-bold text-emerald-600 flex-shrink-0">{Number(v.summa).toLocaleString()}</span>
@@ -244,8 +244,8 @@ export default function LiveDashboardPage() {
                 </div>
               ))}
               {(!reja?.vazifalar?.length) && (
-                <div className="text-center py-8 text-gray-400 text-sm">
-                  <Zap className="w-8 h-8 mx-auto mb-2 text-gray-300" />
+                <div className="text-center py-8 text-muted-foreground text-sm">
+                  <Zap className="w-8 h-8 mx-auto mb-2 text-muted-foreground/50" />
                   Bugungi reja bo&apos;sh
                 </div>
               )}

@@ -34,10 +34,10 @@ export default function PlanningPage() {
         </div>
 
         <div className="flex gap-3 items-center">
-          <select value={month} onChange={e => setMonth(Number(e.target.value))} className="border rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-900">
+          <select value={month} onChange={e => setMonth(Number(e.target.value))} className="border rounded-lg px-3 py-2 text-sm bg-card">
             {months.map((m, i) => <option key={i} value={i}>{m}</option>)}
           </select>
-          <select value={year} onChange={e => setYear(Number(e.target.value))} className="border rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-900">
+          <select value={year} onChange={e => setYear(Number(e.target.value))} className="border rounded-lg px-3 py-2 text-sm bg-card">
             {[2025, 2026, 2027].map(y => <option key={y} value={y}>{y}</option>)}
           </select>
         </div>
@@ -46,7 +46,7 @@ export default function PlanningPage() {
           <TabsList><TabsTrigger value="plan"><Pencil className="w-4 h-4 mr-1" /> Reja o'rnatish</TabsTrigger><TabsTrigger value="result"><BarChart3 className="w-4 h-4 mr-1" /> Bajarilish</TabsTrigger></TabsList>
 
           <TabsContent value="plan">
-            <div className="bg-white dark:bg-gray-900 rounded-xl border overflow-x-auto">
+            <div className="bg-card rounded-xl border overflow-x-auto">
               <Table>
                 <TableHeader><TableRow>
                   <TableHead>Agent</TableHead><TableHead className="text-center">Summa rejasi</TableHead><TableHead className="text-center">Miqdor rejasi</TableHead>
@@ -75,7 +75,7 @@ export default function PlanningPage() {
           </TabsContent>
 
           <TabsContent value="result">
-            <div className="bg-white dark:bg-gray-900 rounded-xl border overflow-x-auto">
+            <div className="bg-card rounded-xl border overflow-x-auto">
               <Table>
                 <TableHeader><TableRow>
                   <TableHead>Agent</TableHead>
@@ -96,7 +96,7 @@ export default function PlanningPage() {
                         <TableCell className="text-center font-mono">{formatCurrency(p.reja_summa)} / {formatCurrency(p.fakt_summa)}</TableCell>
                         <TableCell className="text-center">
                           <div className="flex items-center justify-center gap-2">
-                            <div className="w-20 h-2 bg-gray-200 rounded-full overflow-hidden"><div className={`h-full rounded-full ${pls >= 80 ? "bg-emerald-500" : pls >= 50 ? "bg-yellow-500" : "bg-red-500"}`} style={{ width: `${pls}%` }} /></div>
+                            <div className="w-20 h-2 bg-muted rounded-full overflow-hidden"><div className={`h-full rounded-full ${pls >= 80 ? "bg-emerald-500" : pls >= 50 ? "bg-yellow-500" : "bg-red-500"}`} style={{ width: `${pls}%` }} /></div>
                             <span className="font-bold text-sm">{pls}%</span>
                           </div>
                         </TableCell>

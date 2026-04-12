@@ -151,17 +151,17 @@ export default function MaterialReportPage() {
             <div className="animate-spin h-8 w-8 border-b-2 border-emerald-500 rounded-full" />
           </div>
         ) : (
-          <div className="bg-white dark:bg-gray-900 rounded-xl border overflow-x-auto">
+          <div className="bg-card rounded-xl border overflow-x-auto">
             <Table>
               <TableHeader>
-                <TableRow className="bg-gray-50 dark:bg-gray-800">
+                <TableRow className="bg-muted/50 dark:bg-muted">
                   <TableHead rowSpan={2} className="border-r font-bold">Tovar</TableHead>
                   <TableHead rowSpan={2} className="border-r text-center font-bold">Bosh qoldiq</TableHead>
                   <TableHead colSpan={4} className="text-center border-r bg-emerald-50 dark:bg-emerald-900/10 font-bold text-emerald-700">KIRIM</TableHead>
                   <TableHead colSpan={6} className="text-center border-r bg-red-50 dark:bg-red-900/10 font-bold text-red-700">CHIQIM</TableHead>
                   <TableHead rowSpan={2} className="text-center font-bold bg-blue-50 dark:bg-blue-900/10 text-blue-700">Oxirgi qoldiq</TableHead>
                 </TableRow>
-                <TableRow className="bg-gray-50 dark:bg-gray-800 text-xs">
+                <TableRow className="bg-muted/50 dark:bg-muted text-xs">
                   {/* Kirim sub-headers */}
                   <TableHead className="text-center bg-emerald-50/50 text-xs">Kirim</TableHead>
                   <TableHead className="text-center bg-emerald-50/50 text-xs">Korrek+</TableHead>
@@ -185,7 +185,7 @@ export default function MaterialReportPage() {
                     </TableCell>
                   </TableRow>
                 ) : data.map((t, i) => (
-                  <TableRow key={t.id || i} className={i % 2 === 0 ? "" : "bg-gray-50/50 dark:bg-gray-800/50"}>
+                  <TableRow key={t.id || i} className={i % 2 === 0 ? "" : "bg-muted/50/50 dark:bg-muted/50"}>
                     <TableCell className="border-r">
                       <div className="font-medium text-sm">{t.nomi}</div>
                       {t.kategoriya && <div className="text-xs text-muted-foreground">{t.kategoriya}</div>}

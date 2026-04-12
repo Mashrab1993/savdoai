@@ -88,10 +88,10 @@ export default function ReestrPage() {
             <div className="animate-spin h-8 w-8 border-b-2 border-emerald-500 rounded-full" />
           </div>
         ) : (
-          <div className="bg-white dark:bg-gray-900 rounded-xl border overflow-x-auto">
+          <div className="bg-card rounded-xl border overflow-x-auto">
             <Table>
               <TableHeader>
-                <TableRow className="bg-gray-50 dark:bg-gray-800">
+                <TableRow className="bg-muted/50 dark:bg-muted">
                   <TableHead className="font-bold">№</TableHead>
                   <TableHead className="font-bold">Дата отгрузки</TableHead>
                   <TableHead className="font-bold">Торгов. Точка</TableHead>

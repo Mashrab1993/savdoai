@@ -79,7 +79,7 @@ export default function SystemStatusPage() {
         {/* Services */}
         <div className="space-y-3">
           {services.map((s, i) => (
-            <div key={i} className="bg-white dark:bg-gray-900 rounded-xl border p-4">
+            <div key={i} className="bg-card rounded-xl border p-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <s.icon className="w-6 h-6 text-emerald-600" />
@@ -105,17 +105,17 @@ export default function SystemStatusPage() {
 
         {/* Server Resources */}
         <div className="grid grid-cols-3 gap-4">
-          <div className="bg-white dark:bg-gray-900 rounded-xl border p-4 text-center">
+          <div className="bg-card rounded-xl border p-4 text-center">
             <Cpu className="w-8 h-8 mx-auto text-blue-600 mb-2" />
             <div className="text-sm text-muted-foreground">CPU</div>
             <div className="text-2xl font-bold">12%</div>
           </div>
-          <div className="bg-white dark:bg-gray-900 rounded-xl border p-4 text-center">
+          <div className="bg-card rounded-xl border p-4 text-center">
             <HardDrive className="w-8 h-8 mx-auto text-emerald-600 mb-2" />
             <div className="text-sm text-muted-foreground">RAM</div>
             <div className="text-2xl font-bold">8%</div>
           </div>
-          <div className="bg-white dark:bg-gray-900 rounded-xl border p-4 text-center">
+          <div className="bg-card rounded-xl border p-4 text-center">
             <Database className="w-8 h-8 mx-auto text-purple-600 mb-2" />
             <div className="text-sm text-muted-foreground">Disk</div>
             <div className="text-2xl font-bold">8%</div>

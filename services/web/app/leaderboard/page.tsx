@@ -45,8 +45,8 @@ export default function LeaderboardPage() {
               <span>{myStats.daraja_nomi}</span>
               <span>{myStats.keyingi_daraja} ga {nextXP} XP qoldi</span>
             </div>
-            <div className="bg-white/20 rounded-full h-3 overflow-hidden">
-              <div className="bg-white rounded-full h-full transition-all" style={{ width: `${progress}%` }} />
+            <div className="bg-card/20 rounded-full h-3 overflow-hidden">
+              <div className="bg-card rounded-full h-full transition-all" style={{ width: `${progress}%` }} />
             </div>
           </div>
 
@@ -80,7 +80,7 @@ export default function LeaderboardPage() {
           {[["hafta", "Hafta"], ["oy", "Oy"]].map(([k, l]: string[]) => (
             <button key={k} onClick={() => setDavr(k)}
               className={`px-3 py-1.5 rounded-lg text-xs font-medium ${
-                davr === k ? "bg-emerald-600 text-white" : "bg-gray-100 dark:bg-gray-800 text-gray-600"
+                davr === k ? "bg-emerald-600 text-white" : "bg-muted dark:bg-muted text-muted-foreground"
               }`}>{l}</button>
           ))}
         </div>
@@ -89,11 +89,11 @@ export default function LeaderboardPage() {
       <div className="space-y-2">
         {board.map((r: any, i: number) => (
           <div key={i} className={`flex items-center justify-between p-3.5 rounded-xl border ${
-            i < 3 ? "bg-gradient-to-r from-amber-50 to-white dark:from-amber-900/10 dark:to-gray-900 border-amber-200 dark:border-amber-800" : "bg-white dark:bg-gray-900"
+            i < 3 ? "bg-gradient-to-r from-amber-50 to-white dark:from-amber-900/10 dark:to-gray-900 border-amber-200 dark:border-amber-800" : "bg-card"
           }`}>
             <div className="flex items-center gap-3">
               <div className="w-8 text-center">
-                {r.medal ? <span className="text-xl">{r.medal}</span> : <span className="text-sm font-bold text-gray-400">{r.reyting}</span>}
+                {r.medal ? <span className="text-xl">{r.medal}</span> : <span className="text-sm font-bold text-muted-foreground">{r.reyting}</span>}
               </div>
               <div>
                 <div className="flex items-center gap-1.5">
@@ -101,16 +101,16 @@ export default function LeaderboardPage() {
                   <span className="text-sm font-semibold">{r.nom}</span>
                   {r.streak >= 7 && <span className="text-xs">🔥{r.streak}</span>}
                 </div>
-                <div className="text-xs text-gray-500">{r.sotuv_soni} sotuv • {r.klient_soni} klient</div>
+                <div className="text-xs text-muted-foreground">{r.sotuv_soni} sotuv • {r.klient_soni} klient</div>
               </div>
             </div>
             <div className="text-right">
               <div className="text-sm font-bold text-emerald-600">{Number(r.jami_summa).toLocaleString()}</div>
-              <div className="text-[10px] text-gray-400">so&apos;m</div>
+              <div className="text-[10px] text-muted-foreground">so&apos;m</div>
             </div>
           </div>
         ))}
-        {board.length === 0 && <div className="text-center py-12 text-gray-400">Hali reyting yo&apos;q</div>}
+        {board.length === 0 && <div className="text-center py-12 text-muted-foreground">Hali reyting yo&apos;q</div>}
       </div>
     </div>
   );

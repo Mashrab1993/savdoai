@@ -23,7 +23,7 @@ export default function TerritoriesPage() {
           <Button onClick={() => setShowAdd(true)} className="bg-emerald-600 hover:bg-emerald-700"><Plus className="w-4 h-4 mr-1" /> Yangi</Button>
         </div>
         <div className="relative"><Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" /><Input placeholder="Qidirish..." value={search} onChange={e => setSearch(e.target.value)} className="pl-10" /></div>
-        <div className="bg-white dark:bg-gray-900 rounded-xl border">
+        <div className="bg-card rounded-xl border">
           <Table><TableHeader><TableRow><TableHead>#</TableHead><TableHead>Nomi</TableHead><TableHead>Viloyat</TableHead><TableHead>Tuman</TableHead><TableHead className="text-center">Mijozlar</TableHead><TableHead className="text-center">Holat</TableHead><TableHead className="w-24"></TableHead></TableRow></TableHeader>
             <TableBody>{territories.length === 0 ? (
               <TableRow><TableCell colSpan={7} className="text-center py-10 text-muted-foreground"><MapPin className="w-10 h-10 mx-auto mb-2 opacity-30" />Territoriyalar topilmadi</TableCell></TableRow>

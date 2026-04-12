@@ -68,10 +68,10 @@ export default function TashrifPage() {
   return (
     <div className="max-w-4xl mx-auto p-4 sm:p-6">
       <h1 className="text-2xl font-bold mb-1">📍 Tashriflar</h1>
-      <p className="text-sm text-gray-500 mb-6">Check-in/out va tashrif boshqaruvi</p>
+      <p className="text-sm text-muted-foreground mb-6">Check-in/out va tashrif boshqaruvi</p>
 
       {/* Check-in formasi */}
-      <div className="bg-white dark:bg-gray-900 rounded-xl border p-4 mb-6">
+      <div className="bg-card rounded-xl border p-4 mb-6">
         <div className="flex items-center gap-3">
           <input
             type="number"
@@ -93,13 +93,13 @@ export default function TashrifPage() {
       {/* Ochiq check-inlar */}
       {ochiq.length > 0 && (
         <div className="mb-6">
-          <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">🟢 Ochiq tashriflar</h3>
+          <h3 className="text-sm font-semibold text-foreground dark:text-muted-foreground/50 mb-2">🟢 Ochiq tashriflar</h3>
           <div className="space-y-2">
             {ochiq.map((t: any) => (
               <div key={t.id || t.vaqt} className="flex items-center justify-between p-3 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg border border-emerald-200 dark:border-emerald-800">
                 <div>
                   <span className="font-medium text-sm">{t.klient_nomi || `Klient #${t.klient_id}`}</span>
-                  <span className="text-xs text-gray-500 ml-2">{t.vaqt ? new Date(t.vaqt).toLocaleTimeString("uz") : ""}</span>
+                  <span className="text-xs text-muted-foreground ml-2">{t.vaqt ? new Date(t.vaqt).toLocaleTimeString("uz") : ""}</span>
                 </div>
                 <button onClick={() => doCheckout(t.klient_id)}
                   className="px-3 py-1.5 bg-orange-500 text-white rounded text-xs font-medium hover:bg-orange-600">
@@ -112,8 +112,8 @@ export default function TashrifPage() {
       )}
 
       {/* Tarix */}
-      <div className="bg-white dark:bg-gray-900 rounded-xl border overflow-hidden">
-        <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-800">
+      <div className="bg-card rounded-xl border overflow-hidden">
+        <div className="px-4 py-3 border-b border-border/60 dark:border-border">
           <h3 className="text-sm font-semibold">Tashrif tarixi</h3>
         </div>
         <div className="divide-y divide-gray-100 dark:divide-gray-800">
@@ -125,16 +125,16 @@ export default function TashrifPage() {
                 </span>
                 <div>
                   <div className="text-sm font-medium">{t.klient_nomi || `Klient #${t.klient_id}`}</div>
-                  <div className="text-xs text-gray-500">
+                  <div className="text-xs text-muted-foreground">
                     {t.turi === "checkin" ? "Kirish" : "Chiqish"}
                     {t.latitude ? ` • ${t.latitude.toFixed(4)}, ${t.longitude.toFixed(4)}` : ""}
                   </div>
                 </div>
               </div>
-              <span className="text-xs text-gray-400">{t.vaqt ? new Date(t.vaqt).toLocaleString("uz") : ""}</span>
+              <span className="text-xs text-muted-foreground">{t.vaqt ? new Date(t.vaqt).toLocaleString("uz") : ""}</span>
             </div>
           ))}
-          {tashriflar.length === 0 && <div className="text-center py-12 text-gray-400">Tashriflar yo&apos;q</div>}
+          {tashriflar.length === 0 && <div className="text-center py-12 text-muted-foreground">Tashriflar yo&apos;q</div>}
         </div>
       </div>
     </div>
