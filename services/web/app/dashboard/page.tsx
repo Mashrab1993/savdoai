@@ -91,19 +91,51 @@ export default function DashboardPage() {
               </div>
             )}
 
-            {/* Kam qoldiq ogohlantirish */}
+            {/* Kam qoldiq ogohlantirish — enriched with product names */}
             {statsExtra && statsExtra.kam_qoldiq_soni > 0 && (
-              <div className="bg-yellow-50 dark:bg-yellow-950/20 border-l-4 border-yellow-500 rounded-lg p-4 flex items-start gap-3">
-                <Package className="w-5 h-5 text-yellow-600 dark:text-yellow-400 shrink-0 mt-0.5" />
-                <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-yellow-900 dark:text-yellow-300 text-sm">
-                    {locale === "uz"
-                      ? `${statsExtra.kam_qoldiq_soni} ta tovar qoldig'i kam`
-                      : `${statsExtra.kam_qoldiq_soni} товаров с низким остатком`}
-                  </p>
-                  <Link href="/products" className="text-xs text-yellow-700 dark:text-yellow-400 underline mt-1 inline-block">
-                    {locale === "uz" ? "Tovarlarni ko'rish →" : "Посмотреть товары →"}
+              <div className="bg-amber-500/10 border-l-4 border-amber-500 rounded-2xl p-4 space-y-2">
+                <div className="flex items-start gap-3">
+                  <Package className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-amber-800 dark:text-amber-200 text-sm">
+                      {locale === "uz"
+                        ? `${statsExtra.kam_qoldiq_soni} ta tovar qoldig'i kam`
+                        : `${statsExtra.kam_qoldiq_soni} товаров с низким остатком`}
+                    </p>
+                  </div>
+                  <Link href="/products" className="text-xs text-amber-700 dark:text-amber-300 underline shrink-0">
+                    {locale === "uz" ? "Barchasi →" : "Все →"}
                   </Link>
+                </div>
+                {Array.isArray((statsExtra as any).kam_qoldiq_tovarlar) && (statsExtra as any).kam_qoldiq_tovarlar.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 pl-8">
+                    {(statsExtra as any).kam_qoldiq_tovarlar.slice(0, 5).map((t: any) => (
+                      <span key={t.id} className="inline-flex items-center gap-1 text-[11px] font-medium bg-amber-500/15 text-amber-800 dark:text-amber-200 rounded-full px-2 py-0.5 border border-amber-500/30">
+                        {t.nomi}
+                        <span className="text-amber-600 dark:text-amber-400 font-bold tabular-nums">{Number(t.qoldiq)}</span>
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Bugungi top sellers */}
+            {Array.isArray((statsExtra as any)?.top_bugun) && (statsExtra as any).top_bugun.length > 0 && (
+              <div className="bg-emerald-500/10 border-l-4 border-emerald-500 rounded-2xl p-4">
+                <div className="flex items-start gap-3 mb-2">
+                  <TrendingUp className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+                  <p className="font-semibold text-emerald-800 dark:text-emerald-200 text-sm">
+                    {locale === "uz" ? "Bugun eng ko'p sotilgan" : "Топ продажи сегодня"}
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-1.5 pl-8">
+                  {(statsExtra as any).top_bugun.map((t: any, i: number) => (
+                    <span key={i} className="inline-flex items-center gap-1.5 text-[11px] font-medium bg-emerald-500/15 text-emerald-800 dark:text-emerald-200 rounded-full px-2.5 py-0.5 border border-emerald-500/30">
+                      <span className="text-emerald-500 font-bold">#{i + 1}</span>
+                      {t.nomi}
+                    </span>
+                  ))}
                 </div>
               </div>
             )}
