@@ -14,6 +14,7 @@ import {
 import {
   ArrowRightLeft, Plus, Package, AlertCircle, ChevronRight,
 } from "lucide-react"
+import WarehouseTransferBoard, { type TransferStatus } from "@/components/dashboard/warehouse-transfer-board"
 
 type Transfer = {
   id: number; dan_filial_id: number; ga_filial_id: number;
@@ -157,12 +158,37 @@ export default function TransfersPage() {
         )}
 
         {error && (
-          <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-red-700 flex items-center gap-2">
+          <div className="bg-rose-500/10 border border-rose-500/30 rounded-xl p-4 text-rose-700 dark:text-rose-300 flex items-center gap-2">
             <AlertCircle className="w-5 h-5" /> {error}
           </div>
         )}
 
-        <div className="bg-card border rounded-xl overflow-x-auto">
+        {/* Premium transfer board */}
+        {!loading && items.length > 0 && (
+          <WarehouseTransferBoard
+            transfers={items.map(t => ({
+              id:              t.id,
+              dan_filial_id:   t.dan_filial_id,
+              dan_filial_nomi: t.dan_nomi,
+              ga_filial_id:    t.ga_filial_id,
+              ga_filial_nomi:  t.ga_nomi,
+              tovar_nomi:      t.tovar_nomi,
+              miqdor:          t.miqdor,
+              holat:           (t.holat || "kutilmoqda") as TransferStatus,
+              izoh:            t.izoh,
+              yaratilgan:      t.yaratilgan,
+            }))}
+            onApprove={async (id) => {
+              try { await api(`/api/v1/filial/transfer/${id}/tasdiqlash`, { method: "PUT" }); fetchData() } catch {}
+            }}
+            onCancel={async (id) => {
+              try { await api(`/api/v1/filial/transfer/${id}/bekor`, { method: "PUT" }); fetchData() } catch {}
+            }}
+          />
+        )}
+
+        {/* Legacy table (hidden when premium board renders) */}
+        {!loading && items.length === 0 && <div className="bg-card border rounded-xl overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
