@@ -65,9 +65,9 @@ export default function ApprenticesPage() {
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {[
             { label: L.totalStaff[locale],   value: String(apprentices.length), icon: Users,       color: "text-primary",    bg: "bg-secondary" },
-            { label: L.activeStaff[locale],  value: String(activeCount),         icon: GraduationCap, color: "text-green-500", bg: "bg-green-100 dark:bg-green-900/20" },
+            { label: L.activeStaff[locale],  value: String(activeCount),         icon: GraduationCap, color: "text-green-500", bg: "bg-emerald-500/15 dark:bg-green-900/20" },
             { label: L.monthlyBudget[locale], value: fmt(totalMonthlySales),    icon: Wallet,      color: "text-purple-500", bg: "bg-secondary" },
-            { label: L.todayExpenses[locale], value: fmt(totalTodaySales),       icon: TrendingUp,  color: "text-yellow-500", bg: "bg-yellow-100 dark:bg-yellow-900/20" },
+            { label: L.todayExpenses[locale], value: fmt(totalTodaySales),       icon: TrendingUp,  color: "text-yellow-500", bg: "bg-amber-500/15 dark:bg-yellow-900/20" },
           ].map(s => (
             <div key={s.label} className="bg-card border border-border rounded-xl p-4 flex items-center gap-3 hover:border-border/70 transition-colors">
               <div className={cn("p-2 rounded-lg shrink-0", s.bg, s.color)}>

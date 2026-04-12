@@ -109,9 +109,9 @@ export default function InvoicesPage() {
 
   const kpiCards = [
     { label: t.tushum,   value: fmt(stats.bugun_tushum),   icon: DollarSign,   color: "text-primary",                              bg: "bg-primary/10" },
-    { label: t.tolangan, value: fmt(stats.bugun_tolangan), icon: CheckCircle2, color: "text-green-600 dark:text-green-400",        bg: "bg-green-100 dark:bg-green-900/20" },
-    { label: t.qarzCol,  value: fmt(stats.bugun_qarz),     icon: AlertTriangle,color: "text-destructive",                          bg: "bg-red-100 dark:bg-red-900/20" },
-    { label: t.soni,     value: String(stats.bugun_soni),   icon: Clock,        color: "text-yellow-600 dark:text-yellow-400",      bg: "bg-yellow-100 dark:bg-yellow-900/20" },
+    { label: t.tolangan, value: fmt(stats.bugun_tolangan), icon: CheckCircle2, color: "text-emerald-600 dark:text-emerald-400 dark:text-green-400",        bg: "bg-emerald-500/15 dark:bg-green-900/20" },
+    { label: t.qarzCol,  value: fmt(stats.bugun_qarz),     icon: AlertTriangle,color: "text-destructive",                          bg: "bg-rose-500/15 dark:bg-red-900/20" },
+    { label: t.soni,     value: String(stats.bugun_soni),   icon: Clock,        color: "text-amber-600 dark:text-amber-400 dark:text-yellow-400",      bg: "bg-amber-500/15 dark:bg-yellow-900/20" },
   ]
 
   return (
@@ -203,7 +203,7 @@ export default function InvoicesPage() {
                     <TableCell className="text-xs text-muted-foreground font-mono">{s.id}</TableCell>
                     <TableCell><span className="font-medium text-sm">{s.klient_ismi || "—"}</span></TableCell>
                     <TableCell className="text-right font-semibold text-sm">{fmt(s.jami ?? 0)}</TableCell>
-                    <TableCell className="text-right text-sm text-green-600 dark:text-green-400">{fmt(s.tolangan ?? 0)}</TableCell>
+                    <TableCell className="text-right text-sm text-emerald-600 dark:text-emerald-400 dark:text-green-400">{fmt(s.tolangan ?? 0)}</TableCell>
                     <TableCell className="text-right text-sm">
                       {(s.qarz ?? 0) > 0
                         ? <span className="text-destructive font-medium">{fmt(s.qarz ?? 0)}</span>
@@ -262,7 +262,7 @@ export default function InvoicesPage() {
                 <div>
                   <p className="text-muted-foreground text-xs">{locale === "uz" ? "To'langan / Qarz" : "Оплачено / Долг"}</p>
                   <p className="font-medium">
-                    <span className="text-green-600">{fmt(detailData.tolangan ?? 0)}</span>
+                    <span className="text-emerald-600 dark:text-emerald-400">{fmt(detailData.tolangan ?? 0)}</span>
                     {(detailData.qarz ?? 0) > 0 && <span className="text-destructive"> / {fmt(detailData.qarz ?? 0)}</span>}
                   </p>
                 </div>

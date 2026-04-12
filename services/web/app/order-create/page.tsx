@@ -167,7 +167,7 @@ export default function OrderCreatePage() {
           </div>
         )}
         {error && (
-          <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-red-700 flex items-center gap-2">
+          <div className="bg-rose-500/10 border border-rose-500/30 rounded-xl p-4 text-rose-700 dark:text-rose-300 flex items-center gap-2">
             <AlertCircle className="w-5 h-5" /> {error}
           </div>
         )}
@@ -297,7 +297,7 @@ export default function OrderCreatePage() {
             </div>
             <div className="flex justify-between text-base font-bold border-t pt-3">
               <span>Qarz qoladi:</span>
-              <span className={qarz > 0 ? "text-red-600 font-mono" : "text-emerald-600 font-mono"}>
+              <span className={qarz > 0 ? "text-rose-600 dark:text-rose-400 font-mono" : "text-emerald-600 font-mono"}>
                 {formatCurrency(qarz)}
               </span>
             </div>

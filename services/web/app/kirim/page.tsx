@@ -248,7 +248,7 @@ export default function KirimPage() {
         </div>
 
         {error && (
-          <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-red-700 flex items-center gap-2">
+          <div className="bg-rose-500/10 border border-rose-500/30 rounded-xl p-4 text-rose-700 dark:text-rose-300 flex items-center gap-2">
             <AlertCircle className="w-5 h-5" /> {error}
           </div>
         )}
@@ -317,7 +317,7 @@ export default function KirimPage() {
         </div>
 
         {/* Info box */}
-        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 text-sm text-blue-800">
+        <div className="bg-blue-500/10 border border-blue-200 rounded-xl p-4 text-sm text-blue-800">
           <div className="font-bold mb-1 flex items-center gap-1">
             <TrendingUp className="w-4 h-4" /> Avtomatik qoldiq yangilanadi
           </div>

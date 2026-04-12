@@ -81,8 +81,8 @@ export default function DebtsPage() {
         {!loading && !error && <>
         {/* Alert Banner — Overdue Critical */}
         {overdueCount > 0 && (
-          <div className="bg-red-50 dark:bg-red-950/20 border-l-4 border-red-500 rounded-lg p-4 flex items-start gap-3">
-            <AlertTriangle className="w-5 h-5 text-red-600 dark:text-red-400 shrink-0 mt-0.5" />
+          <div className="bg-rose-500/10 dark:bg-red-950/20 border-l-4 border-red-500 rounded-lg p-4 flex items-start gap-3">
+            <AlertTriangle className="w-5 h-5 text-rose-600 dark:text-rose-400 dark:text-red-400 shrink-0 mt-0.5" />
             <div>
               <p className="font-semibold text-red-900 dark:text-red-300">{overdueCount} {translations.status.overdue[locale]}</p>
               <p className="text-sm text-red-800 dark:text-red-400 mt-1">{fmt(overdueAmount)} {translations.fields.amount[locale].toLowerCase()}</p>
@@ -102,19 +102,19 @@ export default function DebtsPage() {
           <div className={cn(
             "rounded-lg p-4 flex items-center gap-3 border transition-all",
             overdueCount > 0
-              ? "bg-red-50 dark:bg-red-950/20 border-red-300 dark:border-red-900/40"
+              ? "bg-rose-500/10 dark:bg-red-950/20 border-rose-500/30 dark:border-red-900/40"
               : "bg-card border-border"
           )}>
-            <div className={cn("p-2.5 rounded-lg", overdueCount > 0 ? "bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-400" : "bg-secondary text-muted-foreground")}>
+            <div className={cn("p-2.5 rounded-lg", overdueCount > 0 ? "bg-rose-500/15 dark:bg-red-900/40 text-rose-600 dark:text-rose-400 dark:text-red-400" : "bg-secondary text-muted-foreground")}>
               <AlertTriangle className="w-4 h-4" />
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-xs text-muted-foreground mb-1">{translations.status.overdue[locale]}</p>
-              <p className={cn("text-2xl font-bold", overdueCount > 0 ? "text-red-600 dark:text-red-400" : "text-foreground")}>{fmt(overdueAmount)}</p>
+              <p className={cn("text-2xl font-bold", overdueCount > 0 ? "text-rose-600 dark:text-rose-400 dark:text-red-400" : "text-foreground")}>{fmt(overdueAmount)}</p>
             </div>
           </div>
-          <div className="bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-900/40 rounded-lg p-4 flex items-center gap-3">
-            <div className="p-2.5 rounded-lg bg-green-100 dark:bg-green-900/40 text-green-600 dark:text-green-400">
+          <div className="bg-emerald-500/10 dark:bg-green-950/20 border border-emerald-500/30 dark:border-green-900/40 rounded-lg p-4 flex items-center gap-3">
+            <div className="p-2.5 rounded-lg bg-emerald-500/15 dark:bg-green-900/40 text-emerald-600 dark:text-emerald-400 dark:text-green-400">
               <CheckCircle2 className="w-4 h-4" />
             </div>
             <div className="flex-1 min-w-0">
@@ -137,7 +137,7 @@ export default function DebtsPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">{L.allStatus[locale]}</SelectItem>
-                <SelectItem value="overdue" className="text-red-600">{translations.status.overdue[locale]}</SelectItem>
+                <SelectItem value="overdue" className="text-rose-600 dark:text-rose-400">{translations.status.overdue[locale]}</SelectItem>
                 <SelectItem value="pending">{translations.status.pending[locale]}</SelectItem>
                 <SelectItem value="partial">{translations.status.partial[locale]}</SelectItem>
                 <SelectItem value="paid">{translations.status.paid[locale]}</SelectItem>
@@ -216,7 +216,7 @@ export default function DebtsPage() {
                       key={debt.id}
                       className={cn(
                         "border-b border-border hover:bg-secondary/50 transition-colors cursor-pointer",
-                        isOverdue && "bg-red-50/50 dark:bg-red-900/10"
+                        isOverdue && "bg-rose-500/10/50 dark:bg-red-900/10"
                       )}
                       onClick={() => setSelectedDebt(debt)}
                     >

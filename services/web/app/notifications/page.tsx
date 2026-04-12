@@ -18,10 +18,10 @@ type Notification = {
 }
 
 const ICONS = {
-  info:    { icon: Info,          color: "text-blue-600",    bg: "bg-blue-50 border-blue-200" },
-  warning: { icon: AlertCircle,   color: "text-yellow-600",  bg: "bg-yellow-50 border-yellow-200" },
+  info:    { icon: Info,          color: "text-blue-600 dark:text-blue-400",    bg: "bg-blue-500/10 border-blue-200" },
+  warning: { icon: AlertCircle,   color: "text-amber-600 dark:text-amber-400",  bg: "bg-amber-500/10 border-amber-500/30" },
   success: { icon: CheckCircle2,  color: "text-emerald-600", bg: "bg-emerald-50 border-emerald-200" },
-  error:   { icon: X,             color: "text-red-600",     bg: "bg-red-50 border-red-200" },
+  error:   { icon: X,             color: "text-rose-600 dark:text-rose-400",     bg: "bg-rose-500/10 border-rose-500/30" },
 }
 
 async function api<T = unknown>(path: string): Promise<T> {
@@ -159,7 +159,7 @@ export default function NotificationsPage() {
               <Bell className="w-7 h-7 text-emerald-600" />
               Bildirishnomalar
               {unreadCount > 0 && (
-                <Badge className="ml-2 bg-red-500">{unreadCount}</Badge>
+                <Badge className="ml-2 bg-rose-500/100">{unreadCount}</Badge>
               )}
             </h1>
             <p className="text-sm text-muted-foreground mt-1">

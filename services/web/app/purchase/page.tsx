@@ -34,11 +34,11 @@ type Purchase = {
 }
 
 const HOLAT_META: Record<string, { label: string; bg: string; icon: typeof Clock }> = {
-  tayyorlanmoqda: { label: "Tayyorlanmoqda", bg: "bg-blue-100 text-blue-800",        icon: Clock },
-  yuborildi:      { label: "Yuborildi",      bg: "bg-yellow-100 text-yellow-800",    icon: Truck },
+  tayyorlanmoqda: { label: "Tayyorlanmoqda", bg: "bg-blue-500/15 text-blue-800",        icon: Clock },
+  yuborildi:      { label: "Yuborildi",      bg: "bg-amber-500/15 text-amber-800 dark:text-amber-300",    icon: Truck },
   tasdiqlandi:    { label: "Tasdiqlandi",    bg: "bg-sky-100 text-sky-800",          icon: CheckCircle2 },
   yetkazildi:     { label: "Yetkazildi",     bg: "bg-emerald-100 text-emerald-800",  icon: Package },
-  bekor:          { label: "Bekor",          bg: "bg-red-100 text-red-800",          icon: XCircle },
+  bekor:          { label: "Bekor",          bg: "bg-rose-500/15 text-red-800",          icon: XCircle },
 }
 
 async function api<T = unknown>(path: string, opts: RequestInit = {}): Promise<T> {
@@ -220,7 +220,7 @@ export default function PurchasePage() {
           </div>
           <div className="bg-card border rounded-xl p-4">
             <div className="text-xs text-muted-foreground">Kutilyapti</div>
-            <div className="text-2xl font-bold mt-1 text-yellow-600">{stats.pending || 0}</div>
+            <div className="text-2xl font-bold mt-1 text-amber-600 dark:text-amber-400">{stats.pending || 0}</div>
           </div>
           <div className="bg-card border rounded-xl p-4">
             <div className="text-xs text-muted-foreground">Yetkazilgan</div>
@@ -229,7 +229,7 @@ export default function PurchasePage() {
         </div>
 
         {error && (
-          <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-red-700 flex items-center gap-2">
+          <div className="bg-rose-500/10 border border-rose-500/30 rounded-xl p-4 text-rose-700 dark:text-rose-300 flex items-center gap-2">
             <AlertCircle className="w-5 h-5" /> {error}
           </div>
         )}

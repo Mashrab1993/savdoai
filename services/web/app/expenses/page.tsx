@@ -154,8 +154,8 @@ export default function ExpensesPage() {
         {/* Summary cards */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {[
-            { label: L.todayExpenses[locale],   value: fmt(todayExpenses),  icon: TrendingDown, color: "text-yellow-500", bg: "bg-yellow-100 dark:bg-yellow-900/20" },
-            { label: L.monthlyExpenses[locale],  value: fmt(monthlyExpenses), icon: Wallet,       color: "text-destructive", bg: "bg-red-100 dark:bg-red-900/20" },
+            { label: L.todayExpenses[locale],   value: fmt(todayExpenses),  icon: TrendingDown, color: "text-yellow-500", bg: "bg-amber-500/15 dark:bg-yellow-900/20" },
+            { label: L.monthlyExpenses[locale],  value: fmt(monthlyExpenses), icon: Wallet,       color: "text-destructive", bg: "bg-rose-500/15 dark:bg-red-900/20" },
             { label: L.pendingApprovals[locale], value: String(pendingCount), icon: Clock,        color: "text-primary",    bg: "bg-secondary" },
             { label: L.totalCategories[locale],  value: String(categoryData.length), icon: Tag,  color: "text-purple-500", bg: "bg-secondary" },
           ].map(s => (
@@ -216,9 +216,9 @@ export default function ExpensesPage() {
 
             {/* Pending approvals banner */}
             {pendingCount > 0 && statusFilter !== "approved" && statusFilter !== "rejected" && (
-              <div className="flex items-center gap-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-xl px-4 py-3">
-                <AlertCircle className="w-4 h-4 text-yellow-600 dark:text-yellow-400 shrink-0" />
-                <p className="text-sm text-yellow-800 dark:text-yellow-300 font-medium">
+              <div className="flex items-center gap-3 bg-amber-500/10 dark:bg-yellow-900/20 border border-amber-500/30 dark:border-yellow-800 rounded-xl px-4 py-3">
+                <AlertCircle className="w-4 h-4 text-amber-600 dark:text-amber-400 dark:text-yellow-400 shrink-0" />
+                <p className="text-sm text-amber-800 dark:text-amber-300 dark:text-yellow-300 font-medium">
                   {locale === "uz"
                     ? `${pendingCount} ta xarajat tasdiqlashni kutmoqda`
                     : `${pendingCount} расходов ожидают подтверждения`
@@ -280,7 +280,7 @@ export default function ExpensesPage() {
                           <div className="flex items-center justify-end gap-1">
                             <Button
                               size="icon" variant="ghost"
-                              className="h-7 w-7 text-green-600 hover:text-green-700 hover:bg-green-100 dark:hover:bg-green-900/30"
+                              className="h-7 w-7 text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/15 dark:hover:bg-green-900/30"
                               onClick={() => approve(exp.id)}
                               disabled={actionLoading === exp.id}
                               title={L.approveAction[locale]}
@@ -289,7 +289,7 @@ export default function ExpensesPage() {
                             </Button>
                             <Button
                               size="icon" variant="ghost"
-                              className="h-7 w-7 text-destructive hover:text-destructive hover:bg-red-100 dark:hover:bg-red-900/30"
+                              className="h-7 w-7 text-destructive hover:text-destructive hover:bg-rose-500/15 dark:hover:bg-red-900/30"
                               onClick={() => reject(exp.id)}
                               disabled={actionLoading === exp.id}
                               title={L.rejectAction[locale]}
@@ -355,7 +355,7 @@ export default function ExpensesPage() {
                 <h3 className="font-semibold text-sm text-foreground mb-3 flex items-center gap-2">
                   <Clock className="w-4 h-4 text-yellow-500" />
                   {locale === "uz" ? "Kutilayotgan tasdiqlar" : "Ожидают подтверждения"}
-                  <span className="ml-auto bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 text-xs px-2 py-0.5 rounded-full font-medium">
+                  <span className="ml-auto bg-amber-500/15 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 text-xs px-2 py-0.5 rounded-full font-medium">
                     {pendingCount}
                   </span>
                 </h3>
@@ -367,10 +367,10 @@ export default function ExpensesPage() {
                         <p className="text-xs text-muted-foreground">{exp.author ? exp.author.split(" ")[0] : "—"} · {fmt(exp.amount)}</p>
                       </div>
                       <div className="flex gap-1 shrink-0">
-                        <Button size="icon" variant="ghost" className="h-6 w-6 text-green-600 hover:bg-green-100 dark:hover:bg-green-900/30" disabled={actionLoading === exp.id} onClick={() => approve(exp.id)}>
+                        <Button size="icon" variant="ghost" className="h-6 w-6 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/15 dark:hover:bg-green-900/30" disabled={actionLoading === exp.id} onClick={() => approve(exp.id)}>
                           <Check className="w-3 h-3" />
                         </Button>
-                        <Button size="icon" variant="ghost" className="h-6 w-6 text-destructive hover:bg-red-100 dark:hover:bg-red-900/30" disabled={actionLoading === exp.id} onClick={() => reject(exp.id)}>
+                        <Button size="icon" variant="ghost" className="h-6 w-6 text-destructive hover:bg-rose-500/15 dark:hover:bg-red-900/30" disabled={actionLoading === exp.id} onClick={() => reject(exp.id)}>
                           <X className="w-3 h-3" />
                         </Button>
                       </div>
