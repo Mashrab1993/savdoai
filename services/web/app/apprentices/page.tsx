@@ -20,6 +20,8 @@ import {
   GraduationCap, Search, Plus, ChevronRight, Pencil, Trash2,
   Wallet, TrendingUp, Users,
 } from "lucide-react"
+import { PageHeader } from "@/components/ui/page-header"
+import AgentKpiBoard from "@/components/dashboard/agent-kpi-board"
 import { cn } from "@/lib/utils"
 import { useApi } from "@/hooks/use-api"
 import { apprenticeService } from "@/lib/api/services"
@@ -61,6 +63,30 @@ export default function ApprenticesPage() {
         {loading && <PageLoading />}
         {error && !loading && <PageError message={error} onRetry={refetch} />}
         {!loading && !error && <>
+        <PageHeader
+          icon={GraduationCap}
+          gradient="emerald"
+          title={L.title[locale]}
+          subtitle={locale === "uz" ? `${activeCount} faol / ${apprentices.length} jami` : `${activeCount} активных / ${apprentices.length} всего`}
+        />
+
+        {/* Agent leaderboard (premium) */}
+        {apprentices.length > 0 && (
+          <AgentKpiBoard
+            agents={apprentices.map(a => ({
+              id:           a.id,
+              ism:          a.name,
+              reja:         0,
+              tashrif_soni: 0,
+              rejali_summa: a.todaySales ?? 0,
+              rejali_soni:  0,
+              ofplan_summa: 0,
+              ofplan_soni:  0,
+              qaytarish:    0,
+            }))}
+          />
+        )}
+
         {/* Summary cards */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {[
