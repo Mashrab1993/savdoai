@@ -186,6 +186,30 @@ async def admin_statistika(uid: int = Depends(get_uid)):
             "SELECT COUNT(*) FROM qarzlar "
             "WHERE user_id=$1 AND yopildi=FALSE AND qolgan>0 "
             "AND muddat IS NOT NULL AND muddat < NOW()", uid) or 0
+
+        # Kam qoldiq tovarlar ro'yxati (top 10) — dashboard alert uchun
+        kam_tovarlar = await c.fetch("""
+            SELECT id, nomi, qoldiq, min_qoldiq, birlik, kategoriya
+            FROM tovarlar
+            WHERE user_id=$1 AND min_qoldiq > 0 AND qoldiq <= min_qoldiq
+            ORDER BY qoldiq ASC
+            LIMIT 10
+        """, uid)
+
+        # Eng ko'p sotilgan tovar bugun
+        top_bugun = await c.fetch("""
+            SELECT c.tovar_nomi AS nomi,
+                   SUM(c.miqdor) AS miqdor,
+                   SUM(c.jami) AS jami
+            FROM chiqimlar c
+            JOIN sotuv_sessiyalar ss ON ss.id = c.sessiya_id
+            WHERE ss.user_id = $1
+              AND (ss.sana AT TIME ZONE 'Asia/Tashkent')::date = CURRENT_DATE
+            GROUP BY c.tovar_nomi
+            ORDER BY SUM(c.jami) DESC
+            LIMIT 5
+        """, uid)
+
     return {
         "tovar_soni": tovar_soni, "klient_soni": klient_soni,
         "faol_qarz": float(faol_qarz), "kam_qoldiq_soni": kam_qoldiq,
@@ -193,6 +217,8 @@ async def admin_statistika(uid: int = Depends(get_uid)):
         "bugun": {"soni": int(bugun_sotuv["soni"]), "jami": float(bugun_sotuv["jami"])},
         "hafta": {"soni": int(hafta_sotuv["soni"]), "jami": float(hafta_sotuv["jami"])},
         "oy":    {"soni": int(oy_sotuv["soni"]),    "jami": float(oy_sotuv["jami"])},
+        "kam_qoldiq_tovarlar": [dict(r) for r in kam_tovarlar],
+        "top_bugun": [dict(r) for r in top_bugun],
     }
 
 
