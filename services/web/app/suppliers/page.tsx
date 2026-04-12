@@ -14,6 +14,7 @@ import {
 import {
   Building2, Plus, Search, Phone, Pencil, Trash2, ShoppingCart, AlertCircle,
 } from "lucide-react"
+import SupplierBalance from "@/components/dashboard/supplier-balance"
 import { formatCurrency } from "@/lib/format"
 
 type Supplier = {
@@ -154,8 +155,24 @@ export default function SuppliersPage() {
           />
         </div>
 
+        {/* Premium supplier balance overview */}
+        {!loading && suppliers.length > 0 && (
+          <SupplierBalance
+            suppliers={suppliers.map(s => ({
+              id:               s.id,
+              nomi:             s.nomi,
+              telefon:          s.telefon,
+              kategoriya:       (s.kategoriyalar || [])[0],
+              balans:           0,
+              jami_xarid:       0,
+              aktiv_buyurtma:   0,
+              oxirgi_kirim:     undefined,
+            }))}
+          />
+        )}
+
         {error && (
-          <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-red-700 flex items-center gap-2">
+          <div className="bg-rose-500/10 border border-rose-500/30 rounded-xl p-4 text-rose-700 dark:text-rose-300 flex items-center gap-2">
             <AlertCircle className="w-5 h-5" /> {error}
           </div>
         )}
