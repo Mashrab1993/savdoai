@@ -80,7 +80,7 @@ export default function VanSellingPage() {
                   <div className="text-lg font-bold text-emerald-600">{formatCurrency(Number(selected.marshrut?.yetkazilgan_summa || 0))}</div>
                   <div className="text-[10px] text-emerald-600">Yetkazildi</div>
                 </div>
-                <div className="text-center p-3 bg-rose-500/10 dark:bg-red-900/10 rounded-lg">
+                <div className="text-center p-3 bg-rose-500/10 dark:bg-rose-950/10 rounded-lg">
                   <div className="text-lg font-bold text-rose-600 dark:text-rose-400">{formatCurrency(Number(selected.marshrut?.qaytarilgan_summa || 0))}</div>
                   <div className="text-[10px] text-rose-600 dark:text-rose-400">Qaytarildi</div>
                 </div>

@@ -121,7 +121,7 @@ export default function MaterialReportPage() {
             </div>
             <div className="text-2xl font-bold mt-1 text-emerald-700">{totals.kirim}</div>
           </div>
-          <div className="bg-rose-500/10 dark:bg-red-900/20 rounded-xl border border-rose-500/30 p-4">
+          <div className="bg-rose-500/10 dark:bg-rose-950/20 rounded-xl border border-rose-500/30 p-4">
             <div className="text-sm text-rose-600 dark:text-rose-400 flex items-center gap-1">
               <TrendingDown className="w-4 h-4" /> Jami chiqim
             </div>
@@ -158,7 +158,7 @@ export default function MaterialReportPage() {
                   <TableHead rowSpan={2} className="border-r font-bold">Tovar</TableHead>
                   <TableHead rowSpan={2} className="border-r text-center font-bold">Bosh qoldiq</TableHead>
                   <TableHead colSpan={4} className="text-center border-r bg-emerald-50 dark:bg-emerald-900/10 font-bold text-emerald-700">KIRIM</TableHead>
-                  <TableHead colSpan={6} className="text-center border-r bg-rose-500/10 dark:bg-red-900/10 font-bold text-rose-700 dark:text-rose-300">CHIQIM</TableHead>
+                  <TableHead colSpan={6} className="text-center border-r bg-rose-500/10 dark:bg-rose-950/10 font-bold text-rose-700 dark:text-rose-300">CHIQIM</TableHead>
                   <TableHead rowSpan={2} className="text-center font-bold bg-blue-50 dark:bg-blue-900/10 text-blue-700">Oxirgi qoldiq</TableHead>
                 </TableRow>
                 <TableRow className="bg-muted/50 dark:bg-muted text-xs">

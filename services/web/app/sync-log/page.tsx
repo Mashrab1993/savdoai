@@ -37,7 +37,7 @@ export default function SyncLogPage() {
           <div className="text-2xl font-bold text-emerald-600">{success}</div>
           <div className="text-xs text-emerald-600">Muvaffaqiyatli</div>
         </div>
-        <div className="bg-rose-500/10 dark:bg-red-900/20 rounded-xl border border-rose-500/30 dark:border-red-800 p-4 text-center">
+        <div className="bg-rose-500/10 dark:bg-rose-950/20 rounded-xl border border-rose-500/30 dark:border-rose-800 p-4 text-center">
           <div className="text-2xl font-bold text-rose-600 dark:text-rose-400">{fail}</div>
           <div className="text-xs text-rose-600 dark:text-rose-400">Xatolik</div>
         </div>

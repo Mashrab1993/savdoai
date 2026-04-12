@@ -26,7 +26,7 @@ export default function WriteOffPage() {
         />
           </div>
           <div className="flex gap-2">
-            <Button className="bg-red-600 hover:bg-red-700"><Plus className="w-4 h-4 mr-1" /> Yangi spisanie</Button>
+            <Button className="bg-destructive hover:bg-destructive/90"><Plus className="w-4 h-4 mr-1" /> Yangi spisanie</Button>
             <Button variant="outline" size="sm"><Download className="w-4 h-4 mr-1" /> Hisobot</Button>
           </div>
         </div>

@@ -43,7 +43,7 @@ async function api<T = unknown>(path: string, opts: RequestInit = {}): Promise<T
 }
 
 const HOLAT_META: Record<string, { label: string; color: string }> = {
-  kutilmoqda:   { label: "Kutilmoqda", color: "bg-amber-500/15 text-yellow-800" },
+  kutilmoqda:   { label: "Kutilmoqda", color: "bg-amber-500/15 text-amber-800 dark:text-amber-300" },
   tasdiqlangan: { label: "Tasdiqlangan", color: "bg-emerald-500/15 text-emerald-800 dark:text-emerald-300" },
   bekor:        { label: "Bekor",      color: "bg-rose-500/15 text-rose-800 dark:text-rose-300" },
 }
@@ -152,7 +152,7 @@ export default function TransfersPage() {
         </div>
 
         {filiallar.length < 2 && (
-          <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4 text-sm text-yellow-800">
+          <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4 text-sm text-amber-800 dark:text-amber-300">
             ⚠️ Transfer qilish uchun kamida 2 ta filial kerak.{" "}
             <a href="/warehouses" className="underline font-semibold">/warehouses</a> sahifasida qo&apos;shing.
           </div>

@@ -138,7 +138,7 @@ export default function InventoryPage() {
                         ) : phys === sys ? (
                           <Badge className="bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 text-xs">Mos</Badge>
                         ) : (
-                          <Badge className="bg-amber-500/15 text-yellow-800 text-xs">Mos emas</Badge>
+                          <Badge className="bg-amber-500/15 text-amber-800 dark:text-amber-300 text-xs">Mos emas</Badge>
                         )}
                       </TableCell>
                     </TableRow>

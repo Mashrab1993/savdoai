@@ -187,7 +187,7 @@ export default function LiveDashboardPage() {
               </div>
             )}
             {Number(og.jami_qarz || 0) > 0 && (
-              <div className="flex items-center gap-2 px-3 py-2 bg-rose-500/10 dark:bg-red-900/10 border border-rose-500/30 dark:border-red-800 rounded-lg text-xs text-rose-700 dark:text-rose-300 whitespace-nowrap">
+              <div className="flex items-center gap-2 px-3 py-2 bg-rose-500/10 dark:bg-rose-950/10 border border-rose-500/30 dark:border-rose-800 rounded-lg text-xs text-rose-700 dark:text-rose-300 whitespace-nowrap">
                 <CreditCard className="w-3.5 h-3.5" />
                 <span>Jami qarz: {formatCurrency(Number(og.jami_qarz || 0))}</span>
               </div>

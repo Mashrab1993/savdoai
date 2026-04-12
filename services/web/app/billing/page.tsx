@@ -50,7 +50,7 @@ export default function BillingPage() {
               <Plus className="w-3 h-3 mr-1" /> To'ldirish
             </Button>
           </div>
-          <div className="bg-amber-500/10 dark:bg-yellow-900/20 rounded-xl border border-amber-500/30 p-4">
+          <div className="bg-amber-500/10 dark:bg-amber-950/20 rounded-xl border border-amber-500/30 p-4">
             <div className="text-sm text-amber-600 dark:text-amber-400 flex items-center gap-1">
               <Calendar className="w-3 h-3" /> Keyingi to'lov
             </div>

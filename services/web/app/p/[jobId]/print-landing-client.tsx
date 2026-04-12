@@ -39,7 +39,7 @@ export function PrintLandingClient({ jobId, token, width, showDebug }: Props) {
           🖨 SavdoAI Print ilovasini ochish
         </a>
       ) : (
-        <p className="text-red-400 text-sm text-center max-w-md">
+        <p className="text-rose-400 text-sm text-center max-w-md">
           Havola noto&apos;g&apos;ri. Telegramdan chekni qayta yuborib ko&apos;ring.
         </p>
       )}

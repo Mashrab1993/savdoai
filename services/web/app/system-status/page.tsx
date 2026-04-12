@@ -90,7 +90,7 @@ export default function SystemStatusPage() {
                     <div className="text-xs text-muted-foreground">Latency: {s.latency}ms · Uptime: {s.uptime}%</div>
                   </div>
                 </div>
-                <Badge className={s.status === "operational" ? "bg-emerald-500/15 text-emerald-800 dark:text-emerald-300" : s.status === "degraded" ? "bg-amber-500/15 text-yellow-800" : "bg-rose-500/15 text-rose-800 dark:text-rose-300"}>
+                <Badge className={s.status === "operational" ? "bg-emerald-500/15 text-emerald-800 dark:text-emerald-300" : s.status === "degraded" ? "bg-amber-500/15 text-amber-800 dark:text-amber-300" : "bg-rose-500/15 text-rose-800 dark:text-rose-300"}>
                   {s.status === "operational" ? "Operatsion" : s.status === "degraded" ? "Sekin" : "Ishlamaydi"}
                 </Badge>
               </div>

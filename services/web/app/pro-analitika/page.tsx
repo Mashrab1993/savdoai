@@ -145,7 +145,7 @@ export default function AnalytikaPage() {
           {/* Xulosa cards */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
             <Card className="p-4 text-center"><div className="text-2xl font-bold">{churn.xulosa?.jami_klient || 0}</div><div className="text-xs text-muted-foreground">Jami klient</div></Card>
-            <Card className="p-4 text-center border-rose-500/30 bg-rose-500/10 dark:bg-red-900/20"><div className="text-2xl font-bold text-rose-600 dark:text-rose-400">{churn.xulosa?.kritik_xavf || 0}</div><div className="text-xs text-rose-600 dark:text-rose-400">Kritik xavf 🔴</div></Card>
+            <Card className="p-4 text-center border-rose-500/30 bg-rose-500/10 dark:bg-rose-950/20"><div className="text-2xl font-bold text-rose-600 dark:text-rose-400">{churn.xulosa?.kritik_xavf || 0}</div><div className="text-xs text-rose-600 dark:text-rose-400">Kritik xavf 🔴</div></Card>
             <Card className="p-4 text-center border-amber-200 bg-amber-50 dark:bg-amber-900/20"><div className="text-2xl font-bold text-amber-600">{churn.xulosa?.yuqori_xavf || 0}</div><div className="text-xs text-amber-600">Yuqori xavf 🟠</div></Card>
             <Card className="p-4 text-center border-emerald-200 bg-emerald-50 dark:bg-emerald-900/20"><div className="text-2xl font-bold text-emerald-600">{churn.xulosa?.xavfsiz || 0}</div><div className="text-xs text-emerald-600">Xavfsiz 🟢</div></Card>
           </div>

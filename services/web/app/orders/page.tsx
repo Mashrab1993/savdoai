@@ -26,7 +26,7 @@ type OrderStatus = "all" | "yangi" | "tasdiqlangan" | "otgruzka" | "yetkazildi" 
 
 const STATUS_MAP: Record<string, { label: string; color: string; icon: any }> = {
   yangi:         { label: "Yangi",        color: "bg-blue-500/15 text-blue-800 dark:text-blue-300",        icon: Clock },
-  tasdiqlangan:  { label: "Tasdiqlangan", color: "bg-amber-500/15 text-yellow-800",    icon: CheckCircle2 },
+  tasdiqlangan:  { label: "Tasdiqlangan", color: "bg-amber-500/15 text-amber-800 dark:text-amber-300",    icon: CheckCircle2 },
   otgruzka:      { label: "Otgruzka",     color: "bg-violet-500/15 text-purple-800",    icon: Truck },
   yetkazildi:    { label: "Yetkazildi",   color: "bg-emerald-500/15 text-emerald-800 dark:text-emerald-300",  icon: CheckCircle2 },
   bekor:         { label: "Bekor",        color: "bg-rose-500/15 text-rose-800 dark:text-rose-300",          icon: XCircle },
@@ -197,7 +197,7 @@ export default function OrdersPage() {
             <div className="text-xs text-blue-600">Yangi</div>
             <div className="text-2xl font-bold text-blue-700">{stats.yangi}</div>
           </button>
-          <button className={`bg-amber-500/10 dark:bg-yellow-900/20 rounded-xl border border-amber-500/30 p-3 text-left ${statusFilter === "tasdiqlangan" ? "ring-2 ring-yellow-500" : ""}`}
+          <button className={`bg-amber-500/10 dark:bg-amber-950/20 rounded-xl border border-amber-500/30 p-3 text-left ${statusFilter === "tasdiqlangan" ? "ring-2 ring-yellow-500" : ""}`}
                   onClick={() => setStatusFilter("tasdiqlangan")}>
             <div className="text-xs text-amber-600 dark:text-amber-400">Tasdiq.</div>
             <div className="text-2xl font-bold text-amber-700 dark:text-amber-300">{stats.tasdiqlangan}</div>
@@ -212,7 +212,7 @@ export default function OrdersPage() {
             <div className="text-xs text-emerald-600">Yetkazildi</div>
             <div className="text-2xl font-bold text-emerald-700">{stats.yetkazildi}</div>
           </button>
-          <button className={`bg-rose-500/10 dark:bg-red-900/20 rounded-xl border border-rose-500/30 p-3 text-left ${statusFilter === "bekor" ? "ring-2 ring-red-500" : ""}`}
+          <button className={`bg-rose-500/10 dark:bg-rose-950/20 rounded-xl border border-rose-500/30 p-3 text-left ${statusFilter === "bekor" ? "ring-2 ring-red-500" : ""}`}
                   onClick={() => setStatusFilter("bekor")}>
             <div className="text-xs text-rose-600 dark:text-rose-400">Bekor</div>
             <div className="text-2xl font-bold text-rose-700 dark:text-rose-300">{stats.bekor}</div>

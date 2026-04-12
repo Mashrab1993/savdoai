@@ -274,7 +274,7 @@ export default function SettingsPage() {
                 </div>
 
                 {profileSaveMsg && (
-                  <p className="text-xs text-emerald-600 dark:text-emerald-400 dark:text-green-400 flex items-center gap-1.5">
+                  <p className="text-xs text-emerald-600 dark:text-emerald-400 dark:text-emerald-400 flex items-center gap-1.5">
                     <CheckCircle2 className="w-3.5 h-3.5" /> {profileSaveMsg}
                   </p>
                 )}

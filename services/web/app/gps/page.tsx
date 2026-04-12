@@ -100,7 +100,7 @@ export default function GpsPage() {
             </div>
             <div className="text-2xl font-bold mt-1 text-emerald-700">{onlineCount}</div>
           </div>
-          <div className="bg-rose-500/10 dark:bg-red-900/20 rounded-xl border border-rose-500/30 p-4">
+          <div className="bg-rose-500/10 dark:bg-rose-950/20 rounded-xl border border-rose-500/30 p-4">
             <div className="text-sm text-rose-600 dark:text-rose-400 flex items-center gap-1">
               <SignalZero className="w-3 h-3" /> Offline
             </div>
@@ -151,7 +151,7 @@ export default function GpsPage() {
                     onClick={() => setSelectedAgent(agent)}
                   >
                     <div className="flex items-center gap-3">
-                      <div className={`w-3 h-3 rounded-full ${agent.online ? "bg-emerald-500" : "bg-red-400"}`} />
+                      <div className={`w-3 h-3 rounded-full ${agent.online ? "bg-emerald-500" : "bg-rose-400"}`} />
                       <div>
                         <div className="font-medium text-sm">{agent.ism}</div>
                         <div className="text-xs text-muted-foreground flex items-center gap-1">

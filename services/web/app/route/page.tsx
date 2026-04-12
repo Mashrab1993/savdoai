@@ -80,7 +80,7 @@ export default function RoutePage() {
                 <div className="flex-1">
                   <div className="text-xs text-muted-foreground mb-1">Oddiy tartibda</div>
                   <div className="h-3 bg-rose-500/15 rounded-full overflow-hidden">
-                    <div className="h-full bg-red-400 rounded-full" style={{ width: "100%" }} />
+                    <div className="h-full bg-rose-400 rounded-full" style={{ width: "100%" }} />
                   </div>
                   <div className="text-xs text-rose-600 dark:text-rose-400 mt-0.5">{result.oddiy_masofa_km} km</div>
                 </div>

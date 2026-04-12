@@ -132,15 +132,15 @@ export default function TelegramMiniAppPage() {
           <div className="w-12 h-12 rounded-full bg-emerald-500/100/20 flex items-center justify-center mx-auto">
             <span className="text-2xl">✅</span>
           </div>
-          <p className="text-sm text-green-400">Muvaffaqiyat! Dashboard ochilmoqda...</p>
+          <p className="text-sm text-emerald-400">Muvaffaqiyat! Dashboard ochilmoqda...</p>
         </div>
       )}
 
       {status === "error" && (
         <div className="text-center space-y-4 max-w-sm">
-          <AlertCircle className="w-10 h-10 text-red-400 mx-auto" />
+          <AlertCircle className="w-10 h-10 text-rose-400 mx-auto" />
           <div>
-            <p className="text-sm font-medium text-red-400">Xatolik yuz berdi</p>
+            <p className="text-sm font-medium text-rose-400">Xatolik yuz berdi</p>
             <p className="text-xs text-white/40 mt-1">{error}</p>
           </div>
           <div className="flex gap-2 justify-center">

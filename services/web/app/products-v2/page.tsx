@@ -80,7 +80,7 @@ export default function ProductsV2Page() {
             </div>
           )}
           {stats.tugagan > 0 && (
-            <div className="flex items-center gap-2 px-3 py-2 bg-rose-500/10 dark:bg-red-900/10 rounded-lg border border-rose-500/30 text-sm whitespace-nowrap">
+            <div className="flex items-center gap-2 px-3 py-2 bg-rose-500/10 dark:bg-rose-950/10 rounded-lg border border-rose-500/30 text-sm whitespace-nowrap">
               <TrendingDown className="w-4 h-4 text-rose-500 dark:text-rose-400" />
               <span className="font-medium text-rose-700 dark:text-rose-300">{stats.tugagan}</span>
               <span className="text-rose-600 dark:text-rose-400">tugagan</span>

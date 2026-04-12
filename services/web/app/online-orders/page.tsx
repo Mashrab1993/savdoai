@@ -11,7 +11,7 @@ import { formatCurrency } from "@/lib/format"
 
 const STATUS_MAP: Record<number, { label: string; color: string }> = {
   10: { label: "Yangi",        color: "bg-blue-500/15 text-blue-800 dark:text-blue-300" },
-  20: { label: "Tasdiqlandi",  color: "bg-amber-500/15 text-yellow-800" },
+  20: { label: "Tasdiqlandi",  color: "bg-amber-500/15 text-amber-800 dark:text-amber-300" },
   30: { label: "Yetkazildi",   color: "bg-emerald-500/15 text-emerald-800 dark:text-emerald-300" },
   40: { label: "Bekor",        color: "bg-rose-500/15 text-rose-800 dark:text-rose-300" },
 }

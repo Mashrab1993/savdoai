@@ -35,7 +35,7 @@ export default function ApiKeysPage() {
         </div>
 
         {/* Warning */}
-        <div className="bg-amber-500/10 dark:bg-yellow-900/20 rounded-xl border border-amber-500/30 p-4">
+        <div className="bg-amber-500/10 dark:bg-amber-950/20 rounded-xl border border-amber-500/30 p-4">
           <div className="flex gap-3">
             <Shield className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
             <div className="text-sm text-amber-700 dark:text-amber-300">

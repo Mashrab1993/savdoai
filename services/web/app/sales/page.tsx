@@ -356,7 +356,7 @@ export default function SalesPage() {
             {success && (
               <div className="bg-emerald-500/10 dark:bg-green-950/20 border border-emerald-500/30 dark:border-green-800 rounded-lg p-3 text-center">
                 <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400 mx-auto mb-1" />
-                <p className="text-sm font-medium text-emerald-700 dark:text-emerald-300 dark:text-green-400">
+                <p className="text-sm font-medium text-emerald-700 dark:text-emerald-300 dark:text-emerald-400">
                   {t.saved} #{success}
                 </p>
                 <Button variant="outline" size="sm" className="mt-2"

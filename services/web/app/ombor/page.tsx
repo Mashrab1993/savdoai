@@ -136,12 +136,12 @@ export default function OmborPage() {
             <div className="text-sm text-emerald-600">Normal zaxira</div>
             <div className="text-2xl font-bold mt-1 text-emerald-700">{stats.normal}</div>
           </div>
-          <div className="bg-amber-500/10 dark:bg-yellow-900/20 rounded-xl border border-amber-500/30 dark:border-yellow-800 p-4 cursor-pointer hover:shadow-md transition"
+          <div className="bg-amber-500/10 dark:bg-amber-950/20 rounded-xl border border-amber-500/30 dark:border-yellow-800 p-4 cursor-pointer hover:shadow-md transition"
                onClick={() => setFilter("low")}>
             <div className="text-sm text-amber-600 dark:text-amber-400">Kam qolgan</div>
             <div className="text-2xl font-bold mt-1 text-amber-700 dark:text-amber-300">{stats.kam}</div>
           </div>
-          <div className="bg-rose-500/10 dark:bg-red-900/20 rounded-xl border border-rose-500/30 dark:border-red-800 p-4 cursor-pointer hover:shadow-md transition"
+          <div className="bg-rose-500/10 dark:bg-rose-950/20 rounded-xl border border-rose-500/30 dark:border-rose-800 p-4 cursor-pointer hover:shadow-md transition"
                onClick={() => setFilter("out")}>
             <div className="text-sm text-rose-600 dark:text-rose-400">Tugagan</div>
             <div className="text-2xl font-bold mt-1 text-rose-700 dark:text-rose-300">{stats.tugagan}</div>
@@ -232,7 +232,7 @@ export default function OmborPage() {
                   const status = zaxira <= 0 ? "out" : zaxira <= minZaxira ? "low" : "ok"
 
                   return (
-                    <TableRow key={t.id || i} className={status === "out" ? "bg-rose-500/10/50 dark:bg-red-900/10" : status === "low" ? "bg-amber-500/10/50 dark:bg-yellow-900/10" : ""}>
+                    <TableRow key={t.id || i} className={status === "out" ? "bg-rose-500/10/50 dark:bg-rose-950/10" : status === "low" ? "bg-amber-500/10/50 dark:bg-yellow-900/10" : ""}>
                       <TableCell className="text-muted-foreground">{i + 1}</TableCell>
                       <TableCell>
                         <div className="font-medium">{t.nomi || "Nomsiz"}</div>
@@ -263,7 +263,7 @@ export default function OmborPage() {
                         {status === "out" ? (
                           <Badge variant="destructive" className="text-xs">Tugagan</Badge>
                         ) : status === "low" ? (
-                          <Badge className="bg-amber-500/15 text-yellow-800 text-xs">Kam</Badge>
+                          <Badge className="bg-amber-500/15 text-amber-800 dark:text-amber-300 text-xs">Kam</Badge>
                         ) : (
                           <Badge className="bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 text-xs">Normal</Badge>
                         )}

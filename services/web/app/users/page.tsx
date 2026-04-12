@@ -15,7 +15,7 @@ const ROLES = [
   { key: "manager", label: "Menejer", color: "bg-violet-500/15 text-purple-800" },
   { key: "operator", label: "Operator", color: "bg-blue-500/15 text-blue-800 dark:text-blue-300" },
   { key: "kassir", label: "Kassir", color: "bg-emerald-500/15 text-emerald-800 dark:text-emerald-300" },
-  { key: "agent", label: "Agent", color: "bg-amber-500/15 text-yellow-800" },
+  { key: "agent", label: "Agent", color: "bg-amber-500/15 text-amber-800 dark:text-amber-300" },
   { key: "expeditor", label: "Expeditor", color: "bg-orange-500/15 text-orange-800 dark:text-orange-300" },
   { key: "supervisor", label: "Supervisor", color: "bg-indigo-100 text-indigo-800" },
   { key: "merchant", label: "Mer chendayzer", color: "bg-pink-100 text-pink-800" },

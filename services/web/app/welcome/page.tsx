@@ -62,7 +62,7 @@ export default function WelcomePage() {
         </div>
 
         {/* Pro features */}
-        <div className="bg-amber-500/10 dark:bg-yellow-900/20 rounded-xl border border-amber-500/30 p-6">
+        <div className="bg-amber-500/10 dark:bg-amber-950/20 rounded-xl border border-amber-500/30 p-6">
           <div className="flex items-start gap-3">
             <Crown className="w-8 h-8 text-amber-600 dark:text-amber-400 shrink-0" />
             <div>

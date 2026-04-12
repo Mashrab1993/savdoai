@@ -166,8 +166,8 @@ export default function ExpensesPage() {
         {/* Summary cards */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {[
-            { label: L.todayExpenses[locale],   value: fmt(todayExpenses),  icon: TrendingDown, color: "text-amber-500", bg: "bg-amber-500/15 dark:bg-yellow-900/20" },
-            { label: L.monthlyExpenses[locale],  value: fmt(monthlyExpenses), icon: Wallet,       color: "text-destructive", bg: "bg-rose-500/15 dark:bg-red-900/20" },
+            { label: L.todayExpenses[locale],   value: fmt(todayExpenses),  icon: TrendingDown, color: "text-amber-500", bg: "bg-amber-500/15 dark:bg-amber-950/20" },
+            { label: L.monthlyExpenses[locale],  value: fmt(monthlyExpenses), icon: Wallet,       color: "text-destructive", bg: "bg-rose-500/15 dark:bg-rose-950/20" },
             { label: L.pendingApprovals[locale], value: String(pendingCount), icon: Clock,        color: "text-primary",    bg: "bg-secondary" },
             { label: L.totalCategories[locale],  value: String(categoryData.length), icon: Tag,  color: "text-violet-500", bg: "bg-secondary" },
           ].map(s => (
@@ -228,7 +228,7 @@ export default function ExpensesPage() {
 
             {/* Pending approvals banner */}
             {pendingCount > 0 && statusFilter !== "approved" && statusFilter !== "rejected" && (
-              <div className="flex items-center gap-3 bg-amber-500/10 dark:bg-yellow-900/20 border border-amber-500/30 dark:border-yellow-800 rounded-xl px-4 py-3">
+              <div className="flex items-center gap-3 bg-amber-500/10 dark:bg-amber-950/20 border border-amber-500/30 dark:border-yellow-800 rounded-xl px-4 py-3">
                 <AlertCircle className="w-4 h-4 text-amber-600 dark:text-amber-400 dark:text-yellow-400 shrink-0" />
                 <p className="text-sm text-amber-800 dark:text-amber-300 dark:text-amber-300 dark:text-yellow-300 font-medium">
                   {locale === "uz"

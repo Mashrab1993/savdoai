@@ -304,7 +304,7 @@ export default function ReportsPage() {
                   {chartData.map((row, i) => (
                     <tr key={i} className="border-b border-border last:border-0 hover:bg-secondary/40 transition-colors">
                       <td className="py-2 pr-4 text-foreground font-medium">{row.label}</td>
-                      <td className="py-2 pr-4 text-right text-emerald-600 dark:text-emerald-400 dark:text-green-400 font-semibold">{fmt(row.income)}</td>
+                      <td className="py-2 pr-4 text-right text-emerald-600 dark:text-emerald-400 dark:text-emerald-400 font-semibold">{fmt(row.income)}</td>
                       <td className="py-2 text-right text-destructive font-semibold">{fmt(row.outcome)}</td>
                     </tr>
                   ))}
