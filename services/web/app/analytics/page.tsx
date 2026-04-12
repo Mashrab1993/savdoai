@@ -3,7 +3,7 @@
 import { AdminLayout } from "@/components/layout/admin-layout"
 import { Brain, AlertTriangle, TrendingUp, Info, Rocket } from "lucide-react"
 import { useApi } from "@/hooks/use-api"
-import { advisorService, pnlService } from "@/lib/api/services"
+import { advisorService, pnlService, heatmapService } from "@/lib/api/services"
 import { PageLoading, PageError } from "@/components/shared/page-states"
 import { PageHeader } from "@/components/ui/page-header"
 import { useLocale } from "@/lib/locale-context"
@@ -29,6 +29,7 @@ export default function AnalyticsPage() {
   const { data, loading, error, refetch } = useApi(() => advisorService.get())
   const pnlFetcher = useCallback(() => pnlService.get(30), [])
   const { data: pnlData } = useApi(pnlFetcher)
+  const { data: heatmapData } = useApi(heatmapService.get)
 
   const insightlar = data?.insightlar || []
 
@@ -103,19 +104,13 @@ export default function AnalyticsPage() {
               </div>
             )}
 
-            {/* Sales Heatmap */}
-            <SalesHeatmap
-              matrix={[
-                [0,0,0,0,0,0,1,3,8,14,18,12,5,8,14,22,25,22,18,10,4,1,0,0],
-                [0,0,0,0,0,0,2,4,9,16,20,14,6,9,16,24,28,24,19,12,5,1,0,0],
-                [0,0,0,0,0,0,2,5,11,18,22,15,7,10,18,26,30,25,20,13,5,2,0,0],
-                [0,0,0,0,0,0,2,5,10,17,21,14,6,9,17,24,27,23,18,11,5,1,0,0],
-                [0,0,0,0,0,0,3,6,12,19,24,18,7,11,20,28,32,28,22,14,6,2,0,0],
-                [0,0,0,0,0,0,1,2,6,12,18,20,12,15,22,26,28,24,16,9,4,1,0,0],
-                [0,0,0,0,0,0,0,1,3,8,12,15,10,12,18,20,18,14,8,4,1,0,0,0],
-              ]}
-              metric="soni"
-            />
+            {/* Sales Heatmap — real data from /api/v1/hisobot/heatmap */}
+            {heatmapData?.matrix && (
+              <SalesHeatmap
+                matrix={heatmapData.matrix}
+                metric={heatmapData.metric ?? "soni"}
+              />
+            )}
           </>
         )}
       </div>
