@@ -109,7 +109,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
     <>
       {title && !collapsed && (
         <div className="px-3 pt-4 pb-1">
-          <span className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-600">
+          <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
             {title}
           </span>
         </div>
@@ -124,13 +124,13 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
             className={cn(
               "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all",
               isActive
-                ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
-                : "text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-800/50",
+                ? "bg-primary/10 text-primary"
+                : "text-muted-foreground hover:bg-muted/60",
               collapsed && "justify-center px-2"
             )}
             title={collapsed ? item.label : undefined}
           >
-            <item.icon className={cn("h-4.5 w-4.5 flex-shrink-0", isActive ? "text-emerald-600 dark:text-emerald-400" : "")} />
+            <item.icon className={cn("h-4.5 w-4.5 flex-shrink-0", isActive ? "text-primary" : "")} />
             {!collapsed && <span className="truncate">{item.label}</span>}
             {isActive && !collapsed && (
               <div className="ml-auto w-1.5 h-1.5 rounded-full bg-emerald-500" />
@@ -143,25 +143,25 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
 
   return (
     <aside className={cn(
-      "flex flex-col h-full bg-white dark:bg-gray-950 border-r border-gray-200 dark:border-gray-800 transition-all duration-200",
+      "flex flex-col h-full bg-sidebar border-r border-border transition-all duration-200",
       collapsed ? "w-16" : "w-56"
     )}>
       {/* Logo */}
-      <div className="flex items-center justify-between px-3 py-4 border-b border-gray-100 dark:border-gray-800">
+      <div className="flex items-center justify-between px-3 py-4 border-b border-border/60">
         {!collapsed && (
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
               <span className="text-white text-sm font-bold">S</span>
             </div>
             <div>
-              <div className="text-sm font-bold text-gray-900 dark:text-white">SavdoAI</div>
-              <div className="text-[10px] text-gray-400">v25.4.0 Pro</div>
+              <div className="text-sm font-bold text-foreground">SavdoAI</div>
+              <div className="text-[10px] text-muted-foreground">v25.4.0 Pro</div>
             </div>
           </div>
         )}
         <button
           onClick={() => setCollapsed(!collapsed)}
-          className="p-1 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-400"
+          className="p-1 rounded-md hover:bg-muted text-muted-foreground"
         >
           {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
         </button>
@@ -172,15 +172,15 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
         {renderSection(navItems)}
 
         {/* Yangi modullar — ajratilgan */}
-        {!collapsed && <div className="my-2 mx-3 border-t border-gray-100 dark:border-gray-800" />}
+        {!collapsed && <div className="my-2 mx-3 border-t border-border/60" />}
         {renderSection(navItemsNew, "Yangi")}
 
-        {!collapsed && <div className="my-2 mx-3 border-t border-gray-100 dark:border-gray-800" />}
+        {!collapsed && <div className="my-2 mx-3 border-t border-border/60" />}
         {renderSection(navItemsSecondary, "Boshqa")}
       </nav>
 
       {/* Bottom settings */}
-      <div className="border-t border-gray-100 dark:border-gray-800 py-2 px-2 space-y-0.5">
+      <div className="border-t border-border/60 py-2 px-2 space-y-0.5">
         {renderSection(navItemsSettings)}
       </div>
     </aside>
