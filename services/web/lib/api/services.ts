@@ -96,7 +96,9 @@ export const clientService = {
 // Backend returns {total, items: [...]} — extract items safely
 export const productService = {
   list: async (): Promise<ProductDto[]> => {
-    const raw = await api.get<PaginatedResponse<ProductDto> | ProductDto[]>("/api/v1/tovarlar")
+    const raw = await api.get<PaginatedResponse<ProductDto> | ProductDto[]>(
+      "/api/v1/tovarlar?limit=500",
+    )
     return extractItems(raw)
   },
   get: (id: number) => api.get<ProductDto>(`/api/v1/tovar/${id}`),
