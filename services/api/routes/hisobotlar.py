@@ -7,6 +7,8 @@
 """
 from __future__ import annotations
 import logging
+from datetime import datetime, timezone
+from decimal import Decimal
 from typing import Optional
 
 from fastapi import APIRouter, HTTPException, Depends
@@ -150,6 +152,102 @@ async def hisobot_foyda(kunlar: int = 30, uid: int = Depends(get_uid)):
                        "miqdor": float(r["miqdor"])} for r in top_foyda],
         "top_zarar": [{"nomi": r["tovar_nomi"], "zarar": abs(float(r["foyda"])),
                        "miqdor": float(r["miqdor"])} for r in top_zarar],
+    }
+
+
+@router.get("/dashboard/summary", tags=["Dashboard"])
+async def dashboard_summary(uid: int = Depends(get_uid)):
+    """
+    Dashboard uchun YAGONA aggregated endpoint.
+
+    Avval dashboard 5-6 ta API chaqirar edi (statistika, dashboard,
+    top, agentlar, heatmap). Endi hammasi BITTA endpoint'da — tezroq
+    yuklanadi, kamroq server yuki.
+
+    Response shape matches KpiGridPremium + AgentKpiBoard +
+    SalesHeatmap + alert banners.
+    """
+    async with rls_conn(uid) as c:
+        # 1. Bugungi sotuv
+        bugun = await c.fetchrow("""
+            SELECT COUNT(*) AS soni, COALESCE(SUM(jami), 0) AS jami
+            FROM sotuv_sessiyalar
+            WHERE user_id = $1
+              AND (sana AT TIME ZONE 'Asia/Tashkent')::date = CURRENT_DATE
+              AND COALESCE(holat, 'yangi') != 'bekor'
+        """, uid)
+
+        # 2. Haftalik
+        hafta = await c.fetchrow("""
+            SELECT COUNT(*) AS soni, COALESCE(SUM(jami), 0) AS jami
+            FROM sotuv_sessiyalar
+            WHERE user_id = $1 AND sana >= NOW() - interval '7 days'
+        """, uid)
+
+        # 3. Oylik
+        oy = await c.fetchrow("""
+            SELECT COUNT(*) AS soni, COALESCE(SUM(jami), 0) AS jami
+            FROM sotuv_sessiyalar
+            WHERE user_id = $1 AND sana >= NOW() - interval '30 days'
+        """, uid)
+
+        # 4. Qarzlar
+        faol_qarz = await c.fetchval(
+            "SELECT COALESCE(SUM(qolgan), 0) FROM qarzlar "
+            "WHERE user_id=$1 AND yopildi=FALSE AND qolgan>0", uid) or 0
+
+        muddat_otgan = await c.fetchval(
+            "SELECT COUNT(*) FROM qarzlar "
+            "WHERE user_id=$1 AND yopildi=FALSE AND qolgan>0 "
+            "AND muddat IS NOT NULL AND muddat < NOW()", uid) or 0
+
+        # 5. Faol klientlar (30 kun)
+        faol_klient = await c.fetchval("""
+            SELECT COUNT(DISTINCT klient_id)
+            FROM sotuv_sessiyalar
+            WHERE user_id = $1 AND sana >= NOW() - interval '30 days'
+              AND klient_id IS NOT NULL
+        """, uid) or 0
+
+        # 6. Kam qoldiq
+        kam_qoldiq_soni = await c.fetchval(
+            "SELECT COUNT(*) FROM tovarlar "
+            "WHERE user_id=$1 AND min_qoldiq > 0 AND qoldiq <= min_qoldiq", uid) or 0
+
+        kam_qoldiq_tovarlar = await c.fetch("""
+            SELECT id, nomi, qoldiq, min_qoldiq, birlik
+            FROM tovarlar
+            WHERE user_id=$1 AND min_qoldiq > 0 AND qoldiq <= min_qoldiq
+            ORDER BY qoldiq ASC LIMIT 5
+        """, uid)
+
+        # 7. Bugun top 5
+        top_bugun = await c.fetch("""
+            SELECT c.tovar_nomi AS nomi,
+                   SUM(c.miqdor) AS miqdor,
+                   SUM(c.jami) AS jami
+            FROM chiqimlar c
+            JOIN sotuv_sessiyalar ss ON ss.id = c.sessiya_id
+            WHERE ss.user_id = $1
+              AND (ss.sana AT TIME ZONE 'Asia/Tashkent')::date = CURRENT_DATE
+            GROUP BY c.tovar_nomi
+            ORDER BY SUM(c.jami) DESC LIMIT 5
+        """, uid)
+
+    def d(v):
+        return float(v) if isinstance(v, Decimal) else v
+
+    return {
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "bugun":  {"soni": int(bugun["soni"]), "jami": d(bugun["jami"])},
+        "hafta":  {"soni": int(hafta["soni"]), "jami": d(hafta["jami"])},
+        "oy":     {"soni": int(oy["soni"]),    "jami": d(oy["jami"])},
+        "faol_klientlar": int(faol_klient),
+        "faol_qarz": d(faol_qarz),
+        "muddat_otgan_qarz": int(muddat_otgan),
+        "kam_qoldiq_soni": int(kam_qoldiq_soni),
+        "kam_qoldiq_tovarlar": [dict(r) for r in kam_qoldiq_tovarlar],
+        "top_bugun": [dict(r) for r in top_bugun],
     }
 
 
