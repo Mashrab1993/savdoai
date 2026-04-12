@@ -77,7 +77,12 @@ export const dashboardService = {
 // Backend returns {total, items: [...]} — extract items safely
 export const clientService = {
   list: async (): Promise<ClientDto[]> => {
-    const raw = await api.get<PaginatedResponse<ClientDto> | ClientDto[]>("/api/v1/klientlar")
+    // Load up to 500 clients — ClientDirectoryTable does client-side
+    // filtering, search, category chips, debt filter. SalesDoc loads
+    // 300-500 at a time too (DataTables client-side).
+    const raw = await api.get<PaginatedResponse<ClientDto> | ClientDto[]>(
+      "/api/v1/klientlar?limit=500&sort=jami_sotib",
+    )
     return extractItems(raw)
   },
   create: (data: Partial<ClientDto>) => api.post<ClientDto>("/api/v1/klient", data),
