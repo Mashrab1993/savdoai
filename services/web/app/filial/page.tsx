@@ -42,12 +42,17 @@ export default function FilialPage() {
   return (
     <AdminLayout title="🏢 Filiallar">
       <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <p className="text-sm text-muted-foreground">Smartup multi-filial analogi — ko&apos;p filial boshqaruvi</p>
-          <Button onClick={() => setShowCreate(true)} className="bg-emerald-600 hover:bg-emerald-700">
-            <Plus className="w-4 h-4 mr-1" /> Yangi filial
-          </Button>
-        </div>
+        <PageHeader
+          icon={Building2}
+          gradient="blue"
+          title="Filiallar"
+          subtitle="Multi-filial boshqaruvi — do'kon, ombor, ofis"
+          action={
+            <Button onClick={() => setShowCreate(true)}>
+              <Plus className="w-4 h-4 mr-1" /> Yangi filial
+            </Button>
+          }
+        />
 
         {selectedFilial ? (
           <div className="space-y-4">

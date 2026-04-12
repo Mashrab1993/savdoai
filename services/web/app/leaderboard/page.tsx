@@ -1,5 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
+import { Trophy } from "lucide-react";
+import { PageHeader } from "@/components/ui/page-header";
 
 export default function LeaderboardPage() {
   const [myStats, setMyStats] = useState<any>(null);
@@ -23,7 +25,13 @@ export default function LeaderboardPage() {
   const progress = nextXP > 0 ? Math.min(100, ((myStats?.xp || 0) / ((myStats?.xp || 0) + nextXP)) * 100) : 100;
 
   return (
-    <div className="max-w-4xl mx-auto p-4 sm:p-6">
+    <div className="max-w-4xl mx-auto p-4 sm:p-6 space-y-5">
+      <PageHeader
+        icon={Trophy}
+        gradient="amber"
+        title="Leaderboard"
+        subtitle="Gamification — reyting va yutuqlar"
+      />
       {/* My Profile Card */}
       {myStats && (
         <div className="bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl p-5 mb-6 text-white">

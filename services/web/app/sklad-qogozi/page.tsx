@@ -6,6 +6,7 @@ import {
   Warehouse, Download, FileSpreadsheet, Printer, AlertCircle,
   CheckCircle2, TrendingUp,
 } from "lucide-react"
+import { PageHeader } from "@/components/ui/page-header"
 import { formatCurrency } from "@/lib/format"
 
 type ExportResult = {
@@ -51,15 +52,12 @@ export default function SkladQogoziPage() {
   return (
     <AdminLayout>
       <div className="max-w-4xl mx-auto p-4 sm:p-6 space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <Warehouse className="w-7 h-7 text-emerald-600" />
-            Sklad qog&apos;ozi
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Ombor inventarizatsiyasi hujjati — to&apos;liq qoldiq + qiymat hisob
-          </p>
-        </div>
+        <PageHeader
+          icon={Warehouse}
+          gradient="amber"
+          title="Sklad qog'ozi"
+          subtitle="Ombor inventarizatsiyasi hujjati — to'liq qoldiq + qiymat hisob"
+        />
 
         {/* Description Card */}
         <div className="bg-card border rounded-xl p-6">

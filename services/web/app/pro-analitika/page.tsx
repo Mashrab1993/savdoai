@@ -1,5 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
+import { BarChart3 } from "lucide-react";
+import { PageHeader } from "@/components/ui/page-header";
 
 function Card({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return <div className={`bg-card rounded-xl border border-border dark:border-border ${className}`}>{children}</div>;
@@ -39,8 +41,12 @@ export default function AnalytikaPage() {
   return (
     <div className="max-w-6xl mx-auto p-4 sm:p-6">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold">📊 Pro Analitika</h1>
-        <p className="text-sm text-muted-foreground mt-1">SAP/Oracle darajasidagi biznes tahlili</p>
+        <PageHeader
+          icon={BarChart3}
+          gradient="violet"
+          title="Pro Analitika"
+          subtitle="SAP/Oracle darajasidagi biznes tahlili"
+        />
       </div>
 
       <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
