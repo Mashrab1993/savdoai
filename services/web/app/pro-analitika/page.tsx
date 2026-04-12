@@ -188,7 +188,7 @@ export default function AnalytikaPage() {
             <h3 className="text-sm font-semibold">📦 Qayta buyurtma kerak bo&apos;lgan tovarlar</h3>
             <p className="text-xs text-muted-foreground mt-0.5">Reorder Point algoritmi asosida</p>
           </div>
-          <div className="divide-y divide-gray-100 dark:divide-gray-800">
+          <div className="divide-y divide-border/60 dark:divide-border">
             {(reorder || []).map((t: any, i: number) => (
               <div key={i} className="flex items-center justify-between px-4 py-3">
                 <div className="flex items-center gap-3">

@@ -90,7 +90,7 @@ export default function OnboardingPage() {
   const Icon = current.icon
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-emerald-50 dark:from-gray-950 dark:to-emerald-950/20 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-background to-emerald-500/5 dark:from-background dark:to-emerald-950/20 flex items-center justify-center p-4">
       <div className="w-full max-w-lg">
         {/* Progress */}
         <div className="mb-8">

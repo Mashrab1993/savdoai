@@ -72,7 +72,7 @@ export default function LeaderboardPage() {
           <h3 className="text-sm font-semibold mb-3">🎖️ Badgelar</h3>
           <div className="flex flex-wrap gap-2">
             {myStats.badges.map((b: any, i: number) => (
-              <div key={i} className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-full">
+              <div key={i} className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-500/40 rounded-full">
                 <span>{b.emoji}</span>
                 <span className="text-xs font-medium text-amber-700 dark:text-amber-400">{b.nomi}</span>
               </div>
@@ -97,7 +97,7 @@ export default function LeaderboardPage() {
       <div className="space-y-2">
         {board.map((r: any, i: number) => (
           <div key={i} className={`flex items-center justify-between p-3.5 rounded-xl border ${
-            i < 3 ? "bg-gradient-to-r from-amber-50 to-white dark:from-amber-900/10 dark:to-gray-900 border-amber-200 dark:border-amber-800" : "bg-card"
+            i < 3 ? "bg-gradient-to-r from-amber-50 to-white dark:from-amber-500/10 dark:to-card border-amber-200 dark:border-amber-500/40" : "bg-card"
           }`}>
             <div className="flex items-center gap-3">
               <div className="w-8 text-center">

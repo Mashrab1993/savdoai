@@ -139,7 +139,7 @@ export default function PhotoReportsPage() {
                     <img src={p.foto_url} alt={p.klient_nomi || "foto"}
                          className="w-full h-full object-cover" />
                   ) : (
-                    <ImageIcon className="w-12 h-12 text-gray-300" />
+                    <ImageIcon className="w-12 h-12 text-muted-foreground/50" />
                   )}
                 </div>
                 <div className="p-3">

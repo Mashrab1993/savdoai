@@ -125,7 +125,7 @@ export default function AIDashboard() {
               <h3 className="text-sm font-semibold mb-3">🏆 Top 5 tovar (bu oy)</h3>
               <div className="space-y-2">
                 {(oy.top_tovarlar || []).slice(0, 5).map((t: any, i: number) => (
-                  <div key={i} className="flex items-center justify-between py-1.5 border-b border-gray-50 dark:border-border last:border-0">
+                  <div key={i} className="flex items-center justify-between py-1.5 border-b border-border/40 dark:border-border last:border-0">
                     <div className="flex items-center gap-2">
                       <span className="text-xs font-bold text-muted-foreground w-5">{i + 1}.</span>
                       <span className="text-sm">{t.nomi}</span>

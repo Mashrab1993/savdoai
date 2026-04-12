@@ -261,7 +261,7 @@ export default function ConfigPage() {
                   <button
                     onClick={() => handleChange(activeModul, f.key, !modulConfig[f.key])}
                     className={`relative w-11 h-6 rounded-full transition-colors ${
-                      modulConfig[f.key] ? "bg-emerald-500" : "bg-gray-300 dark:bg-gray-600"
+                      modulConfig[f.key] ? "bg-emerald-500" : "bg-muted-foreground/40"
                     }`}
                   >
                     <div className={`absolute top-0.5 left-0.5 w-5 h-5 bg-card rounded-full shadow transition-transform ${

@@ -28,7 +28,7 @@ const SEGMENT_META: Record<string, { label: string; color: string; icon: string;
   Loyal:     { label: "Loyal",           color: "from-emerald-400 to-emerald-600", icon: "💚", tavsiya: "Obunaga taklif, bonus ball, referal dasturi" },
   Potential: { label: "Potential",       color: "from-sky-400 to-sky-600",      icon: "🌱", tavsiya: "Chegirma kupon, yangi mahsulot taqdimoti" },
   "At Risk": { label: "At Risk",         color: "from-orange-400 to-orange-600", icon: "⚠️", tavsiya: "Shaxsiy qo'ng'iroq, yo'qotmang!" },
-  Lost:      { label: "Lost",            color: "from-gray-400 to-gray-600",    icon: "💀", tavsiya: "Yangi ofer yoki unuting" },
+  Lost:      { label: "Lost",            color: "from-slate-400 to-slate-600",    icon: "💀", tavsiya: "Yangi ofer yoki unuting" },
 }
 
 const ORDER = ["Champions", "Loyal", "Potential", "At Risk", "Lost"]

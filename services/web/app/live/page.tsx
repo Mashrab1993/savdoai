@@ -181,7 +181,7 @@ export default function LiveDashboardPage() {
         {(og.kam_qoldiq > 0 || Number(og.jami_qarz || 0) > 0) && (
           <div className="flex gap-3 overflow-x-auto pb-1">
             {og.kam_qoldiq > 0 && (
-              <div className="flex items-center gap-2 px-3 py-2 bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800 rounded-lg text-xs text-amber-700 whitespace-nowrap">
+              <div className="flex items-center gap-2 px-3 py-2 bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-500/40 rounded-lg text-xs text-amber-700 whitespace-nowrap">
                 <Package className="w-3.5 h-3.5" />
                 <span>{og.kam_qoldiq} ta tovar tugayapti</span>
               </div>
@@ -205,7 +205,7 @@ export default function LiveDashboardPage() {
               </div>
               <span className="text-[10px] text-muted-foreground">{sotuvlar.length} ta</span>
             </div>
-            <div className="max-h-96 overflow-y-auto divide-y divide-gray-50 dark:divide-gray-800">
+            <div className="max-h-96 overflow-y-auto divide-y divide-border/40 dark:divide-border">
               {sotuvlar.map((s: any, i: number) => (
                 <ActivityItem
                   key={s.id || i}
@@ -232,7 +232,7 @@ export default function LiveDashboardPage() {
             </div>
             <div className="max-h-96 overflow-y-auto">
               {(reja?.vazifalar || []).map((v: any, i: number) => (
-                <div key={i} className="flex items-start gap-3 p-3 border-b border-gray-50 dark:border-border last:border-0">
+                <div key={i} className="flex items-start gap-3 p-3 border-b border-border/40 dark:border-border last:border-0">
                   <span className="text-lg flex-shrink-0 mt-0.5">{v.emoji}</span>
                   <div className="flex-1 min-w-0">
                     <div className="text-sm font-medium">{v.sarlavha}</div>

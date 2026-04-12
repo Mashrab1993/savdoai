@@ -100,7 +100,7 @@ export default function RoutePage() {
               <div className="p-4 border-b bg-muted/50 dark:bg-muted">
                 <h3 className="text-sm font-semibold">📍 Optimal marshrut</h3>
               </div>
-              <div className="divide-y divide-gray-100 dark:divide-gray-800">
+              <div className="divide-y divide-border/60 dark:divide-border">
                 {result.optimal_tartib.map((n: any, i: number) => (
                   <div key={i} className="flex items-center gap-3 px-4 py-3">
                     <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${

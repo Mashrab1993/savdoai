@@ -118,7 +118,7 @@ export default function AksiyaPage() {
 
       <div className="space-y-3">
         {aksiyalar.map((a: any) => (
-          <div key={a.id} className={`flex items-center justify-between p-4 rounded-xl border ${a.faol ? "bg-card" : "bg-muted/50 dark:bg-gray-950 opacity-60"}`}>
+          <div key={a.id} className={`flex items-center justify-between p-4 rounded-xl border ${a.faol ? "bg-card" : "bg-muted/50 dark:bg-card opacity-60"}`}>
             <div className="flex items-center gap-3">
               <span className="text-2xl">{TURLAR[a.turi]?.icon || "📋"}</span>
               <div>
@@ -127,7 +127,7 @@ export default function AksiyaPage() {
               </div>
             </div>
             <button onClick={() => toggle(a.id, a.faol)}
-              className={`w-11 h-6 rounded-full transition-colors relative ${a.faol ? "bg-emerald-500" : "bg-gray-300"}`}>
+              className={`w-11 h-6 rounded-full transition-colors relative ${a.faol ? "bg-emerald-500" : "bg-muted-foreground/40"}`}>
               <div className={`absolute top-0.5 left-0.5 w-5 h-5 bg-card rounded-full shadow transition-transform ${a.faol ? "translate-x-5" : ""}`} />
             </button>
           </div>

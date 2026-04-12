@@ -112,7 +112,7 @@ export default function GpsPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Map Area */}
           <div className="lg:col-span-2 bg-card rounded-xl border overflow-hidden">
-            <div className="bg-gradient-to-br from-blue-50 to-emerald-50 dark:from-gray-800 dark:to-gray-900 h-96 flex items-center justify-center">
+            <div className="bg-gradient-to-br from-blue-50 to-emerald-50 dark:from-muted dark:to-card h-96 flex items-center justify-center">
               <div className="text-center">
                 <MapPin className="w-16 h-16 mx-auto text-emerald-300 mb-4" />
                 <p className="text-lg font-medium text-muted-foreground">Xarita integratsiyasi</p>

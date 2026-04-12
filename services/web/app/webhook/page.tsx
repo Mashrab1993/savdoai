@@ -116,7 +116,7 @@ export default function WebhookPage() {
               </div>
               <div className="flex items-center gap-2">
                 <button onClick={() => test(w.id)} className="px-3 py-1 bg-blue-100 text-blue-700 rounded text-xs font-medium">Test</button>
-                <span className={`w-2.5 h-2.5 rounded-full ${w.faol ? "bg-emerald-500" : "bg-gray-300"}`} />
+                <span className={`w-2.5 h-2.5 rounded-full ${w.faol ? "bg-emerald-500" : "bg-muted-foreground/40"}`} />
               </div>
             </div>
             <div className="flex items-center gap-4 text-xs text-muted-foreground">

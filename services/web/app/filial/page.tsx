@@ -76,7 +76,7 @@ export default function FilialPage() {
                     </tr></thead>
                     <tbody>
                       {qoldiqlar.map((q: any, i: number) => (
-                        <tr key={i} className="border-t border-gray-50">
+                        <tr key={i} className="border-t border-border/40">
                           <td className="px-3 py-2">{q.tovar_nomi}</td>
                           <td className={`px-3 py-2 text-right font-medium ${Number(q.qoldiq) <= Number(q.min_qoldiq) ? "text-red-600" : ""}`}>{q.qoldiq}</td>
                           <td className="px-3 py-2 text-right text-muted-foreground">{q.min_qoldiq}</td>

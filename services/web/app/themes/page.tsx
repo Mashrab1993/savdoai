@@ -8,8 +8,8 @@ import { PageHeader } from "@/components/ui/page-header"
 
 const THEMES = [
   { key: "light", label: "Yorug'", icon: Sun, preview: "bg-card border" },
-  { key: "dark", label: "Qorong'u", icon: Moon, preview: "bg-gray-900 border-gray-700" },
-  { key: "system", label: "Tizim", icon: Monitor, preview: "bg-gradient-to-r from-white to-gray-900" },
+  { key: "dark", label: "Qorong'u", icon: Moon, preview: "bg-card border-border" },
+  { key: "system", label: "Tizim", icon: Monitor, preview: "bg-gradient-to-r from-white to-card" },
 ]
 
 const COLORS = [
@@ -64,7 +64,7 @@ export default function ThemesPage() {
               <button
                 key={c.name}
                 onClick={() => setSelectedColor(c.name)}
-                className={`p-4 rounded-xl border-2 transition ${selectedColor === c.name ? "border-gray-400" : "border-transparent hover:border-border"}`}
+                className={`p-4 rounded-xl border-2 transition ${selectedColor === c.name ? "border-border" : "border-transparent hover:border-border"}`}
               >
                 <div className={`w-full h-12 rounded-lg ${c.color} mb-2`} />
                 <div className="text-xs font-medium text-center">{c.label}</div>

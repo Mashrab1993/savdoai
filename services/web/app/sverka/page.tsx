@@ -65,7 +65,7 @@ export default function AktSverkiPage() {
             </div>
 
             {/* Summary table */}
-            <div className="divide-y divide-gray-100 dark:divide-gray-800">
+            <div className="divide-y divide-border/60 dark:divide-border">
               {[
                 { label: "Boshlang'ich qoldiq", value: result.boshlangich_qoldiq, color: "" },
                 { label: "Davr ichidagi sotuvlar", value: result.jami_sotuv, color: "text-blue-600" },
@@ -98,7 +98,7 @@ export default function AktSverkiPage() {
                   </tr></thead>
                   <tbody>
                     {result.tafsilotlar.map((t: any, i: number) => (
-                      <tr key={i} className="border-t border-gray-50">
+                      <tr key={i} className="border-t border-border/40">
                         <td className="px-4 py-2 text-xs">{t.sana ? new Date(t.sana).toLocaleDateString("uz") : "—"}</td>
                         <td className="px-4 py-2">{N(t.jami).toLocaleString()}</td>
                         <td className="px-4 py-2 text-emerald-600">{N(t.tolangan).toLocaleString()}</td>

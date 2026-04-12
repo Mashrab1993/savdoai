@@ -124,7 +124,7 @@ export default function TashrifPage() {
         <div className="px-4 py-3 border-b border-border/60 dark:border-border">
           <h3 className="text-sm font-semibold">Tashrif tarixi</h3>
         </div>
-        <div className="divide-y divide-gray-100 dark:divide-gray-800">
+        <div className="divide-y divide-border/60 dark:divide-border">
           {tashriflar.slice(0, 50).map((t: any, i: number) => (
             <div key={i} className="flex items-center justify-between px-4 py-3">
               <div className="flex items-center gap-3">

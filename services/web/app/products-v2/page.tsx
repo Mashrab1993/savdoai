@@ -138,7 +138,7 @@ export default function ProductsV2Page() {
             {filtered.map((p: any) => (
               <div key={p.id} className="bg-card dark:bg-card rounded-xl border border-border dark:border-border overflow-hidden hover:shadow-md transition-shadow">
                 {/* Photo placeholder */}
-                <div className="h-24 bg-gradient-to-br from-gray-100 to-gray-50 dark:from-gray-800 dark:to-gray-900 flex items-center justify-center">
+                <div className="h-24 bg-gradient-to-br from-muted to-muted/50 dark:from-muted dark:to-card flex items-center justify-center">
                   {p.foto_url
                     ? <img src={p.foto_url} alt="" className="h-full w-full object-cover" />
                     : <Package className="w-8 h-8 text-muted-foreground/50" />

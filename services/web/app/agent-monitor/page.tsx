@@ -87,7 +87,7 @@ export default function AgentMonitorPage() {
                     <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
                       online ? "bg-emerald-100" : "bg-muted"
                     }`}>
-                      <div className={`w-3 h-3 rounded-full ${online ? "bg-emerald-500 animate-pulse" : "bg-gray-400"}`} />
+                      <div className={`w-3 h-3 rounded-full ${online ? "bg-emerald-500 animate-pulse" : "bg-muted-foreground"}`} />
                     </div>
                     <div>
                       <div className="text-sm font-semibold">Agent #{a.id}</div>
