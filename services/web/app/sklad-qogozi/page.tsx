@@ -116,7 +116,7 @@ export default function SkladQogoziPage() {
               className="bg-card text-emerald-600 hover:bg-emerald-50"
             >
               {loading ? (
-                <><div className="animate-spin h-4 w-4 border-b-2 border-emerald-600 rounded-full mr-2" /> Yaratilmoqda...</>
+                <><div className="animate-spin h-4 w-4 border-2 border-primary border-t-transparent rounded-full mr-2" /> Yaratilmoqda...</>
               ) : (
                 <><FileSpreadsheet className="w-5 h-5 mr-2" /> Excel yuklab olish</>
               )}

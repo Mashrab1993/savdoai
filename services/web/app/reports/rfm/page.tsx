@@ -74,7 +74,7 @@ export default function ReportsRfmPage() {
 
         {loading && (
           <div className="flex justify-center p-16">
-            <div className="animate-spin h-8 w-8 border-b-2 border-emerald-500 rounded-full" />
+            <div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full" />
           </div>
         )}
         {error && !loading && (

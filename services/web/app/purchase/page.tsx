@@ -251,7 +251,7 @@ export default function PurchasePage() {
               {loading ? (
                 <TableRow>
                   <TableCell colSpan={7} className="text-center py-10">
-                    <div className="animate-spin h-6 w-6 border-b-2 border-emerald-500 rounded-full mx-auto" />
+                    <div className="animate-spin h-5 w-5 border-2 border-primary border-t-transparent rounded-full mx-auto" />
                   </TableCell>
                 </TableRow>
               ) : purchases.length === 0 ? (
