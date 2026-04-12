@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/sheet"
 import { Input } from "@/components/ui/input"
 import { CreditCard, AlertTriangle, CheckCircle2, Clock, Search, ChevronRight } from "lucide-react"
+import { PageHeader } from "@/components/ui/page-header"
 import DebtorsList from "@/components/dashboard/debtors-list"
 import { cn } from "@/lib/utils"
 import { useApi } from "@/hooks/use-api"
@@ -79,6 +80,12 @@ export default function DebtsPage() {
         {loading && <PageLoading />}
         {error && !loading && <PageError message={error} onRetry={refetch} />}
         {!loading && !error && <>
+        <PageHeader
+          icon={CreditCard}
+          gradient="rose"
+          title={L.title[locale]}
+          subtitle={locale === "uz" ? `${debts.length} ta qarz yozuvi` : `${debts.length} записей долга`}
+        />
         {/* Alert Banner — Overdue Critical */}
         {overdueCount > 0 && (
           <div className="bg-rose-500/10 dark:bg-red-950/20 border-l-4 border-red-500 rounded-lg p-4 flex items-start gap-3">
