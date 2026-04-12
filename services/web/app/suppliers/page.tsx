@@ -173,12 +173,12 @@ export default function SuppliersPage() {
         )}
 
         {error && (
-          <div className="bg-rose-500/10 border border-rose-500/30 rounded-xl p-4 text-rose-700 dark:text-rose-300 flex items-center gap-2">
+          <div className="bg-rose-500/10 border border-rose-500/30 rounded-2xl p-4 text-rose-700 dark:text-rose-300 flex items-center gap-2">
             <AlertCircle className="w-5 h-5" /> {error}
           </div>
         )}
 
-        <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-xl overflow-hidden">
+        <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl overflow-hidden">
           <Table>
             <TableHeader>
               <TableRow>
@@ -249,7 +249,7 @@ export default function SuppliersPage() {
         </div>
 
         {/* Xarid buyurtma tugma */}
-        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+        <div className="bg-blue-50 border border-blue-200 rounded-2xl p-4">
           <div className="flex items-center gap-2 text-sm text-blue-800 dark:text-blue-300">
             <ShoppingCart className="w-4 h-4" />
             <span>Xarid buyurtma yaratish uchun <a href="/purchase" className="font-semibold underline">/purchase</a> sahifasiga o&apos;ting</span>

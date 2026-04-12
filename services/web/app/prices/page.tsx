@@ -224,7 +224,7 @@ export default function PricesPage() {
                   key={g.id}
                   onClick={() => setSelected(isActive ? null : g)}
                   className={cn(
-                    "border rounded-xl p-4 cursor-pointer transition-all",
+                    "border rounded-2xl p-4 cursor-pointer transition-all",
                     style.bg, style.border,
                     isActive && "ring-2 ring-primary ring-offset-1"
                   )}
@@ -277,7 +277,7 @@ export default function PricesPage() {
             {syncedSelected ? (
               <>
                 {/* Group info */}
-                <div className={cn("border rounded-xl p-5", getGroupStyle(syncedSelected.name).bg, getGroupStyle(syncedSelected.name).border)}>
+                <div className={cn("border rounded-2xl p-5", getGroupStyle(syncedSelected.name).bg, getGroupStyle(syncedSelected.name).border)}>
                   <div className="flex items-center justify-between mb-3">
                     <div>
                       <h3 className={cn("font-bold text-base", getGroupStyle(syncedSelected.name).text)}>{syncedSelected.name}</h3>

@@ -283,7 +283,7 @@ export default function ClientsPage() {
           ) : tarixData ? (
             <div className="mt-4 space-y-5">
               {/* Klient ma'lumot */}
-              <div className="bg-secondary rounded-xl p-4 space-y-2">
+              <div className="bg-secondary rounded-2xl p-4 space-y-2">
                 {[
                   { l: locale === "uz" ? "Telefon" : "Телефон", v: tarixData.klient?.telefon || "—" },
                   { l: locale === "uz" ? "Kredit limit" : "Кредитный лимит", v: fmt(tarixData.klient?.kredit_limit ?? 0) },

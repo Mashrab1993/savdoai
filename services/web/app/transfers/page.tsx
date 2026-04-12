@@ -137,29 +137,29 @@ export default function TransfersPage() {
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-          <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-xl p-4">
+          <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl p-4">
             <div className="text-xs text-muted-foreground">Transferlar soni</div>
             <div className="text-2xl font-bold mt-1">{stats.soni || 0}</div>
           </div>
-          <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-xl p-4">
+          <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl p-4">
             <div className="text-xs text-muted-foreground">Jami miqdor</div>
             <div className="text-2xl font-bold mt-1">{Number(stats.jami_miqdor || 0).toLocaleString()}</div>
           </div>
-          <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-xl p-4">
+          <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl p-4">
             <div className="text-xs text-muted-foreground">Filiallar</div>
             <div className="text-2xl font-bold mt-1">{filiallar.length}</div>
           </div>
         </div>
 
         {filiallar.length < 2 && (
-          <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4 text-sm text-amber-800 dark:text-amber-300">
+          <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-4 text-sm text-amber-800 dark:text-amber-300">
             ⚠️ Transfer qilish uchun kamida 2 ta filial kerak.{" "}
             <a href="/warehouses" className="underline font-semibold">/warehouses</a> sahifasida qo&apos;shing.
           </div>
         )}
 
         {error && (
-          <div className="bg-rose-500/10 border border-rose-500/30 rounded-xl p-4 text-rose-700 dark:text-rose-300 flex items-center gap-2">
+          <div className="bg-rose-500/10 border border-rose-500/30 rounded-2xl p-4 text-rose-700 dark:text-rose-300 flex items-center gap-2">
             <AlertCircle className="w-5 h-5" /> {error}
           </div>
         )}
@@ -190,7 +190,7 @@ export default function TransfersPage() {
 
         {/* Legacy table (shown only when no transfers exist) */}
         {!loading && items.length === 0 && (
-          <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-xl overflow-x-auto">
+          <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>

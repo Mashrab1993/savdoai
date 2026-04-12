@@ -144,12 +144,12 @@ export default function DataExportPage() {
         </div>
 
         {error && (
-          <div className="bg-rose-500/10 border border-rose-500/30 rounded-xl p-4 text-rose-700 dark:text-rose-300 flex items-center gap-2">
+          <div className="bg-rose-500/10 border border-rose-500/30 rounded-2xl p-4 text-rose-700 dark:text-rose-300 flex items-center gap-2">
             <AlertCircle className="w-5 h-5" /> {error}
           </div>
         )}
         {downloading && done > 0 && (
-          <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 text-blue-700 flex items-center gap-2">
+          <div className="bg-blue-50 border border-blue-200 rounded-2xl p-4 text-blue-700 flex items-center gap-2">
             <Check className="w-5 h-5" />
             {done} / {selected.length} ta hujjat yuklab olindi...
           </div>

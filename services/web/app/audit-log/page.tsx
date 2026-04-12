@@ -87,15 +87,15 @@ export default function AuditLogPage() {
 
         {/* Stats */}
         <div className="grid grid-cols-3 gap-3">
-          <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-xl p-4">
+          <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl p-4">
             <div className="text-xs text-muted-foreground">Jami amallar</div>
             <div className="text-2xl font-bold mt-1">{stats.jami || 0}</div>
           </div>
-          <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-xl p-4">
+          <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl p-4">
             <div className="text-xs text-muted-foreground">Turli jadvallar</div>
             <div className="text-2xl font-bold mt-1">{stats.turli_jadval || 0}</div>
           </div>
-          <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-xl p-4">
+          <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl p-4">
             <div className="text-xs text-muted-foreground">Amal turlari</div>
             <div className="text-2xl font-bold mt-1">{stats.turli_amal || 0}</div>
           </div>
@@ -124,12 +124,12 @@ export default function AuditLogPage() {
         </div>
 
         {error && (
-          <div className="bg-rose-500/10 border border-rose-500/30 rounded-xl p-4 text-rose-700 dark:text-rose-300 flex items-center gap-2">
+          <div className="bg-rose-500/10 border border-rose-500/30 rounded-2xl p-4 text-rose-700 dark:text-rose-300 flex items-center gap-2">
             <AlertCircle className="w-5 h-5" /> {error}
           </div>
         )}
 
-        <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-xl overflow-x-auto">
+        <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>

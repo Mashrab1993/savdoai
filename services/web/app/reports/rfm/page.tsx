@@ -87,17 +87,17 @@ export default function ReportsRfmPage() {
           <>
             {/* Summary */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-xl p-4">
+              <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl p-4">
                 <div className="text-xs text-muted-foreground flex items-center gap-1">
                   <Users className="w-3 h-3" /> Jami klient (aktiv)
                 </div>
                 <div className="text-2xl font-bold mt-1">{data.jami_klient}</div>
               </div>
-              <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-xl p-4">
+              <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl p-4">
                 <div className="text-xs text-muted-foreground">Jami sotuv</div>
                 <div className="text-2xl font-bold mt-1">{formatCurrency(data.jami_summa)}</div>
               </div>
-              <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-xl p-4">
+              <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl p-4">
                 <div className="text-xs text-muted-foreground">VIP ulush</div>
                 <div className="text-2xl font-bold mt-1 text-amber-600">
                   {total > 0 ? Math.round((segments.Champions.soni / total) * 100) : 0}%
@@ -106,7 +106,7 @@ export default function ReportsRfmPage() {
                   {segments.Champions.soni} Champion
                 </div>
               </div>
-              <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-xl p-4">
+              <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl p-4">
                 <div className="text-xs text-muted-foreground">At Risk + Lost</div>
                 <div className="text-2xl font-bold mt-1 text-rose-600 dark:text-rose-400">
                   {segments["At Risk"].soni + segments.Lost.soni}
@@ -116,7 +116,7 @@ export default function ReportsRfmPage() {
             </div>
 
             {/* Segment distribution bars */}
-            <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-xl p-5">
+            <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl p-5">
               <h3 className="font-semibold mb-4">Segment taqsimoti</h3>
               <div className="space-y-3">
                 {ORDER.map(seg => {
@@ -147,7 +147,7 @@ export default function ReportsRfmPage() {
             </div>
 
             {/* Segment tabs + top 10 drill-down */}
-            <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-xl overflow-hidden">
+            <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl overflow-hidden">
               <div className="border-b flex flex-wrap">
                 {ORDER.map(seg => {
                   const s = segments[seg]
@@ -223,7 +223,7 @@ export default function ReportsRfmPage() {
               </Table>
             </div>
 
-            <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 text-sm text-blue-800 dark:text-blue-300">
+            <div className="bg-blue-50 border border-blue-200 rounded-2xl p-4 text-sm text-blue-800 dark:text-blue-300">
               <div className="font-bold mb-1">Izoh:</div>
               <ul className="list-disc pl-5 space-y-1">
                 <li><b>R (Recency)</b> — oxirgi xarid qachon bo&apos;lgan (1..5, 5 eng yaqin)</li>

@@ -151,7 +151,7 @@ export default function LoginPage() {
 
           <div className="grid grid-cols-2 gap-3">
             {stats.map(({ label, value, icon: Icon }) => (
-              <div key={label} className="bg-sidebar-accent/50 border border-sidebar-border rounded-xl p-4 flex items-start gap-3">
+              <div key={label} className="bg-sidebar-accent/50 border border-sidebar-border rounded-2xl p-4 flex items-start gap-3">
                 <div className="p-1.5 rounded-lg bg-sidebar-primary/10 shrink-0">
                   <Icon className="w-4 h-4 text-sidebar-primary" />
                 </div>

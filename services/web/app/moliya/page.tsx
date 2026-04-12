@@ -137,7 +137,7 @@ export default function MoliyaPage() {
           </div>
         )}
         {error && !loading && (
-          <div className="bg-rose-500/10 border border-rose-500/30 rounded-xl p-4 text-rose-700 dark:text-rose-300 flex items-center gap-2">
+          <div className="bg-rose-500/10 border border-rose-500/30 rounded-2xl p-4 text-rose-700 dark:text-rose-300 flex items-center gap-2">
             <AlertCircle className="w-5 h-5" /> Xatolik: {error}
           </div>
         )}

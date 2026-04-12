@@ -272,7 +272,7 @@ export default function DebtsPage() {
                 <SheetTitle>{L.debtDetails[locale]} — {selectedDebt.invoiceId}</SheetTitle>
               </SheetHeader>
               <div className="mt-6 space-y-5">
-                <div className="bg-secondary rounded-xl p-4 space-y-3">
+                <div className="bg-secondary rounded-2xl p-4 space-y-3">
                   {[
                     { label: L.drawerClient[locale], value: selectedDebt.clientName },
                     { label: translations.fields.amount[locale], value: fmt(selectedDebt.amount) },

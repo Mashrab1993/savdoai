@@ -195,7 +195,7 @@ export default function CashPage() {
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {/* Balance */}
           <div className={cn(
-            "col-span-2 lg:col-span-1 rounded-xl p-5 border flex flex-col gap-1",
+            "col-span-2 lg:col-span-1 rounded-2xl p-5 border flex flex-col gap-1",
             balanceTrend
               ? "bg-emerald-500/10 dark:bg-emerald-950/20 border-emerald-500/30 dark:border-green-800"
               : "bg-rose-500/10 dark:bg-rose-950/20 border-rose-500/30 dark:border-rose-800"

@@ -60,7 +60,7 @@ export default function SkladQogoziPage() {
         />
 
         {/* Description Card */}
-        <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-xl p-6">
+        <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl p-6">
           <h2 className="font-bold text-lg mb-4">Bu hujjat nima?</h2>
           <p className="text-sm text-muted-foreground mb-4">
             Sklad qog&apos;ozi — omboringizdagi barcha tovarlarning rasmiy ro&apos;yxati.
@@ -99,7 +99,7 @@ export default function SkladQogoziPage() {
         </div>
 
         {/* Action Card */}
-        <div className="bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl p-6 text-white">
+        <div className="bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl p-6 text-white">
           <div className="flex items-center justify-between flex-wrap gap-4">
             <div>
               <h3 className="text-xl font-bold">Hujjatni yuklab olish</h3>
@@ -124,13 +124,13 @@ export default function SkladQogoziPage() {
         </div>
 
         {error && (
-          <div className="bg-rose-500/10 border border-rose-500/30 rounded-xl p-4 text-rose-700 dark:text-rose-300 flex items-center gap-2">
+          <div className="bg-rose-500/10 border border-rose-500/30 rounded-2xl p-4 text-rose-700 dark:text-rose-300 flex items-center gap-2">
             <AlertCircle className="w-5 h-5" /> {error}
           </div>
         )}
 
         {last && (
-          <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-xl p-6 space-y-4">
+          <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl p-6 space-y-4">
             <div className="flex items-center gap-2 text-emerald-600">
               <CheckCircle2 className="w-5 h-5" />
               <h3 className="font-bold">Muvaffaqiyatli yaratildi!</h3>
@@ -167,7 +167,7 @@ export default function SkladQogoziPage() {
         )}
 
         {/* Info */}
-        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 text-sm text-blue-800 dark:text-blue-300">
+        <div className="bg-blue-50 border border-blue-200 rounded-2xl p-4 text-sm text-blue-800 dark:text-blue-300">
           <div className="font-bold mb-1">Maslahat:</div>
           <div>
             Har oy oxirida sklad qog&apos;ozini yuklab oling va arxivlang.

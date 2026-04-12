@@ -551,7 +551,7 @@ export default function ProductsPage() {
             </div>
           ) : tarixData ? (
             <div className="mt-4 space-y-5">
-              <div className="bg-secondary rounded-xl p-4 space-y-2 text-sm">
+              <div className="bg-secondary rounded-2xl p-4 space-y-2 text-sm">
                 {[
                   { l: locale === "uz" ? "Kategoriya" : "Категория", v: tarixData.tovar?.kategoriya },
                   { l: locale === "uz" ? "Olish narxi" : "Закупочная", v: `${Number(tarixData.tovar?.olish_narxi ?? 0).toLocaleString()} so'm` },

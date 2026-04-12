@@ -116,19 +116,19 @@ export default function WarehousesPage() {
         />
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-xl p-4">
+          <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl p-4">
             <div className="text-xs text-muted-foreground">Jami filiallar</div>
             <div className="text-2xl font-bold mt-1">{stats.jami}</div>
           </div>
-          <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-xl p-4">
+          <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl p-4">
             <div className="text-xs text-muted-foreground">Do&apos;konlar</div>
             <div className="text-2xl font-bold mt-1 text-sky-600">{stats.dokonlar}</div>
           </div>
-          <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-xl p-4">
+          <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl p-4">
             <div className="text-xs text-muted-foreground">Omborlar</div>
             <div className="text-2xl font-bold mt-1 text-emerald-600">{stats.omborlar}</div>
           </div>
-          <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-xl p-4">
+          <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl p-4">
             <div className="text-xs text-muted-foreground">Jami qiymat</div>
             <div className="text-xl font-bold mt-1 text-emerald-600">
               {formatCurrency(stats.jami_qiymat)}
@@ -137,12 +137,12 @@ export default function WarehousesPage() {
         </div>
 
         {error && (
-          <div className="bg-rose-500/10 border border-rose-500/30 rounded-xl p-4 text-rose-700 dark:text-rose-300 flex items-center gap-2">
+          <div className="bg-rose-500/10 border border-rose-500/30 rounded-2xl p-4 text-rose-700 dark:text-rose-300 flex items-center gap-2">
             <AlertCircle className="w-5 h-5" /> {error}
           </div>
         )}
 
-        <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-xl overflow-x-auto">
+        <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
@@ -210,7 +210,7 @@ export default function WarehousesPage() {
           </Table>
         </div>
 
-        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 text-sm text-blue-800 dark:text-blue-300">
+        <div className="bg-blue-50 border border-blue-200 rounded-2xl p-4 text-sm text-blue-800 dark:text-blue-300">
           <div className="font-bold mb-1">📦 Multi-filial ish tizimi:</div>
           <div>
             Har bir filial o&apos;zining tovar qoldiqlarini saqlaydi. Tovarlarni

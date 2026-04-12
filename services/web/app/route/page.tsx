@@ -48,7 +48,7 @@ export default function RoutePage() {
         </div>
 
         {result?.xato && (
-          <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-sm text-amber-700">{result.xato}</div>
+          <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-sm text-amber-700">{result.xato}</div>
         )}
 
         {result?.optimal_tartib && (

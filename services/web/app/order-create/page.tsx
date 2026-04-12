@@ -160,18 +160,18 @@ export default function OrderCreatePage() {
         />
 
         {success && (
-          <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 text-emerald-700 flex items-center gap-2">
+          <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 text-emerald-700 flex items-center gap-2">
             <Check className="w-5 h-5" /> Muvaffaqiyatli saqlandi! /orders sahifasiga yo&apos;naltirilmoqda...
           </div>
         )}
         {error && (
-          <div className="bg-rose-500/10 border border-rose-500/30 rounded-xl p-4 text-rose-700 dark:text-rose-300 flex items-center gap-2">
+          <div className="bg-rose-500/10 border border-rose-500/30 rounded-2xl p-4 text-rose-700 dark:text-rose-300 flex items-center gap-2">
             <AlertCircle className="w-5 h-5" /> {error}
           </div>
         )}
 
         {/* Client */}
-        <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-xl p-4">
+        <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl p-4">
           <h2 className="font-bold mb-3 flex items-center gap-2">
             <User className="w-4 h-4" /> Mijoz
           </h2>
@@ -203,7 +203,7 @@ export default function OrderCreatePage() {
         </div>
 
         {/* Products */}
-        <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-xl p-4">
+        <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl p-4">
           <div className="flex items-center justify-between mb-3">
             <h2 className="font-bold flex items-center gap-2">
               <Package className="w-4 h-4" /> Tovarlar ({cart.length})
@@ -267,7 +267,7 @@ export default function OrderCreatePage() {
         </div>
 
         {/* Summary */}
-        <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-xl p-4">
+        <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl p-4">
           <h2 className="font-bold mb-3 flex items-center gap-2">
             <CreditCard className="w-4 h-4" /> To&apos;lov
           </h2>

@@ -41,7 +41,7 @@ export default function CashboxesPage() {
         </div>
 
         {/* Total balance */}
-        <div className="bg-gradient-to-r from-emerald-500 to-emerald-600 rounded-xl p-6 text-white">
+        <div className="bg-gradient-to-r from-emerald-500 to-emerald-600 rounded-2xl p-6 text-white">
           <div className="text-sm opacity-90">Umumiy balans</div>
           <div className="text-3xl font-bold mt-1">{formatCurrency(total)}</div>
           <div className="flex gap-4 mt-4 text-sm opacity-90">
