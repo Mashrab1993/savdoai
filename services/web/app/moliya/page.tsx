@@ -11,7 +11,7 @@ type TabId = "pl" | "bs" | "cf" | "kpi"
 
 function Card({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return (
-    <div className={`bg-card border border-border rounded-xl ${className}`}>
+    <div className={`bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl ${className}`}>
       {children}
     </div>
   )

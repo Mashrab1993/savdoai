@@ -95,7 +95,7 @@ export default function ApprenticesPage() {
             { label: L.monthlyBudget[locale], value: fmt(totalMonthlySales),    icon: Wallet,      color: "text-purple-500", bg: "bg-secondary" },
             { label: L.todayExpenses[locale], value: fmt(totalTodaySales),       icon: TrendingUp,  color: "text-yellow-500", bg: "bg-amber-500/15 dark:bg-yellow-900/20" },
           ].map(s => (
-            <div key={s.label} className="bg-card border border-border rounded-xl p-4 flex items-center gap-3 hover:border-border/70 transition-colors">
+            <div key={s.label} className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl p-4 flex items-center gap-3 hover:border-border/70 transition-colors">
               <div className={cn("p-2 rounded-lg shrink-0", s.bg, s.color)}>
                 <s.icon className="w-4 h-4" />
               </div>
@@ -136,7 +136,7 @@ export default function ApprenticesPage() {
         </div>
 
         {/* Table */}
-        <div className="bg-card border border-border rounded-xl overflow-hidden">
+        <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl overflow-hidden">
           <Table>
             <TableHeader>
               <TableRow>
@@ -237,7 +237,7 @@ export default function ApprenticesPage() {
                 </div>
 
                 {/* Stats overview */}
-                <div className="bg-card border border-border rounded-xl p-4 space-y-3">
+                <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl p-4 space-y-3">
                   {[
                     { label: locale === "uz" ? "Bugungi savdo" : "Продажи сегодня", value: fmt(selected.todaySales) },
                     { label: locale === "uz" ? "Oylik savdo" : "Продажи в месяц", value: fmt(selected.monthlySales) },

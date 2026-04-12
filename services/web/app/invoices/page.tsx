@@ -120,7 +120,7 @@ export default function InvoicesPage() {
       <div className="space-y-5">
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {kpiCards.map(s => (
-            <div key={s.label} className="bg-card border border-border rounded-xl p-4 flex items-center gap-3">
+            <div key={s.label} className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl p-4 flex items-center gap-3">
               <div className={cn("p-2 rounded-lg shrink-0", s.bg, s.color)}><s.icon className="w-4 h-4" /></div>
               <div className="min-w-0">
                 <p className="text-xs text-muted-foreground truncate">{s.label}</p>

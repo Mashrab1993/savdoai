@@ -187,7 +187,7 @@ export default function PricesPage() {
             { label: locale === "uz" ? "Mijozlar"        : "Клиенты",                            value: String(clients.length), icon: Users,   color: "text-green-500",  bg: "bg-green-100 dark:bg-green-900/20" },
             { label: locale === "uz" ? "O'rtacha chegirma" : "Средняя скидка",                   value: `${avgDiscount}%`,     icon: Percent, color: "text-yellow-500", bg: "bg-yellow-100 dark:bg-yellow-900/20" },
           ].map(s => (
-            <div key={s.label} className="bg-card border border-border rounded-xl p-4 flex items-center gap-3 hover:border-border/70 transition-colors">
+            <div key={s.label} className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl p-4 flex items-center gap-3 hover:border-border/70 transition-colors">
               <div className={cn("p-2 rounded-lg shrink-0", s.bg, s.color)}>
                 <s.icon className="w-4 h-4" />
               </div>
@@ -212,7 +212,7 @@ export default function PricesPage() {
             </div>
 
             {groups.length === 0 ? (
-              <div className="bg-card border border-border rounded-xl p-8 text-center">
+              <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl p-8 text-center">
                 <Tag className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
                 <p className="text-sm text-muted-foreground">{L.noGroups[locale]}</p>
               </div>
@@ -299,7 +299,7 @@ export default function PricesPage() {
                 </div>
 
                 {/* Product price table with discount */}
-                <div className="bg-card border border-border rounded-xl overflow-hidden">
+                <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl overflow-hidden">
                   <div className="flex items-center justify-between px-4 py-3 border-b border-border">
                     <h4 className="font-semibold text-sm text-foreground flex items-center gap-2">
                       <Package className="w-4 h-4" />
@@ -353,7 +353,7 @@ export default function PricesPage() {
                 </div>
               </>
             ) : (
-              <div className="bg-card border border-border rounded-xl p-12 flex flex-col items-center justify-center text-center h-full min-h-[400px]">
+              <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl p-12 flex flex-col items-center justify-center text-center h-full min-h-[400px]">
                 <Tag className="w-10 h-10 text-muted-foreground mb-3" />
                 <p className="font-medium text-foreground mb-1">
                   {locale === "uz" ? "Narx guruhini tanlang" : "Выберите ценовую группу"}
