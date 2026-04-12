@@ -84,7 +84,7 @@ export function AdminLayout({ children, title = "SavdoAI" }: AdminLayoutProps) {
       <div className="flex flex-col flex-1 min-w-0">
         <TopHeader title={title} onMenuClick={() => setMobileMenuOpen(!mobileMenuOpen)} />
         <main className="flex-1 overflow-y-auto pb-16 md:pb-0">
-          <div className="p-4 md:p-6 max-w-7xl mx-auto w-full">
+          <div className="p-4 md:p-6 max-w-7xl mx-auto w-full animate-in fade-in duration-300">
             {children}
           </div>
         </main>
