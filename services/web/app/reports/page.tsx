@@ -15,7 +15,7 @@ import {
 import { Download, TrendingUp, Users, DollarSign, Package, Loader2 } from "lucide-react"
 import { useApi } from "@/hooks/use-api"
 import { getPublicApiBaseUrl } from "@/lib/api/base-url"
-import { reportService, dashboardService, foydaService, pnlService } from "@/lib/api/services"
+import { reportService, dashboardService, foydaService, pnlService, topReportService } from "@/lib/api/services"
 import PnLReport from "@/components/dashboard/pnl-report"
 import SalesPivotTable from "@/components/dashboard/sales-pivot-table"
 import NotificationStream from "@/components/dashboard/notification-stream"
@@ -72,6 +72,10 @@ export default function ReportsPage() {
   const { data: foydaData, loading: foydaLoading, refetch: refetchFoyda } = useApi(foydaFetcher)
   const pnlFetcher = useCallback(() => pnlService.get(30), [])
   const { data: pnlData } = useApi(pnlFetcher)
+  const topKlientFetcher = useCallback(() => topReportService.klientlar(30), [])
+  const { data: topKlientlar } = useApi(topKlientFetcher)
+  const topTovarFetcher = useCallback(() => topReportService.tovarlar(30), [])
+  const { data: topTovarlar } = useApi(topTovarFetcher)
 
   const dashboard = rawDashboard ? normalizeDashboard(rawDashboard) : null
 
@@ -206,6 +210,26 @@ export default function ReportsPage() {
               soni: 0,
               miqdor: Number(t.miqdor || 0),
             }))}
+          />
+        )}
+
+        {/* Top clients pivot — real data */}
+        {topKlientlar && topKlientlar.length > 0 && (
+          <SalesPivotTable
+            dimension="mijoz"
+            title={locale === "uz" ? "Top mijozlar" : "Топ клиенты"}
+            subtitle={locale === "uz" ? "Oxirgi 30 kun, revenue bo'yicha" : "Последние 30 дней, по выручке"}
+            rows={topKlientlar}
+          />
+        )}
+
+        {/* Top products pivot — real data */}
+        {topTovarlar && topTovarlar.length > 0 && (
+          <SalesPivotTable
+            dimension="brend"
+            title={locale === "uz" ? "Top tovarlar" : "Топ товары"}
+            subtitle={locale === "uz" ? "Oxirgi 30 kun, revenue bo'yicha" : "Последние 30 дней, по выручке"}
+            rows={topTovarlar}
           />
         )}
 

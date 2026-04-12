@@ -515,6 +515,21 @@ export const dashboardSummaryService = {
   get: () => api.get<DashboardSummaryResponse>("/api/v1/dashboard/summary"),
 }
 
+// ── Top Reports (SalesPivotTable-compatible) ─────────────────────────────────
+export interface PivotRowResponse {
+  key: string
+  jami: number
+  soni: number
+  miqdor: number
+}
+
+export const topReportService = {
+  klientlar: (kunlar = 30, limit = 20) =>
+    api.get<PivotRowResponse[]>(`/api/v1/hisobot/top-klientlar?kunlar=${kunlar}&limit=${limit}`),
+  tovarlar: (kunlar = 30, limit = 20) =>
+    api.get<PivotRowResponse[]>(`/api/v1/hisobot/top-tovarlar?kunlar=${kunlar}&limit=${limit}`),
+}
+
 // ── Foyda Tahlili ─────────────────────────────────────────────────────────────
 export interface FoydaResponse {
   kunlar: number
