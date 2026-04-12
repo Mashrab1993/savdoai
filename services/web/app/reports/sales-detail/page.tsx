@@ -7,6 +7,7 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table"
 import { FileText, Download, AlertCircle, Filter } from "lucide-react"
+import { PageHeader } from "@/components/ui/page-header"
 import { formatCurrency } from "@/lib/format"
 
 type SalesRow = {
@@ -91,17 +92,15 @@ export default function SalesDetailPage() {
   return (
     <AdminLayout>
       <div className="max-w-7xl mx-auto p-4 sm:p-6 space-y-5">
-        <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <FileText className="w-7 h-7 text-emerald-600" /> Sotuv detail
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Har bir sotuv qatori — foyda hisob-kitobi bilan (SalesDoc-style)
-          </p>
-        </div>
+        <PageHeader
+          icon={FileText}
+          gradient="blue"
+          title="Sotuv detail"
+          subtitle="Har bir sotuv qatori — foyda hisob-kitobi bilan"
+        />
 
         {/* Filters */}
-        <div className="bg-card border rounded-xl p-4">
+        <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl p-4">
           <div className="flex items-center gap-2 mb-3 text-sm font-medium">
             <Filter className="w-4 h-4 text-muted-foreground" /> Filtrlar
           </div>
@@ -145,23 +144,23 @@ export default function SalesDetailPage() {
 
         {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <div className="bg-card border rounded-xl p-4">
+          <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl p-4">
             <div className="text-xs text-muted-foreground">Qatorlar</div>
             <div className="text-2xl font-bold mt-1">{Number(stats.soni || 0).toLocaleString()}</div>
           </div>
-          <div className="bg-card border rounded-xl p-4">
+          <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl p-4">
             <div className="text-xs text-muted-foreground">Jami miqdor</div>
             <div className="text-2xl font-bold mt-1">{Number(stats.jami_miqdor || 0).toLocaleString()}</div>
           </div>
-          <div className="bg-card border rounded-xl p-4">
+          <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl p-4">
             <div className="text-xs text-muted-foreground">Jami summa</div>
             <div className="text-xl font-bold mt-1 text-emerald-600">
               {formatCurrency(Number(stats.jami_summa || 0))}
             </div>
           </div>
-          <div className="bg-card border rounded-xl p-4">
+          <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl p-4">
             <div className="text-xs text-muted-foreground">Jami foyda</div>
-            <div className={`text-xl font-bold mt-1 ${Number(stats.jami_foyda || 0) >= 0 ? "text-emerald-600" : "text-red-500"}`}>
+            <div className={`text-xl font-bold mt-1 ${Number(stats.jami_foyda || 0) >= 0 ? "text-emerald-600" : "text-rose-500 dark:text-rose-400"}`}>
               {formatCurrency(Number(stats.jami_foyda || 0))}
             </div>
             <div className="text-[11px] text-muted-foreground">
@@ -173,14 +172,14 @@ export default function SalesDetailPage() {
         </div>
 
         {error && !loading && (
-          <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-red-700 flex items-center gap-2">
+          <div className="bg-rose-500/10 border border-rose-500/30 rounded-2xl p-4 text-rose-700 dark:text-rose-300 flex items-center gap-2">
             <AlertCircle className="w-5 h-5" /> {error}
           </div>
         )}
 
         {/* Table */}
         {!loading && !error && data && (
-          <div className="bg-card border rounded-xl overflow-x-auto">
+          <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -232,7 +231,7 @@ export default function SalesDetailPage() {
                       <TableCell className="text-right font-mono font-bold text-sm">
                         {formatCurrency(Number(r.jami))}
                       </TableCell>
-                      <TableCell className={`text-right font-mono text-sm ${foyda >= 0 ? "text-emerald-600" : "text-red-500"}`}>
+                      <TableCell className={`text-right font-mono text-sm ${foyda >= 0 ? "text-emerald-600" : "text-rose-500 dark:text-rose-400"}`}>
                         {formatCurrency(foyda)}
                       </TableCell>
                     </TableRow>
