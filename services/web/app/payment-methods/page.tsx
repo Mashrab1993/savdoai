@@ -28,7 +28,7 @@ export default function PaymentMethodsPage() {
         <div className="flex items-center justify-between">
           <div><h1 className="text-2xl font-bold flex items-center gap-2"><CreditCard className="w-7 h-7 text-emerald-600" /> To'lov usullari</h1>
             <p className="text-sm text-muted-foreground mt-1">Naqd, karta, o'tkazma, elektron to'lovlar</p></div>
-          <Button onClick={() => setShowAdd(true)} className="bg-emerald-600 hover:bg-emerald-700"><Plus className="w-4 h-4 mr-1" /> Yangi</Button>
+          <Button onClick={() => setShowAdd(true)} className="bg-primary hover:bg-primary/90"><Plus className="w-4 h-4 mr-1" /> Yangi</Button>
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">

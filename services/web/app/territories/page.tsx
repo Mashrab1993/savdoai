@@ -25,7 +25,7 @@ export default function TerritoriesPage() {
           title="Territoriyalar"
           subtitle="Hududlar, viloyatlar, tumanlar"
         /></div>
-          <Button onClick={() => setShowAdd(true)} className="bg-emerald-600 hover:bg-emerald-700"><Plus className="w-4 h-4 mr-1" /> Yangi</Button>
+          <Button onClick={() => setShowAdd(true)} className="bg-primary hover:bg-primary/90"><Plus className="w-4 h-4 mr-1" /> Yangi</Button>
         </div>
         <div className="relative"><Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" /><Input placeholder="Qidirish..." value={search} onChange={e => setSearch(e.target.value)} className="pl-10" /></div>
         <div className="bg-card rounded-xl border">
@@ -43,7 +43,7 @@ export default function TerritoriesPage() {
             <div><label className="text-sm font-medium">Viloyat</label><Input value={form.viloyat} onChange={e => setForm({...form, viloyat: e.target.value})} placeholder="Samarqand" /></div>
             <div><label className="text-sm font-medium">Tuman</label><Input value={form.tuman} onChange={e => setForm({...form, tuman: e.target.value})} placeholder="Registon tumani" /></div>
           </div>
-          <DialogFooter><Button variant="outline" onClick={() => setShowAdd(false)}>Bekor</Button><Button className="bg-emerald-600">Saqlash</Button></DialogFooter>
+          <DialogFooter><Button variant="outline" onClick={() => setShowAdd(false)}>Bekor</Button><Button className="bg-primary">Saqlash</Button></DialogFooter>
         </DialogContent></Dialog>
       </div>
     </AdminLayout>

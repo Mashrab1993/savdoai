@@ -32,7 +32,7 @@ export default function SmsTemplatesPage() {
           subtitle="Avtomatik xabarlar uchun matn shablonlari"
         />
           </div>
-          <Button onClick={() => setShowAdd(true)} className="bg-emerald-600 hover:bg-emerald-700">
+          <Button onClick={() => setShowAdd(true)} className="bg-primary hover:bg-primary/90">
             <Plus className="w-4 h-4 mr-1" /> Yangi shablon
           </Button>
         </div>

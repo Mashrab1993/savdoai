@@ -117,7 +117,7 @@ export default function BackupPage() {
 
         {/* Action Buttons */}
         <div className="flex gap-3">
-          <Button className="flex-1 bg-emerald-600 hover:bg-emerald-700" disabled={selected.length === 0}>
+          <Button className="flex-1 bg-primary hover:bg-primary/90" disabled={selected.length === 0}>
             <Download className="w-4 h-4 mr-2" /> Backup yuklab olish
           </Button>
           <Button variant="outline" className="flex-1">

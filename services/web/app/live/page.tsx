@@ -67,7 +67,7 @@ function StatCard({ icon: Icon, label, value, trend, sparkData, color = "emerald
       <div className="flex items-center justify-between mt-1">
         <span className="text-xs text-muted-foreground">{label}</span>
         {trend !== undefined && trend !== null && (
-          <span className={`text-xs font-medium flex items-center gap-0.5 ${trend >= 0 ? "text-emerald-600" : "text-rose-500 dark:text-rose-400"}`}>
+          <span className={`text-xs font-medium flex items-center gap-0.5 ${trend >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-500 dark:text-rose-400"}`}>
             {trend >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
             {Math.abs(trend)}%
           </span>

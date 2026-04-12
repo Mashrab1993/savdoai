@@ -45,7 +45,7 @@ export default function NotificationsSettingsPage() {
           subtitle="Qanday hodisalar uchun va qaysi kanallar orqali xabar olish"
         />
           </div>
-          <Button className="bg-emerald-600 hover:bg-emerald-700">
+          <Button className="bg-primary hover:bg-primary/90">
             <Save className="w-4 h-4 mr-1" /> Saqlash
           </Button>
         </div>

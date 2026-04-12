@@ -29,7 +29,7 @@ export default function ApiKeysPage() {
           subtitle="Tashqi tizimlar uchun API kalitlar"
         />
           </div>
-          <Button className="bg-emerald-600 hover:bg-emerald-700">
+          <Button className="bg-primary hover:bg-primary/90">
             <Plus className="w-4 h-4 mr-1" /> Yangi kalit
           </Button>
         </div>

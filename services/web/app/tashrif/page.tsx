@@ -92,7 +92,7 @@ export default function TashrifPage() {
           <button
             onClick={doCheckin}
             disabled={checkinLoading || !klientId}
-            className="px-5 py-2.5 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700 disabled:opacity-50"
+            className="px-5 py-2.5 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 disabled:opacity-50"
           >
             {checkinLoading ? "..." : "📍 Check-in"}
           </button>

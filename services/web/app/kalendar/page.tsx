@@ -30,9 +30,9 @@ export default function CalendarPage() {
       <div className="space-y-4">
         <div className="flex gap-2">
           <Button variant={tab === "bugun" ? "default" : "outline"} onClick={() => setTab("bugun")}
-            className={tab === "bugun" ? "bg-emerald-600" : ""}>📍 Bugun</Button>
+            className={tab === "bugun" ? "bg-primary" : ""}>📍 Bugun</Button>
           <Button variant={tab === "hafta" ? "default" : "outline"} onClick={() => setTab("hafta")}
-            className={tab === "hafta" ? "bg-emerald-600" : ""}>📅 Hafta</Button>
+            className={tab === "hafta" ? "bg-primary" : ""}>📅 Hafta</Button>
         </div>
 
         {tab === "bugun" && bugun && (
@@ -102,7 +102,7 @@ export default function CalendarPage() {
               <div key={i} className={`bg-card rounded-xl border p-3 text-center ${
                 i === todayIdx ? "ring-2 ring-emerald-500 border-emerald-500/40" : ""
               }`}>
-                <div className={`text-xs font-bold mb-2 ${i === todayIdx ? "text-emerald-600" : "text-muted-foreground"}`}>
+                <div className={`text-xs font-bold mb-2 ${i === todayIdx ? "text-emerald-600 dark:text-emerald-400" : "text-muted-foreground"}`}>
                   {KUNLAR[i]}
                 </div>
                 <div className={`text-2xl font-bold mb-1 ${h.klient_soni > 0 ? "text-blue-600" : "text-muted-foreground/50"}`}>

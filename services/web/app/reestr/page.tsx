@@ -45,7 +45,7 @@ export default function ReestrPage() {
           <div className="flex gap-2">
             <Input type="date" value={date} onChange={e => setDate(e.target.value)} className="w-44" />
             <Button
-              className="bg-emerald-600 hover:bg-emerald-700"
+              className="bg-primary hover:bg-primary/90"
               onClick={async () => {
                 try {
                   const token = typeof window !== "undefined" ? localStorage.getItem("auth_token") : ""

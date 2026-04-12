@@ -29,7 +29,7 @@ export default function AuditDashboardPage() {
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
           {[
             { label: "Rejadagi vizitlar", value: 0, icon: MapPin, color: "text-blue-600" },
-            { label: "Bajarilgan vizitlar", value: 0, icon: Eye, color: "text-emerald-600" },
+            { label: "Bajarilgan vizitlar", value: 0, icon: Eye, color: "text-emerald-600 dark:text-emerald-400" },
             { label: "Otkazlar", value: 0, icon: Package, color: "text-rose-600 dark:text-rose-400" },
             { label: "Foto hisobotlar", value: 0, icon: Camera, color: "text-purple-600" },
             { label: "SKU audit", value: 0, icon: BarChart3, color: "text-orange-600" },

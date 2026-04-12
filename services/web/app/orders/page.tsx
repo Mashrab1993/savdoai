@@ -300,11 +300,11 @@ export default function OrdersPage() {
                     </div>
                     <div className="flex justify-between text-sm font-bold border-t pt-2">
                       <span>Jami:</span>
-                      <span className="text-emerald-600">{formatCurrency(Number(selectedOrder.jami || 0))}</span>
+                      <span className="text-emerald-600 dark:text-emerald-400">{formatCurrency(Number(selectedOrder.jami || 0))}</span>
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">To&apos;langan:</span>
-                      <span className="text-emerald-600">{formatCurrency(Number(selectedOrder.tolangan || 0))}</span>
+                      <span className="text-emerald-600 dark:text-emerald-400">{formatCurrency(Number(selectedOrder.tolangan || 0))}</span>
                     </div>
                     {Number(selectedOrder.qarz || 0) > 0 && (
                       <div className="flex justify-between text-sm">

@@ -101,7 +101,7 @@ export default function OmborPage() {
   }
 
   const SortIcon = ({ field }: { field: SortField }) => (
-    <ArrowUpDown className={`inline w-3 h-3 ml-1 ${sortField === field ? "text-emerald-600" : "text-muted-foreground"}`} />
+    <ArrowUpDown className={`inline w-3 h-3 ml-1 ${sortField === field ? "text-emerald-600 dark:text-emerald-400" : "text-muted-foreground"}`} />
   )
 
   return (
@@ -247,7 +247,7 @@ export default function OmborPage() {
                         {kunlikSotuv.toFixed(1)}
                       </TableCell>
                       <TableCell className="text-center">
-                        <span className={`font-mono font-bold ${kunlarYetadi <= 3 ? "text-rose-600 dark:text-rose-400" : kunlarYetadi <= 7 ? "text-amber-600 dark:text-amber-400" : "text-emerald-600"}`}>
+                        <span className={`font-mono font-bold ${kunlarYetadi <= 3 ? "text-rose-600 dark:text-rose-400" : kunlarYetadi <= 7 ? "text-amber-600 dark:text-amber-400" : "text-emerald-600 dark:text-emerald-400"}`}>
                           {kunlarYetadi >= 999 ? "-" : `${kunlarYetadi} kun`}
                         </span>
                       </TableCell>

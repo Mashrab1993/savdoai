@@ -91,7 +91,7 @@ export default function OnlineOrdersPage() {
                   <TableCell>
                     <div className="flex gap-1">
                       <Button variant="ghost" size="sm"><Eye className="w-3 h-3" /></Button>
-                      <Button variant="ghost" size="sm" className="text-emerald-600"><Check className="w-3 h-3" /></Button>
+                      <Button variant="ghost" size="sm" className="text-emerald-600 dark:text-emerald-400"><Check className="w-3 h-3" /></Button>
                       <Button variant="ghost" size="sm" className="text-rose-500 dark:text-rose-400"><X className="w-3 h-3" /></Button>
                     </div>
                   </TableCell>

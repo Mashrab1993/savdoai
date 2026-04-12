@@ -70,7 +70,7 @@ export default function PriceHistoryPage() {
                   <TableCell className="text-center font-mono">{formatCurrency(p.eski_narx)}</TableCell>
                   <TableCell className="text-center font-mono font-bold">{formatCurrency(p.yangi_narx)}</TableCell>
                   <TableCell className="text-center">
-                    <span className={`font-mono font-bold ${p.ozgarish > 0 ? "text-emerald-600" : p.ozgarish < 0 ? "text-rose-600 dark:text-rose-400" : ""}`}>
+                    <span className={`font-mono font-bold ${p.ozgarish > 0 ? "text-emerald-600 dark:text-emerald-400" : p.ozgarish < 0 ? "text-rose-600 dark:text-rose-400" : ""}`}>
                       {p.ozgarish > 0 ? "+" : ""}{p.ozgarish.toFixed(1)}%
                     </span>
                   </TableCell>

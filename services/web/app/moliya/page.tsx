@@ -158,7 +158,7 @@ export default function MoliyaPage() {
             <Row label="SOF SOTUV"     value={N(pl.daromad?.sof_sotuv)} bold />
             <Row label="Tannarx (COGS)" value={`-${N(pl.tannarx?.jami).toLocaleString()}`} color="text-rose-500 dark:text-rose-400" />
             <Row label="YALPI FOYDA"    value={N(pl.yalpi_foyda?.summa)} bold />
-            <Row label={`Margin: ${pl.yalpi_foyda?.margin_foiz ?? 0}%`} value="" indent={1} color="text-emerald-600" />
+            <Row label={`Margin: ${pl.yalpi_foyda?.margin_foiz ?? 0}%`} value="" indent={1} color="text-emerald-600 dark:text-emerald-400" />
             <div className="px-4 py-2 bg-secondary text-xs font-semibold text-muted-foreground">XARAJATLAR</div>
             {pl.xarajatlar?.tafsilot && Object.entries(pl.xarajatlar.tafsilot).map(([k, v]) => (
               <Row key={k} label={k.charAt(0).toUpperCase() + k.slice(1)}
@@ -217,7 +217,7 @@ export default function MoliyaPage() {
             <div className="px-4 py-2 bg-emerald-500/100/10 text-xs font-semibold text-emerald-700">KIRIMLAR</div>
             <Row label="Sotuvdan"       value={N(cf.kirim?.sotuvdan)} indent={1} />
             <Row label="Qarz yig'ildi"  value={N(cf.kirim?.qarz_yigildi)} indent={1} />
-            <Row label="JAMI KIRIM"     value={N(cf.kirim?.jami)} bold color="text-emerald-600" />
+            <Row label="JAMI KIRIM"     value={N(cf.kirim?.jami)} bold color="text-emerald-600 dark:text-emerald-400" />
             <div className="px-4 py-2 bg-rose-500/10 dark:bg-rose-950/10 text-xs font-semibold text-rose-700 dark:text-rose-300">CHIQIMLAR</div>
             <Row label="Tovar xaridi" value={N(cf.chiqim?.tovar_xaridi)} indent={1} />
             <Row label="Xarajatlar"   value={N(cf.chiqim?.xarajatlar)}  indent={1} />

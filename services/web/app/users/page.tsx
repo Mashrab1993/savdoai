@@ -41,7 +41,7 @@ export default function UsersPage() {
           subtitle="Tizim foydalanuvchilari va huquqlar"
         />
           </div>
-          <Button onClick={() => setShowAdd(true)} className="bg-emerald-600 hover:bg-emerald-700">
+          <Button onClick={() => setShowAdd(true)} className="bg-primary hover:bg-primary/90">
             <Plus className="w-4 h-4 mr-1" /> Yangi foydalanuvchi
           </Button>
         </div>
@@ -144,7 +144,7 @@ export default function UsersPage() {
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setShowAdd(false)}>Bekor</Button>
-              <Button className="bg-emerald-600">Saqlash</Button>
+              <Button className="bg-primary">Saqlash</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>

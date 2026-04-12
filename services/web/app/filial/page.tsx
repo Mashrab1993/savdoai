@@ -123,7 +123,7 @@ export default function FilialPage() {
             <Input placeholder="Manzil" value={form.manzil} onChange={e => setForm(p => ({ ...p, manzil: e.target.value }))} />
             <Input placeholder="Telefon" value={form.telefon} onChange={e => setForm(p => ({ ...p, telefon: e.target.value }))} />
           </div>
-          <DialogFooter><Button onClick={create} disabled={!form.nomi} className="bg-emerald-600">Yaratish</Button></DialogFooter>
+          <DialogFooter><Button onClick={create} disabled={!form.nomi} className="bg-primary">Yaratish</Button></DialogFooter>
         </DialogContent>
       </Dialog>
     </AdminLayout>

@@ -34,7 +34,7 @@ export default function EquipmentPage() {
           subtitle="Mijozlarga berilgan uskunalar va ularning holati"
         />
           </div>
-          <Button onClick={() => setShowAdd(true)} className="bg-emerald-600 hover:bg-emerald-700">
+          <Button onClick={() => setShowAdd(true)} className="bg-primary hover:bg-primary/90">
             <Plus className="w-4 h-4 mr-1" /> Yangi uskuna
           </Button>
         </div>

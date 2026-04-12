@@ -94,7 +94,7 @@ export default function IntegrationsPage() {
                   {int.status === "active" ? (
                     <Button variant="outline" size="sm" className="flex-1"><Settings className="w-3 h-3 mr-1" /> Sozlash</Button>
                   ) : int.status === "ready" ? (
-                    <Button size="sm" className="flex-1 bg-emerald-600 hover:bg-emerald-700"><Plug className="w-3 h-3 mr-1" /> Yoqish</Button>
+                    <Button size="sm" className="flex-1 bg-primary hover:bg-primary/90"><Plug className="w-3 h-3 mr-1" /> Yoqish</Button>
                   ) : (
                     <Button variant="outline" size="sm" className="flex-1" disabled>Tez kunda</Button>
                   )}

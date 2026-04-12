@@ -126,7 +126,7 @@ export default function InventoryPage() {
                       </TableCell>
                       <TableCell className="text-center font-mono font-bold">
                         {phys === undefined ? "-" : (
-                          <span className={diff === 0 ? "text-emerald-600" : diff > 0 ? "text-blue-600" : "text-rose-600 dark:text-rose-400"}>
+                          <span className={diff === 0 ? "text-emerald-600 dark:text-emerald-400" : diff > 0 ? "text-blue-600" : "text-rose-600 dark:text-rose-400"}>
                             {diff > 0 ? "+" : ""}{diff}
                           </span>
                         )}

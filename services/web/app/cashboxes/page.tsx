@@ -35,7 +35,7 @@ export default function CashboxesPage() {
           subtitle="Barcha kassalar va balanslar"
         />
           </div>
-          <Button onClick={() => setShowAdd(true)} className="bg-emerald-600 hover:bg-emerald-700">
+          <Button onClick={() => setShowAdd(true)} className="bg-primary hover:bg-primary/90">
             <Plus className="w-4 h-4 mr-1" /> Yangi kassa
           </Button>
         </div>

@@ -102,7 +102,7 @@ export default function ProfilePage() {
                   </select>
                 </div>
               </div>
-              <Button className="w-full bg-emerald-600 hover:bg-emerald-700">
+              <Button className="w-full bg-primary hover:bg-primary/90">
                 <Save className="w-4 h-4 mr-2" /> Saqlash
               </Button>
             </div>
@@ -122,7 +122,7 @@ export default function ProfilePage() {
                 <label className="text-sm font-medium">Telefon</label>
                 <Input value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} />
               </div>
-              <Button className="bg-emerald-600 hover:bg-emerald-700">
+              <Button className="bg-primary hover:bg-primary/90">
                 <Save className="w-4 h-4 mr-2" /> Saqlash
               </Button>
             </div>
@@ -152,7 +152,7 @@ export default function ProfilePage() {
                 <label className="text-sm font-medium">Yangi parolni tasdiqlash</label>
                 <Input type="password" value={pass.confirm} onChange={e => setPass({...pass, confirm: e.target.value})} />
               </div>
-              <Button className="bg-emerald-600 hover:bg-emerald-700">
+              <Button className="bg-primary hover:bg-primary/90">
                 <Lock className="w-4 h-4 mr-2" /> Parolni o'zgartirish
               </Button>
 

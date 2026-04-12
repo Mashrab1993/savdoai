@@ -65,7 +65,7 @@ export default function BillingPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {PLANS.map(p => (
               <div key={p.id} className={`bg-card rounded-xl border-2 p-4 ${currentPlan === p.id ? "border-emerald-500" : ""}`}>
-                {currentPlan === p.id && <Badge className="bg-emerald-600 mb-2">Joriy</Badge>}
+                {currentPlan === p.id && <Badge className="bg-primary mb-2">Joriy</Badge>}
                 <p.icon className={`w-8 h-8 text-${p.color}-600 mb-2`} />
                 <div className="font-bold text-lg">{p.name}</div>
                 <div className="text-2xl font-bold my-2">{formatCurrency(p.price)}<span className="text-sm font-normal text-muted-foreground">/oy</span></div>
@@ -77,7 +77,7 @@ export default function BillingPage() {
                     </li>
                   ))}
                 </ul>
-                <Button className={`w-full ${currentPlan === p.id ? "bg-muted text-muted-foreground" : "bg-emerald-600 hover:bg-emerald-700"}`} disabled={currentPlan === p.id}>
+                <Button className={`w-full ${currentPlan === p.id ? "bg-muted text-muted-foreground" : "bg-primary hover:bg-primary/90"}`} disabled={currentPlan === p.id}>
                   {currentPlan === p.id ? "Joriy" : "Tanlash"}
                 </Button>
               </div>

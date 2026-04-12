@@ -71,7 +71,7 @@ export default function DataImportPage() {
             <Button variant="outline" className="flex-1">
               <Download className="w-4 h-4 mr-1" /> Shablon yuklab olish
             </Button>
-            <Button className="flex-1 bg-emerald-600 hover:bg-emerald-700" disabled={!file}>
+            <Button className="flex-1 bg-primary hover:bg-primary/90" disabled={!file}>
               <Upload className="w-4 h-4 mr-1" /> Import qilish
             </Button>
           </div>

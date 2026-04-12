@@ -69,7 +69,7 @@ export default function AktSverkiPage() {
               {[
                 { label: "Boshlang'ich qoldiq", value: result.boshlangich_qoldiq, color: "" },
                 { label: "Davr ichidagi sotuvlar", value: result.jami_sotuv, color: "text-blue-600" },
-                { label: "Davr ichidagi to'lovlar", value: result.jami_tolov, color: "text-emerald-600" },
+                { label: "Davr ichidagi to'lovlar", value: result.jami_tolov, color: "text-emerald-600 dark:text-emerald-400" },
                 { label: "Qaytarishlar", value: result.jami_qaytarish, color: "text-rose-500 dark:text-rose-400" },
               ].map((row, i) => (
                 <div key={i} className="flex justify-between px-4 py-3">

@@ -166,7 +166,7 @@ export default function BonusesPage() {
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setShowAdd(false)}>Bekor</Button>
-              <Button className="bg-emerald-600">Yaratish</Button>
+              <Button className="bg-primary">Yaratish</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>

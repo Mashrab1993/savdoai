@@ -160,7 +160,7 @@ export default function SalesDetailPage() {
           </div>
           <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl p-4">
             <div className="text-xs text-muted-foreground">Jami foyda</div>
-            <div className={`text-xl font-bold mt-1 ${Number(stats.jami_foyda || 0) >= 0 ? "text-emerald-600" : "text-rose-500 dark:text-rose-400"}`}>
+            <div className={`text-xl font-bold mt-1 ${Number(stats.jami_foyda || 0) >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-500 dark:text-rose-400"}`}>
               {formatCurrency(Number(stats.jami_foyda || 0))}
             </div>
             <div className="text-[11px] text-muted-foreground">
@@ -231,7 +231,7 @@ export default function SalesDetailPage() {
                       <TableCell className="text-right font-mono font-bold text-sm">
                         {formatCurrency(Number(r.jami))}
                       </TableCell>
-                      <TableCell className={`text-right font-mono text-sm ${foyda >= 0 ? "text-emerald-600" : "text-rose-500 dark:text-rose-400"}`}>
+                      <TableCell className={`text-right font-mono text-sm ${foyda >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-500 dark:text-rose-400"}`}>
                         {formatCurrency(foyda)}
                       </TableCell>
                     </TableRow>

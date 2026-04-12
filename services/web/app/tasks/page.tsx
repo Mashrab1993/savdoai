@@ -65,11 +65,11 @@ export default function TasksPage() {
             ].map(f => (
               <button key={f.val} onClick={() => setFilter(f.val)}
                 className={`px-3 py-1.5 rounded-lg text-xs font-medium ${
-                  filter === f.val ? "bg-emerald-600 text-white" : "bg-muted dark:bg-muted text-muted-foreground"
+                  filter === f.val ? "bg-primary text-primary-foreground" : "bg-muted dark:bg-muted text-muted-foreground"
                 }`}>{f.label}</button>
             ))}
           </div>
-          <Button onClick={() => setShowCreate(true)} className="bg-emerald-600 hover:bg-emerald-700">
+          <Button onClick={() => setShowCreate(true)} className="bg-primary hover:bg-primary/90">
             <Plus className="w-4 h-4 mr-1" /> Yangi topshiriq
           </Button>
         </div>
@@ -135,7 +135,7 @@ export default function TasksPage() {
             <Input type="date" value={form.muddat} onChange={e => setForm(p => ({ ...p, muddat: e.target.value }))} />
           </div>
           <DialogFooter>
-            <Button onClick={create} disabled={!form.sarlavha} className="bg-emerald-600">Yaratish</Button>
+            <Button onClick={create} disabled={!form.sarlavha} className="bg-primary">Yaratish</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

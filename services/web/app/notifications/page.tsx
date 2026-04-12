@@ -22,7 +22,7 @@ type Notification = {
 const ICONS = {
   info:    { icon: Info,          color: "text-blue-600 dark:text-blue-400",    bg: "bg-blue-500/10 border-blue-200" },
   warning: { icon: AlertCircle,   color: "text-amber-600 dark:text-amber-400",  bg: "bg-amber-500/10 border-amber-500/30" },
-  success: { icon: CheckCircle2,  color: "text-emerald-600", bg: "bg-emerald-50 border-emerald-200" },
+  success: { icon: CheckCircle2,  color: "text-emerald-600 dark:text-emerald-400", bg: "bg-emerald-50 border-emerald-200" },
   error:   { icon: X,             color: "text-rose-600 dark:text-rose-400",     bg: "bg-rose-500/10 border-rose-500/30" },
 }
 

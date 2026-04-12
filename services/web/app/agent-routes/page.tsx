@@ -26,7 +26,7 @@ export default function AgentRoutesPage() {
           subtitle="Hafta kunlari bo'yicha mijoz tashrif jadvali"
         />
           </div>
-          <Button className="bg-emerald-600 hover:bg-emerald-700">
+          <Button className="bg-primary hover:bg-primary/90">
             <Plus className="w-4 h-4 mr-1" /> Yangi marshrut
           </Button>
         </div>

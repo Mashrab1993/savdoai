@@ -65,7 +65,7 @@ export default function WebhookPage() {
           subtitle="Tashqi tizimlar bilan bog'lanish (1C, Telegram, Google Sheets...)"
         />
         </div>
-        <button onClick={() => setShowForm(!showForm)} className="px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700">
+        <button onClick={() => setShowForm(!showForm)} className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90">
           {showForm ? "Bekor" : "+ Yangi webhook"}
         </button>
       </div>
@@ -101,7 +101,7 @@ export default function WebhookPage() {
           </div>
 
           <button onClick={save} disabled={!form.nomi || !form.url || form.eventlar.length === 0}
-            className="px-6 py-2 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700 disabled:opacity-50">
+            className="px-6 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 disabled:opacity-50">
             Saqlash
           </button>
         </div>

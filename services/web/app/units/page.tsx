@@ -38,7 +38,7 @@ export default function UnitsPage() {
           subtitle="Tovarlar uchun o'lchov birliklari"
         />
           </div>
-          <Button onClick={() => setShowAdd(true)} className="bg-emerald-600 hover:bg-emerald-700">
+          <Button onClick={() => setShowAdd(true)} className="bg-primary hover:bg-primary/90">
             <Plus className="w-4 h-4 mr-1" /> Yangi
           </Button>
         </div>
@@ -96,7 +96,7 @@ export default function UnitsPage() {
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setShowAdd(false)}>Bekor</Button>
-              <Button className="bg-emerald-600">Saqlash</Button>
+              <Button className="bg-primary">Saqlash</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>

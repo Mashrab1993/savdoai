@@ -146,7 +146,7 @@ export default function OnboardingPage() {
                 {current.action} →
               </Button>
             )}
-            <Button onClick={next} className="px-8 bg-emerald-600 hover:bg-emerald-700">
+            <Button onClick={next} className="px-8 bg-primary hover:bg-primary/90">
               {isLast ? "Dashboard ga o'tish" : "Keyingi"}
               {!isLast && <ArrowRight className="w-4 h-4 ml-1" />}
             </Button>

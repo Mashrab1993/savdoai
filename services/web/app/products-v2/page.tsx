@@ -126,7 +126,7 @@ export default function ProductsV2Page() {
             {kategoriyalar.map(k => (
               <button key={k} onClick={() => setSelectedKat(k)}
                 className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${
-                  selectedKat === k ? "bg-emerald-600 text-white" : "bg-muted dark:bg-muted text-muted-foreground"
+                  selectedKat === k ? "bg-primary text-primary-foreground" : "bg-muted dark:bg-muted text-muted-foreground"
                 }`}>{k === "all" ? "Barchasi" : k}</button>
             ))}
           </div>

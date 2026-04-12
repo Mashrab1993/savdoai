@@ -92,7 +92,7 @@ export default function ThemesPage() {
           </div>
         </div>
 
-        <Button className="w-full bg-emerald-600 hover:bg-emerald-700">Saqlash</Button>
+        <Button className="w-full bg-primary hover:bg-primary/90">Saqlash</Button>
       </div>
     </AdminLayout>
   )

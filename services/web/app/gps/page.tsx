@@ -162,7 +162,7 @@ export default function GpsPage() {
                     <div className="flex items-center gap-2">
                       {agent.batareya !== undefined && (
                         <div className={`flex items-center gap-1 text-xs ${
-                          agent.batareya > 50 ? "text-emerald-600" : agent.batareya > 20 ? "text-amber-600 dark:text-amber-400" : "text-rose-600 dark:text-rose-400"
+                          agent.batareya > 50 ? "text-emerald-600 dark:text-emerald-400" : agent.batareya > 20 ? "text-amber-600 dark:text-amber-400" : "text-rose-600 dark:text-rose-400"
                         }`}>
                           <Battery className="w-3 h-3" />
                           {agent.batareya}%

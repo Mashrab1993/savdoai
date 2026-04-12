@@ -89,7 +89,7 @@ export default function LeaderboardPage() {
           {[["hafta", "Hafta"], ["oy", "Oy"]].map(([k, l]: string[]) => (
             <button key={k} onClick={() => setDavr(k)}
               className={`px-3 py-1.5 rounded-lg text-xs font-medium ${
-                davr === k ? "bg-emerald-600 text-white" : "bg-muted dark:bg-muted text-muted-foreground"
+                davr === k ? "bg-primary text-primary-foreground" : "bg-muted dark:bg-muted text-muted-foreground"
               }`}>{l}</button>
           ))}
         </div>

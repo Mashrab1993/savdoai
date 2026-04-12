@@ -54,7 +54,7 @@ export default function AnalytikaPage() {
         {tabs.map((t: any) => (
           <button key={t.id} onClick={() => setTab(t.id)}
             className={`px-4 py-2.5 rounded-lg text-sm font-medium whitespace-nowrap transition-all ${
-              tab === t.id ? "bg-emerald-600 text-white shadow-lg shadow-emerald-200" : "bg-muted dark:bg-muted text-muted-foreground dark:text-muted-foreground"
+              tab === t.id ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20" : "bg-muted dark:bg-muted text-muted-foreground dark:text-muted-foreground"
             }`}>{t.label}</button>
         ))}
       </div>

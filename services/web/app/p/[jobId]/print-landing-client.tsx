@@ -34,7 +34,7 @@ export function PrintLandingClient({ jobId, token, width, showDebug }: Props) {
       {token ? (
         <a
           href={appUrl}
-          className="rounded-xl bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 px-8 py-4 text-lg font-semibold text-white text-center shadow-lg w-full max-w-sm"
+          className="rounded-xl bg-primary hover:bg-primary/90 active:bg-emerald-700 px-8 py-4 text-lg font-semibold text-white text-center shadow-lg w-full max-w-sm"
         >
           🖨 SavdoAI Print ilovasini ochish
         </a>

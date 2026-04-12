@@ -246,7 +246,7 @@ export default function ConfigPage() {
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                 saved
                   ? "bg-emerald-500 text-white"
-                  : "bg-emerald-600 hover:bg-emerald-700 text-white"
+                  : "bg-primary hover:bg-primary/90 text-white"
               } disabled:opacity-50`}
             >
               {saving ? "Saqlanmoqda..." : saved ? "✓ Saqlandi" : "Saqlash"}
