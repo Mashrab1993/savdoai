@@ -300,7 +300,7 @@ export default function PricesPage() {
 
                 {/* Product price table with discount */}
                 <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl overflow-hidden">
-                  <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+                  <div className="flex items-center justify-between px-4 py-3 border-b border-border/60">
                     <h4 className="font-semibold text-sm text-foreground flex items-center gap-2">
                       <Package className="w-4 h-4" />
                       {locale === "uz"

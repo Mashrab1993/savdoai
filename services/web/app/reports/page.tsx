@@ -318,7 +318,7 @@ export default function ReportsPage() {
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-border">
+                  <tr className="border-b border-border/60">
                     <th className="text-left text-xs text-muted-foreground font-medium py-2 pr-4">{locale === "uz" ? "Davr" : "Период"}</th>
                     <th className="text-right text-xs text-muted-foreground font-medium py-2 pr-4">{L.revenue[locale]}</th>
                     <th className="text-right text-xs text-muted-foreground font-medium py-2">{L.expenses[locale]}</th>
