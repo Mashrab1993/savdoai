@@ -154,19 +154,14 @@ export default function NotificationsPage() {
   return (
     <AdminLayout>
       <div className="max-w-4xl mx-auto p-4 sm:p-6 space-y-5">
+        <PageHeader
+          icon={Bell}
+          gradient="amber"
+          title={`Bildirishnomalar${unreadCount > 0 ? ` (${unreadCount})` : ""}`}
+          subtitle="Dashboard ma'lumotlaridan avtomatik tuzilgan xabarlar"
+        />
         <div className="flex items-center justify-between flex-wrap gap-3">
-          <div>
-            <h1 className="text-2xl font-bold flex items-center gap-2">
-              <Bell className="w-7 h-7 text-emerald-600" />
-              Bildirishnomalar
-              {unreadCount > 0 && (
-                <Badge className="ml-2 bg-rose-500/100">{unreadCount}</Badge>
-              )}
-            </h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              Dashboard ma&apos;lumotlaridan avtomatik tuzilgan xabarlar
-            </p>
-          </div>
+          <div></div>
           <div className="flex gap-2">
             <Button size="sm" variant="outline" onClick={fetchData}>
               Yangilash

@@ -187,16 +187,14 @@ export default function PurchasePage() {
   return (
     <AdminLayout>
       <div className="max-w-7xl mx-auto p-4 sm:p-6 space-y-5">
+        <PageHeader
+          icon={ShoppingBag}
+          gradient="blue"
+          title="Xarid buyurtmalar"
+          subtitle="Yetkazib beruvchilardan tovar buyurtma qilish"
+        />
         <div className="flex items-center justify-between flex-wrap gap-3">
-          <div>
-            <h1 className="text-2xl font-bold flex items-center gap-2">
-              <ShoppingBag className="w-7 h-7 text-emerald-600" />
-              Xarid buyurtmalar
-            </h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              Yetkazib beruvchilardan tovar buyurtma qilish — SalesDoc-style
-            </p>
-          </div>
+          <div></div>
           <div className="flex gap-2 items-center flex-wrap">
             <Input type="date" value={sanaDan}  onChange={e => setSanaDan(e.target.value)}  className="w-40" />
             <span className="text-muted-foreground">—</span>
