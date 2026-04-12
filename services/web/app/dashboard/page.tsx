@@ -69,7 +69,7 @@ export default function DashboardPage() {
 
   return (
     <AdminLayout title={title}>
-      <div className="space-y-6">
+      <div className="space-y-4">
 
         {statsLoading && <PageLoading />}
         {statsError && !statsLoading && <PageError message={statsError} onRetry={refetch} />}
