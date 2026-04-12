@@ -461,6 +461,18 @@ export const agentlarKpiService = {
   bugungi: () => api.get<AgentKpiRow[]>("/api/v1/agentlar/bugungi-kpi"),
 }
 
+// ── Heatmap ───────────────────────────────────────────────────────────────────
+export interface HeatmapResponse {
+  matrix: number[][]
+  metric: "soni" | "summa"
+  jami: number
+  kunlar: number
+}
+
+export const heatmapService = {
+  get: (kunlar = 30) => api.get<HeatmapResponse>(`/api/v1/hisobot/heatmap?kunlar=${kunlar}`),
+}
+
 // ── Foyda Tahlili ─────────────────────────────────────────────────────────────
 export interface FoydaResponse {
   kunlar: number

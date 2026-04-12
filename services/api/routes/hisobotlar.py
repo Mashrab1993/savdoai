@@ -200,6 +200,56 @@ async def admin_statistika(uid: int = Depends(get_uid)):
 #  REPORTS — SalesDoc-level reporting
 # ════════════════════════════════════════════════════════════
 
+@router.get("/hisobot/heatmap")
+async def hisobot_heatmap(kunlar: int = 30, uid: int = Depends(get_uid)):
+    """
+    Sotuv faolligi heatmap — 7 kun × 24 soat matritsa.
+
+    Har hafta kuni va har soat uchun nechta sotuv bo'lganini hisoblab
+    [7][24] matritsa qaytaradi. SalesHeatmap komponentiga to'g'ridan-
+    to'g'ri ulash mumkin.
+
+    Response:
+      {
+        "matrix": [[0,0,...,24 ta], ...7 ta],
+        "metric": "soni",
+        "jami": 1234,
+        "kunlar": 30
+      }
+    """
+    async with rls_conn(uid) as c:
+        rows = await c.fetch("""
+            SELECT
+                EXTRACT(DOW FROM sana AT TIME ZONE 'Asia/Tashkent') AS dow,
+                EXTRACT(HOUR FROM sana AT TIME ZONE 'Asia/Tashkent') AS soat,
+                COUNT(*) AS soni
+            FROM sotuv_sessiyalar
+            WHERE user_id = $1
+              AND sana >= NOW() - make_interval(days => $2)
+              AND COALESCE(holat, 'yangi') != 'bekor'
+            GROUP BY 1, 2
+        """, uid, kunlar)
+
+    # Build 7×24 matrix (DOW: 0=Sun in PG, we remap to 0=Mon)
+    matrix = [[0] * 24 for _ in range(7)]
+    jami = 0
+    for r in rows:
+        dow = int(r["dow"])  # PG: 0=Sun, 1=Mon, ..., 6=Sat
+        # Remap to 0=Mon, 1=Tue, ..., 6=Sun
+        mapped = (dow - 1) % 7
+        soat = int(r["soat"])
+        soni = int(r["soni"])
+        matrix[mapped][soat] = soni
+        jami += soni
+
+    return {
+        "matrix": matrix,
+        "metric": "soni",
+        "jami": jami,
+        "kunlar": kunlar,
+    }
+
+
 @router.get("/hisobot/oylik-trend")
 async def hisobot_oylik_trend(oylar: int = 6, uid: int = Depends(get_uid)):
     """Oxirgi N oylik sotuv trend — dashboard grafigi uchun."""
