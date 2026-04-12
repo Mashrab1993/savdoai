@@ -11,6 +11,7 @@ import {
   Camera, Search, Image as ImageIcon, MapPin, Calendar, AlertCircle,
   CheckCircle2, LogOut,
 } from "lucide-react"
+import { PageHeader } from "@/components/ui/page-header"
 
 type PhotoItem = {
   id: number; klient_id: number; turi: "checkin" | "checkout";

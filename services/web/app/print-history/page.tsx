@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Printer, Search, Download, Eye, FileText } from "lucide-react"
+import { PageHeader } from "@/components/ui/page-header"
 
 export default function PrintHistoryPage() {
   const [search, setSearch] = useState("")

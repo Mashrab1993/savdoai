@@ -13,6 +13,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog"
 import { Tag, Plus, AlertCircle, Search } from "lucide-react"
+import { PageHeader } from "@/components/ui/page-header"
 
 type NarxGuruh = {
   id: number; nomi: string; izoh?: string; yaratilgan: string;

@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Package, Save, X, Image as ImageIcon, Upload, AlertCircle, Check } from "lucide-react"
+import { PageHeader } from "@/components/ui/page-header"
 import { productService } from "@/lib/api/services"
 
 export default function ProductCreatePage() {

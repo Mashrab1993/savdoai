@@ -13,6 +13,7 @@ import {
   Package, Search, Download, ArrowUpDown, TrendingUp, TrendingDown,
   ArrowRightLeft, Warehouse, BarChart3,
 } from "lucide-react"
+import { PageHeader } from "@/components/ui/page-header"
 import { formatCurrency } from "@/lib/format"
 
 interface MaterialRow {

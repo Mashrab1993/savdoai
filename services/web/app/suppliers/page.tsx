@@ -14,6 +14,7 @@ import {
 import {
   Building2, Plus, Search, Phone, Pencil, Trash2, ShoppingCart, AlertCircle,
 } from "lucide-react"
+import { PageHeader } from "@/components/ui/page-header"
 import SupplierBalance from "@/components/dashboard/supplier-balance"
 import { formatCurrency } from "@/lib/format"
 

@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { HelpCircle, Search, Book, Video, MessageSquare, Phone, Mail, ChevronRight } from "lucide-react"
+import { PageHeader } from "@/components/ui/page-header"
 
 const FAQ = [
   { q: "Qanday qilib yangi tovar qo'shish mumkin?", a: "Tovarlar bo'limiga kiring va 'Yangi tovar' tugmasini bosing. Yoki Excel orqali ko'plab tovarlarni import qilishingiz mumkin.", category: "tovarlar" },

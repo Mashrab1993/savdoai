@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect, type ReactNode } from "react";
+import { PageHeader } from "@/components/ui/page-header"
 
 function Card({ children, className = "" }: { children: ReactNode; className?: string }) {
   return <div className={`bg-card rounded-xl border border-border dark:border-border p-4 ${className}`}>{children}</div>;

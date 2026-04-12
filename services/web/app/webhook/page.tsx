@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
+import { PageHeader } from "@/components/ui/page-header"
 
 const EVENT_ICONS: Record<string, string> = {
   "sotuv.yaratildi": "💰", "sotuv.bekor_qilindi": "↩️", "sotuv.tasdiqlandi": "✅",

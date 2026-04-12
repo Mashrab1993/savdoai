@@ -4,6 +4,7 @@ import { AdminLayout } from "@/components/layout/admin-layout"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { FileText, Download, Eye, Copy, Plus, Receipt, FileBarChart, Truck, FileCheck } from "lucide-react"
+import { PageHeader } from "@/components/ui/page-header"
 
 const TEMPLATES = [
   { id: 1, nomi: "Faktura (A4)", turi: "faktura", icon: Receipt, format: "PDF", category: "moliyaviy" },

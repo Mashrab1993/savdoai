@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { MapPin, Calendar, Users, Plus, Edit, Filter } from "lucide-react"
+import { PageHeader } from "@/components/ui/page-header"
 
 const DAYS = ["Du", "Se", "Ch", "Pa", "Ju", "Sh", "Ya"]
 

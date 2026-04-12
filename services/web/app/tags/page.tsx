@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Tag, Plus, Pencil, Trash2 } from "lucide-react"
+import { PageHeader } from "@/components/ui/page-header"
 
 const COLORS = ["red", "blue", "emerald", "yellow", "purple", "pink", "indigo", "orange"]
 const DEFAULT_TAGS = [

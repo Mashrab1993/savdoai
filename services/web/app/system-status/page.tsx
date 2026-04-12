@@ -4,6 +4,7 @@ import { AdminLayout } from "@/components/layout/admin-layout"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Activity, Check, X, AlertCircle, RefreshCw, Database, Server, Wifi, Cpu, HardDrive, Zap } from "lucide-react"
+import { PageHeader } from "@/components/ui/page-header"
 
 interface ServiceStatus {
   name: string

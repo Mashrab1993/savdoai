@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Receipt, Save, X, AlertCircle, Check } from "lucide-react"
+import { PageHeader } from "@/components/ui/page-header"
 
 export default function ExpenseCreatePage() {
   const router = useRouter()

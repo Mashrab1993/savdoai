@@ -4,6 +4,7 @@ import { AdminLayout } from "@/components/layout/admin-layout"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Plug, Check, X, Settings, ExternalLink, MessageSquare, CreditCard, Receipt, Truck, Database } from "lucide-react"
+import { PageHeader } from "@/components/ui/page-header"
 
 const INTEGRATIONS = [
   { name: "Telegram Bot", desc: "Buyurtma, narx, hisobot — bot orqali", icon: MessageSquare, status: "active", category: "messaging" },

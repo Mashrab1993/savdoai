@@ -1,6 +1,7 @@
 "use client"
 import { AdminLayout } from "@/components/layout/admin-layout"
 import { Plus, ShoppingCart, Users, Package, FileText, CreditCard, Truck, Camera, Receipt, BarChart3 } from "lucide-react"
+import { PageHeader } from "@/components/ui/page-header"
 import Link from "next/link"
 
 const ACTIONS = [

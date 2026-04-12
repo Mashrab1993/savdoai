@@ -4,6 +4,7 @@ import { AdminLayout } from "@/components/layout/admin-layout"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Upload, Download, FileText, Check, AlertCircle, Package, Users, ShoppingCart, CreditCard } from "lucide-react"
+import { PageHeader } from "@/components/ui/page-header"
 
 const IMPORT_TYPES = [
   { key: "products",  label: "Tovarlar", icon: Package, format: "Excel/CSV", desc: "Tovar bazasi import" },

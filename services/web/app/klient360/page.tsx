@@ -5,6 +5,7 @@ import { AdminLayout } from "@/components/layout/admin-layout"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { User, Search, AlertCircle } from "lucide-react"
+import { PageHeader } from "@/components/ui/page-header"
 import Client360View from "@/components/dashboard/client-360-view"
 
 type Klient360Data = {

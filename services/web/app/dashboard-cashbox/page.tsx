@@ -1,6 +1,7 @@
 "use client"
 import { AdminLayout } from "@/components/layout/admin-layout"
 import { Wallet, TrendingUp, TrendingDown, ArrowRight } from "lucide-react"
+import { PageHeader } from "@/components/ui/page-header"
 import { formatCurrency } from "@/lib/format"
 
 const STATS = [

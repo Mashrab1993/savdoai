@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Target, Upload, Download, Users, TrendingUp, BarChart3, Pencil, Check } from "lucide-react"
+import { PageHeader } from "@/components/ui/page-header"
 import { formatCurrency } from "@/lib/format"
 
 interface PlanRow { agent: string; reja_summa: number; fakt_summa: number; reja_miqdor: number; fakt_miqdor: number; reja_akb: number; fakt_akb: number }

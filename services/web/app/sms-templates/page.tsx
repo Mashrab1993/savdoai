@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
 import { MessageSquare, Plus, Pencil, Trash2, Send, Copy } from "lucide-react"
+import { PageHeader } from "@/components/ui/page-header"
 
 const TEMPLATES = [
   { id: 1, nomi: "Yangi buyurtma", matn: "Hurmatli {ism}, sizning {raqam}-buyurtmangiz qabul qilindi. Summa: {summa} so'm.", kategoriya: "buyurtma" },

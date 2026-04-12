@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Receipt, Plus, Pencil, Trash2, Folder } from "lucide-react"
+import { PageHeader } from "@/components/ui/page-header"
 
 const FUNDS = [
   { id: 1, nomi: "Operatsion xarajatlar", icon: "💼", count: 8 },

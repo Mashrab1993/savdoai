@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
+import { PageHeader } from "@/components/ui/page-header"
 
 export default function SyncLogPage() {
   const [logs, setLogs] = useState<any[]>([]);

@@ -4,6 +4,7 @@ import { AdminLayout } from "@/components/layout/admin-layout"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Palette, Sun, Moon, Monitor, Check } from "lucide-react"
+import { PageHeader } from "@/components/ui/page-header"
 
 const THEMES = [
   { key: "light", label: "Yorug'", icon: Sun, preview: "bg-card border" },

@@ -1,6 +1,7 @@
 "use client"
 import { AdminLayout } from "@/components/layout/admin-layout"
 import { BarChart3, FileText, TrendingUp, Users, Package, DollarSign, ShoppingCart, MapPin, Award, Clock, ArrowRight } from "lucide-react"
+import { PageHeader } from "@/components/ui/page-header"
 import Link from "next/link"
 
 const REPORT_CATEGORIES = [

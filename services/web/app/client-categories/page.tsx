@@ -8,6 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Users, Plus, Pencil, Trash2, Crown, Store, Building, ShoppingBag, Coffee } from "lucide-react"
+import { PageHeader } from "@/components/ui/page-header"
 
 const DEFAULT_CATEGORIES = [
   { id: 1, nomi: "VIP mijozlar", icon: Crown, color: "yellow" },

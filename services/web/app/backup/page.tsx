@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Database, Download, Upload, Calendar, Check, FileText, ShieldCheck } from "lucide-react"
+import { PageHeader } from "@/components/ui/page-header"
 
 const BACKUP_GROUPS = [
   { key: "tovarlar", label: "Tovarlar va kategoriyalar", required: true, count: 8 },

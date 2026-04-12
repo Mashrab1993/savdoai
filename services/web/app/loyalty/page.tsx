@@ -3,6 +3,7 @@
 import { AdminLayout } from "@/components/layout/admin-layout"
 import { KpiCard } from "@/components/ui/kpi-card"
 import { Star, Gift, Crown, Users } from "lucide-react"
+import { PageHeader } from "@/components/ui/page-header"
 import { formatCurrency } from "@/lib/format"
 import { useApi } from "@/hooks/use-api"
 import { useState } from "react"

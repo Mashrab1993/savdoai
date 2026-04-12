@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Building2, User, Lock, Image as ImageIcon, Save, Upload, Eye, EyeOff } from "lucide-react"
+import { PageHeader } from "@/components/ui/page-header"
 
 export default function ProfilePage() {
   const [showOldPass, setShowOldPass] = useState(false)

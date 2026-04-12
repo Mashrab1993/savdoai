@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { CreditCard, Plus, Pencil, Trash2, Banknote, Smartphone, Building2 } from "lucide-react"
+import { PageHeader } from "@/components/ui/page-header"
 
 const DEFAULT_METHODS = [
   { id: 1, nomi: "Naqd pul", kod: "CASH", turi: "naqd", icon: Banknote, faol: true },

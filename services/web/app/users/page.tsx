@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { UserCog, Plus, Pencil, Trash2, Search, Shield, Eye, EyeOff } from "lucide-react"
+import { PageHeader } from "@/components/ui/page-header"
 
 const ROLES = [
   { key: "admin", label: "Administrator", color: "bg-red-100 text-red-800" },

@@ -1,6 +1,7 @@
 "use client"
 import { AdminLayout } from "@/components/layout/admin-layout"
 import { LayoutDashboard, BarChart3, Shield, TrendingUp, Users, Truck, ShoppingCart, MapPin, ArrowRight } from "lucide-react"
+import { PageHeader } from "@/components/ui/page-header"
 import Link from "next/link"
 
 const DASHBOARDS = [

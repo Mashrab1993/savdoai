@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Printer, Plus, Pencil, Trash2, Wifi, Signal, FileText, Settings } from "lucide-react"
+import { PageHeader } from "@/components/ui/page-header"
 
 const PRINTERS = [
   { id: 1, nomi: "Asosiy kassa printeri", turi: "thermal", model: "Xprinter XP-58", port: "USB", status: "online" },

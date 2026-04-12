@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Key, Plus, Copy, Eye, EyeOff, Trash2, Shield, Calendar } from "lucide-react"
+import { PageHeader } from "@/components/ui/page-header"
 
 const KEYS = [
   { id: 1, nomi: "Asosiy API key", key: "sk_live_*****************************", created: "2026-01-15", scope: "full", lastUsed: "5 daqiqa oldin" },

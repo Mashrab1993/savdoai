@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { User, Save, X, MapPin, AlertCircle, Check } from "lucide-react"
+import { PageHeader } from "@/components/ui/page-header"
 import { clientService } from "@/lib/api/services"
 
 export default function ClientCreatePage() {

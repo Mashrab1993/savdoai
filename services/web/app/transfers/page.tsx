@@ -14,6 +14,7 @@ import {
 import {
   ArrowRightLeft, Plus, Package, AlertCircle, ChevronRight,
 } from "lucide-react"
+import { PageHeader } from "@/components/ui/page-header"
 import WarehouseTransferBoard, { type TransferStatus } from "@/components/dashboard/warehouse-transfer-board"
 
 type Transfer = {

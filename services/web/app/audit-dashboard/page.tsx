@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { ClipboardCheck, Camera, BarChart3, Users, Eye, MapPin, Package } from "lucide-react"
+import { PageHeader } from "@/components/ui/page-header"
 
 export default function AuditDashboardPage() {
   const [date, setDate] = useState(new Date().toISOString().split("T")[0])

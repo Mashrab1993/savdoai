@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { MapPin, Plus, Pencil, Trash2, Search, Users } from "lucide-react"
+import { PageHeader } from "@/components/ui/page-header"
 
 export default function TerritoriesPage() {
   const [search, setSearch] = useState("")
