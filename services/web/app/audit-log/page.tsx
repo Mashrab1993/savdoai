@@ -73,20 +73,17 @@ export default function AuditLogPage() {
   return (
     <AdminLayout>
       <div className="max-w-7xl mx-auto p-4 sm:p-6 space-y-5">
-        <div className="flex items-center justify-between flex-wrap gap-3">
-          <div>
-            <h1 className="text-2xl font-bold flex items-center gap-2">
-              <ScrollText className="w-7 h-7 text-emerald-600" />
-              Audit log
-            </h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              Tizimda bajarilgan barcha amallar tarixi
-            </p>
-          </div>
-          <Button variant="outline" size="sm" onClick={fetchData}>
-            <RefreshCw className="w-4 h-4 mr-1" /> Yangilash
-          </Button>
-        </div>
+        <PageHeader
+          icon={ScrollText}
+          gradient="blue"
+          title="Audit log"
+          subtitle="Tizimda bajarilgan barcha amallar tarixi"
+          action={
+            <Button variant="outline" size="sm" onClick={fetchData}>
+              <RefreshCw className="w-4 h-4 mr-1" /> Yangilash
+            </Button>
+          }
+        />
 
         {/* Stats */}
         <div className="grid grid-cols-3 gap-3">

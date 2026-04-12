@@ -185,16 +185,14 @@ export default function KirimPage() {
   return (
     <AdminLayout>
       <div className="max-w-7xl mx-auto p-4 sm:p-6 space-y-5">
+        <PageHeader
+          icon={PackagePlus}
+          gradient="emerald"
+          title="Tovar kirim (Postuplenie)"
+          subtitle="Omborga yangi tovar qabul qilish — avtomatik qoldiq yangilanadi"
+        />
         <div className="flex items-center justify-between flex-wrap gap-3">
-          <div>
-            <h1 className="text-2xl font-bold flex items-center gap-2">
-              <PackagePlus className="w-7 h-7 text-emerald-600" />
-              Tovar kirim (Postuplenie)
-            </h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              Omborga yangi tovar qabul qilish — avtomatik qoldiq yangilanadi
-            </p>
-          </div>
+          <div></div>
           <div className="flex gap-2 items-center flex-wrap">
             <Input type="date" value={sanaDan}   onChange={e => setSanaDan(e.target.value)}   className="w-40" />
             <span className="text-muted-foreground">—</span>
