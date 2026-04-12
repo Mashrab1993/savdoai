@@ -16,6 +16,7 @@ import {
   ShoppingBag, Plus, Package, AlertCircle, Trash2, Eye,
   CheckCircle2, Clock, XCircle, Truck,
 } from "lucide-react"
+import { PageHeader } from "@/components/ui/page-header"
 import { formatCurrency } from "@/lib/format"
 
 type Supplier = { id: number; nomi: string; telefon?: string }

@@ -16,6 +16,7 @@ import {
   PackagePlus, Plus, Search, Package, AlertCircle, Trash2,
   TrendingUp, Download, Upload,
 } from "lucide-react"
+import { PageHeader } from "@/components/ui/page-header"
 import { formatCurrency } from "@/lib/format"
 import { kirimService, productService } from "@/lib/api/services"
 

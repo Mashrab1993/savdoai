@@ -10,6 +10,7 @@ import {
 import {
   ScrollText, Search, Edit, Trash2, Plus, LogIn, RefreshCw, AlertCircle,
 } from "lucide-react"
+import { PageHeader } from "@/components/ui/page-header"
 
 type AuditRow = {
   id: number; user_id: number; amal: string; jadval?: string;

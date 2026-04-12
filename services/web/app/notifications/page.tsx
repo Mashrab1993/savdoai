@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge"
 import {
   Bell, Check, X, AlertCircle, Info, CheckCircle2,
 } from "lucide-react"
+import { PageHeader } from "@/components/ui/page-header"
 import Link from "next/link"
 
 type Notification = {

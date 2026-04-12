@@ -13,6 +13,7 @@ import {
   Package, Search, AlertTriangle, TrendingDown, TrendingUp,
   Download, BarChart3, Warehouse, ArrowUpDown,
 } from "lucide-react"
+import { PageHeader } from "@/components/ui/page-header"
 import { formatCurrency } from "@/lib/format"
 import { omborService } from "@/lib/api/services"
 
