@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useMemo } from "react"
+import { PageLoading } from "@/components/shared/page-states"
 import { AdminLayout } from "@/components/layout/admin-layout"
 import { useApi } from "@/hooks/use-api"
 import { Button } from "@/components/ui/button"
@@ -185,9 +186,7 @@ export default function OmborPage() {
 
         {/* Table */}
         {loading ? (
-          <div className="flex justify-center p-20">
-            <div className="animate-spin h-8 w-8 border-b-2 border-emerald-500 rounded-full" />
-          </div>
+          <PageLoading />
         ) : error ? (
           <div className="text-center p-10 text-rose-500 dark:text-rose-400">Xatolik: {String(error)}</div>
         ) : (

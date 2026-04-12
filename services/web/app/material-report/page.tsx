@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useMemo } from "react"
+import { PageLoading } from "@/components/shared/page-states"
 import { AdminLayout } from "@/components/layout/admin-layout"
 import { useApi } from "@/hooks/use-api"
 import { Button } from "@/components/ui/button"
@@ -147,9 +148,7 @@ export default function MaterialReportPage() {
 
         {/* Table */}
         {loading ? (
-          <div className="flex justify-center p-20">
-            <div className="animate-spin h-8 w-8 border-b-2 border-emerald-500 rounded-full" />
-          </div>
+          <PageLoading />
         ) : (
           <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl overflow-x-auto">
             <Table>

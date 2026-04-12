@@ -1,5 +1,6 @@
 "use client"
 import { useState, useEffect, useCallback } from "react"
+import { PageLoading } from "@/components/shared/page-states"
 import { AdminLayout } from "@/components/layout/admin-layout"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -132,9 +133,7 @@ export default function MoliyaPage() {
         </div>
 
         {loading && (
-          <div className="flex justify-center p-16">
-            <div className="animate-spin h-8 w-8 border-b-2 border-emerald-500 rounded-full" />
-          </div>
+          <PageLoading />
         )}
         {error && !loading && (
           <div className="bg-rose-500/10 border border-rose-500/30 rounded-2xl p-4 text-rose-700 dark:text-rose-300 flex items-center gap-2">

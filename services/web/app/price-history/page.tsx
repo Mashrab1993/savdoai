@@ -1,5 +1,6 @@
 "use client"
 import { useState, useMemo } from "react"
+import { PageLoading } from "@/components/shared/page-states"
 import { AdminLayout } from "@/components/layout/admin-layout"
 import { useApi } from "@/hooks/use-api"
 import { Button } from "@/components/ui/button"
@@ -52,7 +53,7 @@ export default function PriceHistoryPage() {
         <div className="flex gap-3"><div className="relative flex-1"><Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" /><Input placeholder="Tovar qidirish..." value={search} onChange={e => setSearch(e.target.value)} className="pl-10" /></div>
           <Input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} className="w-40" />
           <Input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} className="w-40" /></div>
-        {loading ? <div className="flex justify-center p-20"><div className="animate-spin h-8 w-8 border-b-2 border-emerald-500 rounded-full" /></div> : (
+        {loading ? <PageLoading /> : (
           <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl overflow-x-auto">
             <Table><TableHeader><TableRow>
               <TableHead>#</TableHead><TableHead>Tovar</TableHead><TableHead>Kategoriya</TableHead>

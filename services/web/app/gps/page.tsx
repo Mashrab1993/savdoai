@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { PageLoading } from "@/components/shared/page-states"
 import { AdminLayout } from "@/components/layout/admin-layout"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -133,9 +134,7 @@ export default function GpsPage() {
             </div>
             <div className="max-h-80 overflow-y-auto">
               {loading ? (
-                <div className="flex justify-center p-10">
-                  <div className="animate-spin h-6 w-6 border-b-2 border-emerald-500 rounded-full" />
-                </div>
+                <PageLoading />
               ) : agents.length === 0 ? (
                 <div className="text-center p-10 text-muted-foreground">
                   <User className="w-8 h-8 mx-auto mb-2 opacity-30" />

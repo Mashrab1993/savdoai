@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect, type ReactNode } from "react";
+import { PageLoading } from "@/components/shared/page-states"
 import { Brain } from "lucide-react"
 import { PageHeader } from "@/components/ui/page-header"
 

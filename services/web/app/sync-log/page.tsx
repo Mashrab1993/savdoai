@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
+import { PageLoading } from "@/components/shared/page-states"
 import { RefreshCw } from "lucide-react"
 import { PageHeader } from "@/components/ui/page-header"
 
@@ -17,7 +18,7 @@ export default function SyncLogPage() {
   const success = logs.filter((l: any) => l.muvaffaqiyatli).length;
   const fail = logs.filter((l: any) => !l.muvaffaqiyatli).length;
 
-  if (loading) return <div className="flex justify-center p-20"><div className="animate-spin h-8 w-8 border-b-2 border-emerald-500 rounded-full" /></div>;
+  if (loading) return <PageLoading />;
 
   return (
     <div className="max-w-5xl mx-auto p-4 sm:p-6">

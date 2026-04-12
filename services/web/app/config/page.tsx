@@ -3,6 +3,7 @@
 import { PageHeader } from "@/components/ui/page-header"
 import { Settings } from "lucide-react"
 import { useState, useEffect, useCallback } from "react";
+import { PageLoading } from "@/components/shared/page-states"
 
 // ═══════════════════════════════════════════════════════════
 //  CONFIG MODULLAR RO'YXATI

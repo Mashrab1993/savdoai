@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
+import { PageLoading } from "@/components/shared/page-states"
 import { Trophy } from "lucide-react";
 import { PageHeader } from "@/components/ui/page-header";
 
@@ -19,7 +20,7 @@ export default function LeaderboardPage() {
     ]).then(([me, lb]) => { setMyStats(me); setBoard(lb); }).finally(() => setLoading(false));
   }, [davr]);
 
-  if (loading) return <div className="flex justify-center p-20"><div className="animate-spin h-8 w-8 border-b-2 border-emerald-500 rounded-full" /></div>;
+  if (loading) return <PageLoading />;
 
   const nextXP = myStats?.keyingi_xp || 0;
   const progress = nextXP > 0 ? Math.min(100, ((myStats?.xp || 0) / ((myStats?.xp || 0) + nextXP)) * 100) : 100;

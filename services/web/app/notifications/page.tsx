@@ -1,5 +1,6 @@
 "use client"
 import { useState, useEffect, useCallback } from "react"
+import { PageLoading } from "@/components/shared/page-states"
 import { AdminLayout } from "@/components/layout/admin-layout"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -185,9 +186,7 @@ export default function NotificationsPage() {
         </div>
 
         {loading ? (
-          <div className="flex justify-center p-16">
-            <div className="animate-spin h-8 w-8 border-b-2 border-emerald-500 rounded-full" />
-          </div>
+          <PageLoading />
         ) : filtered.length === 0 ? (
           <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-xl p-20 text-center">
             <Bell className="w-16 h-16 mx-auto mb-3 text-muted-foreground opacity-30" />

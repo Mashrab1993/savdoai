@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
+import { PageLoading } from "@/components/shared/page-states"
 import { BarChart3 } from "lucide-react";
 import { PageHeader } from "@/components/ui/page-header";
 
