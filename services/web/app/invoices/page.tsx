@@ -16,6 +16,7 @@ import {
   Search, DollarSign, Clock, CheckCircle2, AlertTriangle,
   ChevronLeft, ChevronRight, Calendar, Eye, Download,
 } from "lucide-react"
+import { PageHeader } from "@/components/ui/page-header"
 import { useApi } from "@/hooks/use-api"
 import { savdoService, reportService, type SavdoDto } from "@/lib/api/services"
 import { getPublicApiBaseUrl } from "@/lib/api/base-url"
@@ -184,7 +185,13 @@ export default function InvoicesPage() {
         {loading && <PageLoading />}
         {error && !loading && <PageError message={error} onRetry={refetch} />}
         {!loading && !error && (<>
-          <div className="bg-card border border-border rounded-xl overflow-hidden">
+          <PageHeader
+            icon={DollarSign}
+            gradient="amber"
+            title={locale === "uz" ? "Sotuvlar tarixi" : "История продаж"}
+            subtitle={locale === "uz" ? `${items.length} ta sotuv yozuvi` : `${items.length} записей`}
+          />
+          <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl overflow-hidden">
             <Table>
               <TableHeader><TableRow>
                 <TableHead className="w-16">#</TableHead>
