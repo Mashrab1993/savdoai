@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/dialog"
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts"
 import { Plus, ArrowUpCircle, ArrowDownCircle, Trash2, Search, Landmark, TrendingUp, TrendingDown, ArrowUpRight, ArrowDownRight } from "lucide-react"
+import { PageHeader } from "@/components/ui/page-header"
 import CashboxBalance from "@/components/dashboard/cashbox-balance"
 import { cn } from "@/lib/utils"
 import { useApi } from "@/hooks/use-api"

@@ -14,6 +14,7 @@ import {
 import {
   Warehouse, Plus, Package, AlertCircle, Store, Building,
 } from "lucide-react"
+import { PageHeader } from "@/components/ui/page-header"
 import { formatCurrency } from "@/lib/format"
 
 type Filial = {
