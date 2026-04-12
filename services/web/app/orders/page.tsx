@@ -55,7 +55,7 @@ export default function OrdersPage() {
   const [exporting, setExporting] = useState(false)
 
   const { data: rawOrders, loading, error, refetch } = useApi(
-    () => savdoService.list({ sana_dan: sanaDan, sana_gacha: sanaGacha, limit: 200 }),
+    () => savdoService.list({ sana_dan: sanaDan, sana_gacha: sanaGacha, limit: 500 }),
     [sanaDan, sanaGacha]
   )
 
