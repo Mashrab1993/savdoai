@@ -15,7 +15,8 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
-import { User, Building2, Bell, Shield, Camera, Lock, CheckCircle2, MonitorSmartphone } from "lucide-react"
+import { User, Building2, Bell, Shield, Camera, Lock, CheckCircle2, MonitorSmartphone, Settings } from "lucide-react"
+import { PageHeader } from "@/components/ui/page-header"
 import { useTheme } from "next-themes"
 import { cn } from "@/lib/utils"
 
@@ -195,7 +196,13 @@ export default function SettingsPage() {
 
   return (
     <AdminLayout title={S.title[locale]}>
-      <div className="max-w-2xl">
+      <div className="max-w-2xl space-y-5">
+        <PageHeader
+          icon={Settings}
+          gradient="blue"
+          title={S.title[locale]}
+          subtitle={locale === "uz" ? "Profil, ko'rinish, bildirishnoma va xavfsizlik" : "Профиль, внешний вид, уведомления и безопасность"}
+        />
         <Tabs defaultValue="profile">
           <TabsList className="mb-5 h-9">
             <TabsTrigger value="profile" className="gap-1.5 text-xs">
@@ -214,7 +221,7 @@ export default function SettingsPage() {
 
           {/* ── Profile ── */}
           <TabsContent value="profile">
-            <div className="bg-card border border-border rounded-xl overflow-hidden">
+            <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl overflow-hidden">
               <div className="flex items-center justify-between px-6 py-4 border-b border-border">
                 <div>
                   <h3 className="text-sm font-semibold text-foreground">{S.profileTitle[locale]}</h3>
@@ -283,7 +290,7 @@ export default function SettingsPage() {
 
           {/* ── Appearance ── */}
           <TabsContent value="appearance">
-            <div className="bg-card border border-border rounded-xl overflow-hidden">
+            <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl overflow-hidden">
               <div className="flex items-center justify-between px-6 py-4 border-b border-border">
                 <div>
                   <h3 className="text-sm font-semibold text-foreground">{S.appearanceTitle[locale]}</h3>
@@ -325,7 +332,7 @@ export default function SettingsPage() {
 
           {/* ── Notifications ── */}
           <TabsContent value="notifications">
-            <div className="bg-card border border-border rounded-xl overflow-hidden">
+            <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl overflow-hidden">
               <div className="flex items-center justify-between px-6 py-4 border-b border-border">
                 <div>
                   <h3 className="text-sm font-semibold text-foreground">{S.notifTitle[locale]}</h3>
@@ -398,7 +405,7 @@ export default function SettingsPage() {
 
           {/* ── Security ── */}
           <TabsContent value="security">
-            <div className="bg-card border border-border rounded-xl overflow-hidden">
+            <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl overflow-hidden">
               <div className="flex items-center justify-between px-6 py-4 border-b border-border">
                 <div>
                   <h3 className="text-sm font-semibold text-foreground">{S.secTitle[locale]}</h3>
