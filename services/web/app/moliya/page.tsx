@@ -144,7 +144,7 @@ export default function MoliyaPage() {
 
         {!loading && !error && data && tab === "pl" && pl && (
           <Card>
-            <div className="p-4 border-b bg-emerald-50 dark:bg-emerald-900/10 rounded-t-xl">
+            <div className="p-4 border-b bg-emerald-500/100/10 rounded-t-xl">
               <h2 className="font-bold flex items-center gap-2">
                 <TrendingUp className="w-5 h-5 text-emerald-600" />
                 Foyda va Zarar hisoboti
@@ -168,8 +168,8 @@ export default function MoliyaPage() {
             <Row label="Jami xarajat" value={`-${N(pl.xarajatlar?.jami).toLocaleString()}`} bold color="text-rose-500 dark:text-rose-400" />
             <div className={`flex justify-between p-4 rounded-b-xl text-lg font-bold ${
               pl.sof_foyda?.holat === "foyda"
-                ? "bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400"
-                : "bg-rose-500/10 dark:bg-rose-950/20 text-rose-700 dark:text-rose-300 dark:text-rose-400"
+                ? "bg-emerald-500/10 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300"
+                : "bg-rose-500/10 text-rose-700 dark:text-rose-300"
             }`}>
               <span>SOF FOYDA</span>
               <span>{formatCurrency(N(pl.sof_foyda?.summa))} ({pl.sof_foyda?.margin_foiz ?? 0}%)</span>
@@ -180,7 +180,7 @@ export default function MoliyaPage() {
         {!loading && !error && data && tab === "bs" && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <Card>
-              <div className="p-3 bg-emerald-50 dark:bg-emerald-900/10 rounded-t-xl border-b">
+              <div className="p-3 bg-emerald-500/100/10 rounded-t-xl border-b">
                 <h3 className="font-bold text-emerald-700">AKTIVLAR</h3>
               </div>
               <Row label="Kassa (naqd)"        value={N(bs.aktivlar?.kassa_naqd)} />
@@ -197,8 +197,8 @@ export default function MoliyaPage() {
               <Row label="Taqsimlanmagan foyda"   value={N(bs.kapital?.taqsimlanmagan_foyda)} />
               <div className={`p-3 text-center text-sm font-bold ${
                 bs.balans_tekshiruv?.muvozanat
-                  ? "text-emerald-600 bg-emerald-50 dark:bg-emerald-900/20"
-                  : "text-rose-600 dark:text-rose-400 bg-rose-500/10 dark:bg-rose-950/20"
+                  ? "text-emerald-600 bg-emerald-500/10 dark:bg-emerald-900/20"
+                  : "text-rose-600 dark:text-rose-400 bg-rose-500/10"
               }`}>
                 {bs.balans_tekshiruv?.muvozanat ? "✓ Balans muvozanatda" : "⚠ Balans nomuvofiq!"}
               </div>
@@ -215,7 +215,7 @@ export default function MoliyaPage() {
               </h2>
               <p className="text-xs text-muted-foreground">{sanaDan} — {sanaGacha}</p>
             </div>
-            <div className="px-4 py-2 bg-emerald-50 dark:bg-emerald-900/10 text-xs font-semibold text-emerald-700">KIRIMLAR</div>
+            <div className="px-4 py-2 bg-emerald-500/100/10 text-xs font-semibold text-emerald-700">KIRIMLAR</div>
             <Row label="Sotuvdan"       value={N(cf.kirim?.sotuvdan)} indent={1} />
             <Row label="Qarz yig'ildi"  value={N(cf.kirim?.qarz_yigildi)} indent={1} />
             <Row label="JAMI KIRIM"     value={N(cf.kirim?.jami)} bold color="text-emerald-600" />
@@ -225,8 +225,8 @@ export default function MoliyaPage() {
             <Row label="JAMI CHIQIM"  value={N(cf.chiqim?.jami)} bold color="text-rose-600 dark:text-rose-400" />
             <div className={`p-4 rounded-b-xl text-center text-lg font-bold ${
               cf.sof_pul_oqimi?.holat === "ijobiy"
-                ? "bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700"
-                : "bg-rose-500/10 dark:bg-rose-950/20 text-rose-700 dark:text-rose-300"
+                ? "bg-emerald-500/10 dark:bg-emerald-900/20 text-emerald-700"
+                : "bg-rose-500/10 text-rose-700 dark:text-rose-300"
             }`}>
               Sof pul oqimi: {formatCurrency(N(cf.sof_pul_oqimi?.summa))}
             </div>
