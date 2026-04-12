@@ -160,7 +160,7 @@ export const kirimService = {
 // ── Debts ─────────────────────────────────────────────────────────────────────
 // Backend returns grouped debts: [{klient_ismi, qolgan, soni, muddat}, ...]
 export const debtService = {
-  list: () => api.get<DebtDto[]>("/api/v1/qarzlar"),
+  list: () => api.get<DebtDto[]>("/api/v1/qarzlar?limit=500"),
   // Backend expects {klient_ismi, summa} — NOT {debt_id, amount}
   pay: (clientName: string, amount: number) =>
     api.post("/api/v1/qarz/tolash", { klient_ismi: clientName, summa: amount }),
