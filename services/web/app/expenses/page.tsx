@@ -23,6 +23,7 @@ import {
   AlertCircle, Wallet, TrendingDown, Tag,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { PageHeader } from "@/components/ui/page-header"
 import { useApi } from "@/hooks/use-api"
 import { expenseService } from "@/lib/api/services"
 import { normalizeExpense, type ExpenseVM } from "@/lib/api/normalizers"
@@ -151,6 +152,17 @@ export default function ExpensesPage() {
         {loading && <PageLoading />}
         {error && !loading && <PageError message={error} onRetry={refetch} />}
         {!loading && !error && <>
+        <PageHeader
+          icon={Wallet}
+          gradient="rose"
+          title={L.title[locale]}
+          subtitle={locale === "uz" ? `${expenses.length} ta xarajat yozuvi` : `${expenses.length} записей расходов`}
+          action={
+            <Button onClick={() => setModalOpen(true)} className="gap-2">
+              <Plus className="w-4 h-4" /> {L.addExpense[locale]}
+            </Button>
+          }
+        />
         {/* Summary cards */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {[
