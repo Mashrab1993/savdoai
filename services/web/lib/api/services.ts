@@ -497,6 +497,24 @@ export const pnlService = {
   get: (kunlar = 30) => api.get<PnLResponse>(`/api/v1/hisobot/pnl?kunlar=${kunlar}`),
 }
 
+// ── Dashboard Summary (single-call aggregated) ──────────────────────────────
+export interface DashboardSummaryResponse {
+  timestamp: string
+  bugun:  { soni: number; jami: number }
+  hafta:  { soni: number; jami: number }
+  oy:     { soni: number; jami: number }
+  faol_klientlar: number
+  faol_qarz: number
+  muddat_otgan_qarz: number
+  kam_qoldiq_soni: number
+  kam_qoldiq_tovarlar: Array<{ id: number; nomi: string; qoldiq: number; min_qoldiq: number; birlik: string }>
+  top_bugun: Array<{ nomi: string; miqdor: number; jami: number }>
+}
+
+export const dashboardSummaryService = {
+  get: () => api.get<DashboardSummaryResponse>("/api/v1/dashboard/summary"),
+}
+
 // ── Foyda Tahlili ─────────────────────────────────────────────────────────────
 export interface FoydaResponse {
   kunlar: number
