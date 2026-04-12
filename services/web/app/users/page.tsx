@@ -85,7 +85,7 @@ export default function UsersPage() {
                   </TableCell>
                 </TableRow>
               ) : users.map((u: any, i: number) => (
-                <TableRow key={i}>
+                <TableRow key={i} className="hover:bg-muted/50 transition-colors hover:bg-muted/50 transition-colors">
                   <TableCell className="font-mono">{u.id}</TableCell>
                   <TableCell className="font-medium">{u.ism}</TableCell>
                   <TableCell className="font-mono">{u.login}</TableCell>

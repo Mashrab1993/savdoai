@@ -282,7 +282,7 @@ export default function KirimPage() {
                   </TableCell>
                 </TableRow>
               ) : items.map((r, i) => (
-                <TableRow key={r.id}>
+                <TableRow key={r.id} className="hover:bg-muted/50 transition-colors hover:bg-muted/50 transition-colors">
                   <TableCell className="font-mono text-xs">#{i + 1}</TableCell>
                   <TableCell className="text-sm">
                     {new Date(r.sana).toLocaleDateString("uz-UZ")}

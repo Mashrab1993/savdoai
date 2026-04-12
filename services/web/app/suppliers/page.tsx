@@ -207,7 +207,7 @@ export default function SuppliersPage() {
                   </TableCell>
                 </TableRow>
               ) : suppliers.map((s, i) => (
-                <TableRow key={s.id}>
+                <TableRow key={s.id} className="hover:bg-muted/50 transition-colors hover:bg-muted/50 transition-colors">
                   <TableCell className="font-mono text-xs">{i + 1}</TableCell>
                   <TableCell className="font-medium">{s.nomi}</TableCell>
                   <TableCell>

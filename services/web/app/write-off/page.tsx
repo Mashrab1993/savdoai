@@ -42,7 +42,7 @@ export default function WriteOffPage() {
               {items.length === 0 ? (
                 <TableRow><TableCell colSpan={7} className="text-center py-10 text-muted-foreground"><Package className="w-10 h-10 mx-auto mb-2 opacity-30" />Spisanie topilmadi</TableCell></TableRow>
               ) : items.map((s: any, i: number) => (
-                <TableRow key={i}>
+                <TableRow key={i} className="hover:bg-muted/50 transition-colors hover:bg-muted/50 transition-colors">
                   <TableCell>{i + 1}</TableCell>
                   <TableCell>{s.sana || "-"}</TableCell>
                   <TableCell>{s.sklad || "-"}</TableCell>

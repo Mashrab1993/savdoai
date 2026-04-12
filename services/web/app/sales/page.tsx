@@ -230,7 +230,7 @@ export default function SalesPage() {
                 </TableHeader>
                 <TableBody>
                   {cart.map(item => (
-                    <TableRow key={item.id}>
+                    <TableRow key={item.id} className="hover:bg-muted/50 transition-colors hover:bg-muted/50 transition-colors">
                       <TableCell>
                         <span className="text-sm font-medium">{item.nomi}</span>
                         <span className="text-xs text-muted-foreground ml-1">({item.birlik})</span>

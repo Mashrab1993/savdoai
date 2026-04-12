@@ -77,7 +77,7 @@ export default function OnlineOrdersPage() {
                   </TableCell>
                 </TableRow>
               ) : orders.map((o: any, i: number) => (
-                <TableRow key={i}>
+                <TableRow key={i} className="hover:bg-muted/50 transition-colors hover:bg-muted/50 transition-colors">
                   <TableCell className="font-mono">#{o.id}</TableCell>
                   <TableCell className="font-medium">{o.mijoz}</TableCell>
                   <TableCell><div className="flex items-center gap-1"><Phone className="w-3 h-3" />{o.telefon}</div></TableCell>

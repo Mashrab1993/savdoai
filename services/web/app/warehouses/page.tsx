@@ -174,7 +174,7 @@ export default function WarehousesPage() {
                 const meta = TURI_META[f.turi] || TURI_META.dokon
                 const Icon = meta.icon
                 return (
-                  <TableRow key={f.id}>
+                  <TableRow key={f.id} className="hover:bg-muted/50 transition-colors hover:bg-muted/50 transition-colors">
                     <TableCell className="font-mono text-xs">#{i + 1}</TableCell>
                     <TableCell className="font-medium">
                       {f.nomi}

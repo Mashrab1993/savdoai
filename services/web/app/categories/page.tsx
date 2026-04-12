@@ -137,7 +137,7 @@ export default function CategoriesPage() {
                         </TableCell>
                       </TableRow>
                     ) : filtered.map((name, i) => (
-                      <TableRow key={name}>
+                      <TableRow key={name} className="hover:bg-muted/50 transition-colors hover:bg-muted/50 transition-colors">
                         <TableCell className="font-mono text-xs">#{i + 1}</TableCell>
                         <TableCell className="font-medium">{name}</TableCell>
                         <TableCell className="text-right">

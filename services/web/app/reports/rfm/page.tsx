@@ -194,7 +194,7 @@ export default function ReportsRfmPage() {
                       </TableCell>
                     </TableRow>
                   ) : segments[activeSeg].top.map((c, i) => (
-                    <TableRow key={c.id}>
+                    <TableRow key={c.id} className="hover:bg-muted/50 transition-colors hover:bg-muted/50 transition-colors">
                       <TableCell className="font-mono text-xs">#{i + 1}</TableCell>
                       <TableCell className="font-medium">{c.ism}</TableCell>
                       <TableCell className="hidden md:table-cell text-xs text-muted-foreground">

@@ -57,7 +57,7 @@ export default function AuditDashboardPage() {
                 <ClipboardCheck className="w-10 h-10 mx-auto mb-2 opacity-30" />{date} uchun audit ma'lumotlari yo'q
               </TableCell></TableRow>
             ) : agents.map((a: any, i: number) => (
-              <TableRow key={i}>
+              <TableRow key={i} className="hover:bg-muted/50 transition-colors hover:bg-muted/50 transition-colors">
                 <TableCell className="font-medium">{a.ism}</TableCell>
                 <TableCell className="text-center font-mono">{a.reja_vizit || 0}</TableCell>
                 <TableCell className="text-center font-mono font-bold text-emerald-600">{a.vizitlar || 0}</TableCell>

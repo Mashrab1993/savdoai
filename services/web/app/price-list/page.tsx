@@ -143,7 +143,7 @@ export default function PriceListPage() {
                   const newPrice = getPrice(t)
                   const profit = t.olish_narxi > 0 ? ((newPrice - t.olish_narxi) / t.olish_narxi * 100) : 0
                   return (
-                    <TableRow key={t.id || i}>
+                    <TableRow key={t.id || i} className="hover:bg-muted/50 transition-colors hover:bg-muted/50 transition-colors">
                       <TableCell className="text-muted-foreground">{i + 1}</TableCell>
                       <TableCell className="font-mono text-xs">{t.kod || `#${t.id}`}</TableCell>
                       <TableCell className="font-medium">{t.nomi}</TableCell>

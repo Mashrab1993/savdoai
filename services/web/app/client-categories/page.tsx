@@ -77,7 +77,7 @@ export default function ClientCategoriesPage() {
               <Table>
                 <TableHeader><TableRow><TableHead>ID</TableHead><TableHead>Nomi</TableHead><TableHead className="text-center">Mijozlar</TableHead><TableHead className="text-center">Holat</TableHead><TableHead className="w-24"></TableHead></TableRow></TableHeader>
                 <TableBody>{DEFAULT_TYPES.map(t => (
-                  <TableRow key={t.id}>
+                  <TableRow key={t.id} className="hover:bg-muted/50 transition-colors hover:bg-muted/50 transition-colors">
                     <TableCell className="font-mono">{t.id}</TableCell>
                     <TableCell className="font-medium">{t.nomi}</TableCell>
                     <TableCell className="text-center">0</TableCell>

@@ -206,7 +206,7 @@ export default function InvoicesPage() {
                 {items.length === 0 ? (
                   <TableRow><TableCell colSpan={7} className="text-center py-16 text-muted-foreground">{t.noData}</TableCell></TableRow>
                 ) : items.map(s => (
-                  <TableRow key={s.id} className="hover:bg-secondary/50 transition-colors cursor-pointer" onClick={() => openDetail(s.id)}>
+                  <TableRow key={s.id} className="hover:bg-muted/50 transition-colors hover:bg-secondary/50 transition-colors cursor-pointer" onClick={() => openDetail(s.id)}>
                     <TableCell className="text-xs text-muted-foreground font-mono">{s.id}</TableCell>
                     <TableCell><span className="font-medium text-sm">{s.klient_ismi || "—"}</span></TableCell>
                     <TableCell className="text-right font-semibold text-sm">{fmt(s.jami ?? 0)}</TableCell>
@@ -291,7 +291,7 @@ export default function InvoicesPage() {
                       </TableHeader>
                       <TableBody>
                         {detailData.tovarlar.map((tv, i) => (
-                          <TableRow key={i}>
+                          <TableRow key={i} className="hover:bg-muted/50 transition-colors hover:bg-muted/50 transition-colors">
                             <TableCell className="text-xs font-medium">{tv.tovar_nomi || "—"}</TableCell>
                             <TableCell className="text-xs text-right">{tv.miqdor} {tv.birlik}</TableCell>
                             <TableCell className="text-xs text-right">{fmt(tv.sotish_narxi ?? 0)}</TableCell>

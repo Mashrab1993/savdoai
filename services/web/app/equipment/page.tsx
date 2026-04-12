@@ -78,7 +78,7 @@ export default function EquipmentPage() {
                   </TableCell>
                 </TableRow>
               ) : equipment.map((e: any, i: number) => (
-                <TableRow key={i}>
+                <TableRow key={i} className="hover:bg-muted/50 transition-colors hover:bg-muted/50 transition-colors">
                   <TableCell className="font-mono">{e.id}</TableCell>
                   <TableCell className="font-medium">{e.nomi}</TableCell>
                   <TableCell><Badge variant="secondary">{e.tur}</Badge></TableCell>

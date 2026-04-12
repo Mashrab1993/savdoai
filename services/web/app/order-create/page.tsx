@@ -231,7 +231,7 @@ export default function OrderCreatePage() {
               </TableHeader>
               <TableBody>
                 {cart.map((item, i) => (
-                  <TableRow key={i}>
+                  <TableRow key={i} className="hover:bg-muted/50 transition-colors hover:bg-muted/50 transition-colors">
                     <TableCell>
                       <div className="font-medium">{item.nomi}</div>
                       {item.max_qoldiq !== undefined && (

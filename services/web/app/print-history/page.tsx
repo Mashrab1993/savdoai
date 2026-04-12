@@ -65,7 +65,7 @@ export default function PrintHistoryPage() {
                   </TableCell>
                 </TableRow>
               ) : history.map((h: any, i: number) => (
-                <TableRow key={i}>
+                <TableRow key={i} className="hover:bg-muted/50 transition-colors hover:bg-muted/50 transition-colors">
                   <TableCell className="text-sm font-mono">{h.vaqt}</TableCell>
                   <TableCell><Badge variant="secondary">{h.tur}</Badge></TableCell>
                   <TableCell className="font-mono">#{h.raqam}</TableCell>

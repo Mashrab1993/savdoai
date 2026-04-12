@@ -264,7 +264,7 @@ export default function PurchasePage() {
                 const meta = HOLAT_META[p.holat] || HOLAT_META.tayyorlanmoqda
                 const Icon = meta.icon
                 return (
-                  <TableRow key={p.id} className="cursor-pointer hover:bg-secondary/50"
+                  <TableRow key={p.id} className="hover:bg-muted/50 transition-colors cursor-pointer hover:bg-secondary/50"
                             onClick={() => openDetail(p)}>
                     <TableCell className="font-mono text-xs">#{p.id}</TableCell>
                     <TableCell className="text-sm">
@@ -451,7 +451,7 @@ export default function PurchasePage() {
                     </TableHeader>
                     <TableBody>
                       {(Array.isArray(detail.tovarlar) ? detail.tovarlar : []).map((t, i) => (
-                        <TableRow key={i}>
+                        <TableRow key={i} className="hover:bg-muted/50 transition-colors hover:bg-muted/50 transition-colors">
                           <TableCell className="font-medium">{t.nomi}</TableCell>
                           <TableCell className="text-right font-mono">
                             {t.miqdor} {t.birlik || ""}

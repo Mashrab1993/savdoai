@@ -113,7 +113,7 @@ export default function ReestrPage() {
                     </TableCell>
                   </TableRow>
                 ) : orders.map((o: any, i: number) => (
-                  <TableRow key={o.id || i}>
+                  <TableRow key={o.id || i} className="hover:bg-muted/50 transition-colors hover:bg-muted/50 transition-colors">
                     <TableCell>{i + 1}</TableCell>
                     <TableCell className="text-sm">{date}</TableCell>
                     <TableCell className="font-medium">{o.klient_ismi || "Mijoz"}</TableCell>

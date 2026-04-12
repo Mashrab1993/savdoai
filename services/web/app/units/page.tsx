@@ -57,7 +57,7 @@ export default function UnitsPage() {
             </TableHeader>
             <TableBody>
               {units.map(u => (
-                <TableRow key={u.id}>
+                <TableRow key={u.id} className="hover:bg-muted/50 transition-colors hover:bg-muted/50 transition-colors">
                   <TableCell className="font-mono">{u.id}</TableCell>
                   <TableCell className="font-medium">{u.nomi}</TableCell>
                   <TableCell><Badge variant="outline" className="font-mono">{u.qisqa}</Badge></TableCell>

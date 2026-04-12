@@ -57,7 +57,7 @@ export default function AgentRoutesPage() {
                   </TableCell>
                 </TableRow>
               ) : routes.map((r: any, i: number) => (
-                <TableRow key={i}>
+                <TableRow key={i} className="hover:bg-muted/50 transition-colors hover:bg-muted/50 transition-colors">
                   <TableCell className="font-medium">{r.nomi}</TableCell>
                   {DAYS.map(d => (
                     <TableCell key={d} className="text-center">

@@ -59,7 +59,7 @@ export default function ApiKeysPage() {
             </TableHeader>
             <TableBody>
               {KEYS.map(k => (
-                <TableRow key={k.id}>
+                <TableRow key={k.id} className="hover:bg-muted/50 transition-colors hover:bg-muted/50 transition-colors">
                   <TableCell className="font-medium">{k.nomi}</TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">

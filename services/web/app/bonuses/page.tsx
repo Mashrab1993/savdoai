@@ -89,7 +89,7 @@ export default function BonusesPage() {
                     </TableCell>
                   </TableRow>
                 ) : bonuses.map((b: any, i: number) => (
-                  <TableRow key={i}>
+                  <TableRow key={i} className="hover:bg-muted/50 transition-colors hover:bg-muted/50 transition-colors">
                     <TableCell>{i + 1}</TableCell>
                     <TableCell className="font-medium">{b.nomi}</TableCell>
                     <TableCell><Badge variant="secondary" className="text-xs">{b.tur || "-"}</Badge></TableCell>

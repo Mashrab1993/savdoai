@@ -80,7 +80,7 @@ export default function FeedbackPage() {
                   </TableCell>
                 </TableRow>
               ) : feedback.map((f: any, i: number) => (
-                <TableRow key={i}>
+                <TableRow key={i} className="hover:bg-muted/50 transition-colors hover:bg-muted/50 transition-colors">
                   <TableCell>{i+1}</TableCell>
                   <TableCell className="font-medium">{f.mijoz}</TableCell>
                   <TableCell>{f.agent}</TableCell>

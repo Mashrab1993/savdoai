@@ -206,7 +206,7 @@ export default function SalesDetailPage() {
                 ) : data.items.map((r, i) => {
                   const foyda = Number(r.foyda || 0)
                   return (
-                    <TableRow key={r.id}>
+                    <TableRow key={r.id} className="hover:bg-muted/50 transition-colors hover:bg-muted/50 transition-colors">
                       <TableCell className="font-mono text-xs">#{i + 1}</TableCell>
                       <TableCell className="text-xs">
                         {new Date(r.sana).toLocaleDateString("uz-UZ")}

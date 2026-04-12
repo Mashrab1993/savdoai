@@ -65,7 +65,7 @@ export default function PrintersPage() {
             </TableHeader>
             <TableBody>
               {printers.map(p => (
-                <TableRow key={p.id}>
+                <TableRow key={p.id} className="hover:bg-muted/50 transition-colors hover:bg-muted/50 transition-colors">
                   <TableCell className="font-mono">{p.id}</TableCell>
                   <TableCell className="font-medium">{p.nomi}</TableCell>
                   <TableCell><Badge variant="secondary">{p.turi === "thermal" ? "Thermal (chek)" : "A4 (faktura)"}</Badge></TableCell>

@@ -332,7 +332,7 @@ export default function PricesPage() {
                       </TableHeader>
                       <TableBody>
                         {filteredProducts.map(p => (
-                          <TableRow key={p.id} className="border-b border-border hover:bg-secondary/50">
+                          <TableRow key={p.id} className="hover:bg-muted/50 transition-colors border-b border-border hover:bg-secondary/50">
                             <TableCell>
                               <div>
                                 <p className="text-sm font-medium text-foreground">{p.name}</p>

@@ -130,7 +130,7 @@ export default function StaffPage() {
                         </TableCell>
                       </TableRow>
                     ) : filtered.map((s, i) => (
-                      <TableRow key={s.id}>
+                      <TableRow key={s.id} className="hover:bg-muted/50 transition-colors hover:bg-muted/50 transition-colors">
                         <TableCell className="text-muted-foreground">{i + 1}</TableCell>
                         <TableCell className="font-medium">{s.ism}</TableCell>
                         <TableCell className="font-mono text-sm">{s.login}</TableCell>

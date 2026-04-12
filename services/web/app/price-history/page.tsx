@@ -62,7 +62,7 @@ export default function PriceHistoryPage() {
               <TableBody>{items.length === 0 ? (
                 <TableRow><TableCell colSpan={8} className="text-center py-10 text-muted-foreground"><Package className="w-10 h-10 mx-auto mb-2 opacity-30" />Ma'lumot topilmadi</TableCell></TableRow>
               ) : items.map((p: any, i: number) => (
-                <TableRow key={p.id || i}>
+                <TableRow key={p.id || i} className="hover:bg-muted/50 transition-colors hover:bg-muted/50 transition-colors">
                   <TableCell>{i + 1}</TableCell>
                   <TableCell className="font-medium">{p.nomi}</TableCell>
                   <TableCell><Badge variant="secondary" className="text-xs">{p.kategoriya || "-"}</Badge></TableCell>

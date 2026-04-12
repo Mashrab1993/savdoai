@@ -101,7 +101,7 @@ export default function BillingPage() {
               </TableHeader>
               <TableBody>
                 {PAYMENT_HISTORY.map(p => (
-                  <TableRow key={p.id}>
+                  <TableRow key={p.id} className="hover:bg-muted/50 transition-colors hover:bg-muted/50 transition-colors">
                     <TableCell>{p.id}</TableCell>
                     <TableCell>{p.sana}</TableCell>
                     <TableCell><Badge variant="secondary">{p.tarif}</Badge></TableCell>

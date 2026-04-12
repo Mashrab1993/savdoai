@@ -65,7 +65,7 @@ export default function PlanningPage() {
                       <div className="text-xs mt-1">Excel import yoki qo'lda kiriting</div>
                     </TableCell></TableRow>
                   ) : plans.map((p, i) => (
-                    <TableRow key={i}>
+                    <TableRow key={i} className="hover:bg-muted/50 transition-colors hover:bg-muted/50 transition-colors">
                       <TableCell className="font-medium">{p.agent}</TableCell>
                       <TableCell className="text-center"><Input type="number" className="w-28 mx-auto text-center" defaultValue={p.reja_summa} /></TableCell>
                       <TableCell className="text-center"><Input type="number" className="w-24 mx-auto text-center" defaultValue={p.reja_miqdor} /></TableCell>
@@ -96,7 +96,7 @@ export default function PlanningPage() {
                   ) : plans.map((p, i) => {
                     const pls = pulse(p.reja_summa, p.fakt_summa)
                     return (
-                      <TableRow key={i}>
+                      <TableRow key={i} className="hover:bg-muted/50 transition-colors hover:bg-muted/50 transition-colors">
                         <TableCell className="font-medium">{p.agent}</TableCell>
                         <TableCell className="text-center font-mono">{formatCurrency(p.reja_summa)} / {formatCurrency(p.fakt_summa)}</TableCell>
                         <TableCell className="text-center">

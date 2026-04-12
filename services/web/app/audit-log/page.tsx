@@ -160,7 +160,7 @@ export default function AuditLogPage() {
                 const meta = ACTIONS[l.amal] || { label: l.amal, color: "bg-muted text-foreground", icon: ScrollText }
                 const Icon = meta.icon
                 return (
-                  <TableRow key={l.id}>
+                  <TableRow key={l.id} className="hover:bg-muted/50 transition-colors hover:bg-muted/50 transition-colors">
                     <TableCell className="font-mono text-xs">#{l.id}</TableCell>
                     <TableCell className="text-xs">
                       {new Date(l.sana).toLocaleString("uz-UZ")}

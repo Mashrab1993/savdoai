@@ -220,7 +220,7 @@ export default function TransfersPage() {
               ) : items.map((t, i) => {
                 const meta = HOLAT_META[t.holat] || HOLAT_META.kutilmoqda
                 return (
-                  <TableRow key={t.id}>
+                  <TableRow key={t.id} className="hover:bg-muted/50 transition-colors hover:bg-muted/50 transition-colors">
                     <TableCell className="font-mono text-xs">#{i + 1}</TableCell>
                     <TableCell className="text-sm">
                       {new Date(t.yaratilgan).toLocaleDateString("uz-UZ")}

@@ -138,7 +138,7 @@ export default function PriceTypesPage() {
                   </TableCell>
                 </TableRow>
               ) : filtered.map((g, i) => (
-                <TableRow key={g.id}>
+                <TableRow key={g.id} className="hover:bg-muted/50 transition-colors hover:bg-muted/50 transition-colors">
                   <TableCell className="font-mono text-xs">#{i + 1}</TableCell>
                   <TableCell>
                     <Badge variant="default" className="text-sm">

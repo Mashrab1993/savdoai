@@ -121,7 +121,7 @@ export default function SupervisorDashboardPage() {
                         </TableCell>
                       </TableRow>
                     ) : data.map((r, i) => (
-                      <TableRow key={i}>
+                      <TableRow key={i} className="hover:bg-muted/50 transition-colors hover:bg-muted/50 transition-colors">
                         <TableCell className="font-medium">{r.nomi}</TableCell>
                         <TableCell className="text-center">
                           <div className="flex items-center justify-center gap-2">

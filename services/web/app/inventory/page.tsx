@@ -113,7 +113,7 @@ export default function InventoryPage() {
                   const phys = counted[t.id]
                   const diff = phys !== undefined ? phys - sys : 0
                   return (
-                    <TableRow key={t.id || i}>
+                    <TableRow key={t.id || i} className="hover:bg-muted/50 transition-colors hover:bg-muted/50 transition-colors">
                       <TableCell className="text-muted-foreground">{i + 1}</TableCell>
                       <TableCell className="font-medium">{t.nomi}</TableCell>
                       <TableCell className="text-center font-mono">{sys}</TableCell>
