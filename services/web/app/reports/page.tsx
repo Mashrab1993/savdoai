@@ -15,7 +15,7 @@ import {
 import { Download, TrendingUp, Users, DollarSign, Package, Loader2 } from "lucide-react"
 import { useApi } from "@/hooks/use-api"
 import { getPublicApiBaseUrl } from "@/lib/api/base-url"
-import { reportService, dashboardService, foydaService } from "@/lib/api/services"
+import { reportService, dashboardService, foydaService, pnlService } from "@/lib/api/services"
 import PnLReport from "@/components/dashboard/pnl-report"
 import SalesPivotTable from "@/components/dashboard/sales-pivot-table"
 import NotificationStream from "@/components/dashboard/notification-stream"
@@ -70,6 +70,8 @@ export default function ReportsPage() {
   const { data: monthlyRaw, loading: monthlyLoading, error: monthlyError, refetch: refetchMonthly } = useApi(monthlyFetcher)
   const foydaFetcher = useCallback(() => foydaService.get(30), [])
   const { data: foydaData, loading: foydaLoading, refetch: refetchFoyda } = useApi(foydaFetcher)
+  const pnlFetcher = useCallback(() => pnlService.get(30), [])
+  const { data: pnlData } = useApi(pnlFetcher)
 
   const dashboard = rawDashboard ? normalizeDashboard(rawDashboard) : null
 
@@ -185,18 +187,9 @@ export default function ReportsPage() {
           ))}
         </div>
 
-        {/* PnL statement (when foyda data loaded) */}
-        {foydaData && (
-          <PnLReport
-            data={{
-              davr_nomi:           locale === "uz" ? `Oxirgi ${foydaData.kunlar} kun` : `Последние ${foydaData.kunlar} дн.`,
-              tushum:               foydaData.brutto_sotuv ?? 0,
-              tannarx:              foydaData.tannarx ?? 0,
-              yalpi_foyda:          foydaData.sof_foyda ?? 0,
-              operatsion_xarajatlar: foydaData.xarajatlar ?? 0,
-              sof_foyda:            foydaData.toza_foyda ?? 0,
-            }}
-          />
+        {/* PnL statement — dedicated endpoint with full breakdown */}
+        {pnlData && (
+          <PnLReport data={pnlData} />
         )}
 
         {/* Top products pivot — from foyda.top_foyda */}
