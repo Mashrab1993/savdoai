@@ -99,15 +99,12 @@ export default function MoliyaPage() {
   return (
     <AdminLayout>
       <div className="max-w-5xl mx-auto p-4 sm:p-6 space-y-5">
-        <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <Wallet className="w-7 h-7 text-emerald-600" />
-            Moliyaviy hisobotlar
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            SalesDoc + QuickBooks darajasida — P&L, Balans, Cash Flow, KPI
-          </p>
-        </div>
+        <PageHeader
+          icon={Wallet}
+          gradient="emerald"
+          title="Moliyaviy hisobotlar"
+          subtitle="P&L, Balans, Cash Flow, KPI — to'liq moliyaviy tahlil"
+        />
 
         {/* Tabs + date range */}
         <div className="flex flex-wrap items-center gap-2">

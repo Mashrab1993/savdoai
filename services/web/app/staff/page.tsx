@@ -70,20 +70,17 @@ export default function StaffPage() {
     <AdminLayout>
       <div className="max-w-7xl mx-auto p-4 sm:p-6 space-y-6">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold flex items-center gap-2">
-              <Users className="w-7 h-7 text-emerald-600" />
-              Xodimlar boshqaruvi
-            </h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              Agentlar, expeditorlar, supervisorlar
-            </p>
-          </div>
-          <Button onClick={() => { setForm({ ...form, rol: tab }); setShowAdd(true) }} className="bg-emerald-600 hover:bg-emerald-700">
-            <UserPlus className="w-4 h-4 mr-1" /> Yangi {ROLE_LABELS[tab].label}
-          </Button>
-        </div>
+        <PageHeader
+          icon={Users}
+          gradient="violet"
+          title="Xodimlar boshqaruvi"
+          subtitle="Agentlar, expeditorlar, supervisorlar"
+          action={
+            <Button onClick={() => { setForm({ ...form, rol: tab }); setShowAdd(true) }}>
+              <UserPlus className="w-4 h-4 mr-1" /> Yangi {ROLE_LABELS[tab].label}
+            </Button>
+          }
+        />
 
         {/* Tabs */}
         <Tabs value={tab} onValueChange={v => setTab(v as StaffRole)}>

@@ -104,16 +104,14 @@ export default function ReturnsPage() {
   return (
     <AdminLayout>
       <div className="max-w-7xl mx-auto p-4 sm:p-6 space-y-5">
+        <PageHeader
+          icon={RotateCcw}
+          gradient="amber"
+          title="Qaytarishlar (Vozvrat)"
+          subtitle="Mijozdan qaytarilgan tovarlar — avtomatik ombor qoldig'iga qaytaradi"
+        />
         <div className="flex items-center justify-between flex-wrap gap-3">
-          <div>
-            <h1 className="text-2xl font-bold flex items-center gap-2">
-              <RotateCcw className="w-7 h-7 text-orange-600" />
-              Qaytarishlar (Vozvrat)
-            </h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              Mijozdan qaytarilgan tovarlar — avtomatik ombor qoldig&apos;iga qaytaradi
-            </p>
-          </div>
+          <div></div>
           <div className="flex gap-2 items-center flex-wrap">
             <Input type="date" value={sanaDan}   onChange={e => setSanaDan(e.target.value)}   className="w-40" />
             <span className="text-muted-foreground">—</span>
