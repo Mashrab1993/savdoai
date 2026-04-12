@@ -155,18 +155,18 @@ export default function SuppliersPage() {
           />
         </div>
 
-        {/* Premium supplier balance overview */}
+        {/* Premium supplier balance overview — real data from enriched endpoint */}
         {!loading && suppliers.length > 0 && (
           <SupplierBalance
-            suppliers={suppliers.map(s => ({
+            suppliers={suppliers.map((s: any) => ({
               id:               s.id,
               nomi:             s.nomi,
               telefon:          s.telefon,
-              kategoriya:       (s.kategoriyalar || [])[0],
-              balans:           0,
-              jami_xarid:       0,
-              aktiv_buyurtma:   0,
-              oxirgi_kirim:     undefined,
+              kategoriya:       Array.isArray(s.kategoriyalar) ? s.kategoriyalar[0] : undefined,
+              balans:           Number(s.balans ?? 0),
+              jami_xarid:       Number(s.jami_xarid ?? 0),
+              aktiv_buyurtma:   Number(s.aktiv_buyurtma ?? 0),
+              oxirgi_kirim:     s.oxirgi_kirim || undefined,
             }))}
           />
         )}

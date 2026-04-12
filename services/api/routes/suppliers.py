@@ -76,9 +76,18 @@ async def suppliers_list(
                    kategoriyalar, faol, yaratilgan,
                    (SELECT COUNT(*) FROM supplier_buyurtmalar
                     WHERE supplier_id = yetkazib_beruvchilar.id) AS buyurtma_soni,
+                   (SELECT COUNT(*) FROM supplier_buyurtmalar
+                    WHERE supplier_id = yetkazib_beruvchilar.id
+                      AND holat IN ('tayyorlanmoqda','yuborildi','tasdiqlandi')) AS aktiv_buyurtma,
                    (SELECT COALESCE(SUM(jami_summa), 0) FROM supplier_buyurtmalar
                     WHERE supplier_id = yetkazib_beruvchilar.id
-                      AND holat NOT IN ('bekor')) AS jami_xarid
+                      AND holat NOT IN ('bekor')) AS jami_xarid,
+                   (SELECT COALESCE(SUM(jami_summa), 0) FROM supplier_buyurtmalar
+                    WHERE supplier_id = yetkazib_beruvchilar.id
+                      AND holat IN ('tayyorlanmoqda','yuborildi','tasdiqlandi')) AS balans,
+                   (SELECT MAX(yaratilgan) FROM supplier_buyurtmalar
+                    WHERE supplier_id = yetkazib_beruvchilar.id
+                      AND holat = 'yetkazildi') AS oxirgi_kirim
             FROM yetkazib_beruvchilar
             WHERE {" AND ".join(where)}
             ORDER BY faol DESC, nomi ASC
