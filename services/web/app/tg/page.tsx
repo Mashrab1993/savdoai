@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { PageLoading } from "@/components/shared/page-states"
 import { useRouter } from "next/navigation"
 import { Building2, Loader2, AlertCircle, RefreshCw } from "lucide-react"
 import { Button } from "@/components/ui/button"

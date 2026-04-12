@@ -117,9 +117,7 @@ export default function PhotoReportsPage() {
         )}
 
         {loading ? (
-          <div className="flex justify-center p-20">
-            <div className="animate-spin h-8 w-8 border-b-2 border-purple-500 rounded-full" />
-          </div>
+          <PageLoading />
         ) : items.length === 0 ? (
           <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-xl p-20 text-center">
             <Camera className="w-16 h-16 mx-auto mb-3 text-muted-foreground opacity-30" />

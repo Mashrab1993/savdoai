@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useCallback } from "react"
+import { PageLoading } from "@/components/shared/page-states"
 import { AdminLayout } from "@/components/layout/admin-layout"
 import { useLocale } from "@/lib/locale-context"
 import { Input } from "@/components/ui/input"
