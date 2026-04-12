@@ -43,23 +43,18 @@ export default function InventoryPage() {
   return (
     <AdminLayout>
       <div className="max-w-7xl mx-auto p-4 sm:p-6 space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold flex items-center gap-2">
-              <ClipboardList className="w-7 h-7 text-emerald-600" />
-              Inventarizatsiya
-            </h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              Sklad tovarlarini fizik sanash va sverka qilish
-            </p>
-          </div>
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm"><Download className="w-4 h-4 mr-1" /> Excel</Button>
-            <Button className="bg-emerald-600 hover:bg-emerald-700">
-              <Check className="w-4 h-4 mr-1" /> Tasdiqlash
-            </Button>
-          </div>
-        </div>
+        <PageHeader
+          icon={ClipboardList}
+          gradient="violet"
+          title="Inventarizatsiya"
+          subtitle="Sklad tovarlarini fizik sanash va sverka qilish"
+          action={
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm"><Download className="w-4 h-4 mr-1" /> Excel</Button>
+              <Button><Check className="w-4 h-4 mr-1" /> Tasdiqlash</Button>
+            </div>
+          }
+        />
 
         {/* Stats */}
         <div className="grid grid-cols-4 gap-4">

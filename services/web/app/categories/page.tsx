@@ -71,16 +71,14 @@ export default function CategoriesPage() {
   return (
     <AdminLayout>
       <div className="max-w-5xl mx-auto p-4 sm:p-6 space-y-5">
+        <PageHeader
+          icon={Folder}
+          gradient="emerald"
+          title="Tovar kategoriyalari"
+          subtitle="Tovarlaringizdan avtomatik to'plangan kategoriyalar, brendlar va segmentlar"
+        />
         <div className="flex items-center justify-between flex-wrap gap-3">
-          <div>
-            <h1 className="text-2xl font-bold flex items-center gap-2">
-              <Folder className="w-7 h-7 text-emerald-600" />
-              Tovar kategoriyalari
-            </h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              Tovarlaringizdan avtomatik to&apos;plangan kategoriyalar, brendlar va segmentlar
-            </p>
-          </div>
+          <div></div>
           <div className="text-right">
             <div className="text-xs text-muted-foreground">Jami tovar</div>
             <div className="text-2xl font-bold">{facets.jami || 0}</div>
