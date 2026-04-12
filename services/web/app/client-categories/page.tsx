@@ -57,7 +57,7 @@ export default function ClientCategoriesPage() {
           <TabsContent value="category">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {DEFAULT_CATEGORIES.map(c => (
-                <div key={c.id} className="bg-card rounded-xl border p-4 hover:shadow-md transition">
+                <div key={c.id} className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl p-4 hover:shadow-md transition">
                   <div className="flex items-start justify-between mb-3">
                     <c.icon className={`w-8 h-8 text-${c.color}-600`} />
                     <Badge className="bg-emerald-500/15 text-emerald-800 dark:text-emerald-300">Faol</Badge>
@@ -90,7 +90,7 @@ export default function ClientCategoriesPage() {
           </TabsContent>
 
           <TabsContent value="channel">
-            <div className="bg-card rounded-xl border p-10 text-center text-muted-foreground">
+            <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl p-10 text-center text-muted-foreground">
               <Store className="w-12 h-12 mx-auto mb-3 opacity-30" />
               Savdo kanallari hali sozlanmagan
             </div>

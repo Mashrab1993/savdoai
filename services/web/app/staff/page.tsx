@@ -105,7 +105,7 @@ export default function StaffPage() {
           {/* Table for each tab */}
           {(["agent", "expeditor", "supervisor"] as StaffRole[]).map(role => (
             <TabsContent key={role} value={role}>
-              <div className="bg-card rounded-xl border overflow-x-auto">
+              <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>

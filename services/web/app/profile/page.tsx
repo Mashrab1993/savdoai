@@ -48,7 +48,7 @@ export default function ProfilePage() {
           </TabsList>
 
           <TabsContent value="company" className="space-y-4">
-            <div className="bg-card rounded-xl border p-6 space-y-4">
+            <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl p-6 space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="text-sm font-medium">Kompaniya nomi *</label>
@@ -109,7 +109,7 @@ export default function ProfilePage() {
           </TabsContent>
 
           <TabsContent value="user" className="space-y-4">
-            <div className="bg-card rounded-xl border p-6 space-y-4">
+            <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl p-6 space-y-4">
               <div>
                 <label className="text-sm font-medium">F.I.O.</label>
                 <Input value={form.name} onChange={e => setForm({...form, name: e.target.value})} />
@@ -129,7 +129,7 @@ export default function ProfilePage() {
           </TabsContent>
 
           <TabsContent value="security" className="space-y-4">
-            <div className="bg-card rounded-xl border p-6 space-y-4">
+            <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl p-6 space-y-4">
               <div>
                 <label className="text-sm font-medium">Eski parol</label>
                 <div className="relative">
@@ -165,7 +165,7 @@ export default function ProfilePage() {
           </TabsContent>
 
           <TabsContent value="branding" className="space-y-4">
-            <div className="bg-card rounded-xl border p-6">
+            <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl p-6">
               <h3 className="font-bold mb-4">Logo (printer va PDF uchun)</h3>
               <div className="border-2 border-dashed rounded-lg p-10 text-center">
                 <ImageIcon className="w-12 h-12 mx-auto text-muted-foreground/50 mb-3" />

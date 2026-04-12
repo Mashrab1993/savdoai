@@ -33,7 +33,7 @@ export default function PaymentMethodsPage() {
 
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
           {methods.map(m => (
-            <div key={m.id} className="bg-card rounded-xl border p-4 hover:shadow-md transition">
+            <div key={m.id} className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl p-4 hover:shadow-md transition">
               <div className="flex items-start justify-between mb-3">
                 <m.icon className="w-8 h-8 text-emerald-600" />
                 <Badge className={m.faol ? "bg-emerald-500/15 text-emerald-800 dark:text-emerald-300" : "bg-muted text-muted-foreground"}>{m.faol ? "Faol" : "Nofaol"}</Badge>

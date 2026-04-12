@@ -33,7 +33,7 @@ export default function AktSverkiPage() {
         <p className="text-sm text-muted-foreground">Klient bilan solishtirish akti — SD Agent client/revise analogi</p>
 
         {/* Form */}
-        <div className="bg-card rounded-xl border p-5 space-y-4">
+        <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl p-5 space-y-4">
           <div className="grid grid-cols-3 gap-3">
             <div>
               <label className="text-xs font-medium text-muted-foreground">Klient ID</label>
@@ -55,7 +55,7 @@ export default function AktSverkiPage() {
 
         {/* Result */}
         {result && (
-          <div className="bg-card rounded-xl border overflow-hidden">
+          <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl overflow-hidden">
             <div className="p-4 bg-blue-50 dark:bg-blue-900/10 border-b flex items-center justify-between">
               <div>
                 <h3 className="font-bold">📋 Akt sverki #{result.akt_id}</h3>

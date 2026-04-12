@@ -126,7 +126,7 @@ export default function OmborPage() {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          <div className="bg-card rounded-xl border p-4 cursor-pointer hover:shadow-md transition"
+          <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl p-4 cursor-pointer hover:shadow-md transition"
                onClick={() => setFilter("all")}>
             <div className="text-sm text-muted-foreground">Jami tovarlar</div>
             <div className="text-2xl font-bold mt-1">{stats.jami}</div>
@@ -191,7 +191,7 @@ export default function OmborPage() {
         ) : error ? (
           <div className="text-center p-10 text-rose-500 dark:text-rose-400">Xatolik: {String(error)}</div>
         ) : (
-          <div className="bg-card rounded-xl border overflow-x-auto">
+          <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>

@@ -54,7 +54,7 @@ export default function VanSellingPage() {
           <div className="space-y-4">
             <Button variant="outline" onClick={() => setSelected(null)} className="text-xs">← Orqaga</Button>
 
-            <div className="bg-card rounded-xl border p-5">
+            <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl p-5">
               <div className="flex items-center justify-between mb-4">
                 <div>
                   <h2 className="text-lg font-bold flex items-center gap-2">
@@ -122,7 +122,7 @@ export default function VanSellingPage() {
           <div className="space-y-3">
             {marshrutlar.map((m: any) => (
               <div key={m.id} onClick={() => loadDetail(m.id)}
-                className="bg-card rounded-xl border p-4 cursor-pointer hover:shadow-md transition-shadow">
+                className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl p-4 cursor-pointer hover:shadow-md transition-shadow">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center">

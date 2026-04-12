@@ -89,7 +89,7 @@ export default function PriceListPage() {
 
         {/* Stats */}
         <div className="grid grid-cols-3 gap-4">
-          <div className="bg-card rounded-xl border p-4">
+          <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl p-4">
             <div className="text-sm text-muted-foreground">Tovarlar soni</div>
             <div className="text-2xl font-bold mt-1">{items.length}</div>
           </div>
@@ -117,7 +117,7 @@ export default function PriceListPage() {
             <div className="animate-spin h-8 w-8 border-b-2 border-emerald-500 rounded-full" />
           </div>
         ) : (
-          <div className="bg-card rounded-xl border overflow-x-auto">
+          <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>

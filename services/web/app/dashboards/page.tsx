@@ -30,7 +30,7 @@ export default function DashboardsPage() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {DASHBOARDS.map(d => (
-            <Link key={d.href} href={d.href} className="bg-card rounded-xl border p-6 hover:shadow-md hover:border-emerald-500/40 transition group">
+            <Link key={d.href} href={d.href} className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl p-6 hover:shadow-md hover:border-emerald-500/40 transition group">
               <div className="flex items-start justify-between mb-4">
                 <div className={`p-3 bg-${d.color}-50 rounded-xl`}>
                   <d.icon className={`w-7 h-7 text-${d.color}-600`} />

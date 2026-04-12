@@ -81,7 +81,7 @@ export default function IntegrationsPage() {
           {filtered.map((int, i) => {
             const status = STATUS_COLORS[int.status]
             return (
-              <div key={i} className="bg-card rounded-xl border p-4 hover:shadow-md transition">
+              <div key={i} className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl p-4 hover:shadow-md transition">
                 <div className="flex items-start justify-between mb-3">
                   <div className="p-2 bg-emerald-50 rounded-lg">
                     <int.icon className="w-6 h-6 text-emerald-600" />

@@ -53,7 +53,7 @@ export default function CashboxesPage() {
         {/* Cashboxes Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {boxes.map(b => (
-            <div key={b.id} className="bg-card rounded-xl border p-4 hover:shadow-md transition">
+            <div key={b.id} className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl p-4 hover:shadow-md transition">
               <div className="flex items-start justify-between mb-3">
                 <Wallet className="w-8 h-8 text-emerald-600" />
                 <Badge variant="secondary">{b.turi === "naqd" ? "Naqd" : b.turi === "karta" ? "Karta" : b.turi === "bank" ? "Bank" : "Onlayn"}</Badge>

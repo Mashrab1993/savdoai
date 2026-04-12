@@ -207,21 +207,21 @@ export default function PurchasePage() {
 
         {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <div className="bg-card border rounded-xl p-4">
+          <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-xl p-4">
             <div className="text-xs text-muted-foreground">Jami buyurtma</div>
             <div className="text-2xl font-bold mt-1">{stats.soni || 0}</div>
           </div>
-          <div className="bg-card border rounded-xl p-4">
+          <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-xl p-4">
             <div className="text-xs text-muted-foreground">Jami summa</div>
             <div className="text-xl font-bold mt-1 text-emerald-600">
               {formatCurrency(Number(stats.jami || 0))}
             </div>
           </div>
-          <div className="bg-card border rounded-xl p-4">
+          <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-xl p-4">
             <div className="text-xs text-muted-foreground">Kutilyapti</div>
             <div className="text-2xl font-bold mt-1 text-amber-600 dark:text-amber-400">{stats.pending || 0}</div>
           </div>
-          <div className="bg-card border rounded-xl p-4">
+          <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-xl p-4">
             <div className="text-xs text-muted-foreground">Yetkazilgan</div>
             <div className="text-2xl font-bold mt-1 text-emerald-600">{stats.yetkazilgan || 0}</div>
           </div>
@@ -233,7 +233,7 @@ export default function PurchasePage() {
           </div>
         )}
 
-        <div className="bg-card border rounded-xl overflow-x-auto">
+        <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-xl overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>

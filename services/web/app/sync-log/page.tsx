@@ -29,7 +29,7 @@ export default function SyncLogPage() {
         />
 
       <div className="grid grid-cols-3 gap-4 mb-6">
-        <div className="bg-card rounded-xl border p-4 text-center">
+        <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl p-4 text-center">
           <div className="text-2xl font-bold">{logs.length}</div>
           <div className="text-xs text-muted-foreground">Jami sync</div>
         </div>
@@ -43,7 +43,7 @@ export default function SyncLogPage() {
         </div>
       </div>
 
-      <div className="bg-card rounded-xl border overflow-hidden">
+      <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl overflow-hidden">
         <table className="w-full text-sm">
           <thead>
             <tr className="bg-muted/50 dark:bg-muted text-left">

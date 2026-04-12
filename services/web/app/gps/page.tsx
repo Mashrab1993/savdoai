@@ -90,7 +90,7 @@ export default function GpsPage() {
 
         {/* Stats */}
         <div className="grid grid-cols-3 gap-4">
-          <div className="bg-card rounded-xl border p-4">
+          <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl p-4">
             <div className="text-sm text-muted-foreground">Jami agentlar</div>
             <div className="text-2xl font-bold mt-1">{agents.length}</div>
           </div>
@@ -127,7 +127,7 @@ export default function GpsPage() {
           </div>
 
           {/* Agent List */}
-          <div className="bg-card rounded-xl border overflow-hidden">
+          <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl overflow-hidden">
             <div className="p-4 border-b">
               <h3 className="font-bold">Agentlar</h3>
             </div>
@@ -182,7 +182,7 @@ export default function GpsPage() {
 
         {/* Selected Agent Detail */}
         {selectedAgent && (
-          <div className="bg-card rounded-xl border p-4">
+          <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl p-4">
             <h3 className="font-bold mb-3 flex items-center gap-2">
               <Navigation className="w-5 h-5 text-emerald-600" />
               {selectedAgent.ism} — batafsil

@@ -37,7 +37,7 @@ export default function OnlineOrdersPage() {
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {Object.entries(STATUS_MAP).map(([k, s]) => (
-            <button key={k} onClick={() => setFilter(Number(k))} className="bg-card rounded-xl border p-4 hover:shadow-md transition">
+            <button key={k} onClick={() => setFilter(Number(k))} className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl p-4 hover:shadow-md transition">
               <div className="text-sm text-muted-foreground">{s.label}</div>
               <div className="text-2xl font-bold mt-1">0</div>
             </button>
@@ -52,7 +52,7 @@ export default function OnlineOrdersPage() {
           <Button onClick={() => setFilter(0)} variant={filter === 0 ? "default" : "outline"}>Barchasi</Button>
         </div>
 
-        <div className="bg-card rounded-xl border overflow-x-auto">
+        <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>

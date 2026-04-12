@@ -26,7 +26,7 @@ export default function WelcomePage() {
             { label: "Modullar", value: "23", icon: BarChart3 },
             { label: "Xodimlar", value: "9 rol", icon: Users },
           ].map((s, i) => (
-            <div key={i} className="bg-card rounded-xl border p-4 text-center">
+            <div key={i} className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl p-4 text-center">
               <s.icon className="w-8 h-8 mx-auto text-emerald-600 mb-2" />
               <div className="text-2xl font-bold">{s.value}</div>
               <div className="text-xs text-muted-foreground">{s.label}</div>
@@ -49,7 +49,7 @@ export default function WelcomePage() {
               { href: "/staff", label: "Xodimlar", desc: "Agent va expeditorlar", icon: Users },
               { href: "/help", label: "Yordam", desc: "Qo'llanma va FAQ", icon: MessageSquare },
             ].map(l => (
-              <Link key={l.href} href={l.href} className="bg-card rounded-xl border p-4 hover:shadow-md hover:border-emerald-500/40 transition group">
+              <Link key={l.href} href={l.href} className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl p-4 hover:shadow-md hover:border-emerald-500/40 transition group">
                 <div className="flex items-center justify-between mb-2">
                   <l.icon className="w-6 h-6 text-emerald-600" />
                   <ArrowRight className="w-4 h-4 text-muted-foreground/50 group-hover:text-emerald-600" />

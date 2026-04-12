@@ -57,7 +57,7 @@ export default function FilialPage() {
         {selectedFilial ? (
           <div className="space-y-4">
             <Button variant="outline" onClick={() => setSelectedFilial(null)}>← Orqaga</Button>
-            <div className="bg-card rounded-xl border p-5">
+            <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl p-5">
               <div className="flex items-center gap-3 mb-4">
                 <span className="text-3xl">{turiEmoji[selectedFilial.turi] || "🏪"}</span>
                 <div>
@@ -92,7 +92,7 @@ export default function FilialPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {filiallar.map((f: any) => (
               <div key={f.id} onClick={() => loadQoldiq(f.id)}
-                className="bg-card rounded-xl border p-4 cursor-pointer hover:shadow-md transition-shadow">
+                className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl p-4 cursor-pointer hover:shadow-md transition-shadow">
                 <div className="flex items-center gap-3 mb-2">
                   <span className="text-2xl">{turiEmoji[f.turi] || "🏪"}</span>
                   <div className="flex-1">

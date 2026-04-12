@@ -116,19 +116,19 @@ export default function WarehousesPage() {
         />
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <div className="bg-card border rounded-xl p-4">
+          <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-xl p-4">
             <div className="text-xs text-muted-foreground">Jami filiallar</div>
             <div className="text-2xl font-bold mt-1">{stats.jami}</div>
           </div>
-          <div className="bg-card border rounded-xl p-4">
+          <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-xl p-4">
             <div className="text-xs text-muted-foreground">Do&apos;konlar</div>
             <div className="text-2xl font-bold mt-1 text-sky-600">{stats.dokonlar}</div>
           </div>
-          <div className="bg-card border rounded-xl p-4">
+          <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-xl p-4">
             <div className="text-xs text-muted-foreground">Omborlar</div>
             <div className="text-2xl font-bold mt-1 text-emerald-600">{stats.omborlar}</div>
           </div>
-          <div className="bg-card border rounded-xl p-4">
+          <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-xl p-4">
             <div className="text-xs text-muted-foreground">Jami qiymat</div>
             <div className="text-xl font-bold mt-1 text-emerald-600">
               {formatCurrency(stats.jami_qiymat)}
@@ -142,7 +142,7 @@ export default function WarehousesPage() {
           </div>
         )}
 
-        <div className="bg-card border rounded-xl overflow-x-auto">
+        <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-xl overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>

@@ -58,7 +58,7 @@ export default function InventoryPage() {
 
         {/* Stats */}
         <div className="grid grid-cols-4 gap-4">
-          <div className="bg-card rounded-xl border p-4">
+          <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl p-4">
             <div className="text-sm text-muted-foreground">Jami tovarlar</div>
             <div className="text-2xl font-bold mt-1">{stats.total}</div>
           </div>
@@ -88,7 +88,7 @@ export default function InventoryPage() {
             <div className="animate-spin h-8 w-8 border-b-2 border-emerald-500 rounded-full" />
           </div>
         ) : (
-          <div className="bg-card rounded-xl border overflow-x-auto">
+          <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>

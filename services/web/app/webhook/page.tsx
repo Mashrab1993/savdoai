@@ -70,7 +70,7 @@ export default function WebhookPage() {
       </div>
 
       {showForm && (
-        <div className="bg-card rounded-xl border p-5 mb-6 space-y-4">
+        <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl p-5 mb-6 space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="text-sm font-medium">Nomi</label>
@@ -108,7 +108,7 @@ export default function WebhookPage() {
 
       <div className="space-y-3">
         {webhooklar.map((w: any) => (
-          <div key={w.id} className="bg-card rounded-xl border p-4">
+          <div key={w.id} className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl p-4">
             <div className="flex items-center justify-between mb-2">
               <div>
                 <div className="font-medium text-sm">{w.nomi}</div>

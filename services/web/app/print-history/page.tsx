@@ -31,7 +31,7 @@ export default function PrintHistoryPage() {
             { label: "Bu oy", value: 0, color: "purple" },
             { label: "Jami", value: 0, color: "gray" },
           ].map((s, i) => (
-            <div key={i} className="bg-card rounded-xl border p-4">
+            <div key={i} className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl p-4">
               <div className={`text-sm text-${s.color}-600`}>{s.label}</div>
               <div className="text-2xl font-bold mt-1">{s.value}</div>
             </div>
@@ -43,7 +43,7 @@ export default function PrintHistoryPage() {
           <Input placeholder="Qidirish..." value={search} onChange={e => setSearch(e.target.value)} className="pl-10" />
         </div>
 
-        <div className="bg-card rounded-xl border overflow-x-auto">
+        <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>

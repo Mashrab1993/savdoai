@@ -33,7 +33,7 @@ export default function QuickActionsPage() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {ACTIONS.map(a => (
-            <Link key={a.href} href={a.href} className="bg-card rounded-xl border p-6 hover:shadow-lg hover:border-emerald-500/40 transition group">
+            <Link key={a.href} href={a.href} className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl p-6 hover:shadow-lg hover:border-emerald-500/40 transition group">
               <div className={`inline-flex p-4 bg-${a.color}-50 rounded-2xl mb-4`}>
                 <a.icon className={`w-8 h-8 text-${a.color}-600`} />
               </div>

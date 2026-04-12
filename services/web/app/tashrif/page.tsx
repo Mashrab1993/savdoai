@@ -79,7 +79,7 @@ export default function TashrifPage() {
       </div>
 
       {/* Check-in formasi */}
-      <div className="bg-card rounded-xl border p-4 mb-6">
+      <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl p-4 mb-6">
         <div className="flex items-center gap-3">
           <input
             type="number"
@@ -120,7 +120,7 @@ export default function TashrifPage() {
       )}
 
       {/* Tarix */}
-      <div className="bg-card rounded-xl border overflow-hidden">
+      <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl overflow-hidden">
         <div className="px-4 py-3 border-b border-border/60 dark:border-border">
           <h3 className="text-sm font-semibold">Tashrif tarixi</h3>
         </div>

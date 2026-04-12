@@ -51,7 +51,7 @@ export default function PlanningPage() {
           <TabsList><TabsTrigger value="plan"><Pencil className="w-4 h-4 mr-1" /> Reja o'rnatish</TabsTrigger><TabsTrigger value="result"><BarChart3 className="w-4 h-4 mr-1" /> Bajarilish</TabsTrigger></TabsList>
 
           <TabsContent value="plan">
-            <div className="bg-card rounded-xl border overflow-x-auto">
+            <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl overflow-x-auto">
               <Table>
                 <TableHeader><TableRow>
                   <TableHead>Agent</TableHead><TableHead className="text-center">Summa rejasi</TableHead><TableHead className="text-center">Miqdor rejasi</TableHead>
@@ -80,7 +80,7 @@ export default function PlanningPage() {
           </TabsContent>
 
           <TabsContent value="result">
-            <div className="bg-card rounded-xl border overflow-x-auto">
+            <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl overflow-x-auto">
               <Table>
                 <TableHeader><TableRow>
                   <TableHead>Agent</TableHead>

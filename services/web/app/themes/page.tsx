@@ -74,7 +74,7 @@ export default function ThemesPage() {
           </div>
         </div>
 
-        <div className="bg-card rounded-xl border p-6">
+        <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl p-6">
           <h2 className="font-bold mb-3">Tilni tanlash</h2>
           <div className="grid grid-cols-3 gap-3">
             <button className="p-4 border rounded-lg text-center hover:border-emerald-500">

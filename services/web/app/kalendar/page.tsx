@@ -39,7 +39,7 @@ export default function CalendarPage() {
           <>
             {/* Stats */}
             <div className="flex gap-3">
-              <div className="bg-card rounded-xl border px-4 py-3 text-center flex-1">
+              <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl px-4 py-3 text-center flex-1">
                 <div className="text-xl font-bold">{bugun.jami}</div>
                 <div className="text-[10px] text-muted-foreground">Jami klient</div>
               </div>

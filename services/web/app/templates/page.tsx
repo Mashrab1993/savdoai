@@ -62,7 +62,7 @@ export default function TemplatesPage() {
         {/* Templates Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {filtered.map(t => (
-            <div key={t.id} className="bg-card rounded-xl border p-4 hover:shadow-md transition">
+            <div key={t.id} className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl p-4 hover:shadow-md transition">
               <div className="flex items-start justify-between mb-3">
                 <div className="p-2 bg-emerald-50 rounded-lg">
                   <t.icon className="w-6 h-6 text-emerald-600" />

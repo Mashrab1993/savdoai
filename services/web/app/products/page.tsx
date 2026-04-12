@@ -566,15 +566,15 @@ export default function ProductsPage() {
               </div>
               {tarixData.statistika && (
                 <div className="grid grid-cols-3 gap-2 text-center">
-                  <div className="bg-card border rounded-lg p-2">
+                  <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-lg p-2">
                     <p className="text-lg font-bold">{tarixData.statistika.sotuv_soni}</p>
                     <p className="text-[10px] text-muted-foreground">{locale === "uz" ? "Sotuv" : "Продаж"}</p>
                   </div>
-                  <div className="bg-card border rounded-lg p-2">
+                  <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-lg p-2">
                     <p className="text-lg font-bold">{Number(tarixData.statistika.jami_sotilgan).toFixed(0)}</p>
                     <p className="text-[10px] text-muted-foreground">{locale === "uz" ? "Sotilgan" : "Продано"}</p>
                   </div>
-                  <div className="bg-card border rounded-lg p-2">
+                  <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-lg p-2">
                     <p className="text-lg font-bold">{fmt(tarixData.statistika.jami_tushum)}</p>
                     <p className="text-[10px] text-muted-foreground">{locale === "uz" ? "Tushum" : "Выручка"}</p>
                   </div>

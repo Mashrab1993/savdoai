@@ -70,7 +70,7 @@ export default function ExpensesCategoriesPage() {
           {/* Categories */}
           <div className="md:col-span-2">
             <h2 className="font-bold mb-3">Xarajat moddalari</h2>
-            <div className="bg-card rounded-xl border p-4">
+            <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl p-4">
               <div className="space-y-2">
                 {(CATEGORIES.find(c => c.fund === selectedFund)?.items || []).map((cat, i) => (
                   <div key={i} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 dark:hover:bg-muted">

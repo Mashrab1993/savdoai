@@ -55,7 +55,7 @@ export default function RoutePage() {
           <>
             {/* Stats */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-              <div className="bg-card rounded-xl border p-4 text-center">
+              <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl p-4 text-center">
                 <div className="text-2xl font-bold text-blue-600">{result.jami_masofa_km} km</div>
                 <div className="text-[10px] text-muted-foreground">Optimal masofa</div>
               </div>
@@ -63,18 +63,18 @@ export default function RoutePage() {
                 <div className="text-2xl font-bold text-emerald-600">-{result.tejaldi_km} km</div>
                 <div className="text-[10px] text-emerald-600">{result.tejaldi_foiz}% tejaldi</div>
               </div>
-              <div className="bg-card rounded-xl border p-4 text-center">
+              <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl p-4 text-center">
                 <div className="text-2xl font-bold">{result.taxminiy_vaqt_daqiqa} min</div>
                 <div className="text-[10px] text-muted-foreground">Taxminiy vaqt</div>
               </div>
-              <div className="bg-card rounded-xl border p-4 text-center">
+              <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl p-4 text-center">
                 <div className="text-2xl font-bold">{result.klientlar_soni}</div>
                 <div className="text-[10px] text-muted-foreground">Klient</div>
               </div>
             </div>
 
             {/* Comparison */}
-            <div className="bg-card rounded-xl border p-4">
+            <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl p-4">
               <h3 className="text-sm font-semibold mb-3">📊 Solishtirish</h3>
               <div className="flex items-center gap-4">
                 <div className="flex-1">
@@ -96,7 +96,7 @@ export default function RoutePage() {
             </div>
 
             {/* Route steps */}
-            <div className="bg-card rounded-xl border overflow-hidden">
+            <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl overflow-hidden">
               <div className="p-4 border-b bg-muted/50 dark:bg-muted">
                 <h3 className="text-sm font-semibold">📍 Optimal marshrut</h3>
               </div>

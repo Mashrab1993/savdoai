@@ -32,7 +32,7 @@ export default function FeedbackPage() {
         {/* Stats */}
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
           {[5, 4, 3, 2, 1].map(stars => (
-            <div key={stars} className="bg-card rounded-xl border p-4 text-center">
+            <div key={stars} className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl p-4 text-center">
               <div className="flex justify-center gap-0.5 mb-1">
                 {[1, 2, 3, 4, 5].map(s => (
                   <Star key={s} className={`w-3 h-3 ${s <= stars ? "text-amber-500 fill-yellow-500" : "text-muted-foreground/50"}`} />
@@ -59,7 +59,7 @@ export default function FeedbackPage() {
           </select>
         </div>
 
-        <div className="bg-card rounded-xl border overflow-x-auto">
+        <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>

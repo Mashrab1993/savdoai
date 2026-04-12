@@ -49,7 +49,7 @@ export default function UsersPage() {
         {/* Roles overview */}
         <div className="grid grid-cols-3 sm:grid-cols-5 gap-3">
           {ROLES.slice(0, 5).map(r => (
-            <div key={r.key} className="bg-card rounded-xl border p-3 text-center">
+            <div key={r.key} className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl p-3 text-center">
               <Shield className="w-6 h-6 mx-auto mb-1 text-emerald-600" />
               <div className="text-xs font-medium">{r.label}</div>
               <div className="text-lg font-bold">0</div>

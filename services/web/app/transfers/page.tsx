@@ -137,15 +137,15 @@ export default function TransfersPage() {
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-          <div className="bg-card border rounded-xl p-4">
+          <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-xl p-4">
             <div className="text-xs text-muted-foreground">Transferlar soni</div>
             <div className="text-2xl font-bold mt-1">{stats.soni || 0}</div>
           </div>
-          <div className="bg-card border rounded-xl p-4">
+          <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-xl p-4">
             <div className="text-xs text-muted-foreground">Jami miqdor</div>
             <div className="text-2xl font-bold mt-1">{Number(stats.jami_miqdor || 0).toLocaleString()}</div>
           </div>
-          <div className="bg-card border rounded-xl p-4">
+          <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-xl p-4">
             <div className="text-xs text-muted-foreground">Filiallar</div>
             <div className="text-2xl font-bold mt-1">{filiallar.length}</div>
           </div>
@@ -190,7 +190,7 @@ export default function TransfersPage() {
 
         {/* Legacy table (shown only when no transfers exist) */}
         {!loading && items.length === 0 && (
-          <div className="bg-card border rounded-xl overflow-x-auto">
+          <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-xl overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>

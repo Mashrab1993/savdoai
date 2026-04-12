@@ -46,7 +46,7 @@ export default function DataImportPage() {
         </div>
 
         {/* Upload Area */}
-        <div className="bg-card rounded-xl border p-6">
+        <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl p-6">
           <h2 className="font-bold mb-4">Fayl yuklash</h2>
 
           <div className="border-2 border-dashed rounded-xl p-10 text-center hover:border-emerald-500 transition cursor-pointer">

@@ -36,7 +36,7 @@ export default function PrintersPage() {
         </div>
 
         <div className="grid grid-cols-3 gap-4">
-          <div className="bg-card rounded-xl border p-4">
+          <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl p-4">
             <div className="text-sm text-muted-foreground">Jami</div>
             <div className="text-2xl font-bold mt-1">{printers.length}</div>
           </div>

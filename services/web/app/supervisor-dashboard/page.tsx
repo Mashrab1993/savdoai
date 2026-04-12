@@ -51,7 +51,7 @@ export default function SupervisorDashboardPage() {
         </div>
 
         {/* Filters */}
-        <div className="bg-card rounded-xl border p-4">
+        <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl p-4">
           <div className="flex items-center gap-3 flex-wrap">
             <Filter className="w-4 h-4 text-muted-foreground" />
             <select value={status} onChange={e => setStatus(e.target.value)} className="border rounded-lg px-3 py-2 text-sm bg-card">
@@ -69,19 +69,19 @@ export default function SupervisorDashboardPage() {
 
         {/* Stats */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          <div className="bg-card rounded-xl border p-4">
+          <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl p-4">
             <div className="text-sm text-muted-foreground">Jami summa</div>
             <div className="text-2xl font-bold mt-1 text-violet-700 dark:text-violet-300">{formatCurrency(total)}</div>
           </div>
-          <div className="bg-card rounded-xl border p-4">
+          <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl p-4">
             <div className="text-sm text-muted-foreground">Jami buyurtmalar</div>
             <div className="text-2xl font-bold mt-1">0</div>
           </div>
-          <div className="bg-card rounded-xl border p-4">
+          <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl p-4">
             <div className="text-sm text-muted-foreground">AKB (faol mijozlar)</div>
             <div className="text-2xl font-bold mt-1 text-emerald-700">0</div>
           </div>
-          <div className="bg-card rounded-xl border p-4">
+          <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl p-4">
             <div className="text-sm text-muted-foreground">O'rtacha chek</div>
             <div className="text-2xl font-bold mt-1">{formatCurrency(0)}</div>
           </div>
@@ -99,7 +99,7 @@ export default function SupervisorDashboardPage() {
 
           {SECTIONS.map(s => (
             <TabsContent key={s.key} value={s.key}>
-              <div className="bg-card rounded-xl border overflow-x-auto">
+              <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow className="bg-purple-50 dark:bg-purple-900/20">
@@ -153,7 +153,7 @@ export default function SupervisorDashboardPage() {
             { label: "Akt sverka", href: "/sverka", icon: Shield },
             { label: "Audit", href: "/audit-dashboard", icon: Building2 },
           ].map(l => (
-            <a key={l.label} href={l.href} className="bg-card rounded-xl border p-4 hover:border-purple-300 hover:shadow-md transition flex items-center gap-3">
+            <a key={l.label} href={l.href} className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl p-4 hover:border-purple-300 hover:shadow-md transition flex items-center gap-3">
               <l.icon className="w-6 h-6 text-purple-600" />
               <span className="text-sm font-medium">{l.label}</span>
             </a>

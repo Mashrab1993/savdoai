@@ -41,7 +41,7 @@ export default function TagsPage() {
 
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
           {tags.map(t => (
-            <div key={t.id} className="bg-card rounded-xl border p-4 hover:shadow-md transition">
+            <div key={t.id} className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl p-4 hover:shadow-md transition">
               <div className="flex items-start justify-between mb-3">
                 <Badge className={`bg-${t.color}-100 text-${t.color}-800 text-base px-3 py-1`}>{t.nomi}</Badge>
                 <div className="flex gap-1">

@@ -60,7 +60,7 @@ export default function SkladQogoziPage() {
         />
 
         {/* Description Card */}
-        <div className="bg-card border rounded-xl p-6">
+        <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-xl p-6">
           <h2 className="font-bold text-lg mb-4">Bu hujjat nima?</h2>
           <p className="text-sm text-muted-foreground mb-4">
             Sklad qog&apos;ozi — omboringizdagi barcha tovarlarning rasmiy ro&apos;yxati.
@@ -130,7 +130,7 @@ export default function SkladQogoziPage() {
         )}
 
         {last && (
-          <div className="bg-card border rounded-xl p-6 space-y-4">
+          <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-xl p-6 space-y-4">
             <div className="flex items-center gap-2 text-emerald-600">
               <CheckCircle2 className="w-5 h-5" />
               <h3 className="font-bold">Muvaffaqiyatli yaratildi!</h3>

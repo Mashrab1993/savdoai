@@ -58,15 +58,15 @@ export default function AgentMonitorPage() {
 
         {/* Summary */}
         <div className="grid grid-cols-3 gap-3">
-          <div className="bg-card rounded-xl border p-4 text-center">
+          <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl p-4 text-center">
             <div className="text-2xl font-bold text-emerald-600">{agents.filter(a => a.muvaffaqiyatli).length}</div>
             <div className="text-xs text-muted-foreground">🟢 Online</div>
           </div>
-          <div className="bg-card rounded-xl border p-4 text-center">
+          <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl p-4 text-center">
             <div className="text-2xl font-bold">{agents.length}</div>
             <div className="text-xs text-muted-foreground">Jami agent</div>
           </div>
-          <div className="bg-card rounded-xl border p-4 text-center">
+          <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl p-4 text-center">
             <div className="text-2xl font-bold text-amber-600">
               {agents.filter(a => (a.batareya || 0) < 20).length}
             </div>

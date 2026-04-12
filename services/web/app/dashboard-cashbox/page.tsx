@@ -37,7 +37,7 @@ export default function CashboxDashboardPage() {
         </div>
 
         <div className="grid grid-cols-2 gap-6">
-          <div className="bg-card rounded-xl border p-6">
+          <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl p-6">
             <h2 className="font-bold mb-4">To'lov turlari bo'yicha</h2>
             <div className="space-y-3">
               {[
@@ -58,7 +58,7 @@ export default function CashboxDashboardPage() {
             </div>
           </div>
 
-          <div className="bg-card rounded-xl border p-6">
+          <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl p-6">
             <h2 className="font-bold mb-4">Kassalar holati</h2>
             <div className="space-y-3">
               {[

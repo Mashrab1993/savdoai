@@ -66,7 +66,7 @@ export default function ExpenseCreatePage() {
         />
         </div>
 
-        <div className="bg-card rounded-xl border p-6 space-y-4">
+        <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl p-6 space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="text-sm font-medium">Fond *</label>

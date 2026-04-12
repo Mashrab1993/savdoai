@@ -85,19 +85,19 @@ export default function PhotoReportsPage() {
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <div className="bg-card border rounded-xl p-4">
+          <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-xl p-4">
             <div className="text-xs text-purple-600">Jami fotolar</div>
             <div className="text-2xl font-bold mt-1">{stats.jami || 0}</div>
           </div>
-          <div className="bg-card border rounded-xl p-4">
+          <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-xl p-4">
             <div className="text-xs text-emerald-600">Bugungi</div>
             <div className="text-2xl font-bold mt-1">{stats.bugun || 0}</div>
           </div>
-          <div className="bg-card border rounded-xl p-4">
+          <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-xl p-4">
             <div className="text-xs text-sky-600">Bu hafta</div>
             <div className="text-2xl font-bold mt-1">{stats.hafta || 0}</div>
           </div>
-          <div className="bg-card border rounded-xl p-4">
+          <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-xl p-4">
             <div className="text-xs text-orange-600">Bu oy</div>
             <div className="text-2xl font-bold mt-1">{stats.oy || 0}</div>
           </div>
@@ -120,7 +120,7 @@ export default function PhotoReportsPage() {
             <div className="animate-spin h-8 w-8 border-b-2 border-purple-500 rounded-full" />
           </div>
         ) : items.length === 0 ? (
-          <div className="bg-card border rounded-xl p-20 text-center">
+          <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-xl p-20 text-center">
             <Camera className="w-16 h-16 mx-auto mb-3 text-muted-foreground opacity-30" />
             <p className="text-lg font-medium text-muted-foreground">Foto hisobotlar topilmadi</p>
             <p className="text-sm text-muted-foreground mt-1">
@@ -131,7 +131,7 @@ export default function PhotoReportsPage() {
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
             {items.map(p => (
               <div key={p.id}
-                   className="bg-card border rounded-xl overflow-hidden hover:shadow-md transition cursor-pointer"
+                   className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-xl overflow-hidden hover:shadow-md transition cursor-pointer"
                    onClick={() => setPreview(p)}>
                 <div className="aspect-square bg-secondary flex items-center justify-center overflow-hidden">
                   {p.foto_url ? (

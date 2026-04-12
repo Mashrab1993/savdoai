@@ -189,7 +189,7 @@ export default function NotificationsPage() {
             <div className="animate-spin h-8 w-8 border-b-2 border-emerald-500 rounded-full" />
           </div>
         ) : filtered.length === 0 ? (
-          <div className="bg-card border rounded-xl p-20 text-center">
+          <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-xl p-20 text-center">
             <Bell className="w-16 h-16 mx-auto mb-3 text-muted-foreground opacity-30" />
             <p className="text-lg font-medium text-muted-foreground">Bildirishnomalar yo&apos;q</p>
             <p className="text-sm text-muted-foreground mt-1">

@@ -218,7 +218,7 @@ export default function OrdersPage() {
             <div className="text-2xl font-bold text-rose-700 dark:text-rose-300">{stats.bekor}</div>
           </button>
         </div>
-        <div className="bg-card border rounded-xl p-3 text-right">
+        <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-xl p-3 text-right">
           <span className="text-sm text-muted-foreground">Jami summa: </span>
           <span className="text-lg font-bold text-emerald-600">{formatCurrency(stats.jami_summa)}</span>
         </div>

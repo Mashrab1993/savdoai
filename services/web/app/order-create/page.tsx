@@ -171,7 +171,7 @@ export default function OrderCreatePage() {
         )}
 
         {/* Client */}
-        <div className="bg-card border rounded-xl p-4">
+        <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-xl p-4">
           <h2 className="font-bold mb-3 flex items-center gap-2">
             <User className="w-4 h-4" /> Mijoz
           </h2>
@@ -203,7 +203,7 @@ export default function OrderCreatePage() {
         </div>
 
         {/* Products */}
-        <div className="bg-card border rounded-xl p-4">
+        <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-xl p-4">
           <div className="flex items-center justify-between mb-3">
             <h2 className="font-bold flex items-center gap-2">
               <Package className="w-4 h-4" /> Tovarlar ({cart.length})
@@ -267,7 +267,7 @@ export default function OrderCreatePage() {
         </div>
 
         {/* Summary */}
-        <div className="bg-card border rounded-xl p-4">
+        <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-xl p-4">
           <h2 className="font-bold mb-3 flex items-center gap-2">
             <CreditCard className="w-4 h-4" /> To&apos;lov
           </h2>

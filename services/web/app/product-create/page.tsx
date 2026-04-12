@@ -91,7 +91,7 @@ export default function ProductCreatePage() {
           </TabsList>
 
           <TabsContent value="basic" className="space-y-4">
-            <div className="bg-card rounded-xl border p-6 space-y-4">
+            <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl p-6 space-y-4">
               <div>
                 <label className="text-sm font-medium">Tovar nomi *</label>
                 <Input value={form.nomi} onChange={e => setForm({...form, nomi: e.target.value})} placeholder="Tovar nomi" />
@@ -169,7 +169,7 @@ export default function ProductCreatePage() {
           </TabsContent>
 
           <TabsContent value="extra" className="space-y-4">
-            <div className="bg-card rounded-xl border p-6 space-y-4">
+            <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl p-6 space-y-4">
               <div className="grid grid-cols-3 gap-4">
                 <div>
                   <label className="text-sm font-medium">Shtrix kod</label>
@@ -202,7 +202,7 @@ export default function ProductCreatePage() {
           </TabsContent>
 
           <TabsContent value="ikpu" className="space-y-4">
-            <div className="bg-card rounded-xl border p-6 space-y-4">
+            <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl p-6 space-y-4">
               <div>
                 <label className="text-sm font-medium">IKPU kod</label>
                 <Input value={form.ikpu_kod} onChange={e => setForm({...form, ikpu_kod: e.target.value})} />
@@ -215,7 +215,7 @@ export default function ProductCreatePage() {
           </TabsContent>
 
           <TabsContent value="photo" className="space-y-4">
-            <div className="bg-card rounded-xl border p-6">
+            <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl p-6">
               <div className="border-2 border-dashed rounded-lg p-10 text-center">
                 <ImageIcon className="w-12 h-12 mx-auto text-muted-foreground/50 mb-3" />
                 <Button variant="outline"><Upload className="w-4 h-4 mr-1" /> Rasm yuklash</Button>
@@ -224,7 +224,7 @@ export default function ProductCreatePage() {
           </TabsContent>
 
           <TabsContent value="package" className="space-y-4">
-            <div className="bg-card rounded-xl border p-6 space-y-4">
+            <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl p-6 space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="text-sm font-medium">Blokda soni</label>

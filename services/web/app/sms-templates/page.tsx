@@ -50,7 +50,7 @@ export default function SmsTemplatesPage() {
         {/* Templates */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {templates.map(t => (
-            <div key={t.id} className="bg-card rounded-xl border p-4">
+            <div key={t.id} className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl p-4">
               <div className="flex items-start justify-between mb-3">
                 <div>
                   <div className="font-bold">{t.nomi}</div>

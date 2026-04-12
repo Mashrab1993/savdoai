@@ -178,7 +178,7 @@ export default function SuppliersPage() {
           </div>
         )}
 
-        <div className="bg-card border rounded-xl overflow-hidden">
+        <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-xl overflow-hidden">
           <Table>
             <TableHeader>
               <TableRow>
