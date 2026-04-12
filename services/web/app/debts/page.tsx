@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/sheet"
 import { Input } from "@/components/ui/input"
 import { CreditCard, AlertTriangle, CheckCircle2, Clock, Search, ChevronRight } from "lucide-react"
+import DebtorsList from "@/components/dashboard/debtors-list"
 import { cn } from "@/lib/utils"
 import { useApi } from "@/hooks/use-api"
 import { debtService } from "@/lib/api/services"
@@ -145,7 +146,48 @@ export default function DebtsPage() {
           </div>
         </div>
 
-        {/* Table */}
+        {/* Premium aging overview (DebtorsList) */}
+        {debts.length > 0 && (() => {
+          // Group debts by client for DebtorsList
+          const byClient = new Map<string, { jarz: number; soni: number; oldestDue: string; lastPay: string; limit: number }>()
+          for (const d of debts) {
+            const existing = byClient.get(d.clientName)
+            if (existing) {
+              existing.jarz += (d.amount - d.paid)
+              existing.soni += d.count
+              if (d.dueDate < existing.oldestDue) existing.oldestDue = d.dueDate
+            } else {
+              byClient.set(d.clientName, {
+                jarz: d.amount - d.paid,
+                soni: d.count,
+                oldestDue: d.dueDate || new Date().toISOString(),
+                lastPay: "",
+                limit: 0,
+              })
+            }
+          }
+          const debtorRows = Array.from(byClient.entries())
+            .filter(([, v]) => v.jarz > 0)
+            .map(([name, v], i) => ({
+              klient_id:       i + 1,
+              klient_ismi:     name,
+              joriy_qarz:      v.jarz,
+              kredit_limit:    v.limit,
+              qarz_soni:       v.soni,
+              eng_eski_muddat: v.oldestDue,
+            }))
+          return debtorRows.length > 0 ? (
+            <DebtorsList
+              debtors={debtorRows}
+              onRowClick={(id) => {
+                const d = debts.find(x => x.clientName === debtorRows.find(r => r.klient_id === id)?.klient_ismi)
+                if (d) setSelectedDebt(d)
+              }}
+            />
+          ) : null
+        })()}
+
+        {/* Detailed table with payment actions */}
         <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl overflow-hidden">
           <Table>
             <TableHeader>
