@@ -12,6 +12,7 @@ import {
 import {
   Search, Plus, Trash2, ShoppingCart, CheckCircle2, User, Minus,
 } from "lucide-react"
+import { PageHeader } from "@/components/ui/page-header"
 import { useApi } from "@/hooks/use-api"
 import { productService, clientService, savdoService } from "@/lib/api/services"
 import { normalizeProduct } from "@/lib/api/normalizers"
@@ -163,6 +164,13 @@ export default function SalesPage() {
 
   return (
     <AdminLayout title={t.title}>
+      <div className="space-y-5">
+        <PageHeader
+          icon={ShoppingCart}
+          gradient="emerald"
+          title={t.title}
+          subtitle={locale === "uz" ? "Tezkor savdo yaratish" : "Быстрое создание продажи"}
+        />
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
 
         {/* Chap: Tovar qidiruv */}
@@ -369,6 +377,7 @@ export default function SalesPage() {
             )}
           </div>
         </div>
+      </div>
       </div>
     </AdminLayout>
   )
