@@ -18,6 +18,8 @@ import {
 } from "lucide-react"
 import { formatCurrency } from "@/lib/format"
 import { savdoService } from "@/lib/api/services"
+import { PageHeader } from "@/components/ui/page-header"
+import { useLocale } from "@/lib/locale-context"
 import OrderStatusBoard, { type Order as BoardOrder, type OrderStatus as BoardStatus } from "@/components/dashboard/order-status-board"
 
 type OrderStatus = "all" | "yangi" | "tasdiqlangan" | "otgruzka" | "yetkazildi" | "bekor"
@@ -40,6 +42,7 @@ const NEXT_STATUSES: Record<string, string[]> = {
 }
 
 export default function OrdersPage() {
+  const { locale } = useLocale()
   const [search, setSearch] = useState("")
   const [statusFilter, setStatusFilter] = useState<OrderStatus>("all")
   const [selectedOrder, setSelectedOrder] = useState<any>(null)
@@ -156,17 +159,15 @@ export default function OrdersPage() {
   return (
     <AdminLayout>
       <div className="max-w-7xl mx-auto p-4 sm:p-6 space-y-6">
-        {/* Header */}
+        <PageHeader
+          icon={ShoppingCart}
+          gradient="blue"
+          title={locale === "uz" ? "Buyurtmalar" : "Заказы"}
+          subtitle={locale === "uz" ? "Barcha buyurtmalar va sotuvlar" : "Все заказы и продажи"}
+        />
+        {/* Toolbar */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold flex items-center gap-2">
-              <ShoppingCart className="w-7 h-7 text-emerald-600" />
-              Buyurtmalar
-            </h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              Barcha buyurtmalar va sotuvlar
-            </p>
-          </div>
+          <div></div>
           <div className="flex flex-wrap gap-2 items-center">
             <Input type="date" value={sanaDan} onChange={e => setSanaDan(e.target.value)}
                    className="w-40" title="Sana dan" />
