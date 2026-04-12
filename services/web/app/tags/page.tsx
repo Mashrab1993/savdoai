@@ -46,7 +46,7 @@ export default function TagsPage() {
                 <Badge className={`bg-${t.color}-100 text-${t.color}-800 text-base px-3 py-1`}>{t.nomi}</Badge>
                 <div className="flex gap-1">
                   <Button variant="ghost" size="sm"><Pencil className="w-3 h-3" /></Button>
-                  <Button variant="ghost" size="sm" className="text-red-500"><Trash2 className="w-3 h-3" /></Button>
+                  <Button variant="ghost" size="sm" className="text-rose-500 dark:text-rose-400"><Trash2 className="w-3 h-3" /></Button>
                 </div>
               </div>
               <div className="text-xs text-muted-foreground">{t.count} ta foydalanilgan</div>

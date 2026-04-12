@@ -108,7 +108,7 @@ export default function ReportsRfmPage() {
               </div>
               <div className="bg-card border rounded-xl p-4">
                 <div className="text-xs text-muted-foreground">At Risk + Lost</div>
-                <div className="text-2xl font-bold mt-1 text-red-600">
+                <div className="text-2xl font-bold mt-1 text-rose-600 dark:text-rose-400">
                   {segments["At Risk"].soni + segments.Lost.soni}
                 </div>
                 <div className="text-[11px] text-muted-foreground">yo&apos;qotish xavfi</div>
@@ -223,7 +223,7 @@ export default function ReportsRfmPage() {
               </Table>
             </div>
 
-            <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 text-sm text-blue-800">
+            <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 text-sm text-blue-800 dark:text-blue-300">
               <div className="font-bold mb-1">Izoh:</div>
               <ul className="list-disc pl-5 space-y-1">
                 <li><b>R (Recency)</b> — oxirgi xarid qachon bo&apos;lgan (1..5, 5 eng yaqin)</li>

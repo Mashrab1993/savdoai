@@ -166,10 +166,10 @@ export default function ExpensesPage() {
         {/* Summary cards */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {[
-            { label: L.todayExpenses[locale],   value: fmt(todayExpenses),  icon: TrendingDown, color: "text-yellow-500", bg: "bg-amber-500/15 dark:bg-yellow-900/20" },
+            { label: L.todayExpenses[locale],   value: fmt(todayExpenses),  icon: TrendingDown, color: "text-amber-500", bg: "bg-amber-500/15 dark:bg-yellow-900/20" },
             { label: L.monthlyExpenses[locale],  value: fmt(monthlyExpenses), icon: Wallet,       color: "text-destructive", bg: "bg-rose-500/15 dark:bg-red-900/20" },
             { label: L.pendingApprovals[locale], value: String(pendingCount), icon: Clock,        color: "text-primary",    bg: "bg-secondary" },
-            { label: L.totalCategories[locale],  value: String(categoryData.length), icon: Tag,  color: "text-purple-500", bg: "bg-secondary" },
+            { label: L.totalCategories[locale],  value: String(categoryData.length), icon: Tag,  color: "text-violet-500", bg: "bg-secondary" },
           ].map(s => (
             <div key={s.label} className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl shadow-sm p-4 flex items-center gap-3 hover:border-border/70 transition-colors">
               <div className={cn("p-2 rounded-lg shrink-0", s.bg, s.color)}>
@@ -230,7 +230,7 @@ export default function ExpensesPage() {
             {pendingCount > 0 && statusFilter !== "approved" && statusFilter !== "rejected" && (
               <div className="flex items-center gap-3 bg-amber-500/10 dark:bg-yellow-900/20 border border-amber-500/30 dark:border-yellow-800 rounded-xl px-4 py-3">
                 <AlertCircle className="w-4 h-4 text-amber-600 dark:text-amber-400 dark:text-yellow-400 shrink-0" />
-                <p className="text-sm text-amber-800 dark:text-amber-300 dark:text-yellow-300 font-medium">
+                <p className="text-sm text-amber-800 dark:text-amber-300 dark:text-amber-300 dark:text-yellow-300 font-medium">
                   {locale === "uz"
                     ? `${pendingCount} ta xarajat tasdiqlashni kutmoqda`
                     : `${pendingCount} расходов ожидают подтверждения`
@@ -365,9 +365,9 @@ export default function ExpensesPage() {
             {pendingCount > 0 && (
               <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl shadow-sm p-4">
                 <h3 className="font-semibold text-sm text-foreground mb-3 flex items-center gap-2">
-                  <Clock className="w-4 h-4 text-yellow-500" />
+                  <Clock className="w-4 h-4 text-amber-500" />
                   {locale === "uz" ? "Kutilayotgan tasdiqlar" : "Ожидают подтверждения"}
-                  <span className="ml-auto bg-amber-500/15 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 text-xs px-2 py-0.5 rounded-full font-medium">
+                  <span className="ml-auto bg-amber-500/15 dark:bg-yellow-900/30 text-amber-700 dark:text-amber-300 dark:text-yellow-400 text-xs px-2 py-0.5 rounded-full font-medium">
                     {pendingCount}
                   </span>
                 </h3>

@@ -241,8 +241,8 @@ export default function ProductsPage() {
         {/* Summary */}
         <div className="grid grid-cols-3 gap-4">
           {[
-            { label: L.inStock[locale], value: inStock, icon: Package, color: "text-green-500" },
-            { label: L.lowStock[locale], value: lowStock, icon: AlertTriangle, color: "text-yellow-500" },
+            { label: L.inStock[locale], value: inStock, icon: Package, color: "text-emerald-500" },
+            { label: L.lowStock[locale], value: lowStock, icon: AlertTriangle, color: "text-amber-500" },
             { label: L.outOfStock[locale], value: outOfStock, icon: XCircle, color: "text-destructive" },
           ].map(s => (
             <div key={s.label} className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl shadow-sm p-4 flex items-center gap-3 hover:border-border/70 transition-colors">

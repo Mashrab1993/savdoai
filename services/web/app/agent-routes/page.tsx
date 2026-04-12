@@ -61,7 +61,7 @@ export default function AgentRoutesPage() {
                   <TableCell className="font-medium">{r.nomi}</TableCell>
                   {DAYS.map(d => (
                     <TableCell key={d} className="text-center">
-                      {r.kunlar?.[d.toLowerCase()] ? <Badge className="bg-emerald-100 text-emerald-800">{r.kunlar[d.toLowerCase()]}</Badge> : "-"}
+                      {r.kunlar?.[d.toLowerCase()] ? <Badge className="bg-emerald-500/15 text-emerald-800 dark:text-emerald-300">{r.kunlar[d.toLowerCase()]}</Badge> : "-"}
                     </TableCell>
                   ))}
                   <TableCell className="text-center font-bold">{r.jami || 0}</TableCell>

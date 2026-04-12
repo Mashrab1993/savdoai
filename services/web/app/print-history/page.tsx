@@ -72,7 +72,7 @@ export default function PrintHistoryPage() {
                   <TableCell>{h.user}</TableCell>
                   <TableCell className="text-sm">{h.printer}</TableCell>
                   <TableCell className="text-center">
-                    <Badge className={h.holat === "ok" ? "bg-emerald-100 text-emerald-800" : "bg-red-100 text-red-800"}>
+                    <Badge className={h.holat === "ok" ? "bg-emerald-500/15 text-emerald-800 dark:text-emerald-300" : "bg-rose-500/15 text-rose-800 dark:text-rose-300"}>
                       {h.holat === "ok" ? "Muvaffaqiyatli" : "Xato"}
                     </Badge>
                   </TableCell>

@@ -24,7 +24,7 @@ export default function LoyaltyPage() {
         {/* Header */}
         <div>
           <h1 className="text-2xl font-bold flex items-center gap-2">
-            <Star className="h-6 w-6 text-yellow-500" /> Loyalty Tizimi
+            <Star className="h-6 w-6 text-amber-500" /> Loyalty Tizimi
           </h1>
           <p className="text-muted-foreground">
             Bonus ball va VIP darajalar boshqaruvi

@@ -41,9 +41,9 @@ async function api<T = unknown>(path: string, opts: RequestInit = {}): Promise<T
 
 const TURI_META: Record<string, { label: string; icon: typeof Store; color: string }> = {
   dokon:  { label: "Do'kon",  icon: Store,     color: "bg-sky-100 text-sky-800" },
-  ombor:  { label: "Ombor",   icon: Warehouse, color: "bg-emerald-100 text-emerald-800" },
-  sklad:  { label: "Sklad",   icon: Package,   color: "bg-blue-100 text-blue-800" },
-  filial: { label: "Filial",  icon: Building,  color: "bg-purple-100 text-purple-800" },
+  ombor:  { label: "Ombor",   icon: Warehouse, color: "bg-emerald-500/15 text-emerald-800 dark:text-emerald-300" },
+  sklad:  { label: "Sklad",   icon: Package,   color: "bg-blue-500/15 text-blue-800 dark:text-blue-300" },
+  filial: { label: "Filial",  icon: Building,  color: "bg-violet-500/15 text-purple-800" },
 }
 
 export default function WarehousesPage() {
@@ -137,7 +137,7 @@ export default function WarehousesPage() {
         </div>
 
         {error && (
-          <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-red-700 flex items-center gap-2">
+          <div className="bg-rose-500/10 border border-rose-500/30 rounded-xl p-4 text-rose-700 dark:text-rose-300 flex items-center gap-2">
             <AlertCircle className="w-5 h-5" /> {error}
           </div>
         )}
@@ -199,7 +199,7 @@ export default function WarehousesPage() {
                       {formatCurrency(Number(f.ombor_qiymat || 0))}
                     </TableCell>
                     <TableCell className="text-center">
-                      <Badge className={f.faol ? "bg-emerald-100 text-emerald-800" : "bg-muted text-foreground"}>
+                      <Badge className={f.faol ? "bg-emerald-500/15 text-emerald-800 dark:text-emerald-300" : "bg-muted text-foreground"}>
                         {f.faol ? "Faol" : "Nofaol"}
                       </Badge>
                     </TableCell>
@@ -210,7 +210,7 @@ export default function WarehousesPage() {
           </Table>
         </div>
 
-        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 text-sm text-blue-800">
+        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 text-sm text-blue-800 dark:text-blue-300">
           <div className="font-bold mb-1">📦 Multi-filial ish tizimi:</div>
           <div>
             Har bir filial o&apos;zining tovar qoldiqlarini saqlaydi. Tovarlarni

@@ -86,7 +86,7 @@ export default function EquipmentPage() {
                   <TableCell>{e.mijoz}</TableCell>
                   <TableCell className="text-sm">{e.sana}</TableCell>
                   <TableCell className="text-center">
-                    <Badge className={e.holat === "yaxshi" ? "bg-emerald-100 text-emerald-800" : e.holat === "buzilgan" ? "bg-red-100 text-red-800" : "bg-yellow-100 text-yellow-800"}>
+                    <Badge className={e.holat === "yaxshi" ? "bg-emerald-500/15 text-emerald-800 dark:text-emerald-300" : e.holat === "buzilgan" ? "bg-rose-500/15 text-rose-800 dark:text-rose-300" : "bg-amber-500/15 text-yellow-800"}>
                       {e.holat || "Yaxshi"}
                     </Badge>
                   </TableCell>

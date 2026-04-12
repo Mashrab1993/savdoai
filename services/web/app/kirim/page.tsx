@@ -304,7 +304,7 @@ export default function KirimPage() {
                     {r.manba || "—"}
                   </TableCell>
                   <TableCell>
-                    <Button variant="ghost" size="icon" className="h-7 w-7 text-red-500"
+                    <Button variant="ghost" size="icon" className="h-7 w-7 text-rose-500 dark:text-rose-400"
                             onClick={() => handleDelete(r.id)}>
                       <Trash2 className="w-3 h-3" />
                     </Button>
@@ -316,7 +316,7 @@ export default function KirimPage() {
         </div>
 
         {/* Info box */}
-        <div className="bg-blue-500/10 border border-blue-200 rounded-xl p-4 text-sm text-blue-800">
+        <div className="bg-blue-500/10 border border-blue-200 rounded-xl p-4 text-sm text-blue-800 dark:text-blue-300">
           <div className="font-bold mb-1 flex items-center gap-1">
             <TrendingUp className="w-4 h-4" /> Avtomatik qoldiq yangilanadi
           </div>

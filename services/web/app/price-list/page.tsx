@@ -11,10 +11,10 @@ import { PageHeader } from "@/components/ui/page-header"
 import { formatCurrency } from "@/lib/format"
 
 const PRICE_TYPES = [
-  { key: "opt", label: "Opt narx", color: "bg-emerald-100 text-emerald-800" },
-  { key: "roznitsa", label: "Roznitsa narx", color: "bg-blue-100 text-blue-800" },
-  { key: "skidka", label: "Skidka narx", color: "bg-orange-100 text-orange-800" },
-  { key: "vip", label: "VIP narx", color: "bg-purple-100 text-purple-800" },
+  { key: "opt", label: "Opt narx", color: "bg-emerald-500/15 text-emerald-800 dark:text-emerald-300" },
+  { key: "roznitsa", label: "Roznitsa narx", color: "bg-blue-500/15 text-blue-800 dark:text-blue-300" },
+  { key: "skidka", label: "Skidka narx", color: "bg-orange-500/15 text-orange-800 dark:text-orange-300" },
+  { key: "vip", label: "VIP narx", color: "bg-violet-500/15 text-purple-800" },
 ]
 
 export default function PriceListPage() {

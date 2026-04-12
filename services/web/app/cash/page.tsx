@@ -209,7 +209,7 @@ export default function CashPage() {
             </p>
             <div className="flex items-center gap-1 mt-0.5">
               {balanceTrend
-                ? <ArrowUpRight className="w-3.5 h-3.5 text-green-500" />
+                ? <ArrowUpRight className="w-3.5 h-3.5 text-emerald-500" />
                 : <ArrowDownRight className="w-3.5 h-3.5 text-destructive" />
               }
               <span className="text-xs text-muted-foreground">{L.balanceStatus[locale]}</span>

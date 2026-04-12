@@ -61,7 +61,7 @@ export default function NotificationsSettingsPage() {
             <div key={i} className="bg-card rounded-xl border p-4 text-center">
               <c.icon className={`w-8 h-8 mx-auto text-${c.color}-600 mb-2`} />
               <div className="font-bold">{c.label}</div>
-              <Badge className="bg-emerald-100 text-emerald-800 text-xs mt-1">Faol</Badge>
+              <Badge className="bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 text-xs mt-1">Faol</Badge>
             </div>
           ))}
         </div>

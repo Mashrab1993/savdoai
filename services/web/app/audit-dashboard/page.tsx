@@ -30,7 +30,7 @@ export default function AuditDashboardPage() {
           {[
             { label: "Rejadagi vizitlar", value: 0, icon: MapPin, color: "text-blue-600" },
             { label: "Bajarilgan vizitlar", value: 0, icon: Eye, color: "text-emerald-600" },
-            { label: "Otkazlar", value: 0, icon: Package, color: "text-red-600" },
+            { label: "Otkazlar", value: 0, icon: Package, color: "text-rose-600 dark:text-rose-400" },
             { label: "Foto hisobotlar", value: 0, icon: Camera, color: "text-purple-600" },
             { label: "SKU audit", value: 0, icon: BarChart3, color: "text-orange-600" },
           ].map((s, i) => (
@@ -61,7 +61,7 @@ export default function AuditDashboardPage() {
                 <TableCell className="font-medium">{a.ism}</TableCell>
                 <TableCell className="text-center font-mono">{a.reja_vizit || 0}</TableCell>
                 <TableCell className="text-center font-mono font-bold text-emerald-600">{a.vizitlar || 0}</TableCell>
-                <TableCell className="text-center font-mono text-red-600">{a.otkazlar || 0}</TableCell>
+                <TableCell className="text-center font-mono text-rose-600 dark:text-rose-400">{a.otkazlar || 0}</TableCell>
                 <TableCell className="text-center font-mono">{a.sku || 0}</TableCell>
                 <TableCell className="text-center font-mono">{a.facing || 0}</TableCell>
                 <TableCell className="text-center font-mono">{a.merchandizing || 0}</TableCell>

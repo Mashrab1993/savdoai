@@ -70,7 +70,7 @@ export default function AktSverkiPage() {
                 { label: "Boshlang'ich qoldiq", value: result.boshlangich_qoldiq, color: "" },
                 { label: "Davr ichidagi sotuvlar", value: result.jami_sotuv, color: "text-blue-600" },
                 { label: "Davr ichidagi to'lovlar", value: result.jami_tolov, color: "text-emerald-600" },
-                { label: "Qaytarishlar", value: result.jami_qaytarish, color: "text-red-500" },
+                { label: "Qaytarishlar", value: result.jami_qaytarish, color: "text-rose-500 dark:text-rose-400" },
               ].map((row, i) => (
                 <div key={i} className="flex justify-between px-4 py-3">
                   <span className="text-sm text-muted-foreground">{row.label}</span>
@@ -78,7 +78,7 @@ export default function AktSverkiPage() {
                 </div>
               ))}
               <div className={`flex justify-between px-4 py-4 text-lg font-bold ${
-                N(result.yakuniy_qoldiq) > 0 ? "bg-red-50 text-red-700" : "bg-emerald-50 text-emerald-700"
+                N(result.yakuniy_qoldiq) > 0 ? "bg-rose-500/10 text-rose-700 dark:text-rose-300" : "bg-emerald-50 text-emerald-700"
               }`}>
                 <span>YAKUNIY QOLDIQ</span>
                 <span>{formatCurrencyFull(N(result.yakuniy_qoldiq))}</span>
@@ -102,7 +102,7 @@ export default function AktSverkiPage() {
                         <td className="px-4 py-2 text-xs">{t.sana ? new Date(t.sana).toLocaleDateString("uz") : "—"}</td>
                         <td className="px-4 py-2">{N(t.jami).toLocaleString()}</td>
                         <td className="px-4 py-2 text-emerald-600">{N(t.tolangan).toLocaleString()}</td>
-                        <td className="px-4 py-2 text-red-500">{N(t.qarz).toLocaleString()}</td>
+                        <td className="px-4 py-2 text-rose-500 dark:text-rose-400">{N(t.qarz).toLocaleString()}</td>
                       </tr>
                     ))}
                   </tbody>

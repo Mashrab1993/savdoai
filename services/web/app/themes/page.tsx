@@ -16,7 +16,7 @@ const COLORS = [
   { name: "emerald", color: "bg-emerald-500", label: "Yashil" },
   { name: "blue", color: "bg-blue-500", label: "Ko'k" },
   { name: "purple", color: "bg-purple-500", label: "Binafsha" },
-  { name: "red", color: "bg-red-500", label: "Qizil" },
+  { name: "red", color: "bg-rose-500/100", label: "Qizil" },
   { name: "orange", color: "bg-orange-500", label: "To'q sariq" },
   { name: "pink", color: "bg-pink-500", label: "Pushti" },
 ]

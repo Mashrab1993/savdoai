@@ -141,7 +141,7 @@ export default function ShopPage() {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-4">
         <div className="text-center max-w-sm">
-          <CheckCircle2 className="w-16 h-16 text-green-500 mx-auto mb-4" />
+          <CheckCircle2 className="w-16 h-16 text-emerald-500 mx-auto mb-4" />
           <h2 className="text-xl font-bold mb-2">Buyurtma yuborildi!</h2>
           <p className="text-muted-foreground mb-6">
             Do&apos;konchi tez orada bog&apos;lanadi
@@ -287,7 +287,7 @@ export default function ShopPage() {
         )}
 
         {error && !loading && (
-          <div className="text-center py-12 text-red-500">{error}</div>
+          <div className="text-center py-12 text-rose-500 dark:text-rose-400">{error}</div>
         )}
 
         {!loading && !error && filtered.length === 0 && (

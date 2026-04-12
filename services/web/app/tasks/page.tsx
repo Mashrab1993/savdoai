@@ -8,9 +8,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { CheckCircle2, Clock, AlertCircle, Plus, X } from "lucide-react"
 
 const HOLAT_RANG: Record<string, string> = {
-  yangi: "border-blue-300 bg-blue-50",
-  jarayonda: "border-amber-300 bg-amber-50",
-  bajarildi: "border-emerald-300 bg-emerald-50",
+  yangi: "border-blue-500/40 bg-blue-50",
+  jarayonda: "border-amber-500/40 bg-amber-50",
+  bajarildi: "border-emerald-500/40 bg-emerald-50",
   bekor: "border-border bg-muted/50 opacity-50",
 }
 const MUHIMLIK_EMOJI: Record<string, string> = { kritik: "🔴", yuqori: "🟠", oddiy: "🟡", past: "⚪" }
@@ -95,11 +95,11 @@ export default function TasksPage() {
                 <div className="flex gap-1">
                   {t.holat === "yangi" && (
                     <button onClick={() => updateHolat(t.id, "jarayonda")}
-                      className="px-2 py-1 bg-amber-100 text-amber-700 rounded text-[10px] font-medium">▶ Boshlash</button>
+                      className="px-2 py-1 bg-amber-500/15 text-amber-700 rounded text-[10px] font-medium">▶ Boshlash</button>
                   )}
                   {t.holat === "jarayonda" && (
                     <button onClick={() => updateHolat(t.id, "bajarildi")}
-                      className="px-2 py-1 bg-emerald-100 text-emerald-700 rounded text-[10px] font-medium">✅ Bajarildi</button>
+                      className="px-2 py-1 bg-emerald-500/15 text-emerald-700 rounded text-[10px] font-medium">✅ Bajarildi</button>
                   )}
                 </div>
               </div>

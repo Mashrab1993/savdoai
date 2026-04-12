@@ -22,8 +22,8 @@ const INTEGRATIONS = [
 ]
 
 const STATUS_COLORS: Record<string, { color: string; label: string }> = {
-  active:  { color: "bg-emerald-100 text-emerald-800", label: "Faol" },
-  ready:   { color: "bg-blue-100 text-blue-800",       label: "Tayyor (sozlash kerak)" },
+  active:  { color: "bg-emerald-500/15 text-emerald-800 dark:text-emerald-300", label: "Faol" },
+  ready:   { color: "bg-blue-500/15 text-blue-800 dark:text-blue-300",       label: "Tayyor (sozlash kerak)" },
   planned: { color: "bg-muted text-muted-foreground",       label: "Rejada" },
 }
 
@@ -55,7 +55,7 @@ export default function IntegrationsPage() {
             <button
               key={f.key}
               onClick={() => setFilter(f.key)}
-              className={`px-3 py-1.5 rounded-md text-xs font-medium ${filter === f.key ? "bg-emerald-100 text-emerald-700" : "bg-muted text-muted-foreground"}`}
+              className={`px-3 py-1.5 rounded-md text-xs font-medium ${filter === f.key ? "bg-emerald-500/15 text-emerald-700" : "bg-muted text-muted-foreground"}`}
             >{f.label}</button>
           ))}
         </div>

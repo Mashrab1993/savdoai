@@ -142,7 +142,7 @@ export default function OnboardingPage() {
             )}
             {current.action && current.href && (
               <Button variant="outline" onClick={() => router.push(current.href!)}
-                className="px-6 border-emerald-300 text-emerald-600 hover:bg-emerald-50">
+                className="px-6 border-emerald-500/40 text-emerald-600 hover:bg-emerald-50">
                 {current.action} →
               </Button>
             )}

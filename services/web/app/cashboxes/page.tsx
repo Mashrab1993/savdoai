@@ -63,7 +63,7 @@ export default function CashboxesPage() {
               <div className="text-xs text-muted-foreground mt-1">Kassir: {b.kassir}</div>
               <div className="flex gap-2 mt-3">
                 <Button variant="outline" size="sm" className="flex-1"><TrendingUp className="w-3 h-3 mr-1 text-emerald-500" /> Kirim</Button>
-                <Button variant="outline" size="sm" className="flex-1"><TrendingDown className="w-3 h-3 mr-1 text-red-500" /> Chiqim</Button>
+                <Button variant="outline" size="sm" className="flex-1"><TrendingDown className="w-3 h-3 mr-1 text-rose-500 dark:text-rose-400" /> Chiqim</Button>
               </div>
               <Button variant="ghost" size="sm" className="w-full mt-2"><Eye className="w-3 h-3 mr-1" /> Tafsilot</Button>
             </div>

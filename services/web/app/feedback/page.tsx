@@ -35,7 +35,7 @@ export default function FeedbackPage() {
             <div key={stars} className="bg-card rounded-xl border p-4 text-center">
               <div className="flex justify-center gap-0.5 mb-1">
                 {[1, 2, 3, 4, 5].map(s => (
-                  <Star key={s} className={`w-3 h-3 ${s <= stars ? "text-yellow-500 fill-yellow-500" : "text-muted-foreground/50"}`} />
+                  <Star key={s} className={`w-3 h-3 ${s <= stars ? "text-amber-500 fill-yellow-500" : "text-muted-foreground/50"}`} />
                 ))}
               </div>
               <div className="text-2xl font-bold">0</div>
@@ -86,7 +86,7 @@ export default function FeedbackPage() {
                   <TableCell>{f.agent}</TableCell>
                   <TableCell className="text-center">
                     <div className="flex justify-center gap-0.5">
-                      {[1,2,3,4,5].map(s => <Star key={s} className={`w-3 h-3 ${s <= f.baho ? "text-yellow-500 fill-yellow-500" : "text-muted-foreground/50"}`} />)}
+                      {[1,2,3,4,5].map(s => <Star key={s} className={`w-3 h-3 ${s <= f.baho ? "text-amber-500 fill-yellow-500" : "text-muted-foreground/50"}`} />)}
                     </div>
                   </TableCell>
                   <TableCell className="text-sm">{f.izoh}</TableCell>

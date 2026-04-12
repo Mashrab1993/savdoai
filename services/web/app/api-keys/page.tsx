@@ -35,10 +35,10 @@ export default function ApiKeysPage() {
         </div>
 
         {/* Warning */}
-        <div className="bg-yellow-50 dark:bg-yellow-900/20 rounded-xl border border-yellow-200 p-4">
+        <div className="bg-amber-500/10 dark:bg-yellow-900/20 rounded-xl border border-amber-500/30 p-4">
           <div className="flex gap-3">
-            <Shield className="w-5 h-5 text-yellow-600 shrink-0 mt-0.5" />
-            <div className="text-sm text-yellow-700">
+            <Shield className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+            <div className="text-sm text-amber-700 dark:text-amber-300">
               <div className="font-bold mb-1">Xavfsizlik haqida</div>
               <div>API kalitlarni hech kimga bermang. Agar kalit oshkor bo'lsa, darhol uni o'chiring va yangisini yarating.</div>
             </div>
@@ -82,7 +82,7 @@ export default function ApiKeysPage() {
                   </TableCell>
                   <TableCell className="text-xs text-muted-foreground">{k.lastUsed}</TableCell>
                   <TableCell>
-                    <Button variant="ghost" size="sm" className="text-red-500"><Trash2 className="w-3 h-3" /></Button>
+                    <Button variant="ghost" size="sm" className="text-rose-500 dark:text-rose-400"><Trash2 className="w-3 h-3" /></Button>
                   </TableCell>
                 </TableRow>
               ))}

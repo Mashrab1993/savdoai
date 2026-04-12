@@ -98,7 +98,7 @@ function initials(user: { ism?: string; full_name?: string; username?: string } 
 function SectionBadge({ type }: { type: "server" | "local" | "soon" }) {
   const { locale } = useLocale()
   const configs = {
-    server: { label: S.serverManaged[locale], color: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400" },
+    server: { label: S.serverManaged[locale], color: "bg-blue-500/15 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400" },
     local:  { label: S.deviceLocal[locale],   color: "bg-secondary text-muted-foreground" },
     soon:   { label: S.comingSoonBadge[locale], color: "bg-secondary text-muted-foreground" },
   }
@@ -274,7 +274,7 @@ export default function SettingsPage() {
                 </div>
 
                 {profileSaveMsg && (
-                  <p className="text-xs text-green-600 dark:text-green-400 flex items-center gap-1.5">
+                  <p className="text-xs text-emerald-600 dark:text-emerald-400 dark:text-green-400 flex items-center gap-1.5">
                     <CheckCircle2 className="w-3.5 h-3.5" /> {profileSaveMsg}
                   </p>
                 )}
@@ -395,7 +395,7 @@ export default function SettingsPage() {
                   className="gap-2"
                 >
                   {notifSaved
-                    ? <><CheckCircle2 className="w-3.5 h-3.5 text-green-500" /> {S.savedLocal[locale]}</>
+                    ? <><CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" /> {S.savedLocal[locale]}</>
                     : S.savePrefs[locale]
                   }
                 </Button>
@@ -447,7 +447,7 @@ export default function SettingsPage() {
                     </div>
                   </div>
                   {pwdMsg && (
-                    <p className={`text-xs ${pwdMsg.includes("✅") ? "text-green-600" : "text-destructive"}`}>{pwdMsg}</p>
+                    <p className={`text-xs ${pwdMsg.includes("✅") ? "text-emerald-600 dark:text-emerald-400" : "text-destructive"}`}>{pwdMsg}</p>
                   )}
                   <Button size="sm" className="gap-2" disabled={pwdSaving}
                           onClick={handlePwdChange}>

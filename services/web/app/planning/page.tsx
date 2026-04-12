@@ -101,7 +101,7 @@ export default function PlanningPage() {
                         <TableCell className="text-center font-mono">{formatCurrency(p.reja_summa)} / {formatCurrency(p.fakt_summa)}</TableCell>
                         <TableCell className="text-center">
                           <div className="flex items-center justify-center gap-2">
-                            <div className="w-20 h-2 bg-muted rounded-full overflow-hidden"><div className={`h-full rounded-full ${pls >= 80 ? "bg-emerald-500" : pls >= 50 ? "bg-yellow-500" : "bg-red-500"}`} style={{ width: `${pls}%` }} /></div>
+                            <div className="w-20 h-2 bg-muted rounded-full overflow-hidden"><div className={`h-full rounded-full ${pls >= 80 ? "bg-emerald-500" : pls >= 50 ? "bg-amber-500/100" : "bg-rose-500/100"}`} style={{ width: `${pls}%` }} /></div>
                             <span className="font-bold text-sm">{pls}%</span>
                           </div>
                         </TableCell>

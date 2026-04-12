@@ -227,7 +227,7 @@ export default function SuppliersPage() {
                     {formatCurrency(Number(s.jami_xarid))}
                   </TableCell>
                   <TableCell className="text-center">
-                    <Badge className={s.faol ? "bg-emerald-100 text-emerald-800" : "bg-muted text-foreground"}>
+                    <Badge className={s.faol ? "bg-emerald-500/15 text-emerald-800 dark:text-emerald-300" : "bg-muted text-foreground"}>
                       {s.faol ? "Faol" : "Nofaol"}
                     </Badge>
                   </TableCell>
@@ -236,7 +236,7 @@ export default function SuppliersPage() {
                       <Button variant="ghost" size="sm" onClick={() => openEdit(s)}>
                         <Pencil className="w-3 h-3" />
                       </Button>
-                      <Button variant="ghost" size="sm" className="text-red-500"
+                      <Button variant="ghost" size="sm" className="text-rose-500 dark:text-rose-400"
                               onClick={() => handleDelete(s)}>
                         <Trash2 className="w-3 h-3" />
                       </Button>
@@ -250,7 +250,7 @@ export default function SuppliersPage() {
 
         {/* Xarid buyurtma tugma */}
         <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
-          <div className="flex items-center gap-2 text-sm text-blue-800">
+          <div className="flex items-center gap-2 text-sm text-blue-800 dark:text-blue-300">
             <ShoppingCart className="w-4 h-4" />
             <span>Xarid buyurtma yaratish uchun <a href="/purchase" className="font-semibold underline">/purchase</a> sahifasiga o&apos;ting</span>
           </div>

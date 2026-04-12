@@ -132,7 +132,7 @@ export default function ExpenseCreatePage() {
             </div>
           )}
           {error && (
-            <div className="bg-red-50 border border-red-200 rounded-xl p-3 text-red-700 flex items-center gap-2 text-sm">
+            <div className="bg-rose-500/10 border border-rose-500/30 rounded-xl p-3 text-rose-700 dark:text-rose-300 flex items-center gap-2 text-sm">
               <AlertCircle className="w-4 h-4" /> {error}
             </div>
           )}

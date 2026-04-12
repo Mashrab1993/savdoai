@@ -42,7 +42,7 @@ function discountedPrice(price: number, discount: number) {
 }
 
 const GROUP_COLORS: Record<string, { bg: string; text: string; border: string }> = {
-  VIP:      { bg: "bg-yellow-50 dark:bg-yellow-900/20",  text: "text-yellow-700 dark:text-yellow-300",  border: "border-yellow-200 dark:border-yellow-800" },
+  VIP:      { bg: "bg-amber-500/10 dark:bg-yellow-900/20",  text: "text-amber-700 dark:text-amber-300 dark:text-yellow-300",  border: "border-amber-500/30 dark:border-yellow-800" },
   Doimiy:   { bg: "bg-blue-50 dark:bg-blue-900/20",      text: "text-blue-700 dark:text-blue-300",      border: "border-blue-200 dark:border-blue-800" },
   Standart: { bg: "bg-secondary",                         text: "text-foreground",                       border: "border-border" },
 }
@@ -184,8 +184,8 @@ export default function PricesPage() {
         <div className="grid grid-cols-3 gap-4">
           {[
             { label: L.priceGroups[locale],                                                          value: String(groups.length),  icon: Tag,     color: "text-primary",    bg: "bg-secondary" },
-            { label: locale === "uz" ? "Mijozlar"        : "Клиенты",                            value: String(clients.length), icon: Users,   color: "text-green-500",  bg: "bg-green-100 dark:bg-green-900/20" },
-            { label: locale === "uz" ? "O'rtacha chegirma" : "Средняя скидка",                   value: `${avgDiscount}%`,     icon: Percent, color: "text-yellow-500", bg: "bg-yellow-100 dark:bg-yellow-900/20" },
+            { label: locale === "uz" ? "Mijozlar"        : "Клиенты",                            value: String(clients.length), icon: Users,   color: "text-emerald-500",  bg: "bg-emerald-500/15 dark:bg-green-900/20" },
+            { label: locale === "uz" ? "O'rtacha chegirma" : "Средняя скидка",                   value: `${avgDiscount}%`,     icon: Percent, color: "text-amber-500", bg: "bg-amber-500/15 dark:bg-yellow-900/20" },
           ].map(s => (
             <div key={s.label} className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl p-4 flex items-center gap-3 hover:border-border/70 transition-colors">
               <div className={cn("p-2 rounded-lg shrink-0", s.bg, s.color)}>
@@ -327,7 +327,7 @@ export default function PricesPage() {
                         <TableRow>
                           <TableHead>{locale === "uz" ? "Mahsulot"       : "Товар"}</TableHead>
                           <TableHead className="text-right">{locale === "uz" ? "Asosiy narx"     : "Базовая цена"}</TableHead>
-                          <TableHead className="text-right text-green-600 dark:text-green-400">{locale === "uz" ? "Chegirmali narx" : "Цена со скидкой"}</TableHead>
+                          <TableHead className="text-right text-emerald-600 dark:text-emerald-400 dark:text-green-400">{locale === "uz" ? "Chegirmali narx" : "Цена со скидкой"}</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -342,7 +342,7 @@ export default function PricesPage() {
                             <TableCell className="text-right text-sm text-muted-foreground line-through">
                               {fmt(p.price)}
                             </TableCell>
-                            <TableCell className="text-right text-sm font-semibold text-green-600 dark:text-green-400">
+                            <TableCell className="text-right text-sm font-semibold text-emerald-600 dark:text-emerald-400 dark:text-green-400">
                               {fmt(discountedPrice(p.price, syncedSelected.discount))}
                             </TableCell>
                           </TableRow>

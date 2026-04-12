@@ -60,7 +60,7 @@ export default function ClientCategoriesPage() {
                 <div key={c.id} className="bg-card rounded-xl border p-4 hover:shadow-md transition">
                   <div className="flex items-start justify-between mb-3">
                     <c.icon className={`w-8 h-8 text-${c.color}-600`} />
-                    <Badge className="bg-emerald-100 text-emerald-800">Faol</Badge>
+                    <Badge className="bg-emerald-500/15 text-emerald-800 dark:text-emerald-300">Faol</Badge>
                   </div>
                   <div className="font-bold">{c.nomi}</div>
                   <div className="text-xs text-muted-foreground mt-1">0 ta mijoz</div>
@@ -81,8 +81,8 @@ export default function ClientCategoriesPage() {
                     <TableCell className="font-mono">{t.id}</TableCell>
                     <TableCell className="font-medium">{t.nomi}</TableCell>
                     <TableCell className="text-center">0</TableCell>
-                    <TableCell className="text-center"><Badge className="bg-emerald-100 text-emerald-800">Faol</Badge></TableCell>
-                    <TableCell><div className="flex gap-1"><Button variant="ghost" size="sm"><Pencil className="w-3 h-3" /></Button><Button variant="ghost" size="sm" className="text-red-500"><Trash2 className="w-3 h-3" /></Button></div></TableCell>
+                    <TableCell className="text-center"><Badge className="bg-emerald-500/15 text-emerald-800 dark:text-emerald-300">Faol</Badge></TableCell>
+                    <TableCell><div className="flex gap-1"><Button variant="ghost" size="sm"><Pencil className="w-3 h-3" /></Button><Button variant="ghost" size="sm" className="text-rose-500 dark:text-rose-400"><Trash2 className="w-3 h-3" /></Button></div></TableCell>
                   </TableRow>
                 ))}</TableBody>
               </Table>

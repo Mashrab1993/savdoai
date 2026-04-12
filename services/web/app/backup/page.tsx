@@ -77,7 +77,7 @@ export default function BackupPage() {
                     <div className="text-xs text-muted-foreground">{g.count} ta jadval</div>
                   </div>
                 </div>
-                {g.required && <Badge className="bg-red-100 text-red-800 text-xs">Majburiy</Badge>}
+                {g.required && <Badge className="bg-rose-500/15 text-rose-800 dark:text-rose-300 text-xs">Majburiy</Badge>}
               </label>
             ))}
           </div>

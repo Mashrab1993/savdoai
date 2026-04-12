@@ -50,12 +50,12 @@ export default function BillingPage() {
               <Plus className="w-3 h-3 mr-1" /> To'ldirish
             </Button>
           </div>
-          <div className="bg-yellow-50 dark:bg-yellow-900/20 rounded-xl border border-yellow-200 p-4">
-            <div className="text-sm text-yellow-600 flex items-center gap-1">
+          <div className="bg-amber-500/10 dark:bg-yellow-900/20 rounded-xl border border-amber-500/30 p-4">
+            <div className="text-sm text-amber-600 dark:text-amber-400 flex items-center gap-1">
               <Calendar className="w-3 h-3" /> Keyingi to'lov
             </div>
-            <div className="text-2xl font-bold mt-1 text-yellow-700">{formatCurrency(500000)}</div>
-            <div className="text-xs text-yellow-600 mt-1">2026-05-01 (21 kun qoldi)</div>
+            <div className="text-2xl font-bold mt-1 text-amber-700 dark:text-amber-300">{formatCurrency(500000)}</div>
+            <div className="text-xs text-amber-600 dark:text-amber-400 mt-1">2026-05-01 (21 kun qoldi)</div>
           </div>
         </div>
 
@@ -106,7 +106,7 @@ export default function BillingPage() {
                     <TableCell>{p.sana}</TableCell>
                     <TableCell><Badge variant="secondary">{p.tarif}</Badge></TableCell>
                     <TableCell className="text-center font-mono font-bold">{formatCurrency(p.summa)}</TableCell>
-                    <TableCell className="text-center"><Badge className="bg-emerald-100 text-emerald-800">{p.status}</Badge></TableCell>
+                    <TableCell className="text-center"><Badge className="bg-emerald-500/15 text-emerald-800 dark:text-emerald-300">{p.status}</Badge></TableCell>
                   </TableRow>
                 ))}
               </TableBody>

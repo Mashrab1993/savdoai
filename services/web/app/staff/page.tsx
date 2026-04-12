@@ -37,9 +37,9 @@ interface StaffMember {
 }
 
 const ROLE_LABELS: Record<StaffRole, { label: string; color: string; icon: any }> = {
-  agent:      { label: "Agent",      color: "bg-blue-100 text-blue-800",      icon: Users },
-  expeditor:  { label: "Expeditor",  color: "bg-orange-100 text-orange-800",  icon: Truck },
-  supervisor: { label: "Supervisor", color: "bg-purple-100 text-purple-800",  icon: Shield },
+  agent:      { label: "Agent",      color: "bg-blue-500/15 text-blue-800 dark:text-blue-300",      icon: Users },
+  expeditor:  { label: "Expeditor",  color: "bg-orange-500/15 text-orange-800 dark:text-orange-300",  icon: Truck },
+  supervisor: { label: "Supervisor", color: "bg-violet-500/15 text-purple-800",  icon: Shield },
 }
 
 export default function StaffPage() {
@@ -155,14 +155,14 @@ export default function StaffPage() {
                           </TableCell>
                         )}
                         <TableCell className="text-center">
-                          <Badge className={s.faol ? "bg-emerald-100 text-emerald-800" : "bg-muted text-muted-foreground"}>
+                          <Badge className={s.faol ? "bg-emerald-500/15 text-emerald-800 dark:text-emerald-300" : "bg-muted text-muted-foreground"}>
                             {s.faol ? "Faol" : "Nofaol"}
                           </Badge>
                         </TableCell>
                         <TableCell>
                           <div className="flex gap-1">
                             <Button variant="ghost" size="sm"><Pencil className="w-3 h-3" /></Button>
-                            <Button variant="ghost" size="sm" className="text-red-500"><Trash2 className="w-3 h-3" /></Button>
+                            <Button variant="ghost" size="sm" className="text-rose-500 dark:text-rose-400"><Trash2 className="w-3 h-3" /></Button>
                           </div>
                         </TableCell>
                       </TableRow>

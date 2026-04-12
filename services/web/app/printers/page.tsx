@@ -44,9 +44,9 @@ export default function PrintersPage() {
             <div className="text-sm text-emerald-600 flex items-center gap-1"><Signal className="w-3 h-3" /> Online</div>
             <div className="text-2xl font-bold mt-1 text-emerald-700">{printers.filter(p => p.status === "online").length}</div>
           </div>
-          <div className="bg-red-50 rounded-xl border border-red-200 p-4">
-            <div className="text-sm text-red-600">Offline</div>
-            <div className="text-2xl font-bold mt-1 text-red-700">{printers.filter(p => p.status === "offline").length}</div>
+          <div className="bg-rose-500/10 rounded-xl border border-rose-500/30 p-4">
+            <div className="text-sm text-rose-600 dark:text-rose-400">Offline</div>
+            <div className="text-2xl font-bold mt-1 text-rose-700 dark:text-rose-300">{printers.filter(p => p.status === "offline").length}</div>
           </div>
         </div>
 
@@ -73,9 +73,9 @@ export default function PrintersPage() {
                   <TableCell><Badge variant="outline" className="font-mono text-xs">{p.port}</Badge></TableCell>
                   <TableCell className="text-center">
                     {p.status === "online" ? (
-                      <Badge className="bg-emerald-100 text-emerald-800"><Wifi className="w-3 h-3 mr-1" />Online</Badge>
+                      <Badge className="bg-emerald-500/15 text-emerald-800 dark:text-emerald-300"><Wifi className="w-3 h-3 mr-1" />Online</Badge>
                     ) : (
-                      <Badge className="bg-red-100 text-red-800">Offline</Badge>
+                      <Badge className="bg-rose-500/15 text-rose-800 dark:text-rose-300">Offline</Badge>
                     )}
                   </TableCell>
                   <TableCell>
@@ -83,7 +83,7 @@ export default function PrintersPage() {
                       <Button variant="ghost" size="sm" title="Test print"><FileText className="w-3 h-3" /></Button>
                       <Button variant="ghost" size="sm"><Settings className="w-3 h-3" /></Button>
                       <Button variant="ghost" size="sm"><Pencil className="w-3 h-3" /></Button>
-                      <Button variant="ghost" size="sm" className="text-red-500"><Trash2 className="w-3 h-3" /></Button>
+                      <Button variant="ghost" size="sm" className="text-rose-500 dark:text-rose-400"><Trash2 className="w-3 h-3" /></Button>
                     </div>
                   </TableCell>
                 </TableRow>

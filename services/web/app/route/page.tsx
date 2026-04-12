@@ -79,14 +79,14 @@ export default function RoutePage() {
               <div className="flex items-center gap-4">
                 <div className="flex-1">
                   <div className="text-xs text-muted-foreground mb-1">Oddiy tartibda</div>
-                  <div className="h-3 bg-red-100 rounded-full overflow-hidden">
+                  <div className="h-3 bg-rose-500/15 rounded-full overflow-hidden">
                     <div className="h-full bg-red-400 rounded-full" style={{ width: "100%" }} />
                   </div>
-                  <div className="text-xs text-red-600 mt-0.5">{result.oddiy_masofa_km} km</div>
+                  <div className="text-xs text-rose-600 dark:text-rose-400 mt-0.5">{result.oddiy_masofa_km} km</div>
                 </div>
                 <div className="flex-1">
                   <div className="text-xs text-muted-foreground mb-1">Optimal tartibda</div>
-                  <div className="h-3 bg-emerald-100 rounded-full overflow-hidden">
+                  <div className="h-3 bg-emerald-500/15 rounded-full overflow-hidden">
                     <div className="h-full bg-emerald-500 rounded-full"
                       style={{ width: `${(result.jami_masofa_km / result.oddiy_masofa_km) * 100}%` }} />
                   </div>
@@ -104,7 +104,7 @@ export default function RoutePage() {
                 {result.optimal_tartib.map((n: any, i: number) => (
                   <div key={i} className="flex items-center gap-3 px-4 py-3">
                     <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${
-                      i === 0 ? "bg-emerald-100 text-emerald-700" : "bg-blue-50 text-blue-600"
+                      i === 0 ? "bg-emerald-500/15 text-emerald-700" : "bg-blue-50 text-blue-600"
                     }`}>{n.tartib}</div>
                     <div className="flex-1">
                       <div className="text-sm font-medium">{n.nom}</div>

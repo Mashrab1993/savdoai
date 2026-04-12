@@ -69,12 +69,12 @@ export default function PriceHistoryPage() {
                   <TableCell className="text-center font-mono">{formatCurrency(p.eski_narx)}</TableCell>
                   <TableCell className="text-center font-mono font-bold">{formatCurrency(p.yangi_narx)}</TableCell>
                   <TableCell className="text-center">
-                    <span className={`font-mono font-bold ${p.ozgarish > 0 ? "text-emerald-600" : p.ozgarish < 0 ? "text-red-600" : ""}`}>
+                    <span className={`font-mono font-bold ${p.ozgarish > 0 ? "text-emerald-600" : p.ozgarish < 0 ? "text-rose-600 dark:text-rose-400" : ""}`}>
                       {p.ozgarish > 0 ? "+" : ""}{p.ozgarish.toFixed(1)}%
                     </span>
                   </TableCell>
                   <TableCell className="text-center">
-                    {p.ozgarish > 0 ? <TrendingUp className="w-4 h-4 text-emerald-500 mx-auto" /> : p.ozgarish < 0 ? <TrendingDown className="w-4 h-4 text-red-500 mx-auto" /> : <Minus className="w-4 h-4 text-muted-foreground mx-auto" />}
+                    {p.ozgarish > 0 ? <TrendingUp className="w-4 h-4 text-emerald-500 mx-auto" /> : p.ozgarish < 0 ? <TrendingDown className="w-4 h-4 text-rose-500 dark:text-rose-400 mx-auto" /> : <Minus className="w-4 h-4 text-muted-foreground mx-auto" />}
                   </TableCell>
                   <TableCell className="text-sm text-muted-foreground">{p.sana}</TableCell>
                 </TableRow>

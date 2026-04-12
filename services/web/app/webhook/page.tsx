@@ -90,7 +90,7 @@ export default function WebhookPage() {
               {Object.entries(eventlar).map(([key, label]: [string, any]) => (
                 <button key={key} onClick={() => toggleEvent(key)}
                   className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-left transition-all ${
-                    form.eventlar.includes(key) ? "bg-emerald-50 border-emerald-300 border text-emerald-700" : "bg-muted/50 dark:bg-muted border border-transparent text-muted-foreground"
+                    form.eventlar.includes(key) ? "bg-emerald-50 border-emerald-500/40 border text-emerald-700" : "bg-muted/50 dark:bg-muted border border-transparent text-muted-foreground"
                   }`}>
                   <span>{EVENT_ICONS[key] || "📌"}</span>
                   <span>{label}</span>
@@ -115,7 +115,7 @@ export default function WebhookPage() {
                 <div className="text-xs text-muted-foreground font-mono">{w.url}</div>
               </div>
               <div className="flex items-center gap-2">
-                <button onClick={() => test(w.id)} className="px-3 py-1 bg-blue-100 text-blue-700 rounded text-xs font-medium">Test</button>
+                <button onClick={() => test(w.id)} className="px-3 py-1 bg-blue-500/15 text-blue-700 rounded text-xs font-medium">Test</button>
                 <span className={`w-2.5 h-2.5 rounded-full ${w.faol ? "bg-emerald-500" : "bg-muted-foreground/40"}`} />
               </div>
             </div>

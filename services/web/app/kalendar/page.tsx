@@ -62,7 +62,7 @@ export default function CalendarPage() {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                        k.checkin_qilindi ? "bg-emerald-100" : "bg-blue-100"
+                        k.checkin_qilindi ? "bg-emerald-500/15" : "bg-blue-500/15"
                       }`}>
                         {k.checkin_qilindi
                           ? <CheckCircle2 className="w-4 h-4 text-emerald-600" />
@@ -79,8 +79,8 @@ export default function CalendarPage() {
                     </div>
                     {Number(k.qarz) > 0 && (
                       <div className="text-right">
-                        <div className="text-xs font-bold text-red-600">{formatCurrency(Number(k.qarz))}</div>
-                        <div className="text-[9px] text-red-500">qarz</div>
+                        <div className="text-xs font-bold text-rose-600 dark:text-rose-400">{formatCurrency(Number(k.qarz))}</div>
+                        <div className="text-[9px] text-rose-500 dark:text-rose-400">qarz</div>
                       </div>
                     )}
                   </div>
@@ -100,7 +100,7 @@ export default function CalendarPage() {
           <div className="grid grid-cols-7 gap-2">
             {(hafta.hafta || []).map((h: any, i: number) => (
               <div key={i} className={`bg-card rounded-xl border p-3 text-center ${
-                i === todayIdx ? "ring-2 ring-emerald-500 border-emerald-300" : ""
+                i === todayIdx ? "ring-2 ring-emerald-500 border-emerald-500/40" : ""
               }`}>
                 <div className={`text-xs font-bold mb-2 ${i === todayIdx ? "text-emerald-600" : "text-muted-foreground"}`}>
                   {KUNLAR[i]}

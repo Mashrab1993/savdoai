@@ -100,11 +100,11 @@ export default function GpsPage() {
             </div>
             <div className="text-2xl font-bold mt-1 text-emerald-700">{onlineCount}</div>
           </div>
-          <div className="bg-red-50 dark:bg-red-900/20 rounded-xl border border-red-200 p-4">
-            <div className="text-sm text-red-600 flex items-center gap-1">
+          <div className="bg-rose-500/10 dark:bg-red-900/20 rounded-xl border border-rose-500/30 p-4">
+            <div className="text-sm text-rose-600 dark:text-rose-400 flex items-center gap-1">
               <SignalZero className="w-3 h-3" /> Offline
             </div>
-            <div className="text-2xl font-bold mt-1 text-red-700">{offlineCount}</div>
+            <div className="text-2xl font-bold mt-1 text-rose-700 dark:text-rose-300">{offlineCount}</div>
           </div>
         </div>
 
@@ -163,7 +163,7 @@ export default function GpsPage() {
                     <div className="flex items-center gap-2">
                       {agent.batareya !== undefined && (
                         <div className={`flex items-center gap-1 text-xs ${
-                          agent.batareya > 50 ? "text-emerald-600" : agent.batareya > 20 ? "text-yellow-600" : "text-red-600"
+                          agent.batareya > 50 ? "text-emerald-600" : agent.batareya > 20 ? "text-amber-600 dark:text-amber-400" : "text-rose-600 dark:text-rose-400"
                         }`}>
                           <Battery className="w-3 h-3" />
                           {agent.batareya}%

@@ -68,9 +68,9 @@ export default function SystemStatusPage() {
         </div>
 
         {/* Overall Status */}
-        <div className={`rounded-xl border p-6 ${allOk ? "bg-emerald-50 border-emerald-200" : "bg-yellow-50 border-yellow-200"}`}>
+        <div className={`rounded-xl border p-6 ${allOk ? "bg-emerald-50 border-emerald-200" : "bg-amber-500/10 border-amber-500/30"}`}>
           <div className="flex items-center gap-3">
-            {allOk ? <Check className="w-12 h-12 text-emerald-600" /> : <AlertCircle className="w-12 h-12 text-yellow-600" />}
+            {allOk ? <Check className="w-12 h-12 text-emerald-600" /> : <AlertCircle className="w-12 h-12 text-amber-600 dark:text-amber-400" />}
             <div>
               <div className="text-2xl font-bold">{allOk ? "Barcha tizimlar normal ishlayapti" : "Ba'zi muammolar bor"}</div>
               <div className="text-sm text-muted-foreground mt-1">Oxirgi tekshiruv: hozir</div>
@@ -90,14 +90,14 @@ export default function SystemStatusPage() {
                     <div className="text-xs text-muted-foreground">Latency: {s.latency}ms · Uptime: {s.uptime}%</div>
                   </div>
                 </div>
-                <Badge className={s.status === "operational" ? "bg-emerald-100 text-emerald-800" : s.status === "degraded" ? "bg-yellow-100 text-yellow-800" : "bg-red-100 text-red-800"}>
+                <Badge className={s.status === "operational" ? "bg-emerald-500/15 text-emerald-800 dark:text-emerald-300" : s.status === "degraded" ? "bg-amber-500/15 text-yellow-800" : "bg-rose-500/15 text-rose-800 dark:text-rose-300"}>
                   {s.status === "operational" ? "Operatsion" : s.status === "degraded" ? "Sekin" : "Ishlamaydi"}
                 </Badge>
               </div>
               {/* Uptime bar */}
               <div className="mt-3 flex gap-0.5">
                 {Array.from({ length: 90 }).map((_, j) => (
-                  <div key={j} className={`flex-1 h-6 rounded ${Math.random() > 0.02 ? "bg-emerald-500" : "bg-yellow-500"}`} />
+                  <div key={j} className={`flex-1 h-6 rounded ${Math.random() > 0.02 ? "bg-emerald-500" : "bg-amber-500/100"}`} />
                 ))}
               </div>
               <div className="text-xs text-muted-foreground mt-1">Oxirgi 90 kun · 99.98% ishlagan</div>

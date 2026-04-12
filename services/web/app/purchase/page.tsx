@@ -35,11 +35,11 @@ type Purchase = {
 }
 
 const HOLAT_META: Record<string, { label: string; bg: string; icon: typeof Clock }> = {
-  tayyorlanmoqda: { label: "Tayyorlanmoqda", bg: "bg-blue-500/15 text-blue-800",        icon: Clock },
-  yuborildi:      { label: "Yuborildi",      bg: "bg-amber-500/15 text-amber-800 dark:text-amber-300",    icon: Truck },
+  tayyorlanmoqda: { label: "Tayyorlanmoqda", bg: "bg-blue-500/15 text-blue-800 dark:text-blue-300",        icon: Clock },
+  yuborildi:      { label: "Yuborildi",      bg: "bg-amber-500/15 text-amber-800 dark:text-amber-300 dark:text-amber-300",    icon: Truck },
   tasdiqlandi:    { label: "Tasdiqlandi",    bg: "bg-sky-100 text-sky-800",          icon: CheckCircle2 },
-  yetkazildi:     { label: "Yetkazildi",     bg: "bg-emerald-100 text-emerald-800",  icon: Package },
-  bekor:          { label: "Bekor",          bg: "bg-rose-500/15 text-red-800",          icon: XCircle },
+  yetkazildi:     { label: "Yetkazildi",     bg: "bg-emerald-500/15 text-emerald-800 dark:text-emerald-300",  icon: Package },
+  bekor:          { label: "Bekor",          bg: "bg-rose-500/15 text-rose-800 dark:text-rose-300",          icon: XCircle },
 }
 
 async function api<T = unknown>(path: string, opts: RequestInit = {}): Promise<T> {
@@ -361,7 +361,7 @@ export default function PurchasePage() {
                       />
                       <Button
                         variant="ghost" size="sm"
-                        className="col-span-1 text-red-500"
+                        className="col-span-1 text-rose-500 dark:text-rose-400"
                         onClick={() => removeTovar(i)}
                       >
                         <Trash2 className="w-3 h-3" />

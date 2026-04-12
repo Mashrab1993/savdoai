@@ -88,11 +88,11 @@ export default function DebtsPage() {
         />
         {/* Alert Banner — Overdue Critical */}
         {overdueCount > 0 && (
-          <div className="bg-rose-500/10 dark:bg-red-950/20 border-l-4 border-red-500 rounded-lg p-4 flex items-start gap-3">
+          <div className="bg-rose-500/10 dark:bg-red-950/20 border-l-4 border-rose-500 rounded-lg p-4 flex items-start gap-3">
             <AlertTriangle className="w-5 h-5 text-rose-600 dark:text-rose-400 dark:text-red-400 shrink-0 mt-0.5" />
             <div>
-              <p className="font-semibold text-red-900 dark:text-red-300">{overdueCount} {translations.status.overdue[locale]}</p>
-              <p className="text-sm text-red-800 dark:text-red-400 mt-1">{fmt(overdueAmount)} {translations.fields.amount[locale].toLowerCase()}</p>
+              <p className="font-semibold text-rose-900 dark:text-rose-200 dark:text-red-300">{overdueCount} {translations.status.overdue[locale]}</p>
+              <p className="text-sm text-rose-800 dark:text-rose-300 dark:text-red-400 mt-1">{fmt(overdueAmount)} {translations.fields.amount[locale].toLowerCase()}</p>
             </div>
           </div>
         )}
@@ -237,8 +237,8 @@ export default function DebtsPage() {
                       </TableCell>
                       <TableCell className="text-sm font-mono text-muted-foreground">{debt.invoiceId}</TableCell>
                       <TableCell className="text-right text-sm font-medium text-foreground">{fmt(debt.amount)}</TableCell>
-                      <TableCell className="text-right text-sm text-green-500">{fmt(debt.paid)}</TableCell>
-                      <TableCell className={cn("text-right text-sm font-semibold", balance > 0 ? (isOverdue ? "text-destructive" : "text-foreground") : "text-green-500")}>
+                      <TableCell className="text-right text-sm text-emerald-500">{fmt(debt.paid)}</TableCell>
+                      <TableCell className={cn("text-right text-sm font-semibold", balance > 0 ? (isOverdue ? "text-destructive" : "text-foreground") : "text-emerald-500")}>
                         {fmt(balance)}
                       </TableCell>
                       <TableCell>

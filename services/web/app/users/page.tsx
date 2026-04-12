@@ -11,12 +11,12 @@ import { Users } from "lucide-react"
 import { PageHeader } from "@/components/ui/page-header"
 
 const ROLES = [
-  { key: "admin", label: "Administrator", color: "bg-red-100 text-red-800" },
-  { key: "manager", label: "Menejer", color: "bg-purple-100 text-purple-800" },
-  { key: "operator", label: "Operator", color: "bg-blue-100 text-blue-800" },
-  { key: "kassir", label: "Kassir", color: "bg-emerald-100 text-emerald-800" },
-  { key: "agent", label: "Agent", color: "bg-yellow-100 text-yellow-800" },
-  { key: "expeditor", label: "Expeditor", color: "bg-orange-100 text-orange-800" },
+  { key: "admin", label: "Administrator", color: "bg-rose-500/15 text-rose-800 dark:text-rose-300" },
+  { key: "manager", label: "Menejer", color: "bg-violet-500/15 text-purple-800" },
+  { key: "operator", label: "Operator", color: "bg-blue-500/15 text-blue-800 dark:text-blue-300" },
+  { key: "kassir", label: "Kassir", color: "bg-emerald-500/15 text-emerald-800 dark:text-emerald-300" },
+  { key: "agent", label: "Agent", color: "bg-amber-500/15 text-yellow-800" },
+  { key: "expeditor", label: "Expeditor", color: "bg-orange-500/15 text-orange-800 dark:text-orange-300" },
   { key: "supervisor", label: "Supervisor", color: "bg-indigo-100 text-indigo-800" },
   { key: "merchant", label: "Mer chendayzer", color: "bg-pink-100 text-pink-800" },
   { key: "warehouse", label: "Sklad ishchisi", color: "bg-teal-100 text-teal-800" },
@@ -96,8 +96,8 @@ export default function UsersPage() {
                       {ROLES.find(r => r.key === u.rol)?.label || u.rol}
                     </Badge>
                   </TableCell>
-                  <TableCell className="text-center"><Badge className="bg-emerald-100 text-emerald-800">Faol</Badge></TableCell>
-                  <TableCell><div className="flex gap-1"><Button variant="ghost" size="sm"><Pencil className="w-3 h-3" /></Button><Button variant="ghost" size="sm" className="text-red-500"><Trash2 className="w-3 h-3" /></Button></div></TableCell>
+                  <TableCell className="text-center"><Badge className="bg-emerald-500/15 text-emerald-800 dark:text-emerald-300">Faol</Badge></TableCell>
+                  <TableCell><div className="flex gap-1"><Button variant="ghost" size="sm"><Pencil className="w-3 h-3" /></Button><Button variant="ghost" size="sm" className="text-rose-500 dark:text-rose-400"><Trash2 className="w-3 h-3" /></Button></div></TableCell>
                 </TableRow>
               ))}
             </TableBody>

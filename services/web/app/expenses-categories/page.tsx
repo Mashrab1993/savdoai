@@ -81,7 +81,7 @@ export default function ExpensesCategoriesPage() {
                     <div className="flex gap-1">
                       <Badge variant="secondary" className="text-xs">0 ta operatsiya</Badge>
                       <Button variant="ghost" size="sm"><Pencil className="w-3 h-3" /></Button>
-                      <Button variant="ghost" size="sm" className="text-red-500"><Trash2 className="w-3 h-3" /></Button>
+                      <Button variant="ghost" size="sm" className="text-rose-500 dark:text-rose-400"><Trash2 className="w-3 h-3" /></Button>
                     </div>
                   </div>
                 ))}

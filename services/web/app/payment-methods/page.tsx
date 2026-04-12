@@ -36,7 +36,7 @@ export default function PaymentMethodsPage() {
             <div key={m.id} className="bg-card rounded-xl border p-4 hover:shadow-md transition">
               <div className="flex items-start justify-between mb-3">
                 <m.icon className="w-8 h-8 text-emerald-600" />
-                <Badge className={m.faol ? "bg-emerald-100 text-emerald-800" : "bg-muted text-muted-foreground"}>{m.faol ? "Faol" : "Nofaol"}</Badge>
+                <Badge className={m.faol ? "bg-emerald-500/15 text-emerald-800 dark:text-emerald-300" : "bg-muted text-muted-foreground"}>{m.faol ? "Faol" : "Nofaol"}</Badge>
               </div>
               <div className="font-bold">{m.nomi}</div>
               <div className="text-xs text-muted-foreground font-mono mt-1">{m.kod}</div>

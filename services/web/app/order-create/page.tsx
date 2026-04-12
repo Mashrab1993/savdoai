@@ -254,7 +254,7 @@ export default function OrderCreatePage() {
                       {formatCurrency(item.jami)}
                     </TableCell>
                     <TableCell>
-                      <Button variant="ghost" size="icon" className="h-7 w-7 text-red-500"
+                      <Button variant="ghost" size="icon" className="h-7 w-7 text-rose-500 dark:text-rose-400"
                               onClick={() => removeItem(i)}>
                         <Trash2 className="w-3 h-3" />
                       </Button>

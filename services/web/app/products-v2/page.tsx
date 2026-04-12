@@ -57,7 +57,7 @@ export default function ProductsV2Page() {
   }
 
   const stockColor = (q: number) =>
-    q <= 0 ? "text-red-600 bg-red-50" : q <= 5 ? "text-amber-600 bg-amber-50" : "text-emerald-600 bg-emerald-50"
+    q <= 0 ? "text-rose-600 dark:text-rose-400 bg-rose-500/10" : q <= 5 ? "text-amber-600 bg-amber-50" : "text-emerald-600 bg-emerald-50"
 
   const stockBadge = (q: number) =>
     q <= 0 ? "🔴 Tugagan" : q <= 5 ? "🟡 Kam" : "🟢 Bor"
@@ -80,10 +80,10 @@ export default function ProductsV2Page() {
             </div>
           )}
           {stats.tugagan > 0 && (
-            <div className="flex items-center gap-2 px-3 py-2 bg-red-50 dark:bg-red-900/10 rounded-lg border border-red-200 text-sm whitespace-nowrap">
-              <TrendingDown className="w-4 h-4 text-red-500" />
-              <span className="font-medium text-red-700">{stats.tugagan}</span>
-              <span className="text-red-600">tugagan</span>
+            <div className="flex items-center gap-2 px-3 py-2 bg-rose-500/10 dark:bg-red-900/10 rounded-lg border border-rose-500/30 text-sm whitespace-nowrap">
+              <TrendingDown className="w-4 h-4 text-rose-500 dark:text-rose-400" />
+              <span className="font-medium text-rose-700 dark:text-rose-300">{stats.tugagan}</span>
+              <span className="text-rose-600 dark:text-rose-400">tugagan</span>
             </div>
           )}
         </div>

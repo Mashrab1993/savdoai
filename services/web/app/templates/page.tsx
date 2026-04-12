@@ -54,7 +54,7 @@ export default function TemplatesPage() {
             <button
               key={c.key}
               onClick={() => setFilter(c.key)}
-              className={`px-3 py-1.5 rounded-md text-xs font-medium ${filter === c.key ? "bg-emerald-100 text-emerald-700" : "bg-muted text-muted-foreground hover:bg-muted"}`}
+              className={`px-3 py-1.5 rounded-md text-xs font-medium ${filter === c.key ? "bg-emerald-500/15 text-emerald-700" : "bg-muted text-muted-foreground hover:bg-muted"}`}
             >{c.label}</button>
           ))}
         </div>

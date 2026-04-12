@@ -59,7 +59,7 @@ export default function SmsTemplatesPage() {
                 <div className="flex gap-1">
                   <Button variant="ghost" size="sm"><Copy className="w-3 h-3" /></Button>
                   <Button variant="ghost" size="sm"><Pencil className="w-3 h-3" /></Button>
-                  <Button variant="ghost" size="sm" className="text-red-500"><Trash2 className="w-3 h-3" /></Button>
+                  <Button variant="ghost" size="sm" className="text-rose-500 dark:text-rose-400"><Trash2 className="w-3 h-3" /></Button>
                 </div>
               </div>
               <div className="text-sm bg-muted/50 dark:bg-muted rounded p-3 mb-3 leading-relaxed">

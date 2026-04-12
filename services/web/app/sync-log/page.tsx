@@ -37,9 +37,9 @@ export default function SyncLogPage() {
           <div className="text-2xl font-bold text-emerald-600">{success}</div>
           <div className="text-xs text-emerald-600">Muvaffaqiyatli</div>
         </div>
-        <div className="bg-red-50 dark:bg-red-900/20 rounded-xl border border-red-200 dark:border-red-800 p-4 text-center">
-          <div className="text-2xl font-bold text-red-600">{fail}</div>
-          <div className="text-xs text-red-600">Xatolik</div>
+        <div className="bg-rose-500/10 dark:bg-red-900/20 rounded-xl border border-rose-500/30 dark:border-red-800 p-4 text-center">
+          <div className="text-2xl font-bold text-rose-600 dark:text-rose-400">{fail}</div>
+          <div className="text-xs text-rose-600 dark:text-rose-400">Xatolik</div>
         </div>
       </div>
 
@@ -59,11 +59,11 @@ export default function SyncLogPage() {
             {logs.map((l: any) => (
               <tr key={l.id} className="border-t border-border/60 dark:border-border hover:bg-muted/50 dark:hover:bg-muted/50">
                 <td className="px-4 py-3 text-xs">{l.boshlangan ? new Date(l.boshlangan).toLocaleString("uz") : "—"}</td>
-                <td className="px-4 py-3"><span className={`px-2 py-0.5 rounded text-xs font-medium ${l.sync_turi === "auto" ? "bg-blue-100 text-blue-700" : "bg-muted text-foreground"}`}>{l.sync_turi}</span></td>
+                <td className="px-4 py-3"><span className={`px-2 py-0.5 rounded text-xs font-medium ${l.sync_turi === "auto" ? "bg-blue-500/15 text-blue-700" : "bg-muted text-foreground"}`}>{l.sync_turi}</span></td>
                 <td className="px-4 py-3">{l.entity_soni || 0}</td>
                 <td className="px-4 py-3 text-xs text-muted-foreground">{l.yuborilgan_bayt ? `↑${(l.yuborilgan_bayt/1024).toFixed(1)}KB` : ""} {l.qabul_qilingan_bayt ? `↓${(l.qabul_qilingan_bayt/1024).toFixed(1)}KB` : ""}</td>
-                <td className="px-4 py-3">{l.muvaffaqiyatli ? <span className="text-emerald-500">✓</span> : <span className="text-red-500">✗ {l.status_kod}</span>}</td>
-                <td className="px-4 py-3 text-xs text-red-500 max-w-48 truncate">{l.xato_xabar || ""}</td>
+                <td className="px-4 py-3">{l.muvaffaqiyatli ? <span className="text-emerald-500">✓</span> : <span className="text-rose-500 dark:text-rose-400">✗ {l.status_kod}</span>}</td>
+                <td className="px-4 py-3 text-xs text-rose-500 dark:text-rose-400 max-w-48 truncate">{l.xato_xabar || ""}</td>
               </tr>
             ))}
           </tbody>

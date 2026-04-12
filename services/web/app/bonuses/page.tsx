@@ -53,7 +53,7 @@ export default function BonusesPage() {
         {/* Bonus Types Grid */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
           {BONUS_TYPES.map(t => (
-            <div key={t.key} className="bg-card rounded-xl border p-4 hover:border-emerald-300 cursor-pointer transition" onClick={() => { setForm({ ...form, turi: t.key }); setShowAdd(true) }}>
+            <div key={t.key} className="bg-card rounded-xl border p-4 hover:border-emerald-500/40 cursor-pointer transition" onClick={() => { setForm({ ...form, turi: t.key }); setShowAdd(true) }}>
               <div className="text-2xl mb-2">{t.icon}</div>
               <div className="text-sm font-medium">{t.label}</div>
             </div>
@@ -98,8 +98,8 @@ export default function BonusesPage() {
                     <TableCell className="text-sm">{b.sana_dan} → {b.sana_gacha}</TableCell>
                     <TableCell className="text-center">{b.tovarlar_soni || "Barchasi"}</TableCell>
                     <TableCell className="text-center">{b.mijozlar_soni || "Barchasi"}</TableCell>
-                    <TableCell className="text-center"><Badge className="bg-emerald-100 text-emerald-800 text-xs">Faol</Badge></TableCell>
-                    <TableCell><div className="flex gap-1"><Button variant="ghost" size="sm"><Pencil className="w-3 h-3" /></Button><Button variant="ghost" size="sm" className="text-red-500"><Trash2 className="w-3 h-3" /></Button></div></TableCell>
+                    <TableCell className="text-center"><Badge className="bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 text-xs">Faol</Badge></TableCell>
+                    <TableCell><div className="flex gap-1"><Button variant="ghost" size="sm"><Pencil className="w-3 h-3" /></Button><Button variant="ghost" size="sm" className="text-rose-500 dark:text-rose-400"><Trash2 className="w-3 h-3" /></Button></div></TableCell>
                   </TableRow>
                 ))}
               </TableBody>

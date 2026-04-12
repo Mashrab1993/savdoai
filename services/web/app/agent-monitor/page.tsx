@@ -85,7 +85,7 @@ export default function AgentMonitorPage() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                      online ? "bg-emerald-100" : "bg-muted"
+                      online ? "bg-emerald-500/15" : "bg-muted"
                     }`}>
                       <div className={`w-3 h-3 rounded-full ${online ? "bg-emerald-500 animate-pulse" : "bg-muted-foreground"}`} />
                     </div>
@@ -102,7 +102,7 @@ export default function AgentMonitorPage() {
                   <span className="flex items-center gap-1">
                     <Wifi className="w-3 h-3" /> {a.tarmoq}
                   </span>
-                  <span className={`flex items-center gap-1 ${(a.batareya || 0) < 20 ? "text-red-500" : ""}`}>
+                  <span className={`flex items-center gap-1 ${(a.batareya || 0) < 20 ? "text-rose-500 dark:text-rose-400" : ""}`}>
                     <Battery className="w-3 h-3" /> {a.batareya || 0}%
                   </span>
                   <span className="flex items-center gap-1">

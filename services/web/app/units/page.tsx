@@ -62,13 +62,13 @@ export default function UnitsPage() {
                   <TableCell className="font-medium">{u.nomi}</TableCell>
                   <TableCell><Badge variant="outline" className="font-mono">{u.qisqa}</Badge></TableCell>
                   <TableCell className="text-center">
-                    {u.asosiy && <Badge className="bg-blue-100 text-blue-800 text-xs">Asosiy</Badge>}
+                    {u.asosiy && <Badge className="bg-blue-500/15 text-blue-800 dark:text-blue-300 text-xs">Asosiy</Badge>}
                   </TableCell>
-                  <TableCell className="text-center"><Badge className="bg-emerald-100 text-emerald-800">Faol</Badge></TableCell>
+                  <TableCell className="text-center"><Badge className="bg-emerald-500/15 text-emerald-800 dark:text-emerald-300">Faol</Badge></TableCell>
                   <TableCell>
                     <div className="flex gap-1">
                       <Button variant="ghost" size="sm"><Pencil className="w-3 h-3" /></Button>
-                      <Button variant="ghost" size="sm" className="text-red-500"><Trash2 className="w-3 h-3" /></Button>
+                      <Button variant="ghost" size="sm" className="text-rose-500 dark:text-rose-400"><Trash2 className="w-3 h-3" /></Button>
                     </div>
                   </TableCell>
                 </TableRow>

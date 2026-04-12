@@ -64,7 +64,7 @@ export default function FilialPage() {
                   <h2 className="text-lg font-bold">{selectedFilial.nomi}</h2>
                   <p className="text-xs text-muted-foreground">{selectedFilial.manzil} • {selectedFilial.telefon}</p>
                 </div>
-                {selectedFilial.bosh_filial && <span className="px-2 py-0.5 bg-amber-100 text-amber-700 rounded-full text-[10px] font-bold">⭐ Bosh filial</span>}
+                {selectedFilial.bosh_filial && <span className="px-2 py-0.5 bg-amber-500/15 text-amber-700 rounded-full text-[10px] font-bold">⭐ Bosh filial</span>}
               </div>
 
               <h3 className="text-sm font-semibold mb-2">📦 Ombor qoldiqlari ({qoldiqlar.length} tovar)</h3>
@@ -78,7 +78,7 @@ export default function FilialPage() {
                       {qoldiqlar.map((q: any, i: number) => (
                         <tr key={i} className="border-t border-border/40">
                           <td className="px-3 py-2">{q.tovar_nomi}</td>
-                          <td className={`px-3 py-2 text-right font-medium ${Number(q.qoldiq) <= Number(q.min_qoldiq) ? "text-red-600" : ""}`}>{q.qoldiq}</td>
+                          <td className={`px-3 py-2 text-right font-medium ${Number(q.qoldiq) <= Number(q.min_qoldiq) ? "text-rose-600 dark:text-rose-400" : ""}`}>{q.qoldiq}</td>
                           <td className="px-3 py-2 text-right text-muted-foreground">{q.min_qoldiq}</td>
                         </tr>
                       ))}

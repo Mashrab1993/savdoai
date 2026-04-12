@@ -49,7 +49,7 @@ export default function WelcomePage() {
               { href: "/staff", label: "Xodimlar", desc: "Agent va expeditorlar", icon: Users },
               { href: "/help", label: "Yordam", desc: "Qo'llanma va FAQ", icon: MessageSquare },
             ].map(l => (
-              <Link key={l.href} href={l.href} className="bg-card rounded-xl border p-4 hover:shadow-md hover:border-emerald-300 transition group">
+              <Link key={l.href} href={l.href} className="bg-card rounded-xl border p-4 hover:shadow-md hover:border-emerald-500/40 transition group">
                 <div className="flex items-center justify-between mb-2">
                   <l.icon className="w-6 h-6 text-emerald-600" />
                   <ArrowRight className="w-4 h-4 text-muted-foreground/50 group-hover:text-emerald-600" />
@@ -62,12 +62,12 @@ export default function WelcomePage() {
         </div>
 
         {/* Pro features */}
-        <div className="bg-yellow-50 dark:bg-yellow-900/20 rounded-xl border border-yellow-200 p-6">
+        <div className="bg-amber-500/10 dark:bg-yellow-900/20 rounded-xl border border-amber-500/30 p-6">
           <div className="flex items-start gap-3">
-            <Crown className="w-8 h-8 text-yellow-600 shrink-0" />
+            <Crown className="w-8 h-8 text-amber-600 dark:text-amber-400 shrink-0" />
             <div>
-              <div className="font-bold text-lg text-yellow-700">Pro funksiyalar</div>
-              <div className="text-sm text-yellow-600 mt-1">SalesDoc darajasida AI tahlil, ovoz boshqaruvi, GPS monitoring, multi-filial</div>
+              <div className="font-bold text-lg text-amber-700 dark:text-amber-300">Pro funksiyalar</div>
+              <div className="text-sm text-amber-600 dark:text-amber-400 mt-1">SalesDoc darajasida AI tahlil, ovoz boshqaruvi, GPS monitoring, multi-filial</div>
               <Link href="/billing" className="inline-block mt-3 px-4 py-2 bg-yellow-600 text-white rounded-lg text-sm font-medium hover:bg-yellow-700">
                 Tariflarni ko'rish
               </Link>

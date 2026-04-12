@@ -129,7 +129,7 @@ export default function TelegramMiniAppPage() {
 
       {status === "success" && (
         <div className="text-center space-y-3">
-          <div className="w-12 h-12 rounded-full bg-green-500/20 flex items-center justify-center mx-auto">
+          <div className="w-12 h-12 rounded-full bg-emerald-500/100/20 flex items-center justify-center mx-auto">
             <span className="text-2xl">✅</span>
           </div>
           <p className="text-sm text-green-400">Muvaffaqiyat! Dashboard ochilmoqda...</p>

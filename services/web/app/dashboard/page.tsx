@@ -78,15 +78,15 @@ export default function DashboardPage() {
           <>
             {/* Priority: Overdue Alert if critical */}
             {stats.overdueCount > 0 && (
-              <div className="bg-red-50 dark:bg-red-950/20 border-l-4 border-red-500 rounded-lg p-4 flex items-start gap-3">
-                <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400 shrink-0 mt-0.5" />
+              <div className="bg-rose-500/10 dark:bg-red-950/20 border-l-4 border-rose-500 rounded-lg p-4 flex items-start gap-3">
+                <AlertCircle className="w-5 h-5 text-rose-600 dark:text-rose-400 dark:text-red-400 shrink-0 mt-0.5" />
                 <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-red-900 dark:text-red-300 text-sm">
+                  <p className="font-semibold text-rose-900 dark:text-rose-200 dark:text-red-300 text-sm">
                     {locale === "uz"
                       ? `${stats.overdueCount} ta qarz muddati o'tgan`
                       : `${stats.overdueCount} долга просрочено`}
                   </p>
-                  <p className="text-xs text-red-800 dark:text-red-400 mt-1">{formatCurrency(stats.overdueAmount)} so'm</p>
+                  <p className="text-xs text-rose-800 dark:text-rose-300 dark:text-red-400 mt-1">{formatCurrency(stats.overdueAmount)} so'm</p>
                 </div>
               </div>
             )}
@@ -97,7 +97,7 @@ export default function DashboardPage() {
                 <div className="flex items-start gap-3">
                   <Package className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
                   <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-amber-800 dark:text-amber-200 text-sm">
+                    <p className="font-semibold text-amber-800 dark:text-amber-300 dark:text-amber-200 text-sm">
                       {locale === "uz"
                         ? `${statsExtra.kam_qoldiq_soni} ta tovar qoldig'i kam`
                         : `${statsExtra.kam_qoldiq_soni} товаров с низким остатком`}
@@ -110,7 +110,7 @@ export default function DashboardPage() {
                 {Array.isArray((statsExtra as any).kam_qoldiq_tovarlar) && (statsExtra as any).kam_qoldiq_tovarlar.length > 0 && (
                   <div className="flex flex-wrap gap-1.5 pl-8">
                     {(statsExtra as any).kam_qoldiq_tovarlar.slice(0, 5).map((t: any) => (
-                      <span key={t.id} className="inline-flex items-center gap-1 text-[11px] font-medium bg-amber-500/15 text-amber-800 dark:text-amber-200 rounded-full px-2 py-0.5 border border-amber-500/30">
+                      <span key={t.id} className="inline-flex items-center gap-1 text-[11px] font-medium bg-amber-500/15 text-amber-800 dark:text-amber-300 dark:text-amber-200 rounded-full px-2 py-0.5 border border-amber-500/30">
                         {t.nomi}
                         <span className="text-amber-600 dark:text-amber-400 font-bold tabular-nums">{Number(t.qoldiq)}</span>
                       </span>
@@ -125,13 +125,13 @@ export default function DashboardPage() {
               <div className="bg-emerald-500/10 border-l-4 border-emerald-500 rounded-2xl p-4">
                 <div className="flex items-start gap-3 mb-2">
                   <TrendingUp className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
-                  <p className="font-semibold text-emerald-800 dark:text-emerald-200 text-sm">
+                  <p className="font-semibold text-emerald-800 dark:text-emerald-300 dark:text-emerald-200 text-sm">
                     {locale === "uz" ? "Bugun eng ko'p sotilgan" : "Топ продажи сегодня"}
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-1.5 pl-8">
                   {(statsExtra as any).top_bugun.map((t: any, i: number) => (
-                    <span key={i} className="inline-flex items-center gap-1.5 text-[11px] font-medium bg-emerald-500/15 text-emerald-800 dark:text-emerald-200 rounded-full px-2.5 py-0.5 border border-emerald-500/30">
+                    <span key={i} className="inline-flex items-center gap-1.5 text-[11px] font-medium bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 dark:text-emerald-200 rounded-full px-2.5 py-0.5 border border-emerald-500/30">
                       <span className="text-emerald-500 font-bold">#{i + 1}</span>
                       {t.nomi}
                     </span>
@@ -192,7 +192,7 @@ export default function DashboardPage() {
                     label: d.todayCashIncome[locale],
                     value: `${fmt(stats.todayCashIncome)} so'm`,
                     icon: Landmark,
-                    color: "text-green-500",
+                    color: "text-emerald-500",
                   },
                   {
                     label: d.activeStaff[locale],
@@ -256,7 +256,7 @@ export default function DashboardPage() {
                   <h3 className="font-semibold text-foreground text-sm">{d.revenueChart[locale]}</h3>
                   <p className="text-xs text-muted-foreground mt-0.5">{d.last8Months[locale]}</p>
                 </div>
-                <TrendingUp className="w-4 h-4 text-green-500" />
+                <TrendingUp className="w-4 h-4 text-emerald-500" />
               </div>
               {chartData.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-48 gap-2 text-center">

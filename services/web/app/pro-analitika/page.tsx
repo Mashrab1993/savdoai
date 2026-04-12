@@ -82,15 +82,15 @@ export default function AnalytikaPage() {
                 {["X", "Y", "Z"].map((x: string) => {
                   const key = `${["A","B","C"][ai]}${x}` as string;
                   const count = abc.matritsa_statistika?.[key] || 0;
-                  const colors: Record<string, string> = { AX: "bg-emerald-100 text-emerald-700 border-emerald-300",
-                                   AY: "bg-amber-50 text-amber-700 border-amber-300",
-                                   AZ: "bg-red-50 text-red-700 border-red-300",
+                  const colors: Record<string, string> = { AX: "bg-emerald-500/15 text-emerald-700 border-emerald-500/40",
+                                   AY: "bg-amber-50 text-amber-700 border-amber-500/40",
+                                   AZ: "bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-500/30",
                                    BX: "bg-emerald-50 text-emerald-600 border-emerald-200",
                                    BY: "bg-muted/50 text-muted-foreground border-border",
                                    BZ: "bg-amber-50 text-amber-600 border-amber-200",
                                    CX: "bg-blue-50 text-blue-600 border-blue-200",
                                    CY: "bg-muted/50 text-muted-foreground border-border",
-                                   CZ: "bg-red-50 text-red-600 border-red-200" };
+                                   CZ: "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/30" };
                   return (
                     <div key={key} className={`p-3 rounded border text-center ${colors[key] || "bg-muted/50"}`}>
                       <div className="text-lg font-bold">{count}</div>
@@ -145,7 +145,7 @@ export default function AnalytikaPage() {
           {/* Xulosa cards */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
             <Card className="p-4 text-center"><div className="text-2xl font-bold">{churn.xulosa?.jami_klient || 0}</div><div className="text-xs text-muted-foreground">Jami klient</div></Card>
-            <Card className="p-4 text-center border-red-200 bg-red-50 dark:bg-red-900/20"><div className="text-2xl font-bold text-red-600">{churn.xulosa?.kritik_xavf || 0}</div><div className="text-xs text-red-600">Kritik xavf 🔴</div></Card>
+            <Card className="p-4 text-center border-rose-500/30 bg-rose-500/10 dark:bg-red-900/20"><div className="text-2xl font-bold text-rose-600 dark:text-rose-400">{churn.xulosa?.kritik_xavf || 0}</div><div className="text-xs text-rose-600 dark:text-rose-400">Kritik xavf 🔴</div></Card>
             <Card className="p-4 text-center border-amber-200 bg-amber-50 dark:bg-amber-900/20"><div className="text-2xl font-bold text-amber-600">{churn.xulosa?.yuqori_xavf || 0}</div><div className="text-xs text-amber-600">Yuqori xavf 🟠</div></Card>
             <Card className="p-4 text-center border-emerald-200 bg-emerald-50 dark:bg-emerald-900/20"><div className="text-2xl font-bold text-emerald-600">{churn.xulosa?.xavfsiz || 0}</div><div className="text-xs text-emerald-600">Xavfsiz 🟢</div></Card>
           </div>

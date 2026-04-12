@@ -163,7 +163,7 @@ export default function ClientsPage() {
             </div>
           </div>
           <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl shadow-sm p-4 flex items-center gap-3 hover:border-border/70 transition-colors">
-            <div className="p-2 rounded-lg bg-secondary text-green-500 shrink-0"><DollarSign className="w-4 h-4" /></div>
+            <div className="p-2 rounded-lg bg-secondary text-emerald-500 shrink-0"><DollarSign className="w-4 h-4" /></div>
             <div className="min-w-0">
               <p className="text-xs text-muted-foreground truncate">{L.totalRevenue[locale]}</p>
               <p className="text-xl font-bold text-foreground truncate">{fmt(totalRevenue)}</p>
@@ -336,7 +336,7 @@ export default function ClientsPage() {
                             {q.muddat && ` · muddat: ${new Date(q.muddat).toLocaleDateString("uz-UZ")}`}
                           </p>
                         </div>
-                        <span className={`text-xs font-medium ${q.yopildi ? "text-green-600" : "text-destructive"}`}>
+                        <span className={`text-xs font-medium ${q.yopildi ? "text-emerald-600 dark:text-emerald-400" : "text-destructive"}`}>
                           {q.yopildi ? "✅" : `${fmt(q.qolgan ?? 0)}`}
                         </span>
                       </div>

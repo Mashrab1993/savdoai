@@ -132,7 +132,7 @@ export default function ReturnsPage() {
             <div className="text-xs text-muted-foreground">Jami miqdor</div>
             <div className="text-2xl font-bold mt-1">{Number(stats.jami_miqdor || 0).toLocaleString()}</div>
           </div>
-          <div className="bg-card border rounded-xl p-4 border-orange-300">
+          <div className="bg-card border rounded-xl p-4 border-orange-500/40">
             <div className="text-xs text-muted-foreground">Jami summa (zarar)</div>
             <div className="text-xl font-bold mt-1 text-orange-600">
               {formatCurrency(Number(stats.jami_summa || 0))}
@@ -151,7 +151,7 @@ export default function ReturnsPage() {
         </div>
 
         {error && (
-          <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-red-700 flex items-center gap-2">
+          <div className="bg-rose-500/10 border border-rose-500/30 rounded-xl p-4 text-rose-700 dark:text-rose-300 flex items-center gap-2">
             <AlertCircle className="w-5 h-5" /> {error}
           </div>
         )}

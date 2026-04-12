@@ -162,7 +162,7 @@ export default function NakladnoyPage() {
           </div>
           <div className="bg-purple-50 dark:bg-purple-900/20 rounded-xl border border-purple-200 p-4">
             <div className="text-sm text-purple-600">Jami summa</div>
-            <div className="text-xl font-bold mt-1 text-purple-700">{formatCurrency(totalSum)}</div>
+            <div className="text-xl font-bold mt-1 text-violet-700 dark:text-violet-300">{formatCurrency(totalSum)}</div>
           </div>
         </div>
 

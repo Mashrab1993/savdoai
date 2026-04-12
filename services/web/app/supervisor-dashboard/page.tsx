@@ -71,7 +71,7 @@ export default function SupervisorDashboardPage() {
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           <div className="bg-card rounded-xl border p-4">
             <div className="text-sm text-muted-foreground">Jami summa</div>
-            <div className="text-2xl font-bold mt-1 text-purple-700">{formatCurrency(total)}</div>
+            <div className="text-2xl font-bold mt-1 text-violet-700 dark:text-violet-300">{formatCurrency(total)}</div>
           </div>
           <div className="bg-card rounded-xl border p-4">
             <div className="text-sm text-muted-foreground">Jami buyurtmalar</div>
@@ -103,13 +103,13 @@ export default function SupervisorDashboardPage() {
                 <Table>
                   <TableHeader>
                     <TableRow className="bg-purple-50 dark:bg-purple-900/20">
-                      <TableHead className="text-purple-700 font-bold">{s.label.split(" ")[0]}</TableHead>
-                      <TableHead className="text-center text-purple-700 font-bold">Ulush %</TableHead>
-                      <TableHead className="text-center text-purple-700 font-bold">Summa</TableHead>
-                      <TableHead className="text-center text-purple-700 font-bold">Hajm</TableHead>
-                      <TableHead className="text-center text-purple-700 font-bold">Blok</TableHead>
-                      <TableHead className="text-center text-purple-700 font-bold">Miqdor</TableHead>
-                      <TableHead className="text-center text-purple-700 font-bold">AKB</TableHead>
+                      <TableHead className="text-violet-700 dark:text-violet-300 font-bold">{s.label.split(" ")[0]}</TableHead>
+                      <TableHead className="text-center text-violet-700 dark:text-violet-300 font-bold">Ulush %</TableHead>
+                      <TableHead className="text-center text-violet-700 dark:text-violet-300 font-bold">Summa</TableHead>
+                      <TableHead className="text-center text-violet-700 dark:text-violet-300 font-bold">Hajm</TableHead>
+                      <TableHead className="text-center text-violet-700 dark:text-violet-300 font-bold">Blok</TableHead>
+                      <TableHead className="text-center text-violet-700 dark:text-violet-300 font-bold">Miqdor</TableHead>
+                      <TableHead className="text-center text-violet-700 dark:text-violet-300 font-bold">AKB</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>

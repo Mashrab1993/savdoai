@@ -25,11 +25,11 @@ import OrderStatusBoard, { type Order as BoardOrder, type OrderStatus as BoardSt
 type OrderStatus = "all" | "yangi" | "tasdiqlangan" | "otgruzka" | "yetkazildi" | "bekor"
 
 const STATUS_MAP: Record<string, { label: string; color: string; icon: any }> = {
-  yangi:         { label: "Yangi",        color: "bg-blue-100 text-blue-800",        icon: Clock },
-  tasdiqlangan:  { label: "Tasdiqlangan", color: "bg-yellow-100 text-yellow-800",    icon: CheckCircle2 },
-  otgruzka:      { label: "Otgruzka",     color: "bg-purple-100 text-purple-800",    icon: Truck },
-  yetkazildi:    { label: "Yetkazildi",   color: "bg-emerald-100 text-emerald-800",  icon: CheckCircle2 },
-  bekor:         { label: "Bekor",        color: "bg-red-100 text-red-800",          icon: XCircle },
+  yangi:         { label: "Yangi",        color: "bg-blue-500/15 text-blue-800 dark:text-blue-300",        icon: Clock },
+  tasdiqlangan:  { label: "Tasdiqlangan", color: "bg-amber-500/15 text-yellow-800",    icon: CheckCircle2 },
+  otgruzka:      { label: "Otgruzka",     color: "bg-violet-500/15 text-purple-800",    icon: Truck },
+  yetkazildi:    { label: "Yetkazildi",   color: "bg-emerald-500/15 text-emerald-800 dark:text-emerald-300",  icon: CheckCircle2 },
+  bekor:         { label: "Bekor",        color: "bg-rose-500/15 text-rose-800 dark:text-rose-300",          icon: XCircle },
 }
 
 // Valid next statuses from current state
@@ -197,25 +197,25 @@ export default function OrdersPage() {
             <div className="text-xs text-blue-600">Yangi</div>
             <div className="text-2xl font-bold text-blue-700">{stats.yangi}</div>
           </button>
-          <button className={`bg-yellow-50 dark:bg-yellow-900/20 rounded-xl border border-yellow-200 p-3 text-left ${statusFilter === "tasdiqlangan" ? "ring-2 ring-yellow-500" : ""}`}
+          <button className={`bg-amber-500/10 dark:bg-yellow-900/20 rounded-xl border border-amber-500/30 p-3 text-left ${statusFilter === "tasdiqlangan" ? "ring-2 ring-yellow-500" : ""}`}
                   onClick={() => setStatusFilter("tasdiqlangan")}>
-            <div className="text-xs text-yellow-600">Tasdiq.</div>
-            <div className="text-2xl font-bold text-yellow-700">{stats.tasdiqlangan}</div>
+            <div className="text-xs text-amber-600 dark:text-amber-400">Tasdiq.</div>
+            <div className="text-2xl font-bold text-amber-700 dark:text-amber-300">{stats.tasdiqlangan}</div>
           </button>
           <button className={`bg-purple-50 dark:bg-purple-900/20 rounded-xl border border-purple-200 p-3 text-left ${statusFilter === "otgruzka" ? "ring-2 ring-purple-500" : ""}`}
                   onClick={() => setStatusFilter("otgruzka")}>
             <div className="text-xs text-purple-600">Otgruzka</div>
-            <div className="text-2xl font-bold text-purple-700">{stats.otgruzka}</div>
+            <div className="text-2xl font-bold text-violet-700 dark:text-violet-300">{stats.otgruzka}</div>
           </button>
           <button className={`bg-emerald-50 dark:bg-emerald-900/20 rounded-xl border border-emerald-200 p-3 text-left ${statusFilter === "yetkazildi" ? "ring-2 ring-emerald-500" : ""}`}
                   onClick={() => setStatusFilter("yetkazildi")}>
             <div className="text-xs text-emerald-600">Yetkazildi</div>
             <div className="text-2xl font-bold text-emerald-700">{stats.yetkazildi}</div>
           </button>
-          <button className={`bg-red-50 dark:bg-red-900/20 rounded-xl border border-red-200 p-3 text-left ${statusFilter === "bekor" ? "ring-2 ring-red-500" : ""}`}
+          <button className={`bg-rose-500/10 dark:bg-red-900/20 rounded-xl border border-rose-500/30 p-3 text-left ${statusFilter === "bekor" ? "ring-2 ring-red-500" : ""}`}
                   onClick={() => setStatusFilter("bekor")}>
-            <div className="text-xs text-red-600">Bekor</div>
-            <div className="text-2xl font-bold text-red-700">{stats.bekor}</div>
+            <div className="text-xs text-rose-600 dark:text-rose-400">Bekor</div>
+            <div className="text-2xl font-bold text-rose-700 dark:text-rose-300">{stats.bekor}</div>
           </button>
         </div>
         <div className="bg-card border rounded-xl p-3 text-right">
@@ -240,7 +240,7 @@ export default function OrdersPage() {
             <div className="animate-spin h-8 w-8 border-b-2 border-emerald-500 rounded-full" />
           </div>
         ) : error ? (
-          <div className="text-center p-10 text-red-500">Xatolik: {String(error)}</div>
+          <div className="text-center p-10 text-rose-500 dark:text-rose-400">Xatolik: {String(error)}</div>
         ) : (
           <OrderStatusBoard
             orders={orders.map<BoardOrder>((o: any) => ({
@@ -310,7 +310,7 @@ export default function OrdersPage() {
                     {Number(selectedOrder.qarz || 0) > 0 && (
                       <div className="flex justify-between text-sm">
                         <span className="text-muted-foreground">Qarz:</span>
-                        <span className="text-red-600 font-semibold">{formatCurrency(Number(selectedOrder.qarz || 0))}</span>
+                        <span className="text-rose-600 dark:text-rose-400 font-semibold">{formatCurrency(Number(selectedOrder.qarz || 0))}</span>
                       </div>
                     )}
                   </div>

@@ -66,9 +66,9 @@ export default function InventoryPage() {
             <div className="text-sm text-emerald-600 flex items-center gap-1"><Check className="w-3 h-3" /> Mos keldi</div>
             <div className="text-2xl font-bold mt-1 text-emerald-700">{stats.matched}</div>
           </div>
-          <div className="bg-yellow-50 rounded-xl border border-yellow-200 p-4">
-            <div className="text-sm text-yellow-600 flex items-center gap-1"><AlertCircle className="w-3 h-3" /> Mos kelmadi</div>
-            <div className="text-2xl font-bold mt-1 text-yellow-700">{stats.mismatched}</div>
+          <div className="bg-amber-500/10 rounded-xl border border-amber-500/30 p-4">
+            <div className="text-sm text-amber-600 dark:text-amber-400 flex items-center gap-1"><AlertCircle className="w-3 h-3" /> Mos kelmadi</div>
+            <div className="text-2xl font-bold mt-1 text-amber-700 dark:text-amber-300">{stats.mismatched}</div>
           </div>
           <div className="bg-muted/50 rounded-xl border p-4">
             <div className="text-sm text-muted-foreground">Sanalmagan</div>
@@ -127,7 +127,7 @@ export default function InventoryPage() {
                       </TableCell>
                       <TableCell className="text-center font-mono font-bold">
                         {phys === undefined ? "-" : (
-                          <span className={diff === 0 ? "text-emerald-600" : diff > 0 ? "text-blue-600" : "text-red-600"}>
+                          <span className={diff === 0 ? "text-emerald-600" : diff > 0 ? "text-blue-600" : "text-rose-600 dark:text-rose-400"}>
                             {diff > 0 ? "+" : ""}{diff}
                           </span>
                         )}
@@ -136,9 +136,9 @@ export default function InventoryPage() {
                         {phys === undefined ? (
                           <Badge variant="secondary" className="text-xs">Sanalmagan</Badge>
                         ) : phys === sys ? (
-                          <Badge className="bg-emerald-100 text-emerald-800 text-xs">Mos</Badge>
+                          <Badge className="bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 text-xs">Mos</Badge>
                         ) : (
-                          <Badge className="bg-yellow-100 text-yellow-800 text-xs">Mos emas</Badge>
+                          <Badge className="bg-amber-500/15 text-yellow-800 text-xs">Mos emas</Badge>
                         )}
                       </TableCell>
                     </TableRow>

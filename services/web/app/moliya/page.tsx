@@ -137,7 +137,7 @@ export default function MoliyaPage() {
           </div>
         )}
         {error && !loading && (
-          <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-red-700 flex items-center gap-2">
+          <div className="bg-rose-500/10 border border-rose-500/30 rounded-xl p-4 text-rose-700 dark:text-rose-300 flex items-center gap-2">
             <AlertCircle className="w-5 h-5" /> Xatolik: {error}
           </div>
         )}
@@ -154,10 +154,10 @@ export default function MoliyaPage() {
               </p>
             </div>
             <Row label="Jami sotuv"    value={N(pl.daromad?.jami_sotuv)} />
-            <Row label="Qaytarishlar"  value={`-${N(pl.daromad?.qaytarish).toLocaleString()}`} indent={1} color="text-red-500" />
-            <Row label="Chegirmalar"   value={`-${N(pl.daromad?.chegirma).toLocaleString()}`}  indent={1} color="text-red-500" />
+            <Row label="Qaytarishlar"  value={`-${N(pl.daromad?.qaytarish).toLocaleString()}`} indent={1} color="text-rose-500 dark:text-rose-400" />
+            <Row label="Chegirmalar"   value={`-${N(pl.daromad?.chegirma).toLocaleString()}`}  indent={1} color="text-rose-500 dark:text-rose-400" />
             <Row label="SOF SOTUV"     value={N(pl.daromad?.sof_sotuv)} bold />
-            <Row label="Tannarx (COGS)" value={`-${N(pl.tannarx?.jami).toLocaleString()}`} color="text-red-500" />
+            <Row label="Tannarx (COGS)" value={`-${N(pl.tannarx?.jami).toLocaleString()}`} color="text-rose-500 dark:text-rose-400" />
             <Row label="YALPI FOYDA"    value={N(pl.yalpi_foyda?.summa)} bold />
             <Row label={`Margin: ${pl.yalpi_foyda?.margin_foiz ?? 0}%`} value="" indent={1} color="text-emerald-600" />
             <div className="px-4 py-2 bg-secondary text-xs font-semibold text-muted-foreground">XARAJATLAR</div>
@@ -165,11 +165,11 @@ export default function MoliyaPage() {
               <Row key={k} label={k.charAt(0).toUpperCase() + k.slice(1)}
                    value={`-${N(v).toLocaleString()}`} indent={1} color="text-red-400" />
             ))}
-            <Row label="Jami xarajat" value={`-${N(pl.xarajatlar?.jami).toLocaleString()}`} bold color="text-red-500" />
+            <Row label="Jami xarajat" value={`-${N(pl.xarajatlar?.jami).toLocaleString()}`} bold color="text-rose-500 dark:text-rose-400" />
             <div className={`flex justify-between p-4 rounded-b-xl text-lg font-bold ${
               pl.sof_foyda?.holat === "foyda"
                 ? "bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400"
-                : "bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400"
+                : "bg-rose-500/10 dark:bg-red-900/20 text-rose-700 dark:text-rose-300 dark:text-red-400"
             }`}>
               <span>SOF FOYDA</span>
               <span>{formatCurrency(N(pl.sof_foyda?.summa))} ({pl.sof_foyda?.margin_foiz ?? 0}%)</span>
@@ -198,7 +198,7 @@ export default function MoliyaPage() {
               <div className={`p-3 text-center text-sm font-bold ${
                 bs.balans_tekshiruv?.muvozanat
                   ? "text-emerald-600 bg-emerald-50 dark:bg-emerald-900/20"
-                  : "text-red-600 bg-red-50 dark:bg-red-900/20"
+                  : "text-rose-600 dark:text-rose-400 bg-rose-500/10 dark:bg-red-900/20"
               }`}>
                 {bs.balans_tekshiruv?.muvozanat ? "✓ Balans muvozanatda" : "⚠ Balans nomuvofiq!"}
               </div>
@@ -219,14 +219,14 @@ export default function MoliyaPage() {
             <Row label="Sotuvdan"       value={N(cf.kirim?.sotuvdan)} indent={1} />
             <Row label="Qarz yig'ildi"  value={N(cf.kirim?.qarz_yigildi)} indent={1} />
             <Row label="JAMI KIRIM"     value={N(cf.kirim?.jami)} bold color="text-emerald-600" />
-            <div className="px-4 py-2 bg-red-50 dark:bg-red-900/10 text-xs font-semibold text-red-700">CHIQIMLAR</div>
+            <div className="px-4 py-2 bg-rose-500/10 dark:bg-red-900/10 text-xs font-semibold text-rose-700 dark:text-rose-300">CHIQIMLAR</div>
             <Row label="Tovar xaridi" value={N(cf.chiqim?.tovar_xaridi)} indent={1} />
             <Row label="Xarajatlar"   value={N(cf.chiqim?.xarajatlar)}  indent={1} />
-            <Row label="JAMI CHIQIM"  value={N(cf.chiqim?.jami)} bold color="text-red-600" />
+            <Row label="JAMI CHIQIM"  value={N(cf.chiqim?.jami)} bold color="text-rose-600 dark:text-rose-400" />
             <div className={`p-4 rounded-b-xl text-center text-lg font-bold ${
               cf.sof_pul_oqimi?.holat === "ijobiy"
                 ? "bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700"
-                : "bg-red-50 dark:bg-red-900/20 text-red-700"
+                : "bg-rose-500/10 dark:bg-red-900/20 text-rose-700 dark:text-rose-300"
             }`}>
               Sof pul oqimi: {formatCurrency(N(cf.sof_pul_oqimi?.summa))}
             </div>

@@ -67,7 +67,7 @@ function StatCard({ icon: Icon, label, value, trend, sparkData, color = "emerald
       <div className="flex items-center justify-between mt-1">
         <span className="text-xs text-muted-foreground">{label}</span>
         {trend !== undefined && trend !== null && (
-          <span className={`text-xs font-medium flex items-center gap-0.5 ${trend >= 0 ? "text-emerald-600" : "text-red-500"}`}>
+          <span className={`text-xs font-medium flex items-center gap-0.5 ${trend >= 0 ? "text-emerald-600" : "text-rose-500 dark:text-rose-400"}`}>
             {trend >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
             {Math.abs(trend)}%
           </span>
@@ -153,8 +153,8 @@ export default function LiveDashboardPage() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-1.5">
-              <div className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse" />
-              <span className="text-sm font-bold text-red-600 uppercase tracking-wide">LIVE</span>
+              <div className="w-2.5 h-2.5 rounded-full bg-rose-500/100 animate-pulse" />
+              <span className="text-sm font-bold text-rose-600 dark:text-rose-400 uppercase tracking-wide">LIVE</span>
             </div>
             <span className="text-sm text-muted-foreground">
               {now.toLocaleTimeString("uz-UZ")}
@@ -187,7 +187,7 @@ export default function LiveDashboardPage() {
               </div>
             )}
             {Number(og.jami_qarz || 0) > 0 && (
-              <div className="flex items-center gap-2 px-3 py-2 bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800 rounded-lg text-xs text-red-700 whitespace-nowrap">
+              <div className="flex items-center gap-2 px-3 py-2 bg-rose-500/10 dark:bg-red-900/10 border border-rose-500/30 dark:border-red-800 rounded-lg text-xs text-rose-700 dark:text-rose-300 whitespace-nowrap">
                 <CreditCard className="w-3.5 h-3.5" />
                 <span>Jami qarz: {formatCurrency(Number(og.jami_qarz || 0))}</span>
               </div>

@@ -107,7 +107,7 @@ export default function PriceTypesPage() {
         </div>
 
         {error && (
-          <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-red-700 flex items-center gap-2">
+          <div className="bg-rose-500/10 border border-rose-500/30 rounded-xl p-4 text-rose-700 dark:text-rose-300 flex items-center gap-2">
             <AlertCircle className="w-5 h-5" /> {error}
           </div>
         )}
@@ -160,7 +160,7 @@ export default function PriceTypesPage() {
           </Table>
         </div>
 
-        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 text-sm text-blue-800">
+        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 text-sm text-blue-800 dark:text-blue-300">
           <div className="font-bold mb-1">💡 Narx guruhlari qanday ishlaydi:</div>
           <div>
             Har bir klientni bitta narx guruhiga biriktirishingiz mumkin (masalan:

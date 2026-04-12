@@ -15,7 +15,7 @@ function Stat({ label, value, icon, trend, color = "emerald" }: { label: string;
       </div>
       <div className={`text-2xl font-bold text-${color}-600`}>{value}</div>
       {trend !== undefined && (
-        <div className={`text-xs mt-1 ${trend >= 0 ? "text-emerald-500" : "text-red-500"}`}>
+        <div className={`text-xs mt-1 ${trend >= 0 ? "text-emerald-500" : "text-rose-500 dark:text-rose-400"}`}>
           {trend >= 0 ? "↑" : "↓"} {Math.abs(trend)}% haftalik
         </div>
       )}
@@ -147,7 +147,7 @@ export default function AIDashboard() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {(oy.top_klientlar || []).slice(0, 6).map((k: any, i: number) => (
                 <div key={i} className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 dark:bg-muted">
-                  <div className="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-900 flex items-center justify-center">
+                  <div className="w-8 h-8 rounded-full bg-emerald-500/15 dark:bg-emerald-900 flex items-center justify-center">
                     <span className="text-xs font-bold text-emerald-600">{i + 1}</span>
                   </div>
                   <div className="flex-1 min-w-0">

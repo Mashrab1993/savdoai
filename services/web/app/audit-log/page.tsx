@@ -19,11 +19,11 @@ type AuditRow = {
 }
 
 const ACTIONS: Record<string, { label: string; color: string; icon: typeof Plus }> = {
-  create:       { label: "Yaratish",    color: "bg-emerald-100 text-emerald-800", icon: Plus },
-  update:       { label: "Tahrirlash",  color: "bg-blue-100 text-blue-800",       icon: Edit },
-  delete:       { label: "O'chirish",   color: "bg-red-100 text-red-800",         icon: Trash2 },
-  bekor_qilish: { label: "Bekor qilish", color: "bg-orange-100 text-orange-800",  icon: Trash2 },
-  login:        { label: "Login",       color: "bg-purple-100 text-purple-800",   icon: LogIn },
+  create:       { label: "Yaratish",    color: "bg-emerald-500/15 text-emerald-800 dark:text-emerald-300", icon: Plus },
+  update:       { label: "Tahrirlash",  color: "bg-blue-500/15 text-blue-800 dark:text-blue-300",       icon: Edit },
+  delete:       { label: "O'chirish",   color: "bg-rose-500/15 text-rose-800 dark:text-rose-300",         icon: Trash2 },
+  bekor_qilish: { label: "Bekor qilish", color: "bg-orange-500/15 text-orange-800 dark:text-orange-300",  icon: Trash2 },
+  login:        { label: "Login",       color: "bg-violet-500/15 text-purple-800",   icon: LogIn },
 }
 
 async function api<T = unknown>(path: string): Promise<T> {
@@ -124,7 +124,7 @@ export default function AuditLogPage() {
         </div>
 
         {error && (
-          <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-red-700 flex items-center gap-2">
+          <div className="bg-rose-500/10 border border-rose-500/30 rounded-xl p-4 text-rose-700 dark:text-rose-300 flex items-center gap-2">
             <AlertCircle className="w-5 h-5" /> {error}
           </div>
         )}
