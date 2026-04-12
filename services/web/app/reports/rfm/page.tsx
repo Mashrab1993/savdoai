@@ -7,6 +7,7 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table"
 import { TrendingUp, Users, AlertCircle } from "lucide-react"
+import { PageHeader } from "@/components/ui/page-header"
 import Link from "next/link"
 import { formatCurrency } from "@/lib/format"
 
@@ -64,14 +65,12 @@ export default function ReportsRfmPage() {
   return (
     <AdminLayout>
       <div className="max-w-7xl mx-auto p-4 sm:p-6 space-y-5">
-        <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <TrendingUp className="w-7 h-7 text-emerald-600" /> RFM Tahlil
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            SalesDoc-style klient segmentatsiya — Recency, Frequency, Monetary
-          </p>
-        </div>
+        <PageHeader
+          icon={Users}
+          gradient="violet"
+          title="RFM Tahlil"
+          subtitle="Klient segmentatsiya — Recency, Frequency, Monetary"
+        />
 
         {loading && (
           <div className="flex justify-center p-16">
@@ -79,7 +78,7 @@ export default function ReportsRfmPage() {
           </div>
         )}
         {error && !loading && (
-          <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-red-700 flex items-center gap-2">
+          <div className="bg-rose-500/10 border border-rose-500/30 rounded-2xl p-4 text-rose-700 dark:text-rose-300 flex items-center gap-2">
             <AlertCircle className="w-5 h-5" /> {error}
           </div>
         )}
