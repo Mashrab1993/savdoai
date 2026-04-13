@@ -1302,3 +1302,149 @@ async def tavsiya_qoldiq(
         "yetarli": sum(1 for i in items if i["holat"] == "yetarli"),
         "kunlar": kunlar,
     }
+
+
+# ════════════════════════════════════════════════════════════
+#  VAN SELLING — Kunlik agent hisoboti
+#  Har bir agentning bugungi sotuv faoliyati (SalesDoc uslubi)
+# ════════════════════════════════════════════════════════════
+
+@router.get("/hisobot/van-selling-kunlik")
+async def van_selling_kunlik(
+    sana: Optional[str] = None,  # YYYY-MM-DD, default today
+    uid: int = Depends(get_uid),
+):
+    """
+    Van Selling kunlik hisobot — har bir agentning sotuv faoliyati.
+
+    SalesDoc supervisor dashboard uchun: vizitlar, buyurtmalar,
+    jami sotuv, foyda, naqd/qarz, qaytarishlar, yangi klientlar.
+
+    Response:
+      {
+        "sana": "2026-04-13",
+        "agentlar": [{ agent_id, agent_ismi, vizitlar_soni, ... }],
+        "jami": { vizitlar, buyurtmalar, sotuv, foyda }
+      }
+    """
+    if sana:
+        try:
+            datetime.strptime(sana, "%Y-%m-%d")
+        except ValueError:
+            raise HTTPException(status_code=400, detail="sana formati noto'g'ri, YYYY-MM-DD kerak")
+        target_date = sana
+    else:
+        target_date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+
+    async with rls_conn(uid) as c:
+        # 1. Agentlar bo'yicha sotuv sessiyalari
+        agent_rows = await c.fetch("""
+            SELECT
+                ss.user_id                              AS agent_id,
+                COALESCE(u.ism, u.dokon_nomi, u.username, 'Agent') AS agent_ismi,
+                COUNT(DISTINCT ss.klient_id)            AS vizitlar_soni,
+                COUNT(ss.id)                            AS buyurtmalar_soni,
+                COALESCE(SUM(ss.jami), 0)               AS jami_sotuv,
+                COALESCE(SUM(ss.tolangan), 0)           AS naqd_tulangan,
+                COALESCE(SUM(ss.qarz), 0)               AS qarz_berilgan,
+                MAX(ss.sana AT TIME ZONE 'Asia/Tashkent') AS oxirgi_vaqt
+            FROM sotuv_sessiyalar ss
+            LEFT JOIN users u ON u.id = ss.user_id
+            WHERE (ss.sana AT TIME ZONE 'Asia/Tashkent')::date = $1::date
+              AND COALESCE(ss.holat, 'yangi') != 'bekor'
+            GROUP BY ss.user_id, u.ism, u.dokon_nomi, u.username
+            ORDER BY SUM(ss.jami) DESC
+        """, target_date)
+
+        # 2. Foyda — chiqimlar orqali
+        foyda_rows = await c.fetch("""
+            SELECT
+                ss.user_id AS agent_id,
+                COALESCE(SUM((ch.sotish_narxi - ch.olish_narxi) * ch.miqdor), 0) AS foyda,
+                COALESCE(SUM(ch.miqdor), 0) AS tovarlar_soni
+            FROM chiqimlar ch
+            JOIN sotuv_sessiyalar ss ON ss.id = ch.sessiya_id
+            WHERE (ss.sana AT TIME ZONE 'Asia/Tashkent')::date = $1::date
+              AND COALESCE(ss.holat, 'yangi') != 'bekor'
+            GROUP BY ss.user_id
+        """, target_date)
+        foyda_map = {r["agent_id"]: r for r in foyda_rows}
+
+        # 3. Qaytarishlar (jadval mavjud bo'lmasligi mumkin)
+        try:
+            qayt_rows = await c.fetch("""
+                SELECT user_id AS agent_id,
+                       COUNT(*) AS qaytarish_soni,
+                       COALESCE(SUM(jami), 0) AS qaytarish_summa
+                FROM qaytarishlar
+                WHERE (sana AT TIME ZONE 'Asia/Tashkent')::date = $1::date
+                GROUP BY user_id
+            """, target_date)
+            qayt_map = {r["agent_id"]: r for r in qayt_rows}
+        except Exception:
+            qayt_map = {}
+
+        # 4. Yangi klientlar (bugun yaratilgan)
+        try:
+            yangi_rows = await c.fetch("""
+                SELECT user_id AS agent_id, COUNT(*) AS yangi_klientlar
+                FROM klientlar
+                WHERE (yaratilgan AT TIME ZONE 'Asia/Tashkent')::date = $1::date
+                GROUP BY user_id
+            """, target_date)
+            yangi_map = {r["agent_id"]: r for r in yangi_rows}
+        except Exception:
+            yangi_map = {}
+
+    # Natijani yig'ish
+    agentlar = []
+    jami_vizitlar = 0
+    jami_buyurtmalar = 0
+    jami_sotuv = Decimal(0)
+    jami_foyda = Decimal(0)
+
+    for ar in agent_rows:
+        aid = ar["agent_id"]
+        fr = foyda_map.get(aid, {})
+        qr = qayt_map.get(aid, {})
+        yr = yangi_map.get(aid, {})
+
+        vizitlar = int(ar["vizitlar_soni"] or 0)
+        buyurtmalar = int(ar["buyurtmalar_soni"] or 0)
+        sotuv = float(ar["jami_sotuv"] or 0)
+        foyda = float(fr.get("foyda", 0) or 0)
+
+        jami_vizitlar += vizitlar
+        jami_buyurtmalar += buyurtmalar
+        jami_sotuv += Decimal(str(sotuv))
+        jami_foyda += Decimal(str(foyda))
+
+        oxirgi = ar["oxirgi_vaqt"]
+        oxirgi_str = oxirgi.strftime("%H:%M") if oxirgi else None
+
+        agentlar.append({
+            "agent_id":        aid,
+            "agent_ismi":      ar["agent_ismi"],
+            "vizitlar_soni":   vizitlar,
+            "buyurtmalar_soni": buyurtmalar,
+            "jami_sotuv":      sotuv,
+            "jami_foyda":      foyda,
+            "naqd_tulangan":   float(ar["naqd_tulangan"] or 0),
+            "qarz_berilgan":   float(ar["qarz_berilgan"] or 0),
+            "qaytarish_soni":  int(qr.get("qaytarish_soni", 0) or 0),
+            "qaytarish_summa": float(qr.get("qaytarish_summa", 0) or 0),
+            "tovarlar_soni":   int(fr.get("tovarlar_soni", 0) or 0),
+            "yangi_klientlar": int(yr.get("yangi_klientlar", 0) or 0),
+            "oxirgi_faollik":  oxirgi_str,
+        })
+
+    return {
+        "sana": target_date,
+        "agentlar": agentlar,
+        "jami": {
+            "vizitlar":    jami_vizitlar,
+            "buyurtmalar": jami_buyurtmalar,
+            "sotuv":       float(jami_sotuv),
+            "foyda":       float(jami_foyda),
+        },
+    }
