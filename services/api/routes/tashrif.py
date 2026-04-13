@@ -106,7 +106,7 @@ async def tag_qoyish(sotuv_id: int, body: TagBody, uid: int = Depends(get_uid)):
     async with get_conn(uid) as conn:
         await conn.execute("""
             INSERT INTO sotuv_taglar (sotuv_id, tag, user_id)
-            VALUES ($1, $2, $3) ON CONFLICT DO NOTHING
+            VALUES ($1, $2, $3) ON CONFLICT (sotuv_id, tag) DO NOTHING
         """, sotuv_id, body.tag, uid)
         return {"muvaffaqiyat": True}
 

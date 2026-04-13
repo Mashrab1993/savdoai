@@ -98,11 +98,20 @@ async def klientlar(
     """
     async with rls_conn(uid) as c:
         rows = await c.fetch(sql, *params)
-        total_sql = f"SELECT COUNT(*) FROM klientlar k WHERE {where_sql}"
-        # for total with qarzdor we need the subquery; simplest approach: use len(rows)+offset approx
         if qarzdor:
-            total = len(rows) + offset  # approximate
+            total_sql = f"""
+                SELECT COUNT(*) FROM (
+                    SELECT k.id
+                    FROM klientlar k
+                    LEFT JOIN qarzlar q ON q.klient_id = k.id
+                    WHERE {where_sql}
+                    GROUP BY k.id
+                    {having}
+                ) sub
+            """
+            total = await c.fetchval(total_sql, *params[:-2])
         else:
+            total_sql = f"SELECT COUNT(*) FROM klientlar k WHERE {where_sql}"
             total = await c.fetchval(total_sql, *params[:-2])
     return {"total": total, "items": [dict(r) for r in rows]}
 
