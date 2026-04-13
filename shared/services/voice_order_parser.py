@@ -128,9 +128,12 @@ def parse_order_text(text: str) -> dict:
                 miqdor = int(m3.group(1))
                 nomi = m3.group(2).strip()
 
-        # Default miqdor = 1
-        if miqdor == 0 and nomi:
-            miqdor = 1
+        # Default miqdor = 1 ONLY if a quantity indicator was found
+        # (digit, "ta", "dona", O'zbek number word). Otherwise skip —
+        # plain words without qty are NOT order items.
+        if miqdor == 0:
+            # No quantity found — skip this item (not a real order line)
+            continue
 
         # Clean up name
         nomi = re.sub(r'\s+', ' ', nomi).strip()
