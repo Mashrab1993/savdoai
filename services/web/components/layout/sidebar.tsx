@@ -156,7 +156,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
             </div>
             <div>
               <div className="text-sm font-bold text-foreground">SavdoAI</div>
-              <div className="text-[10px] text-muted-foreground">v25.5.0 Premium</div>
+              <div className="text-[10px] text-muted-foreground">v25.6.0 Premium</div>
             </div>
           </div>
         )}

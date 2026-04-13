@@ -1,6 +1,6 @@
 """
 ╔══════════════════════════════════════════════════════════════════╗
-║  SAVDOAI MASHRAB MOLIYA  v25.3  PRODUCTION GRADE               ║
+║  SAVDOAI MASHRAB MOLIYA  v25.6  PRODUCTION GRADE               ║
 ║  @savdoai_mashrab_bot                                            ║
 ║                                                                  ║
 ║  🎤 OVOZ-BIRINCHI: Ovoz yuboring — bot hamma ishni qiladi      ║
@@ -107,7 +107,7 @@ if _SENTRY_DSN:
         logging.getLogger(__name__).info("✅ Sentry ulandi (bot)")
     except ImportError:
         pass
-__version__ = "25.3"
+__version__ = "25.6"
 __author__  = "Mashrab Moliya"
 
 # Segment nomi matnlari
