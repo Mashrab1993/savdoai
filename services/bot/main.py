@@ -495,11 +495,18 @@ async def ovoz_qabul(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
         try:
             ctx.user_data["last_transcription"] = matn
 
-            # Detect kirim vs order by keywords
+            # Detect kirim vs order by keywords + structure
+            # Kirim requires: keyword AND (qty OR price mention)
             matn_lower = matn.lower()
+            matn_words = matn.split()
             kirim_kw = ("keldi", "kelgan", "tushdi", "kirim", "kirimi",
                         "olish narx", "zavoddan", "fabrika", "kompaniyasidan")
-            is_kirim = any(kw in matn_lower for kw in kirim_kw)
+            has_kirim_kw = any(kw in matn_lower for kw in kirim_kw)
+            has_qty_or_price = (
+                any(w.isdigit() for w in matn_words)
+                or any(kw in matn_lower for kw in ("narx", "ming", "mln", "ta ", "dona"))
+            )
+            is_kirim = has_kirim_kw and has_qty_or_price
 
             if is_kirim:
                 from services.bot.handlers.voice_kirim import handle_voice_kirim

@@ -18,6 +18,7 @@
 from __future__ import annotations
 import logging
 import json
+import time
 import uuid
 from decimal import Decimal
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
@@ -36,8 +37,16 @@ from shared.services.voice_order_parser import (
 log = logging.getLogger(__name__)
 
 # Pending orders keyed by unique token (NOT user_id — prevents race condition)
-# Format: token → {user_id, parsed, klient, matched, jami, text, ts}
 _pending_orders: dict[str, dict] = {}
+_PENDING_TTL = 600  # 10 minutes
+
+
+def _cleanup_expired():
+    """Remove pending orders older than 10 minutes."""
+    now = time.time()
+    expired = [k for k, v in _pending_orders.items() if now - v.get("ts", 0) > _PENDING_TTL]
+    for k in expired:
+        _pending_orders.pop(k, None)
 
 
 def _fmt(n: float) -> str:
@@ -65,14 +74,26 @@ async def handle_voice_order(update: Update, context: ContextTypes.DEFAULT_TYPE)
         await msg.reply_text("⚠️ Ovoz tanilmadi. Qaytadan urinib ko'ring.")
         return
 
-    # Check if this looks like an order (has shop name + product mentions)
-    # Simple heuristic: at least 2 words and contains a number or quantity word
+    # Check if this looks like an order:
+    # 1) At least 3 words
+    # 2) Contains a number or quantity word
+    # 3) Has a separator pattern (do'kon — tovar) OR parseable structure
     words = text.split()
-    has_qty = any(w.isdigit() or w in ("ta", "dona", "karobka", "ikki", "uch", "besh") for w in words)
+    qty_words = {"ta", "dona", "karobka", "shtuk", "sht", "kg", "pachka",
+                 "ikki", "ikkita", "uch", "uchta", "besh", "beshta",
+                 "to'rt", "olti", "yetti", "sakkiz", "to'qqiz", "o'n",
+                 "bitta", "to'rtta", "oltita", "yettita"}
+    has_qty = any(w.isdigit() for w in words) or any(w.lower() in qty_words for w in words)
+    has_separator = any(sep in text for sep in ("—", "–", "-", ".", ","))
 
     if len(words) < 3 or not has_qty:
-        # Not an order — let normal message handler process it
-        return
+        return  # Not enough structure for an order
+
+    # Quick pre-parse to verify structure before DB calls
+    from shared.services.voice_order_parser import parse_order_text as _pre_parse
+    pre_check = _pre_parse(text)
+    if not pre_check.get("tovarlar") and not has_separator:
+        return  # Parser couldn't extract items and no separator found
 
     try:
         # Get DB connection
@@ -189,12 +210,14 @@ async def handle_voice_order(update: Update, context: ContextTypes.DEFAULT_TYPE)
             "user_id": user_id,
             "parsed": parsed,
             "klient": klient,
-            "matched": matched,  # Bug #9: persist matched IDs
+            "matched": matched,
             "jami": jami,
             "text": text,
+            "ts": time.time(),
         }
 
-        # Clean up old pending orders (keep max 50)
+        # Clean up expired + overflow
+        _cleanup_expired()
         if len(_pending_orders) > 50:
             oldest_keys = list(_pending_orders.keys())[:len(_pending_orders) - 50]
             for k in oldest_keys:

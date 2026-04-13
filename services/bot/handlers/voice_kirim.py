@@ -16,6 +16,7 @@
 """
 from __future__ import annotations
 import logging
+import time
 import uuid
 from decimal import Decimal
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
@@ -34,6 +35,15 @@ log = logging.getLogger(__name__)
 
 # Pending kirim orders keyed by unique token
 _pending_kirims: dict[str, dict] = {}
+_PENDING_TTL = 600  # 10 minutes
+
+
+def _cleanup_expired_kirims():
+    """Remove pending kirims older than 10 minutes."""
+    now = time.time()
+    expired = [k for k, v in _pending_kirims.items() if now - v.get("ts", 0) > _PENDING_TTL]
+    for k in expired:
+        _pending_kirims.pop(k, None)
 
 
 def _fmt(n: float) -> str:
@@ -61,11 +71,21 @@ async def handle_voice_kirim(update: Update, context: ContextTypes.DEFAULT_TYPE)
         await msg.reply_text("⚠️ Ovoz tanilmadi. Qaytadan urinib ko'ring.")
         return
 
-    # Check if this looks like a kirim (has keywords like "keldi", "kirim", "narxi")
+    # Check if this looks like a kirim — require BOTH:
+    # 1) At least one kirim keyword
+    # 2) A quantity indicator (number or qty word)
+    # This prevents "zavoddan bachchamni olib keldim" from triggering
     text_lower = text.lower()
+    words = text.split()
     kirim_keywords = ("keldi", "kelgan", "tushdi", "kirim", "kirimi", "olish narx",
                       "sotish narx", "sotishi", "zavoddan", "fabrika", "kompaniya")
-    has_kirim = any(kw in text_lower for kw in kirim_keywords)
+    has_kirim_kw = any(kw in text_lower for kw in kirim_keywords)
+    has_qty = any(w.isdigit() for w in words) or any(
+        w.lower() in ("ta", "dona", "karobka", "shtuk", "kg", "pachka") for w in words
+    )
+    has_price = any(kw in text_lower for kw in ("narx", "narxi", "ming", "mln", "so'm"))
+    # Require keyword + (quantity OR price mention)
+    has_kirim = has_kirim_kw and (has_qty or has_price)
 
     if not has_kirim:
         return  # Not a kirim message — let other handlers process
@@ -183,9 +203,11 @@ async def handle_voice_kirim(update: Update, context: ContextTypes.DEFAULT_TYPE)
             "matched": matched,
             "jami": jami_kirim,
             "text": text,
+            "ts": time.time(),
         }
 
-        # Clean up old pending kirims
+        # Clean up expired + overflow
+        _cleanup_expired_kirims()
         if len(_pending_kirims) > 50:
             oldest_keys = list(_pending_kirims.keys())[:len(_pending_kirims) - 50]
             for k in oldest_keys:
