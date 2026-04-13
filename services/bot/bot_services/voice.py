@@ -78,7 +78,22 @@ Ovoz: "lobar opaga ikkita kler ottiz ikki ming"
 Natija: Lobar opaga 2 Cler 32000
 
 Ovoz: "sardor akaga beshta persel qirq besh mingdan nasiyaga"
-Natija: Sardor akaga 5 Persil 45000 nasiyaga"""
+Natija: Sardor akaga 5 Persil 45000 nasiyaga
+
+NARX O'RNATISH MISOLLARI:
+Ovoz: "sotish narxi binem katta oltmish besh ming"
+Natija: sotish narxi. Benim katta 65000.
+
+Ovoz: "dolliks sotish narxi yetmish besh ming rozabella arzon sakson olti ming"
+Natija: sotish narxi. Dollux 75000. Rozabella arzon 86000.
+
+KIRIM MISOLLARI:
+Ovoz: "yuz korobka dolliks keldi kirim narxi oltmish toqqiz ming sotish narxi sakson besh ming"
+Natija: Dollux 100 karobka keldi, kirim narxi 69000, sotish narxi 85000.
+
+KLIENT MISOLLARI:
+Ovoz: "yangi klient jasur aka kattaqorgon toqson besh lik ikki yuz ellik toqqiz toqson toqqiz nol nol"
+Natija: Yangi klient Jasur Aka Kattaqo'rg'on 95 lik 259 99 00"""
 
 _PROMPT_USER = (
     "Bu O'zbek tilida savdo haqida gapirilgan ovoz xabari. "
