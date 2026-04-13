@@ -1158,11 +1158,15 @@ def parse_narx_text(text: str) -> dict:
     if not text:
         return {"tovarlar": [], "xato": "Bo'sh matn"}
 
-    # Remove prefix
+    # Remove prefix — including "sotish narxi" at the start
     text_clean = re.sub(
         r'^(?:narx\s*(?:o\'rnat|qo\'y|belgilab?|yangilab?)\s*[:\-—.]?\s*)',
         '', text, flags=re.IGNORECASE,
     ).strip() or text
+    text_clean = re.sub(
+        r'^(?:sotish\s*narxi?\s*[:\-—.]?\s*)',
+        '', text_clean, flags=re.IGNORECASE,
+    ).strip() or text_clean
 
     def _parse_price(s: str) -> int:
         """Parse price: 85 ming → 85000, 1.5 mln → 1500000, 85000 → 85000"""
@@ -1200,10 +1204,10 @@ def parse_narx_text(text: str) -> dict:
             narx = _parse_price(narx_match.group(1))
             nomi = item[:narx_match.start()].strip()
         else:
-            # Try: "TOVAR NARX mingdan" or "TOVAR NARX"
-            m = re.search(r'([\d]+(?:[.,]\d+)?)\s*(?:ming|mln)?\s*(?:dan|ga)?\s*$', item, re.IGNORECASE)
+            # Try: "TOVAR NARX mingdan" or "TOVAR NARX" or "TOVAR 65 000"
+            m = re.search(r'([\d][\d\s.,]*(?:\s*(?:ming|mln))?)\s*(?:dan|ga|so\'m)?\s*$', item, re.IGNORECASE)
             if m:
-                narx = _parse_price(m.group(0))
+                narx = _parse_price(m.group(1))
                 nomi = item[:m.start()].strip()
             else:
                 continue
