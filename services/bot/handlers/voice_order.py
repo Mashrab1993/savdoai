@@ -117,32 +117,41 @@ async def handle_voice_order(update: Update, context: ContextTypes.DEFAULT_TYPE)
             klientlar_list = [dict(r) for r in klientlar]
 
         # Parse the text — try regex first, then Gemini AI
+        tovar_nomlari = [t.get("nomi", "") for t in tovarlar_list]
+        klient_nomlari = [k.get("ism", "") for k in klientlar_list]
+
         parsed = parse_order_text(text)
 
-        if parsed.get("xato") or not parsed.get("tovarlar"):
-            # Regex failed — try Gemini smart parser
+        # If regex failed OR do'kon not found — try Gemini smart parser
+        klient = None
+        if not parsed.get("xato") and parsed.get("do'kon"):
+            klient = fuzzy_match_klient(parsed["do'kon"], klientlar_list)
+
+        if parsed.get("xato") or not parsed.get("tovarlar") or not klient:
+            # Regex failed or klient not matched — try Gemini AI with FULL context
             try:
-                parsed = await smart_parse_with_gemini(
-                    text,
-                    [t.get("nomi", "") for t in tovarlar_list],
-                )
+                parsed = await smart_parse_with_gemini(text, tovar_nomlari)
+                if not parsed.get("xato") and parsed.get("do'kon"):
+                    klient = fuzzy_match_klient(parsed["do'kon"], klientlar_list)
             except Exception as _sp:
                 log.debug("smart parse fallback: %s", _sp)
 
-        if parsed.get("xato"):
+        if parsed.get("xato") or not parsed.get("tovarlar"):
             await msg.reply_text(
-                f"⚠️ Tushunmadim:\n{parsed['xato']}\n\n"
+                f"⚠️ Tushunmadim:\n{parsed.get('xato', 'Tovarlar aniqlanmadi')}\n\n"
                 f"📝 Matn: {text[:200]}\n\n"
                 f"💡 Format: «Do'kon nomi — Tovar1 N ta, Tovar2 M ta»"
             )
             context.user_data["_voice_order_handled"] = True
             return
 
-        # Match do'kon
-        klient = fuzzy_match_klient(parsed["do'kon"], klientlar_list)
+        # Match do'kon (may already be matched above)
+        if not klient and parsed.get("do'kon"):
+            klient = fuzzy_match_klient(parsed["do'kon"], klientlar_list)
+
         if not klient:
             await msg.reply_text(
-                f"⚠️ Do'kon topilmadi: «{parsed['do\'kon']}»\n\n"
+                f"⚠️ Do'kon topilmadi: «{parsed.get('do' + chr(39) + 'kon', '?')}»\n\n"
                 f"💡 DB'dagi klientlardan birini ayting. "
                 f"Masalan: /klientlar buyrug'i bilan ro'yxatni ko'ring."
             )

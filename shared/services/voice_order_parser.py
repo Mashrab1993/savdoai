@@ -893,12 +893,17 @@ async def smart_parse_with_gemini(text: str, tovarlar_nomlari: list[str]) -> dic
         prompt = f"""Sen savdo agenti uchun ovozli buyurtmalarni parse qiluvchi AI'san.
 
 Quyidagi matnni tahlil qil va JSON formatda javob ber:
-- "dokon": do'kon yoki klient nomi
+- "dokon": do'kon yoki klient nomi (BIRINCHI aytilgan ism — ajratuvchi belgi bo'lmasligi mumkin)
 - "tovarlar": [{{"nomi": "tovar nomi", "miqdor": son}}]
 
-MUHIM: Faqat JSON qaytar, boshqa matn qo'shma.
+MUHIM QOIDALAR:
+1. Faqat JSON qaytar, boshqa matn qo'shma
+2. Matn boshidagi ism — bu DO'KON nomi (klient ismi)
+3. Agar ajratuvchi belgi (—, -, .) yo'q bo'lsa ham, birinchi ismni do'kon deb ol
+4. "aka", "opa", "uka" + shahar nomi = do'kon nomi
+5. Masalan: "Jasur aka Kattaqo'rg'on benim katta 11 karobka" → dokon = "Jasur aka Kattaqo'rg'on"
 
-Mavjud tovarlar ro'yxati (fuzzy match qil):
+Mavjud tovarlar ro'yxati:
 {chr(10).join(f'- {n}' for n in tovarlar_nomlari[:50])}
 
 Matn: "{text}"
