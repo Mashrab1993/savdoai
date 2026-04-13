@@ -1007,3 +1007,124 @@ Matn: "{text}"
     except Exception as e:
         log.warning("smart_parse_kirim_with_gemini: %s", e)
         return parse_kirim_text(text)  # fallback to regex
+
+
+# ════════════════════════════════════════════════════════════
+#  KLIENT PARSER — ovozdan yangi klient ma'lumotlarini ajratish
+# ════════════════════════════════════════════════════════════
+
+def parse_klient_text(text: str) -> dict:
+    """
+    Ovozdan klient ma'lumotlarini ajratish.
+
+    Input examples:
+        "Yangi klient Jasur Aka Katakurgon, telefoni 91 542 76 43, Samarqanddan"
+        "Klient qo'sh: Anvar Toshkent 90 123 45 67 kredit limit 50 million"
+        "Jasur Aka, telefon 915427643, manzil Samarqand, kredit 500 million"
+
+    Returns:
+        {
+            "ism": "Jasur Aka Katakurgon",
+            "telefon": "+998915427643",
+            "manzil": "Samarqand",
+            "kredit_limit": 500000000,
+            "xato": None
+        }
+    """
+    text = text.strip()
+    if not text:
+        return {"ism": "", "telefon": "", "manzil": "", "kredit_limit": 0, "xato": "Bo'sh matn"}
+
+    # Remove common prefixes
+    text_clean = re.sub(
+        r'^(?:yangi\s+)?(?:klient|mijoz|do\'kon)\s*(?:qo\'sh|qo\'shish|yaratish)?\s*[:\-—.]?\s*',
+        '', text, flags=re.IGNORECASE,
+    ).strip() or text
+
+    # ── Extract phone number ──
+    telefon = ""
+    # Patterns: +998 91 542 76 43, 998915427643, 91 542 76 43, 915427643
+    phone_patterns = [
+        r'\+?998\s*[\-]?\s*(\d{2})\s*[\-]?\s*(\d{3})\s*[\-]?\s*(\d{2})\s*[\-]?\s*(\d{2})',
+        r'(?:telefon[ia]?\s*(?:raqam[ia]?)?\s*[:=]?\s*)(\d{2})\s*[\-]?\s*(\d{3})\s*[\-]?\s*(\d{2})\s*[\-]?\s*(\d{2})',
+        r'\b(\d{2})\s+(\d{3})\s+(\d{2})\s+(\d{2})\b',
+        r'\b(\d{9})\b',
+    ]
+    for pat in phone_patterns:
+        m = re.search(pat, text_clean)
+        if m:
+            groups = m.groups()
+            if len(groups) == 1 and len(groups[0]) == 9:
+                digits = groups[0]
+            else:
+                digits = ''.join(groups)
+            if len(digits) == 9 and digits[0] in '3456789':
+                telefon = f"+998{digits}"
+                # Remove phone from text for name extraction
+                text_clean = text_clean[:m.start()] + text_clean[m.end():]
+                break
+
+    # ── Extract kredit limit ──
+    kredit_limit = 0
+    kredit_patterns = [
+        (r'kredit\s*(?:limit[ia]?)?\s*[:=]?\s*([\d.,]+)\s*(?:mln|million|milli[oa]n)', 1_000_000),
+        (r'kredit\s*(?:limit[ia]?)?\s*[:=]?\s*([\d.,]+)\s*(?:mlrd|milliard)', 1_000_000_000),
+        (r'kredit\s*(?:limit[ia]?)?\s*[:=]?\s*([\d.,]+)\s*ming', 1_000),
+        (r'kredit\s*(?:limit[ia]?)?\s*[:=]?\s*([\d\s.,]+)', 1),
+        (r'limit\s*[:=]?\s*([\d.,]+)\s*(?:mln|million|milli[oa]n)', 1_000_000),
+        (r'limit\s*[:=]?\s*([\d.,]+)\s*ming', 1_000),
+    ]
+    for pat, mult in kredit_patterns:
+        m = re.search(pat, text_clean, re.IGNORECASE)
+        if m:
+            try:
+                val = float(m.group(1).replace(',', '.').replace(' ', ''))
+                kredit_limit = int(val * mult)
+                text_clean = text_clean[:m.start()] + text_clean[m.end():]
+                break
+            except (ValueError, TypeError):
+                pass
+
+    # ── Extract manzil (address) ──
+    manzil = ""
+    # Patterns: "Samarqanddan", "manzil Samarqand", "manzili Toshkent"
+    manzil_patterns = [
+        r'(?:manzil[ia]?\s*[:=]?\s*)([A-ZА-ЯЎҚҒҲa-zа-яўқғҳ\s]+?)(?:\s*[,.]|\s*kredit|\s*telefon|\s*$)',
+        r'(?:shahar[ia]?\s*[:=]?\s*)([A-ZА-ЯЎҚҒҲa-zа-яўқғҳ\s]+?)(?:\s*[,.]|\s*kredit|\s*telefon|\s*$)',
+        r'([A-ZА-ЯЎҚҒҲa-zа-яўқғҳ]+)(?:dan|lik)\b',
+    ]
+    for pat in manzil_patterns:
+        m = re.search(pat, text_clean, re.IGNORECASE)
+        if m:
+            candidate = m.group(1).strip()
+            # Known cities/regions
+            known = {"samarqand", "toshkent", "buxoro", "andijon", "farg'ona", "namangan",
+                     "qashqadaryo", "surxondaryo", "jizzax", "sirdaryo", "navoiy", "xorazm",
+                     "nukus", "qarshi", "termiz", "kokand", "marg'ilon", "katakurgon",
+                     "urgench", "guliston", "denov", "shahrisabz", "urgut", "kattaqo'rg'on"}
+            clean = re.sub(r'(?:dan|lik)$', '', candidate, flags=re.IGNORECASE).strip()
+            if clean.lower() in known or len(clean) > 3:
+                manzil = clean
+                text_clean = text_clean[:m.start()] + text_clean[m.end():]
+                break
+
+    # ── Extract name (what's left) ──
+    # Remove noise words
+    text_clean = re.sub(
+        r'\b(?:telefon[ia]?\s*(?:raqam)?\s*[:=]?|manzil[ia]?\s*[:=]?|kredit\s*limit[ia]?\s*[:=]?|yangi|klient|mijoz|qo\'sh)\b',
+        '', text_clean, flags=re.IGNORECASE,
+    )
+    # Clean up
+    ism = re.sub(r'[,.:;\-—]+', ' ', text_clean).strip()
+    ism = re.sub(r'\s+', ' ', ism).strip()
+    # Remove trailing/leading noise
+    ism = re.sub(r'^\s*(?:dan|ga|ning|ni)\s+', '', ism, flags=re.IGNORECASE).strip()
+    ism = re.sub(r'\s+(?:dan|ga|ning|ni)\s*$', '', ism, flags=re.IGNORECASE).strip()
+
+    return {
+        "ism": ism,
+        "telefon": telefon,
+        "manzil": manzil,
+        "kredit_limit": kredit_limit,
+        "xato": None if ism else "Klient ismi aniqlanmadi",
+    }

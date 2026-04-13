@@ -491,14 +491,18 @@ async def ovoz_qabul(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
         except Exception as _pi:
             log.debug("Print intent (ovoz): %s", _pi)
 
-        # ═══ v25.5/25.6 VOICE ORDER + KIRIM ═══
+        # ═══ v25.6 VOICE: KLIENT / KIRIM / ORDER ═══
         try:
             ctx.user_data["last_transcription"] = matn
-
-            # Detect kirim vs order by keywords + structure
-            # Kirim requires: keyword AND (qty OR price mention)
             matn_lower = matn.lower()
             matn_words = matn.split()
+
+            # 1. Detect KLIENT creation
+            klient_kw = ("yangi klient", "klient qo'sh", "mijoz qo'sh",
+                         "yangi mijoz", "yangi do'kon", "do'kon qo'sh")
+            is_klient = any(kw in matn_lower for kw in klient_kw)
+
+            # 2. Detect KIRIM (requires keyword + qty/price)
             kirim_kw = ("keldi", "kelgan", "tushdi", "kirim", "kirimi",
                         "olish narx", "zavoddan", "fabrika", "kompaniyasidan")
             has_kirim_kw = any(kw in matn_lower for kw in kirim_kw)
@@ -506,9 +510,12 @@ async def ovoz_qabul(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
                 any(w.isdigit() for w in matn_words)
                 or any(kw in matn_lower for kw in ("narx", "ming", "mln", "ta ", "dona"))
             )
-            is_kirim = has_kirim_kw and has_qty_or_price
+            is_kirim = has_kirim_kw and has_qty_or_price and not is_klient
 
-            if is_kirim:
+            if is_klient:
+                from services.bot.handlers.voice_klient import handle_voice_klient
+                await handle_voice_klient(update, ctx)
+            elif is_kirim:
                 from services.bot.handlers.voice_kirim import handle_voice_kirim
                 await handle_voice_kirim(update, ctx)
             else:
@@ -519,7 +526,7 @@ async def ovoz_qabul(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
                 del ctx.user_data["_voice_order_handled"]
                 return
         except Exception as _vo:
-            log.debug("Voice order/kirim: %s", _vo)
+            log.debug("Voice order/kirim/klient: %s", _vo)
 
         await _qayta_ishlash(update,ctx,matn)
     except Exception as xato:
@@ -1269,6 +1276,14 @@ def ilovani_qur(conf:Config) -> Application:
         log.info("✅ Voice Kirim callback handler ulandi")
     except Exception as e:
         log.warning("⚠️ Voice Kirim handler yuklanmadi: %s", e)
+
+    # ═══ v25.6 VOICE KLIENT — ovozdan yangi klient qo'shish ═══
+    try:
+        from services.bot.handlers.voice_klient import handle_voice_klient_callback
+        app.add_handler(CallbackQueryHandler(handle_voice_klient_callback, pattern=r"^voice_klient_"))
+        log.info("✅ Voice Klient callback handler ulandi")
+    except Exception as e:
+        log.warning("⚠️ Voice Klient handler yuklanmadi: %s", e)
 
     # ═══ v25.3.2 KUCHLI HANDLERLAR — Qarz eslatma, KPI, Loyalty ═══
     from services.bot.handlers.yangi import register_yangi_handlers
