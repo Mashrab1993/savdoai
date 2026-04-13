@@ -449,6 +449,369 @@ async def create_order_from_voice(
 
 
 # ════════════════════════════════════════════════════════════
+#  KIRIM TEXT PARSER — ovozdan kirim (tushum) ma'lumotlarini ajratish
+# ════════════════════════════════════════════════════════════
+
+def parse_kirim_text(text: str) -> dict:
+    """
+    Distributor ovozidan keyin Gemini STT bergan matnni parse qilish.
+    KIRIM = zavoddan/yetkazuvchidan tovar kelishi.
+
+    Input example:
+        "Zavoddan Dollux 100 ta keldi, kirim narxi 69 ming, sotuv narxi 85 ming.
+         Rosabella qizil 50 dona, kirimi 45 ming, sotishi 62 ming."
+
+    Returns:
+        {
+            "yetkazuvchi": "Zavod",
+            "tovarlar": [
+                {"nomi": "Dollux", "miqdor": 100, "kirim_narxi": 69000, "sotish_narxi": 85000},
+                {"nomi": "Rosabella qizil", "miqdor": 50, "kirim_narxi": 45000, "sotish_narxi": 62000},
+            ],
+            "xato": None
+        }
+    """
+    text = text.strip()
+    if not text:
+        return {"yetkazuvchi": "", "tovarlar": [], "xato": "Bo'sh matn"}
+
+    # O'zbek son nomlari → raqam (same as parse_order_text)
+    SON_MAP = {
+        "bir": 1, "bitta": 1, "ikki": 2, "ikkita": 2,
+        "uch": 3, "uchta": 3, "to'rt": 4, "to'rtta": 4, "tort": 4,
+        "besh": 5, "beshta": 5, "olti": 6, "oltita": 6,
+        "yetti": 7, "yettita": 7, "sakkiz": 8, "sakkizta": 8,
+        "to'qqiz": 9, "to'qqizta": 9, "o'n": 10, "o'nta": 10,
+        "o'n bir": 11, "o'n ikki": 12, "o'n besh": 15,
+        "yigirma": 20, "o'ttiz": 30, "qirq": 40, "ellik": 50,
+        "yuz": 100, "ikki yuz": 200, "besh yuz": 500, "ming": 1000,
+    }
+
+    def _parse_narx(s: str) -> int | None:
+        """
+        O'zbek narx formatlarini parse qilish:
+            "69 ming" → 69000
+            "1.5 mln" → 1500000
+            "45000" → 45000
+            "69000 so'm" → 69000
+            "ellik ming" → 50000
+        """
+        s = s.strip().lower()
+        s = re.sub(r"\s*so'm\s*$", "", s)
+
+        # "N.M mln" yoki "N mln"
+        m = re.match(r'^([\d]+(?:[.,]\d+)?)\s*mln', s)
+        if m:
+            return int(float(m.group(1).replace(",", ".")) * 1_000_000)
+
+        # "N.M ming" yoki "N ming"
+        m = re.match(r'^([\d]+(?:[.,]\d+)?)\s*ming', s)
+        if m:
+            return int(float(m.group(1).replace(",", ".")) * 1_000)
+
+        # Pure number: "45000", "69 000"
+        digits = re.sub(r'\s+', '', s)
+        if digits.isdigit():
+            return int(digits)
+
+        # O'zbek son + "ming": "ellik ming", "yuz ming"
+        for word, num in sorted(SON_MAP.items(), key=lambda x: -len(x[0])):
+            pat = rf'^{re.escape(word)}\s+ming'
+            if re.match(pat, s):
+                return num * 1000
+
+        # Single O'zbek number word (as price, rare but possible)
+        for word, num in sorted(SON_MAP.items(), key=lambda x: -len(x[0])):
+            if s == word:
+                return num
+
+        return None
+
+    # Step 1: Yetkazuvchi (supplier) nomini ajratish
+    # Patterns: "Zavoddan ...", "Coca-Cola kompaniyasidan ..."
+    yetkazuvchi = ""
+    work_text = text
+
+    m_supplier = re.match(
+        r'^(.+?)\s*(?:dan|kompaniyasidan|fabrikasidan)\s+',
+        text, re.IGNORECASE,
+    )
+    if m_supplier:
+        yetkazuvchi = m_supplier.group(1).strip()
+        work_text = text[m_supplier.end():].strip()
+
+    # Step 2: Tovar bloklarini ajratish
+    # Split by period (but NOT decimal dot like "1.5"), "keyin", "yana"
+    items_raw = re.split(r'(?<!\d)\.(?!\d)|\bkeyin\b|\byana\b', work_text)
+
+    # Expand comma splits
+    expanded = []
+    for chunk in items_raw:
+        parts = re.split(r',\s*(?=[A-ZА-ЯЎҚҒҲa-zа-яўқғҳ])', chunk)
+        expanded.extend(parts)
+    items_raw = expanded
+
+    # Step 3: Parse each item block for nomi, miqdor, kirim_narxi, sotish_narxi
+    tovarlar = []
+
+    # Regex for quantity: "100 ta keldi", "50 dona", etc.
+    QTY_RE = re.compile(
+        r'(\d+)\s*(?:ta|dona|karobka|shtuk|sht|kg|kilogramm?|pachka|quti|korobka|bl[oa]k)?\s*'
+        r'(?:keldi|kelgan|tushdi|tushgan)?',
+        re.IGNORECASE,
+    )
+
+    # Regex for prices — captures "kirim narxi 69 ming" style
+    KIRIM_NARX_RE = re.compile(
+        r'(?:kirim\s*(?:narxi|narx)|kirimi|olish\s*narxi|olish)\s*'
+        r'([\d\s.,]+(?:\s*(?:ming|mln|so\'m))?)',
+        re.IGNORECASE,
+    )
+    SOTISH_NARX_RE = re.compile(
+        r'(?:sot(?:ish|uv)\s*narxi|sotishi|sotish)\s*'
+        r'([\d\s.,]+(?:\s*(?:ming|mln|so\'m))?)',
+        re.IGNORECASE,
+    )
+
+    # We may get items split across multiple comma-segments.
+    # Strategy: accumulate per-item. A new item starts when we see
+    # a new product name + quantity. Price segments attach to the
+    # most recent item.
+
+    pending_item = None  # {"nomi": ..., "miqdor": ..., ...}
+
+    for chunk in items_raw:
+        chunk = chunk.strip()
+        if not chunk or len(chunk) < 3:
+            continue
+
+        # Sub-split by comma for intra-item price segments
+        sub_parts = re.split(r',\s*', chunk)
+
+        for part in sub_parts:
+            part = part.strip()
+            if not part:
+                continue
+
+            # Check if this part is a price segment (no product name)
+            kirim_m = KIRIM_NARX_RE.search(part)
+            sotish_m = SOTISH_NARX_RE.search(part)
+
+            if kirim_m and pending_item:
+                narx = _parse_narx(kirim_m.group(1))
+                if narx:
+                    pending_item["kirim_narxi"] = narx
+
+            if sotish_m and pending_item:
+                narx = _parse_narx(sotish_m.group(1))
+                if narx:
+                    pending_item["sotish_narxi"] = narx
+
+            # If we already got prices, skip further name parsing
+            if kirim_m or sotish_m:
+                continue
+
+            # Try to parse as a new item (name + quantity)
+            qty_m = QTY_RE.search(part)
+            if qty_m:
+                # Save previous pending item
+                if pending_item and pending_item.get("nomi"):
+                    tovarlar.append(pending_item)
+
+                miqdor = int(qty_m.group(1))
+                nomi = part[:qty_m.start()].strip()
+
+                # Clean up name
+                nomi = re.sub(r'\s+', ' ', nomi).strip()
+                nomi = re.sub(r'\s+(dan|lik|ning|ga|ni)$', '', nomi, flags=re.IGNORECASE)
+
+                if nomi and len(nomi) >= 2:
+                    pending_item = {
+                        "nomi": nomi,
+                        "miqdor": miqdor,
+                        "kirim_narxi": 0,
+                        "sotish_narxi": 0,
+                    }
+                else:
+                    pending_item = None
+            else:
+                # Try O'zbek son nomlari for quantity
+                found_son = False
+                for word, num in sorted(SON_MAP.items(), key=lambda x: -len(x[0])):
+                    pattern = (
+                        rf'\b{re.escape(word)}\b\s*'
+                        r'(?:ta|dona|karobka|shtuk|kg|kilogramm?)?\s*'
+                        r'(?:keldi|kelgan|tushdi|tushgan)?'
+                    )
+                    m2 = re.search(pattern, part, re.IGNORECASE)
+                    if m2:
+                        if pending_item and pending_item.get("nomi"):
+                            tovarlar.append(pending_item)
+
+                        nomi = part[:m2.start()].strip()
+                        nomi = re.sub(r'\s+', ' ', nomi).strip()
+                        nomi = re.sub(r'\s+(dan|lik|ning|ga|ni)$', '', nomi, flags=re.IGNORECASE)
+
+                        if nomi and len(nomi) >= 2:
+                            pending_item = {
+                                "nomi": nomi,
+                                "miqdor": num,
+                                "kirim_narxi": 0,
+                                "sotish_narxi": 0,
+                            }
+                        else:
+                            pending_item = None
+                        found_son = True
+                        break
+
+                if not found_son:
+                    # This part might just be a product name without qty yet
+                    # or noise — skip
+                    pass
+
+    # Don't forget the last pending item
+    if pending_item and pending_item.get("nomi"):
+        tovarlar.append(pending_item)
+
+    return {
+        "yetkazuvchi": yetkazuvchi,
+        "tovarlar": tovarlar,
+        "xato": None if tovarlar else "Tovarlar aniqlanmadi",
+    }
+
+
+# ════════════════════════════════════════════════════════════
+#  KIRIM CREATION — DB'da kirim yozuvlari yaratish
+# ════════════════════════════════════════════════════════════
+
+async def create_kirim_from_voice(
+    conn,
+    uid: int,
+    parsed: dict,
+    db_tovarlar: list[dict],
+    *,
+    pre_matched: list[dict] | None = None,
+) -> dict:
+    """
+    Parse qilingan kirim matnidan kirimlar yozuvlari yaratish
+    va tovarlar qoldiqlarini oshirish.
+
+    Args:
+        conn: asyncpg connection
+        uid: user_id
+        parsed: parse_kirim_text() natijasi
+        db_tovarlar: DB'dagi barcha tovarlar
+        pre_matched: Agar tasdiqlash bosqichidan kelsa, tayyor items
+
+    Returns:
+        {
+            "success": True/False,
+            "kirim_ids": [1, 2, ...],
+            "yetkazuvchi": "Zavod",
+            "tovarlar_soni": 2,
+            "jami_summa": Decimal("11850000"),
+            "xatolar": [...],
+            "matched_items": [{nomi, miqdor, kirim_narxi, sotish_narxi, jami}]
+        }
+    """
+    result = {
+        "success": False,
+        "kirim_ids": [],
+        "yetkazuvchi": parsed.get("yetkazuvchi", ""),
+        "tovarlar_soni": 0,
+        "jami_summa": Decimal("0"),
+        "xatolar": [],
+        "matched_items": [],
+    }
+
+    # 1. Match tovarlar (or use pre-matched from confirmation)
+    if pre_matched:
+        matched = pre_matched
+    else:
+        matched = []
+        for t in parsed["tovarlar"]:
+            tv = fuzzy_match_tovar(t["nomi"], db_tovarlar)
+            if tv:
+                matched.append({
+                    "tovar_id": tv["id"],
+                    "nomi": tv["nomi"],
+                    "miqdor": t["miqdor"],
+                    "kirim_narxi": _to_decimal(t.get("kirim_narxi")),
+                    "sotish_narxi": _to_decimal(t.get("sotish_narxi")),
+                    "birlik": tv.get("birlik", "dona"),
+                    "kategoriya": tv.get("kategoriya", "Boshqa"),
+                })
+            else:
+                result["xatolar"].append(f"Tovar topilmadi: '{t['nomi']}'")
+
+    if not matched:
+        result["xatolar"].append("Birorta ham tovar mos kelmadi")
+        return result
+
+    # Ensure Decimal throughout
+    for m in matched:
+        m["kirim_narxi"] = _to_decimal(m["kirim_narxi"])
+        m["sotish_narxi"] = _to_decimal(m["sotish_narxi"])
+        m["jami"] = Decimal(str(m["miqdor"])) * m["kirim_narxi"]
+
+    jami = sum(m["jami"] for m in matched)
+    manba = parsed.get("yetkazuvchi") or "Ovozli kirim"
+
+    # 2. Create kirimlar records — ALL inside a transaction
+    try:
+        async with conn.transaction():
+            # SET app.uid with parameterized query (no SQL injection)
+            await conn.execute("SELECT set_config('app.uid', $1::text, true)", str(uid))
+
+            kirim_ids = []
+            for m in matched:
+                # 2a. INSERT kirim record
+                kirim_id = await conn.fetchval("""
+                    INSERT INTO kirimlar
+                        (user_id, tovar_id, tovar_nomi, kategoriya,
+                         miqdor, birlik, narx, jami, manba, izoh, sana)
+                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW())
+                    RETURNING id
+                """,
+                    uid, m["tovar_id"], m["nomi"], m["kategoriya"],
+                    Decimal(str(m["miqdor"])), m["birlik"],
+                    m["kirim_narxi"], m["jami"],
+                    manba, "Ovozli kirim orqali",
+                )
+                kirim_ids.append(kirim_id)
+
+                # 2b. UPDATE tovar: qoldiq += miqdor, olish_narxi, sotish_narxi
+                update_parts = ["qoldiq = qoldiq + $1"]
+                update_params: list = [Decimal(str(m["miqdor"])), m["tovar_id"], uid]
+
+                if m["kirim_narxi"] > 0:
+                    update_parts.append(f"olish_narxi = ${len(update_params) + 1}")
+                    update_params.append(m["kirim_narxi"])
+
+                if m["sotish_narxi"] > 0:
+                    update_parts.append(f"sotish_narxi = ${len(update_params) + 1}")
+                    update_params.append(m["sotish_narxi"])
+
+                await conn.execute(
+                    f"UPDATE tovarlar SET {', '.join(update_parts)} "
+                    f"WHERE id = $2 AND user_id = $3",
+                    *update_params,
+                )
+
+        result["success"] = True
+        result["kirim_ids"] = kirim_ids
+        result["tovarlar_soni"] = len(matched)
+        result["jami_summa"] = jami
+        result["matched_items"] = matched
+
+    except Exception as e:
+        log.error("voice kirim create: %s", e)
+        result["xatolar"].append(f"DB xato: {str(e)[:100]}")
+
+    return result
+
+
+# ════════════════════════════════════════════════════════════
 #  GEMINI SMART PARSER — murakkab ovozlar uchun AI fallback
 # ════════════════════════════════════════════════════════════
 
@@ -535,3 +898,112 @@ Matn: "{text}"
     except Exception as e:
         log.warning("smart_parse_with_gemini: %s", e)
         return parse_order_text(text)  # fallback to regex
+
+
+# ════════════════════════════════════════════════════════════
+#  GEMINI SMART KIRIM PARSER — murakkab ovozli kirimlar uchun
+# ════════════════════════════════════════════════════════════
+
+async def smart_parse_kirim_with_gemini(text: str, tovarlar_nomlari: list[str]) -> dict:
+    """
+    Agar oddiy regex parser ishlamasa — Gemini'dan kirim uchun yordam.
+
+    Gemini'ga tovarlar ro'yxatini berish va kirim matnini structured
+    JSON ga parse qilishni so'rash. Bu murakkab gaplar uchun:
+    "Zavoddan Dollux yuzta keldi kirimi oltmish to'qqiz ming sotishi
+    sakson besh ming keyin yana Rosabella qizil elliktasini kirimi
+    qirq besh mingdan sotishi oltmish ikki mingdan qo'shing"
+
+    Returns same shape as parse_kirim_text().
+    """
+    import os
+    try:
+        import google.generativeai as genai
+        key = os.getenv("GEMINI_API_KEY", "")
+        if not key:
+            return parse_kirim_text(text)  # fallback to regex
+
+        genai.configure(api_key=key)
+        model = genai.GenerativeModel("gemini-2.5-flash")
+
+        prompt = f"""Sen distributor uchun ovozli KIRIM (tovar tushumi) ma'lumotlarini parse qiluvchi AI'san.
+
+Kirim = zavoddan/yetkazuvchidan tovar kelishi. Har bir tovar uchun MIQDOR, KIRIM NARXI (olish), SOTISH NARXI bo'lishi mumkin.
+
+Quyidagi matnni tahlil qil va JSON formatda javob ber:
+- "yetkazuvchi": yetkazuvchi/zavod nomi (agar aytilgan bo'lsa, aks holda "")
+- "tovarlar": [{{"nomi": "tovar nomi", "miqdor": son, "kirim_narxi": son, "sotish_narxi": son}}]
+
+MUHIM:
+- Narxlar SO'M da bo'lsin (69 ming = 69000, 1.5 mln = 1500000)
+- Agar narx aytilmagan bo'lsa, 0 qo'y
+- Faqat JSON qaytar, boshqa matn qo'shma
+
+Mavjud tovarlar ro'yxati (fuzzy match qil):
+{chr(10).join(f'- {n}' for n in tovarlar_nomlari[:50])}
+
+Matn: "{text}"
+"""
+        resp = model.generate_content(prompt)
+        raw = resp.text.strip()
+
+        # Extract JSON from response
+        import json
+        if raw.startswith("{"):
+            data = json.loads(raw)
+        elif "{" in raw:
+            start = raw.index("{")
+            end = raw.rindex("}") + 1
+            data = json.loads(raw[start:end])
+        else:
+            return parse_kirim_text(text)
+
+        # Validate and sanitize Gemini output
+        tovarlar_parsed = []
+        for t in data.get("tovarlar", []):
+            nomi = (t.get("nomi") or "").strip()
+            if not nomi or len(nomi) < 2:
+                continue
+            try:
+                miqdor = int(t.get("miqdor", 1))
+            except (ValueError, TypeError):
+                miqdor = 1
+            miqdor = max(1, min(miqdor, 99999))
+
+            try:
+                kirim_narxi = int(t.get("kirim_narxi", 0))
+            except (ValueError, TypeError):
+                kirim_narxi = 0
+
+            try:
+                sotish_narxi = int(t.get("sotish_narxi", 0))
+            except (ValueError, TypeError):
+                sotish_narxi = 0
+
+            # Check nomi is plausible
+            nomi_lower = nomi.lower()
+            has_match = any(
+                nomi_lower in tn.lower() or tn.lower() in nomi_lower
+                for tn in tovarlar_nomlari
+            )
+            if not has_match:
+                log.debug("gemini kirim: unknown tovar: %s", nomi)
+
+            tovarlar_parsed.append({
+                "nomi": nomi,
+                "miqdor": miqdor,
+                "kirim_narxi": kirim_narxi,
+                "sotish_narxi": sotish_narxi,
+            })
+
+        yetkazuvchi = (data.get("yetkazuvchi") or "").strip()
+
+        return {
+            "yetkazuvchi": yetkazuvchi,
+            "tovarlar": tovarlar_parsed,
+            "xato": None if tovarlar_parsed else "Gemini kirim parse natijasi bo'sh",
+        }
+
+    except Exception as e:
+        log.warning("smart_parse_kirim_with_gemini: %s", e)
+        return parse_kirim_text(text)  # fallback to regex

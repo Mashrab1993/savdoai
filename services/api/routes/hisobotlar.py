@@ -110,7 +110,7 @@ async def hisobot_foyda(kunlar: int = 30, uid: int = Depends(get_uid)):
         xarajat = await c.fetchval("""
             SELECT COALESCE(SUM(summa), 0)
             FROM xarajatlar
-            WHERE admin_uid = $1
+            WHERE user_id = $1
               AND NOT bekor_qilingan
               AND sana >= NOW() - make_interval(days => $2)
         """, uid, kunlar)
@@ -361,7 +361,7 @@ async def hisobot_pnl(kunlar: int = 30, uid: int = Depends(get_uid)):
         xarajat = await c.fetchval("""
             SELECT COALESCE(SUM(summa), 0)
             FROM xarajatlar
-            WHERE admin_uid = $1
+            WHERE user_id = $1
               AND sana >= NOW() - make_interval(days => $2)
               AND COALESCE(bekor_qilingan, FALSE) = FALSE
         """, uid, kunlar) or 0
@@ -383,7 +383,7 @@ async def hisobot_pnl(kunlar: int = 30, uid: int = Depends(get_uid)):
                     COALESCE(kategoriya_nomi, 'Boshqa') AS nomi,
                     SUM(summa)                          AS summa
                 FROM xarajatlar
-                WHERE admin_uid = $1
+                WHERE user_id = $1
                   AND sana >= NOW() - make_interval(days => $2)
                   AND COALESCE(bekor_qilingan, FALSE) = FALSE
                 GROUP BY kategoriya_nomi
@@ -410,7 +410,7 @@ async def hisobot_pnl(kunlar: int = 30, uid: int = Depends(get_uid)):
         prev_xarajat = await c.fetchval("""
             SELECT COALESCE(SUM(summa), 0)
             FROM xarajatlar
-            WHERE admin_uid = $1
+            WHERE user_id = $1
               AND sana >= NOW() - make_interval(days => $2)
               AND sana < NOW() - make_interval(days => $3)
               AND COALESCE(bekor_qilingan, FALSE) = FALSE

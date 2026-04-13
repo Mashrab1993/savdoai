@@ -491,18 +491,28 @@ async def ovoz_qabul(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
         except Exception as _pi:
             log.debug("Print intent (ovoz): %s", _pi)
 
-        # ═══ v25.5 VOICE ORDER — avtomatik zakaz ═══
+        # ═══ v25.5/25.6 VOICE ORDER + KIRIM ═══
         try:
             ctx.user_data["last_transcription"] = matn
-            from services.bot.handlers.voice_order import handle_voice_order
-            await handle_voice_order(update, ctx)
-            # If voice_order handled it, it replied. If not (not an order),
-            # fall through to normal processing below.
+
+            # Detect kirim vs order by keywords
+            matn_lower = matn.lower()
+            kirim_kw = ("keldi", "kelgan", "tushdi", "kirim", "kirimi",
+                        "olish narx", "zavoddan", "fabrika", "kompaniyasidan")
+            is_kirim = any(kw in matn_lower for kw in kirim_kw)
+
+            if is_kirim:
+                from services.bot.handlers.voice_kirim import handle_voice_kirim
+                await handle_voice_kirim(update, ctx)
+            else:
+                from services.bot.handlers.voice_order import handle_voice_order
+                await handle_voice_order(update, ctx)
+
             if ctx.user_data.get("_voice_order_handled"):
                 del ctx.user_data["_voice_order_handled"]
                 return
         except Exception as _vo:
-            log.debug("Voice order: %s", _vo)
+            log.debug("Voice order/kirim: %s", _vo)
 
         await _qayta_ishlash(update,ctx,matn)
     except Exception as xato:
@@ -1244,6 +1254,14 @@ def ilovani_qur(conf:Config) -> Application:
         log.info("✅ Voice Order callback handler ulandi")
     except Exception as e:
         log.warning("⚠️ Voice Order handler yuklanmadi: %s", e)
+
+    # ═══ v25.6 VOICE KIRIM — ovozdan kirim (zavoddan yuk) ═══
+    try:
+        from services.bot.handlers.voice_kirim import handle_voice_kirim_callback
+        app.add_handler(CallbackQueryHandler(handle_voice_kirim_callback, pattern=r"^voice_kirim_"))
+        log.info("✅ Voice Kirim callback handler ulandi")
+    except Exception as e:
+        log.warning("⚠️ Voice Kirim handler yuklanmadi: %s", e)
 
     # ═══ v25.3.2 KUCHLI HANDLERLAR — Qarz eslatma, KPI, Loyalty ═══
     from services.bot.handlers.yangi import register_yangi_handlers

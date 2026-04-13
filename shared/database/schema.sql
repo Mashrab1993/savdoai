@@ -989,3 +989,63 @@ CREATE TABLE IF NOT EXISTS chegirma_qoidalar (
 CREATE INDEX IF NOT EXISTS idx_cheg_uid ON chegirma_qoidalar(user_id, faol);
 SELECT enable_rls('chegirma_qoidalar');
 
+-- ═══════════════════════════════════════════════════════════════
+--  v25.6 YANGI JADVALLAR: NARX TURLAR, OMBOR QOLDIQ, KLIENT KAT, WEBHOOKLAR
+-- ═══════════════════════════════════════════════════════════════
+
+-- Narx turlari (optom, chakana, VIP va h.k.)
+CREATE TABLE IF NOT EXISTS narx_turlar (
+    id          SERIAL      PRIMARY KEY,
+    user_id     BIGINT      NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    nomi        TEXT        NOT NULL,
+    foiz        NUMERIC     NOT NULL DEFAULT 0,
+    faol        BOOLEAN     NOT NULL DEFAULT TRUE
+);
+CREATE INDEX IF NOT EXISTS idx_narx_turlar_uid ON narx_turlar(user_id);
+ALTER TABLE narx_turlar ENABLE ROW LEVEL SECURITY;
+CREATE POLICY narx_turlar_iso ON narx_turlar
+    FOR ALL USING (user_id = current_setting('app.uid')::bigint);
+
+-- Ombor qoldiqlari
+CREATE TABLE IF NOT EXISTS ombor_qoldiq (
+    id              SERIAL      PRIMARY KEY,
+    user_id         BIGINT      NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    tovar_id        INT         NOT NULL REFERENCES tovarlar(id) ON DELETE CASCADE,
+    ombor_id        INT,
+    miqdor          NUMERIC     NOT NULL DEFAULT 0,
+    yangilangan     TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_ombor_qoldiq_uid ON ombor_qoldiq(user_id);
+CREATE INDEX IF NOT EXISTS idx_ombor_qoldiq_tovar ON ombor_qoldiq(tovar_id);
+ALTER TABLE ombor_qoldiq ENABLE ROW LEVEL SECURITY;
+CREATE POLICY ombor_qoldiq_iso ON ombor_qoldiq
+    FOR ALL USING (user_id = current_setting('app.uid')::bigint);
+
+-- Klient kategoriyalari
+CREATE TABLE IF NOT EXISTS klient_kategoriyalar (
+    id          SERIAL      PRIMARY KEY,
+    user_id     BIGINT      NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    nomi        TEXT        NOT NULL,
+    rang        TEXT        NOT NULL DEFAULT '#3B82F6',
+    tartib      INT         NOT NULL DEFAULT 0
+);
+CREATE INDEX IF NOT EXISTS idx_klient_kat_uid ON klient_kategoriyalar(user_id);
+ALTER TABLE klient_kategoriyalar ENABLE ROW LEVEL SECURITY;
+CREATE POLICY klient_kategoriyalar_iso ON klient_kategoriyalar
+    FOR ALL USING (user_id = current_setting('app.uid')::bigint);
+
+-- Webhooklar (tashqi integratsiyalar uchun)
+CREATE TABLE IF NOT EXISTS webhooklar (
+    id          SERIAL      PRIMARY KEY,
+    user_id     BIGINT      NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    url         TEXT        NOT NULL,
+    event_type  TEXT        NOT NULL,
+    faol        BOOLEAN     NOT NULL DEFAULT TRUE,
+    secret      TEXT,
+    yaratilgan  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_webhooklar_uid ON webhooklar(user_id);
+ALTER TABLE webhooklar ENABLE ROW LEVEL SECURITY;
+CREATE POLICY webhooklar_iso ON webhooklar
+    FOR ALL USING (user_id = current_setting('app.uid')::bigint);
+
