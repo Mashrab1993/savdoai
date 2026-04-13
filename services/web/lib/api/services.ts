@@ -873,6 +873,58 @@ export const sozlamalarService = {
   remove: (jadval: string, id: number) => api.delete(`/api/v1/sozlamalar/${jadval}/${id}`),
 }
 
+// ── Van Selling Kunlik Hisobot ───────────────────────────────────────────────
+export const vanSellingService = {
+  kunlik: (sana?: string) => {
+    const q = sana ? `?sana=${sana}` : ""
+    return api.get<{
+      sana: string
+      agentlar: Array<{
+        agent_id: number; agent_ismi: string
+        vizitlar_soni: number; buyurtmalar_soni: number
+        jami_sotuv: number; jami_foyda: number
+        naqd_tulangan: number; qarz_berilgan: number
+        tovarlar_soni: number; yangi_klientlar: number
+        oxirgi_faollik: string
+      }>
+      jami: { vizitlar: number; buyurtmalar: number; sotuv: number; foyda: number }
+    }>(`/api/v1/hisobot/van-selling-kunlik${q}`)
+  },
+}
+
+// ── Stock Forecast (Tavsiya qoldiq) ─────────────────────────────────────────
+export interface StockForecastItem {
+  id: number
+  nomi: string
+  kategoriya: string
+  birlik: string
+  qoldiq: number
+  sotish_narxi: number
+  olish_narxi: number
+  jami_sotilgan: number
+  sotuv_kunlari: number
+  kunlik_sotuv: number
+  necha_kunga_yetadi: number
+  tavsiya_6_kun: number
+  tavsiya_10_kun: number
+  tavsiya_30_kun: number
+  holat: "tugagan" | "kritik" | "kam" | "yetarli"
+}
+
+export interface StockForecastResponse {
+  items: StockForecastItem[]
+  jami_tovar: number
+  tugagan: number
+  kritik: number
+  kam: number
+  yetarli: number
+  kunlar: number
+}
+
+export const stockForecastService = {
+  get: (kunlar: number = 30) => api.get<StockForecastResponse>(`/api/v1/hisobot/tavsiya-qoldiq?kunlar=${kunlar}`),
+}
+
 // ── Config (Sozlamalar) ──────────────────────────────────────────────────────
 // Backend: /config/... (no /api/v1)
 export const configService = {

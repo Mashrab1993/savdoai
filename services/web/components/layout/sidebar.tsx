@@ -89,6 +89,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   const navItemsSecondary = [
     { href: "/kpi",          label: "📊 KPI",              icon: Target },
     { href: "/abc-xyz",      label: "📦 ABC-XYZ Matritsa", icon: BarChart3 },
+    { href: "/stock-forecast", label: "📦 Tavsiya qoldiq", icon: Package },
     { href: "/analytics",    label: "🧠 AI Tahlil",        icon: Brain },
     { href: "/loyalty",      label: "⭐ Loyalty",           icon: Star },
     { href: "/apprentices", label: nav.apprentices[locale], icon: GraduationCap },
