@@ -44,7 +44,7 @@ interface StockForecastItem {
   jami_sotilgan: number
   sotuv_kunlari: number
   kunlik_sotuv: number
-  necha_kunga_yetadi: number
+  necha_kunga_yetadi: number | null
   tavsiya_6_kun: number
   tavsiya_10_kun: number
   tavsiya_30_kun: number
@@ -132,7 +132,7 @@ export default function StockForecastPage() {
   }, [items, search, categoryFilter])
 
   // Progress bar max kunlar
-  const maxKunlar = Math.max(30, ...items.map((t) => t.necha_kunga_yetadi))
+  const maxKunlar = Math.max(30, ...items.map((t) => t.necha_kunga_yetadi ?? 0))
 
   return (
     <AdminLayout>
@@ -294,7 +294,7 @@ export default function StockForecastPage() {
                   <TableBody>
                     {filtered.map((item, i) => {
                       const holat = HOLAT_CONFIG[item.holat] ?? HOLAT_CONFIG.yetarli
-                      const progressPct = Math.min(100, (item.necha_kunga_yetadi / maxKunlar) * 100)
+                      const progressPct = Math.min(100, ((item.necha_kunga_yetadi ?? 0) / maxKunlar) * 100)
                       const progressColor =
                         item.holat === "tugagan"
                           ? "bg-rose-500"
@@ -331,7 +331,7 @@ export default function StockForecastPage() {
                                 />
                               </div>
                               <span className="text-xs font-semibold tabular-nums min-w-[32px] text-right">
-                                {item.necha_kunga_yetadi.toFixed(1)}
+                                {item.necha_kunga_yetadi != null ? item.necha_kunga_yetadi.toFixed(1) : "—"}
                               </span>
                             </div>
                           </TableCell>
