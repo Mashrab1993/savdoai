@@ -6,7 +6,7 @@ import {
   LayoutDashboard, Users, Package, CreditCard, FileText, BarChart3,
   Settings, ChevronLeft, ChevronRight, GraduationCap, Receipt, Tag,
   Landmark, ShoppingCart, Brain, Star, Target, Gift, RefreshCw,
-  MapPin, Shield, Activity, Wallet,
+  MapPin, Shield, Activity, Wallet, Camera,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useState } from "react"
@@ -65,6 +65,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
     { href: "/sverka",          label: "📋 Akt Sverki",      icon: Shield },
     { href: "/tashrif",         label: "📍 Tashriflar",      icon: MapPin },
     { href: "/visit-report",    label: "📊 Vizit hisoboti",  icon: MapPin },
+    { href: "/photo-reports",   label: "📸 Foto hisobotlar", icon: Camera },
     { href: "/webhook",         label: "🔗 Webhook",         icon: RefreshCw },
     { href: "/sync-log",        label: "🔄 Sync log",        icon: RefreshCw },
     { href: "/suppliers",       label: "🏭 Postavshiklar",   icon: Shield },

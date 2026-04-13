@@ -819,6 +819,7 @@ async def photo_reports(
     sana_dan: Optional[str] = None,
     sana_gacha: Optional[str] = None,
     qidiruv: Optional[str] = None,
+    agent_id: Optional[int] = None,
     uid: int = Depends(get_uid),
 ):
     """Agentlar yuklagan rasmlar — checkin_out.foto_url orqali."""
@@ -833,6 +834,9 @@ async def photo_reports(
     if qidiruv:
         params.append(f"%{qidiruv}%")
         where.append(f"k.ism ILIKE ${len(params)}")
+    if agent_id:
+        params.append(agent_id)
+        where.append(f"co.agent_id = ${len(params)}")
     where_sql = " AND ".join(where)
 
     async with rls_conn(uid) as c:
@@ -840,9 +844,12 @@ async def photo_reports(
             rows = await c.fetch(f"""
                 SELECT co.id, co.klient_id, co.turi, co.vaqt, co.foto_url,
                        co.izoh, co.latitude, co.longitude,
-                       k.ism AS klient_nomi, k.manzil
+                       k.ism AS klient_nomi, k.manzil,
+                       COALESCE(s.ism, 'Agent') AS agent_ismi,
+                       co.agent_id
                 FROM checkin_out co
                 LEFT JOIN klientlar k ON k.id = co.klient_id
+                LEFT JOIN shogirdlar s ON s.id = co.agent_id
                 WHERE {where_sql}
                 ORDER BY co.vaqt DESC
                 LIMIT 500
@@ -853,17 +860,28 @@ async def photo_reports(
                     COUNT(*)                                                      AS jami,
                     COUNT(*) FILTER (WHERE vaqt::date = CURRENT_DATE)             AS bugun,
                     COUNT(*) FILTER (WHERE vaqt >= NOW() - interval '7 days')     AS hafta,
-                    COUNT(*) FILTER (WHERE vaqt >= NOW() - interval '30 days')    AS oy
+                    COUNT(*) FILTER (WHERE vaqt >= NOW() - interval '30 days')    AS oy,
+                    COUNT(DISTINCT agent_id)                                       AS agentlar_soni
                 FROM checkin_out
                 WHERE user_id = $1 AND foto_url IS NOT NULL AND foto_url <> ''
             """, uid)
+
+            agents = await c.fetch("""
+                SELECT DISTINCT s.id, s.ism
+                FROM shogirdlar s
+                JOIN checkin_out co ON co.agent_id = s.id AND co.user_id = $1
+                    AND co.foto_url IS NOT NULL AND co.foto_url <> ''
+                WHERE s.admin_uid = $1
+                ORDER BY s.ism
+            """, uid)
         except Exception as e:
             log.warning("photo-reports: %s", e)
-            return {"items": [], "stats": {}}
+            return {"items": [], "stats": {}, "agents": []}
 
     return {
         "items": [dict(r) for r in rows],
         "stats": dict(stats) if stats else {},
+        "agents": [{"id": a["id"], "ism": a["ism"]} for a in agents],
     }
 
 
