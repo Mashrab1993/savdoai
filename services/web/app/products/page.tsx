@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { AdminLayout } from "@/components/layout/admin-layout"
 import { StatusBadge } from "@/components/ui/status-badge"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -15,7 +16,7 @@ import {
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table"
-import { Search, Plus, Pencil, Trash2, Package, AlertTriangle, XCircle, Download, Upload, Eye } from "lucide-react"
+import { Search, Plus, Pencil, Trash2, Package, AlertTriangle, XCircle, Download, Upload, Eye, LayoutGrid, LayoutList } from "lucide-react"
 import ProductStockGrid, { type ProductCardData } from "@/components/dashboard/product-stock-grid"
 import { PageHeader } from "@/components/ui/page-header"
 import { useLocale } from "@/lib/locale-context"
@@ -88,6 +89,7 @@ export default function ProductsPage() {
     statistika?: { sotuv_soni: number; jami_sotilgan: number; jami_tushum: number }
   } | null>(null)
   const [tarixLoading, setTarixLoading] = useState(false)
+  const [viewMode, setViewMode] = useState<"grid" | "table">("table")
 
   const products: ProductVM[] = (rawProducts ?? []).map(normalizeProduct)
 
@@ -346,24 +348,109 @@ export default function ProductsPage() {
           </div>
         </div>
 
-        {/* Premium product stock grid (v0.dev → GPT-5 pipeline) */}
-        <ProductStockGrid
-          products={filtered.map<ProductCardData>(p => ({
-            id:           Number(p.id),
-            nomi:         p.name,
-            brend:        p.description || undefined,
-            kategoriya:   p.category || undefined,
-            birlik:       p.unit || "dona",
-            sotish_narxi: p.price || 0,
-            olish_narxi:  0,
-            qoldiq:       p.stock || 0,
-            min_qoldiq:   p.lowStockThreshold || 0,
-            rasm_url:     undefined,
-            faol:         p.status !== "out-of-stock",
-            shtrix_kod:   p.sku || undefined,
-          }))}
-          onProductClick={id => openTarix(id)}
-        />
+        {/* View toggle */}
+        <div className="flex items-center gap-1 justify-end">
+          <Button
+            variant={viewMode === "table" ? "default" : "outline"}
+            size="sm"
+            className="h-8 w-8 p-0"
+            onClick={() => setViewMode("table")}
+          >
+            <LayoutList className="w-4 h-4" />
+          </Button>
+          <Button
+            variant={viewMode === "grid" ? "default" : "outline"}
+            size="sm"
+            className="h-8 w-8 p-0"
+            onClick={() => setViewMode("grid")}
+          >
+            <LayoutGrid className="w-4 h-4" />
+          </Button>
+        </div>
+
+        {viewMode === "table" ? (
+          /* SalesDoc-style table view */
+          <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl overflow-hidden">
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-muted/30">
+                    <TableHead className="text-xs w-12">#</TableHead>
+                    <TableHead className="text-xs">{locale === "uz" ? "Nomi" : "Название"}</TableHead>
+                    <TableHead className="text-xs">{locale === "uz" ? "Kategoriya" : "Категория"}</TableHead>
+                    <TableHead className="text-xs">{locale === "uz" ? "Brend" : "Бренд"}</TableHead>
+                    <TableHead className="text-xs text-right">{locale === "uz" ? "Qoldiq" : "Остаток"}</TableHead>
+                    <TableHead className="text-xs">{locale === "uz" ? "Birlik" : "Ед."}</TableHead>
+                    <TableHead className="text-xs text-right">{locale === "uz" ? "Sotish narxi" : "Цена продажи"}</TableHead>
+                    <TableHead className="text-xs text-right">{locale === "uz" ? "Olish narxi" : "Цена покупки"}</TableHead>
+                    <TableHead className="text-xs">{locale === "uz" ? "Shtrix-kod" : "Штрих-код"}</TableHead>
+                    <TableHead className="text-xs w-16"></TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filtered.map((p, i) => (
+                    <TableRow
+                      key={p.id}
+                      className="hover:bg-muted/30 transition-colors cursor-pointer"
+                      onClick={() => openTarix(Number(p.id))}
+                    >
+                      <TableCell className="text-xs text-muted-foreground font-mono">{i + 1}</TableCell>
+                      <TableCell>
+                        <span className="text-sm font-medium">{p.name}</span>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="secondary" className="text-[10px]">{p.category || "—"}</Badge>
+                      </TableCell>
+                      <TableCell className="text-xs text-muted-foreground">{p.description || "—"}</TableCell>
+                      <TableCell className="text-right">
+                        <span className={`text-sm font-semibold ${
+                          p.stock <= 0 ? "text-destructive" :
+                          p.stock <= (p.lowStockThreshold || 5) ? "text-amber-500" :
+                          "text-emerald-600"
+                        }`}>
+                          {p.stock}
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-xs text-muted-foreground">{p.unit}</TableCell>
+                      <TableCell className="text-right text-sm font-medium">{formatCurrency(p.price)}</TableCell>
+                      <TableCell className="text-right text-xs text-muted-foreground">{formatCurrency(0)}</TableCell>
+                      <TableCell className="text-xs text-muted-foreground font-mono">{(p.sku || "").slice(0, 13) || "—"}</TableCell>
+                      <TableCell>
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={e => { e.stopPropagation(); openTarix(Number(p.id)) }}>
+                          <Eye className="w-3.5 h-3.5" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+            {filtered.length === 0 && (
+              <div className="text-center py-12 text-muted-foreground text-sm">
+                {locale === "uz" ? "Tovar topilmadi" : "Товар не найден"}
+              </div>
+            )}
+          </div>
+        ) : (
+          /* Premium product stock grid */
+          <ProductStockGrid
+            products={filtered.map<ProductCardData>(p => ({
+              id:           Number(p.id),
+              nomi:         p.name,
+              brend:        p.description || undefined,
+              kategoriya:   p.category || undefined,
+              birlik:       p.unit || "dona",
+              sotish_narxi: p.price || 0,
+              olish_narxi:  0,
+              qoldiq:       p.stock || 0,
+              min_qoldiq:   p.lowStockThreshold || 0,
+              rasm_url:     undefined,
+              faol:         p.status !== "out-of-stock",
+              shtrix_kod:   p.sku || undefined,
+            }))}
+            onProductClick={id => openTarix(id)}
+          />
+        )}
         </>}
       </div>
 
