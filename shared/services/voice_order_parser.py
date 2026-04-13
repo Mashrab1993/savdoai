@@ -888,7 +888,7 @@ async def smart_parse_with_gemini(text: str, tovarlar_nomlari: list[str]) -> dic
             return parse_order_text(text)  # fallback to regex
 
         genai.configure(api_key=key)
-        model = genai.GenerativeModel("gemini-2.5-flash")
+        model = genai.GenerativeModel("gemini-3-flash-preview")
 
         prompt = f"""Sen savdo agenti uchun ovozli buyurtmalarni parse qiluvchi AI'san.
 
@@ -983,7 +983,7 @@ async def smart_parse_kirim_with_gemini(text: str, tovarlar_nomlari: list[str]) 
             return parse_kirim_text(text)  # fallback to regex
 
         genai.configure(api_key=key)
-        model = genai.GenerativeModel("gemini-2.5-flash")
+        model = genai.GenerativeModel("gemini-3-flash-preview")
 
         prompt = f"""Sen distributor uchun ovozli KIRIM (tovar tushumi) ma'lumotlarini parse qiluvchi AI'san.
 

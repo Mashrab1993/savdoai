@@ -21,9 +21,9 @@ from tenacity import (
 log = logging.getLogger(__name__)
 
 _client    = None
-MODEL      = os.getenv("GEMINI_MODEL", "gemini-2.5-pro")
+MODEL      = os.getenv("GEMINI_MODEL", "gemini-3-flash-preview")
 MAX_MB     = 100
-TIMEOUT_S  = 90   # gemini-2.5-pro sekinroq lekin aniqroq
+TIMEOUT_S  = 45   # gemini-3-flash — tezkor va aqlli
 MAX_PARALLEL = 4   # 2 soat audio = 40 chunk, 4 parallel = 10 batch = tez
 _semaphore = None
 # STT uchun foydalanuvchi bo'yicha prompt keshi (RLS bilan); global pool ishlatilmaydi.
