@@ -9,6 +9,7 @@ import {
 } from "lucide-react"
 import { PageHeader } from "@/components/ui/page-header"
 import Link from "next/link"
+import { dashboardService } from "@/lib/api/services"
 
 type Notification = {
   id: string
@@ -26,16 +27,6 @@ const ICONS = {
   error:   { icon: X,             color: "text-rose-600 dark:text-rose-400",     bg: "bg-rose-500/10 border-rose-500/30" },
 }
 
-async function api<T = unknown>(path: string): Promise<T> {
-  const token = typeof window !== "undefined" ? localStorage.getItem("auth_token") : ""
-  const base  = process.env.NEXT_PUBLIC_API_URL || ""
-  const res = await fetch(`${base}${path}`, {
-    headers: { Authorization: `Bearer ${token}` },
-  })
-  if (!res.ok) throw new Error(`HTTP ${res.status}`)
-  return res.json() as Promise<T>
-}
-
 export default function NotificationsPage() {
   const [filter, setFilter] = useState<"all" | "unread" | "read">("all")
   const [notifications, setNotifications] = useState<Notification[]>([])
@@ -44,15 +35,7 @@ export default function NotificationsPage() {
   const fetchData = useCallback(async () => {
     setLoading(true)
     try {
-      type DashboardResp = {
-        bugun_sotuv_jami?: number
-        kam_qoldiq_soni?: number
-        overdue_count?: number
-        overdue_amount?: number
-        jami_qarz?: number
-        pending_expenses?: number
-      }
-      const d = await api<DashboardResp>("/api/v1/dashboard")
+      const d = await dashboardService.get()
       const read = new Set(
         JSON.parse(localStorage.getItem("read_notifications") || "[]")
       )

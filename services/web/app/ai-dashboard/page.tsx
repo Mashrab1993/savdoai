@@ -3,6 +3,7 @@ import { useState, useEffect, type ReactNode } from "react";
 import { PageLoading } from "@/components/shared/page-states"
 import { Brain } from "lucide-react"
 import { PageHeader } from "@/components/ui/page-header"
+import { aiDashboardService, configService } from "@/lib/api/services"
 
 function Card({ children, className = "" }: { children: ReactNode; className?: string }) {
   return <div className={`bg-card rounded-xl border border-border dark:border-border p-4 ${className}`}>{children}</div>;
@@ -31,17 +32,14 @@ export default function AIDashboard() {
   const [loading, setLoading] = useState<boolean>(true);
   const [tab, setTab] = useState<string>("umumiy");
 
-  const API = process.env.NEXT_PUBLIC_API_URL || "";
-  const h = { Authorization: `Bearer ${typeof window !== "undefined" ? localStorage.getItem("auth_token") : ""}` };
-
   useEffect(() => {
     Promise.all([
-      fetch(`${API}/hisobot/umumiy`, { headers: h }).then(r => r.ok ? r.json() : {}),
-      fetch(`${API}/tahlil`, { headers: h }).then(r => r.ok ? r.json() : { insightlar: [] }),
-      fetch(`${API}/config`, { headers: h }).then(r => r.ok ? r.json() : null),
+      aiDashboardService.umumiy().catch(() => ({})),
+      aiDashboardService.tahlil().catch(() => ({ insightlar: [] })),
+      configService.get().catch(() => null),
     ]).then(([d, ins, cfg]) => {
       setData(d);
-      setInsights(ins.insightlar || ins || []);
+      setInsights(ins.insightlar || []);
       setConfig(cfg);
     }).catch(() => {}).finally(() => setLoading(false));
   }, []);

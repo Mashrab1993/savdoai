@@ -856,10 +856,17 @@ export const proService = {
   routeOptimize: (data: unknown) => api.post<unknown>("/marshrut/optimallashtir", data),
 }
 
+// ── AI Dashboard (umumiy hisobot + tahlil) ──────────────────────────────────
+// Backend: /hisobot/umumiy and /tahlil (no /api/v1 prefix)
+export const aiDashboardService = {
+  umumiy: () => api.get<Record<string, unknown>>("/hisobot/umumiy"),
+  tahlil: () => api.get<{ insightlar?: Array<Record<string, unknown>> }>("/tahlil"),
+}
+
 // ── Config (Sozlamalar) ──────────────────────────────────────────────────────
 // Backend: /config/... (no /api/v1)
 export const configService = {
-  get:     () => api.get<unknown>("/config"),
+  get:     () => api.get<Record<string, Record<string, boolean>>>("/config"),
   update:  (data: unknown) => api.post<unknown>("/config", data),
   modules: () => api.get<unknown>("/config/modullar"),
 }
