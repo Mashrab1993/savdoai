@@ -92,7 +92,9 @@ async def qarz_eslatma_royxati(conn, uid: int) -> list[dict]:
     natija = []
     bugun = date.today()
     for r in rows:
-        muddat = r["eng_yaqin_muddat"]
+        # Normalize muddat to date (asyncpg may return date or datetime)
+        raw_muddat = r["eng_yaqin_muddat"]
+        muddat = raw_muddat.date() if hasattr(raw_muddat, "date") and callable(raw_muddat.date) else raw_muddat
         muddati_otgan = muddat is not None and muddat < bugun
 
         # Holat aniqlash
@@ -106,6 +108,14 @@ async def qarz_eslatma_royxati(conn, uid: int) -> list[dict]:
             holat = "yumshoq"
             kun_otgan = 0
 
+        # Normalize eng_eski_qarz to date
+        raw_eski = r["eng_eski_qarz"]
+        if raw_eski is not None:
+            eski_date = raw_eski.date() if hasattr(raw_eski, "date") and callable(raw_eski.date) else raw_eski
+            eng_eski_kun = (bugun - eski_date).days
+        else:
+            eng_eski_kun = 0
+
         natija.append({
             "klient_ismi": r["klient_ismi"],
             "klient_id": r["klient_id"],
@@ -116,8 +126,7 @@ async def qarz_eslatma_royxati(conn, uid: int) -> list[dict]:
             "muddati_otgan": muddati_otgan,
             "kun_otgan": kun_otgan,
             "holat": holat,
-            "eng_eski_kun": (bugun - r["eng_eski_qarz"].date()).days
-                           if r["eng_eski_qarz"] else 0,
+            "eng_eski_kun": eng_eski_kun,
         })
 
     return natija
@@ -162,7 +171,12 @@ async def eslatma_yuborish_mumkinmi(conn, uid: int, klient_id: int) -> bool:
         """, uid, klient_id)
         if oxirgi is None:
             return True
-        farq = (datetime.now(TZ) - oxirgi).days
+        # Ensure both are timezone-aware for safe subtraction
+        now = datetime.now(TZ)
+        if oxirgi.tzinfo is None:
+            from zoneinfo import ZoneInfo
+            oxirgi = oxirgi.replace(tzinfo=ZoneInfo("Asia/Tashkent"))
+        farq = (now - oxirgi).days
         return farq >= _MIN_ESLATMA_ORALIGI_KUN
     except Exception:
         # Jadval yo'q bo'lsa — yuborish mumkin
