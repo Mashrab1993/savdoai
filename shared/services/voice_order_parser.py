@@ -1044,9 +1044,11 @@ def parse_klient_text(text: str) -> dict:
     # ── Extract phone number ──
     telefon = ""
     # Patterns: +998 91 542 76 43, 998915427643, 91 542 76 43, 915427643
+    # Also: "95 lik 259 99 00" (O'zbek format: XX lik XXX XX XX)
     phone_patterns = [
         r'\+?998\s*[\-]?\s*(\d{2})\s*[\-]?\s*(\d{3})\s*[\-]?\s*(\d{2})\s*[\-]?\s*(\d{2})',
         r'(?:telefon[ia]?\s*(?:raqam[ia]?)?\s*[:=]?\s*)(\d{2})\s*[\-]?\s*(\d{3})\s*[\-]?\s*(\d{2})\s*[\-]?\s*(\d{2})',
+        r'(\d{2})\s*lik\s*(\d{3})\s+(\d{2})\s+(\d{2})',  # "95 lik 259 99 00"
         r'\b(\d{2})\s+(\d{3})\s+(\d{2})\s+(\d{2})\b',
         r'\b(\d{9})\b',
     ]
