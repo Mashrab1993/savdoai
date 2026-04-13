@@ -1063,7 +1063,7 @@ async def boshlash(app:Application) -> None:
                     for user in users:
                         try:
                             async with db._P().acquire() as c:
-                                await c.execute(f"SET app.uid = '{user['id']}'")
+                                await c.execute("SELECT set_config('app.uid', $1::text, true)", str(user['id']))
                                 bugun = await c.fetch("""
                                     SELECT ss.id, ss.klient_ismi, ss.jami, ss.sana,
                                            COUNT(ch.id) AS tovar_soni
