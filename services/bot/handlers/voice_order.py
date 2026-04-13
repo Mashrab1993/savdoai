@@ -24,6 +24,7 @@ from telegram.ext import ContextTypes
 from services.bot import db
 from shared.services.voice_order_parser import (
     parse_order_text,
+    smart_parse_with_gemini,
     fuzzy_match_tovar,
     fuzzy_match_klient,
     create_order_from_voice,
@@ -90,8 +91,18 @@ async def handle_voice_order(update: Update, context: ContextTypes.DEFAULT_TYPE)
             tovarlar_list = [dict(r) for r in tovarlar]
             klientlar_list = [dict(r) for r in klientlar]
 
-        # Parse the text
+        # Parse the text — try regex first, then Gemini AI
         parsed = parse_order_text(text)
+
+        if parsed.get("xato") or not parsed.get("tovarlar"):
+            # Regex failed — try Gemini smart parser
+            try:
+                parsed = await smart_parse_with_gemini(
+                    text,
+                    [t.get("nomi", "") for t in tovarlar_list],
+                )
+            except Exception as _sp:
+                log.debug("smart parse fallback: %s", _sp)
 
         if parsed.get("xato"):
             await msg.reply_text(
