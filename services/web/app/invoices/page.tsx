@@ -290,7 +290,7 @@ export default function InvoicesPage() {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {detailData.tovarlar.map((tv, i) => (
+                        {(detailData.tovarlar || []).map((tv, i) => (
                           <TableRow key={i} className="hover:bg-muted/50 transition-colors hover:bg-muted/50 transition-colors">
                             <TableCell className="text-xs font-medium">{tv.tovar_nomi || "—"}</TableCell>
                             <TableCell className="text-xs text-right">{tv.miqdor} {tv.birlik}</TableCell>
