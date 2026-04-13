@@ -953,6 +953,35 @@ export const stockForecastService = {
   get: (kunlar: number = 30) => api.get<StockForecastResponse>(`/api/v1/hisobot/tavsiya-qoldiq?kunlar=${kunlar}`),
 }
 
+// ── Visit Report (Vizit hisoboti) ────────────────────────────────────────────
+export interface VizitItem {
+  sana: string
+  agent_ismi: string
+  jami_vizit: number
+  sotuv_qilgan: number
+  bosh_vizit: number
+  birinchi_vizit: string | null
+  oxirgi_vizit: string | null
+  ish_vaqti_soat: number
+}
+
+export interface VizitResponse {
+  sana_dan: string
+  sana_gacha: string
+  items: VizitItem[]
+  jami: { vizitlar: number; sotuv_qilgan: number }
+}
+
+export const visitReportService = {
+  get: (sana_dan?: string, sana_gacha?: string) => {
+    const params = new URLSearchParams()
+    if (sana_dan) params.set("sana_dan", sana_dan)
+    if (sana_gacha) params.set("sana_gacha", sana_gacha)
+    const qs = params.toString()
+    return api.get<VizitResponse>(`/api/v1/hisobot/vizitlar${qs ? `?${qs}` : ""}`)
+  },
+}
+
 // ── Config (Sozlamalar) ──────────────────────────────────────────────────────
 // Backend: /config/... (no /api/v1)
 export const configService = {

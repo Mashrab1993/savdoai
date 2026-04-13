@@ -64,6 +64,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
     { href: "/agent-monitor",   label: "📡 Agent Monitor",   icon: Activity },
     { href: "/sverka",          label: "📋 Akt Sverki",      icon: Shield },
     { href: "/tashrif",         label: "📍 Tashriflar",      icon: MapPin },
+    { href: "/visit-report",    label: "📊 Vizit hisoboti",  icon: MapPin },
     { href: "/webhook",         label: "🔗 Webhook",         icon: RefreshCw },
     { href: "/sync-log",        label: "🔄 Sync log",        icon: RefreshCw },
     { href: "/suppliers",       label: "🏭 Postavshiklar",   icon: Shield },

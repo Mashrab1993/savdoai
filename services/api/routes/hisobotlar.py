@@ -1638,3 +1638,161 @@ async def ekspeditor_hisoboti(
     }
     await cache_yoz(cache_k, result, TTL_HISOBOT)
     return result
+
+
+# ═══════════════════════════════════════════════════════
+#  VIZIT HISOBOTI
+# ═══════════════════════════════════════════════════════
+
+@router.get("/hisobot/vizitlar")
+async def vizit_hisoboti(
+    sana_dan: Optional[str] = None,
+    sana_gacha: Optional[str] = None,
+    uid: int = Depends(get_uid),
+):
+    """Agent vizitlari hisoboti — checkin_out yoki sotuv_sessiyalar asosida"""
+    from datetime import timedelta
+
+    now = datetime.now(timezone.utc)
+
+    if sana_gacha:
+        try:
+            datetime.strptime(sana_gacha, "%Y-%m-%d")
+        except ValueError:
+            raise HTTPException(status_code=400, detail="sana_gacha formati noto'g'ri, YYYY-MM-DD kerak")
+        gacha = sana_gacha
+    else:
+        gacha = now.strftime("%Y-%m-%d")
+
+    if sana_dan:
+        try:
+            datetime.strptime(sana_dan, "%Y-%m-%d")
+        except ValueError:
+            raise HTTPException(status_code=400, detail="sana_dan formati noto'g'ri, YYYY-MM-DD kerak")
+        dan = sana_dan
+    else:
+        dan = (now - timedelta(days=30)).strftime("%Y-%m-%d")
+
+    cache_k = f"hisobot:vizitlar:{uid}:{dan}:{gacha}"
+    cached = await cache_ol(cache_k)
+    if cached:
+        return cached
+
+    async with rls_conn(uid) as c:
+        # Jadval mavjudligini tekshirish
+        has_checkin = await c.fetchval("""
+            SELECT EXISTS (
+                SELECT 1 FROM information_schema.tables
+                WHERE table_name = 'checkin_out'
+            )
+        """)
+
+        if has_checkin:
+            # checkin_out jadvalidan vizit ma'lumotlari
+            rows = await c.fetch("""
+                WITH vizitlar AS (
+                    SELECT
+                        (ci.vaqt AT TIME ZONE 'Asia/Tashkent')::date AS sana,
+                        COALESCE(u.ism, u.dokon_nomi, u.username, 'Agent') AS agent_ismi,
+                        ci.klient_id,
+                        ci.vaqt AT TIME ZONE 'Asia/Tashkent' AS mahalliy_vaqt
+                    FROM checkin_out ci
+                    LEFT JOIN users u ON u.id = ci.user_id
+                    WHERE ci.turi = 'in'
+                      AND (ci.vaqt AT TIME ZONE 'Asia/Tashkent')::date
+                            BETWEEN $1::date AND $2::date
+                ),
+                sotuv_klientlar AS (
+                    SELECT DISTINCT
+                        (ss.sana AT TIME ZONE 'Asia/Tashkent')::date AS sana,
+                        ss.klient_id
+                    FROM sotuv_sessiyalar ss
+                    WHERE (ss.sana AT TIME ZONE 'Asia/Tashkent')::date
+                            BETWEEN $1::date AND $2::date
+                      AND COALESCE(ss.holat, 'yangi') != 'bekor'
+                )
+                SELECT
+                    v.sana,
+                    v.agent_ismi,
+                    COUNT(DISTINCT v.klient_id)      AS jami_vizit,
+                    COUNT(DISTINCT v.klient_id)
+                        FILTER (WHERE sk.klient_id IS NOT NULL)
+                                                      AS sotuv_qilgan,
+                    COUNT(DISTINCT v.klient_id)
+                        FILTER (WHERE sk.klient_id IS NULL)
+                                                      AS bosh_vizit,
+                    MIN(v.mahalliy_vaqt)::time        AS birinchi_vizit,
+                    MAX(v.mahalliy_vaqt)::time        AS oxirgi_vizit
+                FROM vizitlar v
+                LEFT JOIN sotuv_klientlar sk
+                    ON sk.sana = v.sana AND sk.klient_id = v.klient_id
+                GROUP BY v.sana, v.agent_ismi
+                ORDER BY v.sana DESC
+            """, dan, gacha)
+        else:
+            # Fallback: sotuv_sessiyalar dan distinct klient_id
+            rows = await c.fetch("""
+                SELECT
+                    (ss.sana AT TIME ZONE 'Asia/Tashkent')::date AS sana,
+                    COALESCE(u.ism, u.dokon_nomi, u.username, 'Agent') AS agent_ismi,
+                    COUNT(DISTINCT ss.klient_id)     AS jami_vizit,
+                    COUNT(DISTINCT ss.klient_id)     AS sotuv_qilgan,
+                    0                                 AS bosh_vizit,
+                    MIN(ss.sana AT TIME ZONE 'Asia/Tashkent')::time AS birinchi_vizit,
+                    MAX(ss.sana AT TIME ZONE 'Asia/Tashkent')::time AS oxirgi_vizit
+                FROM sotuv_sessiyalar ss
+                LEFT JOIN users u ON u.id = ss.user_id
+                WHERE (ss.sana AT TIME ZONE 'Asia/Tashkent')::date
+                        BETWEEN $1::date AND $2::date
+                  AND COALESCE(ss.holat, 'yangi') != 'bekor'
+                GROUP BY (ss.sana AT TIME ZONE 'Asia/Tashkent')::date,
+                         COALESCE(u.ism, u.dokon_nomi, u.username, 'Agent')
+                ORDER BY sana DESC
+            """, dan, gacha)
+
+        items = []
+        jami_vizitlar = 0
+        jami_sotuv = 0
+
+        for r in rows:
+            birinchi = r["birinchi_vizit"]
+            oxirgi = r["oxirgi_vizit"]
+
+            # Ish vaqtini hisoblash (soatlarda)
+            if birinchi and oxirgi:
+                delta_seconds = (
+                    oxirgi.hour * 3600 + oxirgi.minute * 60 + oxirgi.second
+                ) - (
+                    birinchi.hour * 3600 + birinchi.minute * 60 + birinchi.second
+                )
+                ish_vaqti = round(max(delta_seconds, 0) / 3600.0, 2)
+            else:
+                ish_vaqti = 0.0
+
+            jv = int(r["jami_vizit"])
+            sq = int(r["sotuv_qilgan"])
+            jami_vizitlar += jv
+            jami_sotuv += sq
+
+            items.append({
+                "sana":           str(r["sana"]),
+                "agent_ismi":     r["agent_ismi"],
+                "jami_vizit":     jv,
+                "sotuv_qilgan":   sq,
+                "bosh_vizit":     int(r["bosh_vizit"]),
+                "birinchi_vizit": birinchi.strftime("%H:%M") if birinchi else None,
+                "oxirgi_vizit":   oxirgi.strftime("%H:%M") if oxirgi else None,
+                "ish_vaqti_soat": ish_vaqti,
+            })
+
+    result = {
+        "sana_dan":  dan,
+        "sana_gacha": gacha,
+        "items": items,
+        "jami": {
+            "vizitlar":     jami_vizitlar,
+            "sotuv_qilgan": jami_sotuv,
+        },
+    }
+    await cache_yoz(cache_k, result, TTL_HISOBOT)
+    return result
