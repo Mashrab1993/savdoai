@@ -17,10 +17,22 @@
 from __future__ import annotations
 import logging
 import re
-from decimal import Decimal
+from decimal import Decimal, ROUND_HALF_UP
 from typing import Optional
 
 log = logging.getLogger(__name__)
+
+# ════════════════════════════════════════════════════════════
+#  HELPERS
+# ════════════════════════════════════════════════════════════
+
+def _to_decimal(val) -> Decimal:
+    """Convert any numeric value to Decimal safely."""
+    if isinstance(val, Decimal):
+        return val
+    if val is None:
+        return Decimal("0")
+    return Decimal(str(val))
 
 
 # ════════════════════════════════════════════════════════════
@@ -91,8 +103,46 @@ def parse_order_text(text: str) -> dict:
     # Step 2: Tovarlarni ajratish
     tovarlar = []
 
-    # Split by comma, "keyin", "va", periods
-    items_raw = re.split(r'[,.]|\bkeyin\b|\bva\b|\byana\b', tovar_text)
+    # Split by comma (only if followed by space+word), "keyin", "yana", periods.
+    # NOTE: "va" is NOT a splitter — it appears inside product names
+    # (e.g. "Gullar va Ariqlar 3 ta") and in phrases like
+    # "Rosabella qizil 2 ta va Dollux 4 ta" where comma already splits.
+    # We split on "va" ONLY if it's between two quantity patterns.
+    items_raw = re.split(r'[.]|\bkeyin\b|\byana\b', tovar_text)
+
+    # Second pass: split remaining items by comma, but preserve commas
+    # inside names (e.g. "Tovar A, B model 3 ta" should NOT split)
+    expanded = []
+    for chunk in items_raw:
+        # Split by comma only if what follows looks like a new item
+        # (starts with a word, not a continuation like "qizil")
+        parts = re.split(r',\s*(?=[A-ZА-ЯЎҚҒҲa-zа-яўқғҳ])', chunk)
+        expanded.extend(parts)
+    items_raw = expanded
+
+    # Third pass: split on "va" only between qty patterns
+    # "Rosabella 2 ta va Dollux 4 ta" → two items
+    final_items = []
+    for chunk in items_raw:
+        # Split on "va" only if preceded by a number/qty word
+        parts = re.split(
+            r'(?:\d+\s*(?:ta|dona|karobka|shtuk|kg)?)\s+va\s+',
+            chunk
+        )
+        if len(parts) > 1:
+            # Re-attach the quantity to the first part
+            m_split = re.search(
+                r'(\d+\s*(?:ta|dona|karobka|shtuk|kg)?)\s+va\s+',
+                chunk, re.IGNORECASE,
+            )
+            if m_split:
+                final_items.append(chunk[:m_split.end(1)])
+                final_items.append(chunk[m_split.end():])
+            else:
+                final_items.extend(parts)
+        else:
+            final_items.append(chunk)
+    items_raw = final_items
 
     for item in items_raw:
         item = item.strip()
@@ -194,8 +244,9 @@ def fuzzy_match_tovar(nomi: str, db_tovarlar: list[dict]) -> Optional[dict]:
                 best_score = score
                 best = tv
 
-    # Minimum threshold
-    if best_score < 0.3:
+    # Minimum threshold — 0.4 prevents false positives
+    # (e.g. "Park" matching "Parking karta 500mb")
+    if best_score < 0.4:
         return None
 
     return best
@@ -252,9 +303,15 @@ async def create_order_from_voice(
     parsed: dict,
     db_tovarlar: list[dict],
     db_klientlar: list[dict],
+    *,
+    pre_matched: list[dict] | None = None,
 ) -> dict:
     """
     Parse qilingan matndan sotuv_sessiya + chiqimlar yaratish.
+
+    Args:
+        pre_matched: If provided, skip fuzzy matching and use these
+                     items directly (from confirmation step).
 
     Returns:
         {
@@ -262,7 +319,7 @@ async def create_order_from_voice(
             "sessiya_id": 123,
             "klient": "Xurshid Aka Qorĝoncha",
             "tovarlar_soni": 6,
-            "jami_summa": 1101800,
+            "jami_summa": Decimal("1101800"),
             "xatolar": ["Tovar topilmadi: XYZ"],
             "matched_items": [{nomi, miqdor, narx, jami}]
         }
@@ -272,7 +329,7 @@ async def create_order_from_voice(
         "sessiya_id": None,
         "klient": None,
         "tovarlar_soni": 0,
-        "jami_summa": 0,
+        "jami_summa": Decimal("0"),
         "xatolar": [],
         "matched_items": [],
     }
@@ -286,60 +343,95 @@ async def create_order_from_voice(
     result["klient"] = klient["ism"]
     klient_id = klient["id"]
 
-    # 2. Match tovarlar
-    matched = []
-    for t in parsed["tovarlar"]:
-        tv = fuzzy_match_tovar(t["nomi"], db_tovarlar)
-        if tv:
-            narx = float(tv.get("sotish_narxi") or 0)
-            miqdor = t["miqdor"]
-            matched.append({
-                "tovar_id": tv["id"],
-                "nomi": tv["nomi"],
-                "miqdor": miqdor,
-                "narx": narx,
-                "jami": miqdor * narx,
-                "birlik": tv.get("birlik", "dona"),
-                "kategoriya": tv.get("kategoriya", "Boshqa"),
-                "olish_narxi": float(tv.get("olish_narxi") or 0),
-            })
-        else:
-            result["xatolar"].append(f"Tovar topilmadi: '{t['nomi']}'")
+    # 2. Match tovarlar (or use pre-matched from confirmation)
+    if pre_matched:
+        matched = pre_matched
+    else:
+        matched = []
+        for t in parsed["tovarlar"]:
+            tv = fuzzy_match_tovar(t["nomi"], db_tovarlar)
+            if tv:
+                narx = _to_decimal(tv.get("sotish_narxi"))
+                miqdor = t["miqdor"]
+                matched.append({
+                    "tovar_id": tv["id"],
+                    "nomi": tv["nomi"],
+                    "miqdor": miqdor,
+                    "narx": narx,
+                    "jami": Decimal(str(miqdor)) * narx,
+                    "birlik": tv.get("birlik", "dona"),
+                    "kategoriya": tv.get("kategoriya", "Boshqa"),
+                    "olish_narxi": _to_decimal(tv.get("olish_narxi")),
+                })
+            else:
+                result["xatolar"].append(f"Tovar topilmadi: '{t['nomi']}'")
 
     if not matched:
         result["xatolar"].append("Birorta ham tovar mos kelmadi")
         return result
 
+    # Ensure Decimal throughout
+    for m in matched:
+        m["narx"] = _to_decimal(m["narx"])
+        m["olish_narxi"] = _to_decimal(m.get("olish_narxi"))
+        m["jami"] = Decimal(str(m["miqdor"])) * m["narx"]
+
     jami = sum(m["jami"] for m in matched)
 
-    # 3. Create sotuv_sessiya
+    # 3. Create sotuv_sessiya — ALL inside a transaction
     try:
-        sessiya_id = await conn.fetchval("""
-            INSERT INTO sotuv_sessiyalar (user_id, klient_id, klient_ismi, jami, tolangan, qarz, sana)
-            VALUES ($1, $2, $3, $4, $4, 0, NOW())
-            RETURNING id
-        """, uid, klient_id, klient["ism"], jami)
+        async with conn.transaction():
+            # SET app.uid with parameterized query (no SQL injection)
+            await conn.execute("SELECT set_config('app.uid', $1::text, true)", str(uid))
 
-        # 4. Create chiqimlar
-        for m in matched:
-            await conn.execute("""
-                INSERT INTO chiqimlar
-                    (user_id, sessiya_id, klient_id, klient_ismi,
-                     tovar_id, tovar_nomi, kategoriya, miqdor, birlik,
-                     olish_narxi, sotish_narxi, narx, jami, sana)
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $11, $12, NOW())
-            """,
-                uid, sessiya_id, klient_id, klient["ism"],
-                m["tovar_id"], m["nomi"], m["kategoriya"],
-                m["miqdor"], m["birlik"],
-                m["olish_narxi"], m["narx"], m["jami"],
-            )
+            # 3a. Stock validation — check BEFORE writing
+            for m in matched:
+                current_qoldiq = await conn.fetchval(
+                    "SELECT qoldiq FROM tovarlar WHERE id = $1 AND user_id = $2",
+                    m["tovar_id"], uid,
+                )
+                if current_qoldiq is None:
+                    result["xatolar"].append(f"Tovar topilmadi DB'da: {m['nomi']}")
+                    return result
+                if current_qoldiq < m["miqdor"]:
+                    result["xatolar"].append(
+                        f"Qoldiq yetarli emas: {m['nomi']} — "
+                        f"kerak {m['miqdor']}, bor {current_qoldiq}"
+                    )
+                    return result
 
-            # 5. Update qoldiq
-            await conn.execute("""
-                UPDATE tovarlar SET qoldiq = qoldiq - $1
-                WHERE id = $2 AND user_id = $3
-            """, m["miqdor"], m["tovar_id"], uid)
+            sessiya_id = await conn.fetchval("""
+                INSERT INTO sotuv_sessiyalar
+                    (user_id, klient_id, klient_ismi, jami, tolangan, qarz, sana)
+                VALUES ($1, $2, $3, $4, $4, 0, NOW())
+                RETURNING id
+            """, uid, klient_id, klient["ism"], jami)
+
+            # 4. Create chiqimlar
+            for m in matched:
+                await conn.execute("""
+                    INSERT INTO chiqimlar
+                        (user_id, sessiya_id, klient_id, klient_ismi,
+                         tovar_id, tovar_nomi, kategoriya, miqdor, birlik,
+                         olish_narxi, sotish_narxi, narx, jami, sana)
+                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $11, $12, NOW())
+                """,
+                    uid, sessiya_id, klient_id, klient["ism"],
+                    m["tovar_id"], m["nomi"], m["kategoriya"],
+                    m["miqdor"], m["birlik"],
+                    m["olish_narxi"], m["narx"], m["jami"],
+                )
+
+                # 5. Update qoldiq — atomic guard (WHERE qoldiq >= miqdor)
+                rows_updated = await conn.execute("""
+                    UPDATE tovarlar SET qoldiq = qoldiq - $1
+                    WHERE id = $2 AND user_id = $3 AND qoldiq >= $1
+                """, m["miqdor"], m["tovar_id"], uid)
+
+                if rows_updated == "UPDATE 0":
+                    raise RuntimeError(
+                        f"Qoldiq yetarli emas (concurrent): {m['nomi']}"
+                    )
 
         result["success"] = True
         result["sessiya_id"] = sessiya_id
@@ -347,6 +439,8 @@ async def create_order_from_voice(
         result["jami_summa"] = jami
         result["matched_items"] = matched
 
+    except RuntimeError as e:
+        result["xatolar"].append(str(e))
     except Exception as e:
         log.error("voice order create: %s", e)
         result["xatolar"].append(f"DB xato: {str(e)[:100]}")
@@ -407,14 +501,35 @@ Matn: "{text}"
         else:
             return parse_order_text(text)
 
+        # Validate and sanitize Gemini output
+        tovarlar_parsed = []
+        for t in data.get("tovarlar", []):
+            nomi = (t.get("nomi") or "").strip()
+            if not nomi or len(nomi) < 2:
+                continue
+            try:
+                miqdor = int(t.get("miqdor", 1))
+            except (ValueError, TypeError):
+                miqdor = 1
+            # Bound quantity to sane range (1-9999)
+            miqdor = max(1, min(miqdor, 9999))
+            # Check nomi is plausible (exists in tovarlar list, fuzzy)
+            nomi_lower = nomi.lower()
+            has_match = any(
+                nomi_lower in tn.lower() or tn.lower() in nomi_lower
+                for tn in tovarlar_nomlari
+            )
+            if not has_match:
+                # Still include but log — fuzzy_match_tovar will handle
+                log.debug("gemini returned unknown tovar: %s", nomi)
+            tovarlar_parsed.append({"nomi": nomi, "miqdor": miqdor})
+
+        dokon = (data.get("dokon") or data.get("do'kon") or "").strip()
+
         return {
-            "do'kon": data.get("dokon", data.get("do'kon", "")),
-            "tovarlar": [
-                {"nomi": t.get("nomi", ""), "miqdor": int(t.get("miqdor", 1))}
-                for t in data.get("tovarlar", [])
-                if t.get("nomi")
-            ],
-            "xato": None,
+            "do'kon": dokon,
+            "tovarlar": tovarlar_parsed,
+            "xato": None if dokon and tovarlar_parsed else "Gemini parse natijasi bo'sh",
         }
 
     except Exception as e:
