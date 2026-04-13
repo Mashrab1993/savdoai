@@ -491,6 +491,19 @@ async def ovoz_qabul(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
         except Exception as _pi:
             log.debug("Print intent (ovoz): %s", _pi)
 
+        # ═══ v25.5 VOICE ORDER — avtomatik zakaz ═══
+        try:
+            ctx.user_data["last_transcription"] = matn
+            from services.bot.handlers.voice_order import handle_voice_order
+            await handle_voice_order(update, ctx)
+            # If voice_order handled it, it replied. If not (not an order),
+            # fall through to normal processing below.
+            if ctx.user_data.get("_voice_order_handled"):
+                del ctx.user_data["_voice_order_handled"]
+                return
+        except Exception as _vo:
+            log.debug("Voice order: %s", _vo)
+
         await _qayta_ishlash(update,ctx,matn)
     except Exception as xato:
         log.error("ovoz_qabul: %s",xato,exc_info=True)
@@ -1174,6 +1187,15 @@ def ilovani_qur(conf:Config) -> Application:
     app.add_handler(CommandHandler("bekor_sotuv",      cmd_bekor_sotuv))
     app.add_handler(CommandHandler("sotuv",            cmd_sotuv_detail))
     app.add_handler(CallbackQueryHandler(barcode_cb,   pattern=r"^bc:"))
+
+    # ═══ v25.5 VOICE ORDER — agent ovozdan avtomatik zakaz ═══
+    try:
+        from services.bot.handlers.voice_order import handle_voice_order_callback
+        app.add_handler(CallbackQueryHandler(handle_voice_order_callback, pattern=r"^voice_order_"))
+        log.info("✅ Voice Order callback handler ulandi")
+    except Exception as e:
+        log.warning("⚠️ Voice Order handler yuklanmadi: %s", e)
+
     # ═══ v25.3.2 KUCHLI HANDLERLAR — Qarz eslatma, KPI, Loyalty ═══
     from services.bot.handlers.yangi import register_yangi_handlers
     register_yangi_handlers(app)
