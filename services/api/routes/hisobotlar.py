@@ -1511,3 +1511,130 @@ async def defekt_hisoboti(
         "jami_summa":  float(Decimal(str(stats["jami_summa"]))) if stats else 0,
         "soni":        int(stats["soni"]) if stats else 0,
     }
+
+
+# ════════════════════════════════════════════════════════════
+#  EKSPEDITOR (DELIVERY AGENT) HISOBOTI
+# ════════════════════════════════════════════════════════════
+
+@router.get("/hisobot/ekspeditor")
+async def ekspeditor_hisoboti(
+    sana_dan: Optional[str] = None,
+    sana_gacha: Optional[str] = None,
+    uid: int = Depends(get_uid),
+):
+    """
+    Ekspeditor (delivery agent) hisoboti — yetkazib berish samaradorligi.
+
+    sotuv_sessiyalar jadvalidagi holat = 'otgruzka' | 'yetkazildi'
+    buyurtmalarni agent bo'yicha guruhlaydi.
+
+    Parametrlar:
+      sana_dan  — boshlanish sanasi (YYYY-MM-DD), default 30 kun oldin
+      sana_gacha — tugash sanasi (YYYY-MM-DD), default bugun
+
+    Response:
+      {
+        "items": [{ agent_id, agent_ismi, jami_buyurtma, yetkazilgan,
+                     kutilmoqda, jami_summa, yetkazilgan_summa,
+                     ortacha_vaqt_soat }],
+        "jami": { buyurtma, yetkazilgan, kutilmoqda }
+      }
+    """
+    from datetime import timedelta
+
+    now = datetime.now(timezone.utc)
+
+    if sana_gacha:
+        try:
+            datetime.strptime(sana_gacha, "%Y-%m-%d")
+        except ValueError:
+            raise HTTPException(status_code=400, detail="sana_gacha formati noto'g'ri, YYYY-MM-DD kerak")
+        gacha = sana_gacha
+    else:
+        gacha = now.strftime("%Y-%m-%d")
+
+    if sana_dan:
+        try:
+            datetime.strptime(sana_dan, "%Y-%m-%d")
+        except ValueError:
+            raise HTTPException(status_code=400, detail="sana_dan formati noto'g'ri, YYYY-MM-DD kerak")
+        dan = sana_dan
+    else:
+        dan = (now - timedelta(days=30)).strftime("%Y-%m-%d")
+
+    cache_k = f"hisobot:ekspeditor:{uid}:{dan}:{gacha}"
+    cached = await cache_ol(cache_k)
+    if cached:
+        return cached
+
+    async with rls_conn(uid) as c:
+        rows = await c.fetch("""
+            SELECT
+                ss.user_id                              AS agent_id,
+                COALESCE(u.ism, u.dokon_nomi, u.username, 'Agent') AS agent_ismi,
+
+                COUNT(ss.id)                            AS jami_buyurtma,
+
+                COUNT(ss.id) FILTER (WHERE ss.holat = 'yetkazildi')
+                                                        AS yetkazilgan,
+                COUNT(ss.id) FILTER (WHERE ss.holat IN ('otgruzka','tasdiqlangan'))
+                                                        AS kutilmoqda,
+
+                COALESCE(SUM(ss.jami), 0)               AS jami_summa,
+                COALESCE(SUM(ss.jami) FILTER (WHERE ss.holat = 'yetkazildi'), 0)
+                                                        AS yetkazilgan_summa,
+
+                -- O'rtacha yetkazish vaqti (otgruzka -> yetkazildi, soatlarda)
+                COALESCE(
+                    AVG(
+                        EXTRACT(EPOCH FROM (ss.yetkazildi_vaqti - ss.otgruzka_vaqti)) / 3600.0
+                    ) FILTER (
+                        WHERE ss.yetkazildi_vaqti IS NOT NULL
+                          AND ss.otgruzka_vaqti IS NOT NULL
+                    ),
+                    0
+                )                                       AS ortacha_vaqt_soat
+
+            FROM sotuv_sessiyalar ss
+            LEFT JOIN users u ON u.id = ss.user_id
+            WHERE ss.holat IN ('otgruzka','yetkazildi','tasdiqlangan')
+              AND (ss.sana AT TIME ZONE 'Asia/Tashkent')::date
+                    BETWEEN $1::date AND $2::date
+            GROUP BY ss.user_id, u.ism, u.dokon_nomi, u.username
+            ORDER BY COUNT(ss.id) DESC
+        """, dan, gacha)
+
+        jami_buyurtma = 0
+        jami_yetkazilgan = 0
+        jami_kutilmoqda = 0
+        items = []
+
+        for r in rows:
+            jami_buyurtma += int(r["jami_buyurtma"])
+            jami_yetkazilgan += int(r["yetkazilgan"])
+            jami_kutilmoqda += int(r["kutilmoqda"])
+
+            items.append({
+                "agent_id":          int(r["agent_id"]),
+                "agent_ismi":        r["agent_ismi"],
+                "jami_buyurtma":     int(r["jami_buyurtma"]),
+                "yetkazilgan":       int(r["yetkazilgan"]),
+                "kutilmoqda":        int(r["kutilmoqda"]),
+                "jami_summa":        float(r["jami_summa"]),
+                "yetkazilgan_summa": float(r["yetkazilgan_summa"]),
+                "ortacha_vaqt_soat": round(float(r["ortacha_vaqt_soat"]), 1),
+            })
+
+    result = {
+        "sana_dan": dan,
+        "sana_gacha": gacha,
+        "items": items,
+        "jami": {
+            "buyurtma":    jami_buyurtma,
+            "yetkazilgan": jami_yetkazilgan,
+            "kutilmoqda":  jami_kutilmoqda,
+        },
+    }
+    await cache_yoz(cache_k, result, TTL_HISOBOT)
+    return result
