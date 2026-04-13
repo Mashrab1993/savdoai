@@ -62,10 +62,19 @@ export async function apiRequest<T>(
     headers["Authorization"] = `Bearer ${token}`
   }
 
-  const res = await fetch(`${base}${path}`, {
-    ...options,
-    headers,
-  })
+  let res: Response
+  try {
+    res = await fetch(`${base}${path}`, {
+      ...options,
+      headers,
+    })
+  } catch (networkErr) {
+    // Network error — API unreachable, CORS, or offline
+    const hint = base
+      ? `API (${base}) ga ulanib bo'lmadi. Internet aloqasini tekshiring.`
+      : "API manzili sozlanmagan. Sahifani yangilang (Ctrl+Shift+R)."
+    throw new ApiResponseError(0, hint)
+  }
 
   if (res.status === 401) {
     clearSession()
