@@ -352,3 +352,71 @@ async def create_order_from_voice(
         result["xatolar"].append(f"DB xato: {str(e)[:100]}")
 
     return result
+
+
+# ════════════════════════════════════════════════════════════
+#  GEMINI SMART PARSER — murakkab ovozlar uchun AI fallback
+# ════════════════════════════════════════════════════════════
+
+async def smart_parse_with_gemini(text: str, tovarlar_nomlari: list[str]) -> dict:
+    """
+    Agar oddiy regex parser ishlamasa — Gemini'dan yordam so'rash.
+
+    Gemini'ga tovarlar ro'yxatini berish va matnni structured
+    JSON ga parse qilishni so'rash. Bu murakkab gaplar uchun:
+    "Xurshid akaga ikki dona Rosabella qizil bilan to'rtta Dollux
+    keyin yana bitta Park ham qo'shib yuboring"
+
+    Returns same shape as parse_order_text().
+    """
+    import os
+    try:
+        import google.generativeai as genai
+        key = os.getenv("GEMINI_API_KEY", "")
+        if not key:
+            return parse_order_text(text)  # fallback to regex
+
+        genai.configure(api_key=key)
+        model = genai.GenerativeModel("gemini-2.5-flash")
+
+        prompt = f"""Sen savdo agenti uchun ovozli buyurtmalarni parse qiluvchi AI'san.
+
+Quyidagi matnni tahlil qil va JSON formatda javob ber:
+- "dokon": do'kon yoki klient nomi
+- "tovarlar": [{{"nomi": "tovar nomi", "miqdor": son}}]
+
+MUHIM: Faqat JSON qaytar, boshqa matn qo'shma.
+
+Mavjud tovarlar ro'yxati (fuzzy match qil):
+{chr(10).join(f'- {n}' for n in tovarlar_nomlari[:50])}
+
+Matn: "{text}"
+"""
+        resp = model.generate_content(prompt)
+        raw = resp.text.strip()
+
+        # Extract JSON from response
+        import json
+        # Try to find JSON in response
+        if raw.startswith("{"):
+            data = json.loads(raw)
+        elif "{" in raw:
+            start = raw.index("{")
+            end = raw.rindex("}") + 1
+            data = json.loads(raw[start:end])
+        else:
+            return parse_order_text(text)
+
+        return {
+            "do'kon": data.get("dokon", data.get("do'kon", "")),
+            "tovarlar": [
+                {"nomi": t.get("nomi", ""), "miqdor": int(t.get("miqdor", 1))}
+                for t in data.get("tovarlar", [])
+                if t.get("nomi")
+            ],
+            "xato": None,
+        }
+
+    except Exception as e:
+        log.warning("smart_parse_with_gemini: %s", e)
+        return parse_order_text(text)  # fallback to regex
