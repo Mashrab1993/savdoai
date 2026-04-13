@@ -107,9 +107,9 @@ export default function DashboardPage() {
                     {locale === "uz" ? "Barchasi →" : "Все →"}
                   </Link>
                 </div>
-                {Array.isArray((statsExtra as any).kam_qoldiq_tovarlar) && (statsExtra as any).kam_qoldiq_tovarlar.length > 0 && (
+                {Array.isArray(statsExtra?.kam_qoldiq_tovarlar) && statsExtra?.kam_qoldiq_tovarlar.length > 0 && (
                   <div className="flex flex-wrap gap-1.5 pl-8">
-                    {(statsExtra as any).kam_qoldiq_tovarlar.slice(0, 5).map((t: any) => (
+                    {statsExtra?.kam_qoldiq_tovarlar.slice(0, 5).map((t: any) => (
                       <span key={t.id} className="inline-flex items-center gap-1 text-[11px] font-medium bg-amber-500/15 text-amber-800 dark:text-amber-300 dark:text-amber-200 rounded-full px-2 py-0.5 border border-amber-500/30">
                         {t.nomi}
                         <span className="text-amber-600 dark:text-amber-400 font-bold tabular-nums">{Number(t.qoldiq)}</span>
@@ -121,7 +121,7 @@ export default function DashboardPage() {
             )}
 
             {/* Bugungi top sellers */}
-            {Array.isArray((statsExtra as any)?.top_bugun) && (statsExtra as any).top_bugun.length > 0 && (
+            {Array.isArray(statsExtra?.top_bugun) && statsExtra?.top_bugun.length > 0 && (
               <div className="bg-emerald-500/10 border-l-4 border-emerald-500 rounded-2xl p-4">
                 <div className="flex items-start gap-3 mb-2">
                   <TrendingUp className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
@@ -130,7 +130,7 @@ export default function DashboardPage() {
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-1.5 pl-8">
-                  {(statsExtra as any).top_bugun.map((t: any, i: number) => (
+                  {statsExtra?.top_bugun.map((t: any, i: number) => (
                     <span key={i} className="inline-flex items-center gap-1.5 text-[11px] font-medium bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 dark:text-emerald-200 rounded-full px-2.5 py-0.5 border border-emerald-500/30">
                       <span className="text-emerald-500 font-bold">#{i + 1}</span>
                       {t.nomi}

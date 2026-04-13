@@ -445,6 +445,8 @@ export interface StatistikaResponse {
   bugun: { soni: number; jami: number }
   hafta: { soni: number; jami: number }
   oy: { soni: number; jami: number }
+  kam_qoldiq_tovarlar?: Array<{ id: number; nomi: string; qoldiq: number; min_qoldiq: number; birlik: string }>
+  top_bugun?: Array<{ nomi: string; miqdor: number; jami: number }>
 }
 
 export const statistikaService = {
