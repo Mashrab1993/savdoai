@@ -515,6 +515,20 @@ export const dashboardSummaryService = {
   get: () => api.get<DashboardSummaryResponse>("/api/v1/dashboard/summary"),
 }
 
+// ── Ombor holati ──────────────────────────────────────────────────────────────
+export interface OmborHolatiResponse {
+  jami_tovar: number
+  faol: number
+  tugagan: number
+  kam_qoldiq: number
+  kategoriya_soni: number
+  jami_qiymat: number
+  top_qimmat: Array<{ nomi: string; qoldiq: number; qiymat: number }>
+  top_kam: Array<{ nomi: string; qoldiq: number; min_qoldiq: number; birlik: string }>
+}
+
+// omborService defined below (near OmborPrognozResponse)
+
 // ── Top Reports (SalesPivotTable-compatible) ─────────────────────────────────
 export interface PivotRowResponse {
   key: string
@@ -617,6 +631,7 @@ export interface OmborPrognozResponse {
 export const omborService = {
   prognoz: (kunlar?: number) =>
     api.get<OmborPrognozResponse>(`/api/v1/ombor/prognoz${kunlar ? `?kunlar=${kunlar}` : ""}`),
+  holati: () => api.get<OmborHolatiResponse>("/api/v1/hisobot/ombor-holati"),
 }
 
 // ── KPI ───────────────────────────────────────────────────────────────────────
