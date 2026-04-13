@@ -132,12 +132,12 @@ export default function OmborPage() {
             <div className="text-sm text-muted-foreground">Jami tovarlar</div>
             <div className="text-2xl font-bold mt-1">{stats.jami}</div>
           </div>
-          <div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-xl border border-emerald-200 dark:border-emerald-800 p-4 cursor-pointer hover:shadow-md transition"
+          <div className="bg-emerald-500/10 rounded-2xl border border-emerald-500/30 p-4 cursor-pointer hover:shadow-md transition"
                onClick={() => setFilter("ok")}>
-            <div className="text-sm text-emerald-600">Normal zaxira</div>
-            <div className="text-2xl font-bold mt-1 text-emerald-700">{stats.normal}</div>
+            <div className="text-sm text-emerald-600 dark:text-emerald-400">Normal zaxira</div>
+            <div className="text-2xl font-bold mt-1 text-emerald-700 dark:text-emerald-300">{stats.normal}</div>
           </div>
-          <div className="bg-amber-500/10 dark:bg-amber-950/20 rounded-xl border border-amber-500/30 dark:border-yellow-800 p-4 cursor-pointer hover:shadow-md transition"
+          <div className="bg-amber-500/10 dark:bg-amber-500/10 rounded-xl border border-amber-500/30 dark:border-amber-500/30 p-4 cursor-pointer hover:shadow-md transition"
                onClick={() => setFilter("low")}>
             <div className="text-sm text-amber-600 dark:text-amber-400">Kam qolgan</div>
             <div className="text-2xl font-bold mt-1 text-amber-700 dark:text-amber-300">{stats.kam}</div>
