@@ -100,8 +100,62 @@ def parse_order_text(text: str) -> dict:
             dokon = sentences[0].strip()
             tovar_text = sentences[1].strip()
 
+    # If STILL no separator — try splitting before first number/qty word
+    # "Jasur aka Kattaqo'rg'on benim katta 11 karobka..." →
+    # do'kon = "Jasur aka Kattaqo'rg'on", tovarlar = "benim katta 11 karobka..."
+    if not dokon:
+        qty_pattern = re.search(
+            r'\b(\d+)\s*(?:ta|dona|karobka|shtuk|sht|kg|pachka|quti|korobka|bl[oa]k)\b',
+            text, re.IGNORECASE,
+        )
+        if qty_pattern:
+            # Walk backwards from the number to find where product name starts
+            before_qty = text[:qty_pattern.start()].strip()
+            # The product name is the last 1-3 words before the number
+            words_before = before_qty.split()
+            if len(words_before) >= 3:
+                # Try splitting: first 2+ words = do'kon, rest = tovar
+                # Heuristic: do'kon usually has "aka/opa/brat" or is a known place name
+                for split_at in range(2, min(len(words_before), 6)):
+                    candidate_dokon = " ".join(words_before[:split_at])
+                    candidate_rest = " ".join(words_before[split_at:])
+                    # If candidate has "aka", "opa" or is capitalized — likely do'kon
+                    has_honorific = any(
+                        h in candidate_dokon.lower()
+                        for h in ("aka", "opa", "brat", "uka", "xola", "amaki")
+                    )
+                    if has_honorific:
+                        # Include 1 more word after honorific if it looks like a place name
+                        # "Jasur aka Kattaqo'rg'on" → include Kattaqo'rg'on
+                        if split_at < len(words_before):
+                            next_word = words_before[split_at]
+                            # If next word starts with uppercase and not a number → place name
+                            if next_word[0].isupper() and not next_word[0].isdigit():
+                                dokon = candidate_dokon + " " + next_word
+                                tovar_text = " ".join(words_before[split_at + 1:]) + " " + text[qty_pattern.start():]
+                                break
+                        dokon = candidate_dokon
+                        tovar_text = candidate_rest + " " + text[qty_pattern.start():]
+                        break
+                # Fallback: first 3 words = do'kon
+                if not dokon and len(words_before) >= 4:
+                    dokon = " ".join(words_before[:3])
+                    tovar_text = " ".join(words_before[3:]) + " " + text[qty_pattern.start():]
+
     # Step 2: Tovarlarni ajratish
     tovarlar = []
+
+    # Pre-step: if tovar_text has NO separators but has multiple "N karobka/ta/dona"
+    # patterns, split by quantity pattern: "benim katta 11 karobka benim mayda 8 karobka"
+    # → ["benim katta 11 karobka", "benim mayda 8 karobka"]
+    if not any(sep in tovar_text for sep in [",", ".", "—", "–"]):
+        # Insert commas after each "N karobka/ta/dona" pattern
+        tovar_text = re.sub(
+            r'(\d+\s*(?:karobka|ta|dona|shtuk|sht|kg|pachka|quti|korobka|blok))\s+(?=[a-zA-Z])',
+            r'\1, ',
+            tovar_text,
+            flags=re.IGNORECASE,
+        )
 
     # Split by comma (only if followed by space+word), "keyin", "yana", periods.
     # NOTE: "va" is NOT a splitter — it appears inside product names
