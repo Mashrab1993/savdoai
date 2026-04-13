@@ -163,7 +163,7 @@ export default function BusinessSettingsPage() {
       <div className="space-y-5">
         <PageHeader
           icon={Settings2}
-          gradient="indigo"
+          gradient="violet"
           title={t.title}
           subtitle={t.subtitle}
         />
