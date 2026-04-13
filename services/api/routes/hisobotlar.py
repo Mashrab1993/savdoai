@@ -1199,3 +1199,106 @@ async def report_sales_detail_excel(
         "jami_summa": total_jami,
         "jami_foyda": total_foyda,
     }
+
+
+# ════════════════════════════════════════════════════════════
+#  TAVSIYA QOLDIQ — SalesDoc stock/report uslubida
+#  O'rtacha kunlik sotuv + necha kunga yetishi + tavsiya
+# ════════════════════════════════════════════════════════════
+
+@router.get("/hisobot/tavsiya-qoldiq")
+async def tavsiya_qoldiq(
+    kunlar: int = 30,
+    uid: int = Depends(get_uid),
+):
+    """
+    SalesDoc'dagi "Рекомендуемый запас" hisoboti.
+
+    Har bir tovar uchun:
+    - O'rtacha kunlik sotuv (oxirgi N kun)
+    - Hozirgi qoldiq
+    - Necha kunga yetishi
+    - Tavsiya qoldiq (6, 10, 30 kunga)
+    """
+    async with rls_conn(uid) as c:
+        rows = await c.fetch("""
+            WITH sotuv_stats AS (
+                SELECT
+                    ch.tovar_id,
+                    SUM(ch.miqdor) AS jami_sotilgan,
+                    COUNT(DISTINCT (ch.sana AT TIME ZONE 'Asia/Tashkent')::date) AS sotuv_kunlari
+                FROM chiqimlar ch
+                WHERE ch.user_id = $1
+                  AND ch.sana >= NOW() - make_interval(days => $2)
+                GROUP BY ch.tovar_id
+            )
+            SELECT
+                t.id,
+                t.nomi,
+                t.kategoriya,
+                t.birlik,
+                t.qoldiq,
+                t.sotish_narxi,
+                t.olish_narxi,
+                COALESCE(ss.jami_sotilgan, 0) AS jami_sotilgan,
+                COALESCE(ss.sotuv_kunlari, 0) AS sotuv_kunlari,
+                CASE
+                    WHEN COALESCE(ss.sotuv_kunlari, 0) > 0
+                    THEN ROUND(ss.jami_sotilgan::numeric / ss.sotuv_kunlari, 1)
+                    ELSE 0
+                END AS kunlik_sotuv,
+                CASE
+                    WHEN COALESCE(ss.jami_sotilgan, 0) > 0 AND ss.sotuv_kunlari > 0
+                    THEN ROUND(t.qoldiq::numeric / (ss.jami_sotilgan::numeric / ss.sotuv_kunlari), 1)
+                    ELSE NULL
+                END AS necha_kunga_yetadi
+            FROM tovarlar t
+            LEFT JOIN sotuv_stats ss ON ss.tovar_id = t.id
+            WHERE t.user_id = $1 AND t.faol = TRUE
+            ORDER BY
+                CASE WHEN t.qoldiq <= 0 THEN 0
+                     WHEN COALESCE(ss.jami_sotilgan, 0) > 0
+                          AND ss.sotuv_kunlari > 0
+                          AND t.qoldiq::numeric / (ss.jami_sotilgan::numeric / ss.sotuv_kunlari) < 7
+                     THEN 1
+                     ELSE 2
+                END,
+                t.nomi
+        """, uid, kunlar)
+
+    items = []
+    for r in rows:
+        kunlik = float(r["kunlik_sotuv"] or 0)
+        qoldiq = float(r["qoldiq"] or 0)
+        yetadi = float(r["necha_kunga_yetadi"]) if r["necha_kunga_yetadi"] is not None else None
+
+        items.append({
+            "id": r["id"],
+            "nomi": r["nomi"],
+            "kategoriya": r["kategoriya"],
+            "birlik": r["birlik"],
+            "qoldiq": qoldiq,
+            "sotish_narxi": float(r["sotish_narxi"] or 0),
+            "olish_narxi": float(r["olish_narxi"] or 0),
+            "jami_sotilgan": float(r["jami_sotilgan"] or 0),
+            "sotuv_kunlari": int(r["sotuv_kunlari"] or 0),
+            "kunlik_sotuv": kunlik,
+            "necha_kunga_yetadi": yetadi,
+            "tavsiya_6_kun": max(0, round(kunlik * 6 - qoldiq, 1)),
+            "tavsiya_10_kun": max(0, round(kunlik * 10 - qoldiq, 1)),
+            "tavsiya_30_kun": max(0, round(kunlik * 30 - qoldiq, 1)),
+            "holat": "tugagan" if qoldiq <= 0 else
+                     "kritik" if yetadi is not None and yetadi < 3 else
+                     "kam" if yetadi is not None and yetadi < 7 else
+                     "yetarli",
+        })
+
+    return {
+        "items": items,
+        "jami_tovar": len(items),
+        "tugagan": sum(1 for i in items if i["holat"] == "tugagan"),
+        "kritik": sum(1 for i in items if i["holat"] == "kritik"),
+        "kam": sum(1 for i in items if i["holat"] == "kam"),
+        "yetarli": sum(1 for i in items if i["holat"] == "yetarli"),
+        "kunlar": kunlar,
+    }
