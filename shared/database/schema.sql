@@ -1049,3 +1049,17 @@ ALTER TABLE webhooklar ENABLE ROW LEVEL SECURITY;
 CREATE POLICY webhooklar_iso ON webhooklar
     FOR ALL USING (user_id = current_setting('app.uid')::bigint);
 
+
+-- ═══ sotuv_taglar — buyurtma teglari ═══
+CREATE TABLE IF NOT EXISTS sotuv_taglar (
+    id SERIAL PRIMARY KEY,
+    sotuv_id INTEGER NOT NULL,
+    tag VARCHAR(100) NOT NULL,
+    user_id INTEGER NOT NULL,
+    yaratilgan TIMESTAMPTZ DEFAULT NOW(),
+    UNIQUE(sotuv_id, tag)
+);
+CREATE INDEX IF NOT EXISTS idx_sotuv_taglar ON sotuv_taglar(user_id, sotuv_id);
+ALTER TABLE sotuv_taglar ENABLE ROW LEVEL SECURITY;
+CREATE POLICY sotuv_taglar_iso ON sotuv_taglar
+    FOR ALL USING (user_id = current_setting('app.uid')::bigint);
