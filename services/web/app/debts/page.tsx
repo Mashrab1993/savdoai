@@ -50,8 +50,8 @@ export default function DebtsPage() {
     return matchSearch && matchStatus
   })
 
-  const totalOwed = debts.filter(d => d.status !== "paid").reduce((s, d) => s + (d.amount - d.paid), 0)
-  const overdueAmount = debts.filter(d => d.status === "overdue").reduce((s, d) => s + d.amount, 0)
+  const totalOwed = debts.filter(d => d.status !== "paid").reduce((s, d) => s + (d.amount - (d.paid || 0)), 0)
+  const overdueAmount = debts.filter(d => d.status === "overdue").reduce((s, d) => s + (d.amount || 0), 0)
   const overdueCount = debts.filter(d => d.status === "overdue").length
 
   async function handlePayment(debt: DebtVM) {

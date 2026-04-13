@@ -93,7 +93,7 @@ export default function ProductsPage() {
 
   const filtered = products.filter(p => {
     const matchesSearch = p.name.toLowerCase().includes(search.toLowerCase()) ||
-      p.sku.toLowerCase().includes(search.toLowerCase())
+      (p.sku || "").toLowerCase().includes(search.toLowerCase())
     const matchesCategory = categoryFilter === "all" || p.category === categoryFilter
     return matchesSearch && matchesCategory
   })
@@ -314,7 +314,7 @@ export default function ProductsPage() {
                   a.download  = r.filename || "shablon.xlsx"
                   a.click()
                   URL.revokeObjectURL(url)
-                } catch { /* silent */ }
+                } catch { alert(locale === "uz" ? "Yuklab olishda xato" : "Ошибка загрузки") }
               }}
               title={locale === "uz" ? "Import uchun shablon yuklab olish" : "Скачать шаблон для импорта"}
             >
@@ -337,7 +337,7 @@ export default function ProductsPage() {
                   a.download = result.filename || "tovarlar.xlsx"
                   a.click()
                   URL.revokeObjectURL(url)
-                } catch { /* silent */ }
+                } catch { alert(locale === "uz" ? "Yuklab olishda xato" : "Ошибка загрузки") }
               }}
             >
               <Download className="w-4 h-4" />

@@ -65,8 +65,8 @@ export default function ClientsPage() {
   const filtered = clients.filter(c => {
     const matchesSearch =
       c.name.toLowerCase().includes(search.toLowerCase()) ||
-      c.phone.toLowerCase().includes(search.toLowerCase()) ||
-      c.address.toLowerCase().includes(search.toLowerCase())
+      (c.phone || "").toLowerCase().includes(search.toLowerCase()) ||
+      (c.address || "").toLowerCase().includes(search.toLowerCase())
     const matchesStatus = statusFilter === "all" || c.status === statusFilter
     return matchesSearch && matchesStatus
   })
