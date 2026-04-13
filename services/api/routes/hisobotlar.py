@@ -1448,3 +1448,66 @@ async def van_selling_kunlik(
             "foyda":       float(jami_foyda),
         },
     }
+
+
+# ────────────────────────────────────────────────────────────────────
+#  DEFEKT / QAYTARISH HISOBOTI
+# ────────────────────────────────────────────────────────────────────
+@router.get("/hisobot/defekt")
+async def defekt_hisoboti(
+    sana_dan: Optional[str] = None,
+    sana_gacha: Optional[str] = None,
+    uid: int = Depends(get_uid),
+):
+    """Defekt/qaytarish hisoboti — qaytarilgan tovarlar, sabablar, statistika."""
+    where = ["q.user_id = $1"]
+    params: list = [uid]
+    if sana_dan:
+        params.append(sana_dan)
+        where.append(f"q.sana >= ${len(params)}::timestamptz")
+    if sana_gacha:
+        params.append(sana_gacha)
+        where.append(f"q.sana < ${len(params)}::timestamptz + interval '1 day'")
+    where_sql = " AND ".join(where)
+
+    async with rls_conn(uid) as c:
+        rows = await c.fetch(f"""
+            SELECT q.id, q.tovar_nomi, COALESCE(ch.kategoriya, 'Boshqa') AS kategoriya,
+                   q.miqdor, q.narx, q.jami,
+                   COALESCE(q.sabab, '') AS sabab,
+                   COALESCE(q.klient_ismi, '') AS klient_ismi,
+                   q.sana
+            FROM qaytarishlar q
+            LEFT JOIN chiqimlar ch ON ch.id = q.chiqim_id
+            WHERE {where_sql}
+            ORDER BY q.sana DESC
+        """, *params)
+
+        stats = await c.fetchrow(f"""
+            SELECT COUNT(*)                  AS soni,
+                   COALESCE(SUM(q.jami), 0)    AS jami_summa,
+                   COALESCE(SUM(q.miqdor), 0)  AS jami_miqdor
+            FROM qaytarishlar q
+            WHERE {where_sql}
+        """, *params)
+
+    items = []
+    for r in rows:
+        items.append({
+            "id":          r["id"],
+            "tovar_nomi":  r["tovar_nomi"],
+            "kategoriya":  r["kategoriya"],
+            "miqdor":      float(Decimal(str(r["miqdor"]))) if r["miqdor"] else 0,
+            "narx":        float(Decimal(str(r["narx"]))) if r["narx"] else 0,
+            "jami":        float(Decimal(str(r["jami"]))) if r["jami"] else 0,
+            "sabab":       r["sabab"],
+            "klient_ismi": r["klient_ismi"],
+            "sana":        r["sana"].strftime("%Y-%m-%d") if r["sana"] else None,
+        })
+
+    return {
+        "items":      items,
+        "jami_miqdor": float(Decimal(str(stats["jami_miqdor"]))) if stats else 0,
+        "jami_summa":  float(Decimal(str(stats["jami_summa"]))) if stats else 0,
+        "soni":        int(stats["soni"]) if stats else 0,
+    }

@@ -873,6 +873,34 @@ export const sozlamalarService = {
   remove: (jadval: string, id: number) => api.delete(`/api/v1/sozlamalar/${jadval}/${id}`),
 }
 
+// ── Defekt hisoboti ──────────────────────────────────────────────────────────
+export const defektService = {
+  list: (params?: { sana_dan?: string; sana_gacha?: string }) => {
+    const q = new URLSearchParams()
+    if (params?.sana_dan) q.set("sana_dan", params.sana_dan)
+    if (params?.sana_gacha) q.set("sana_gacha", params.sana_gacha)
+    const qs = q.toString()
+    return api.get<{
+      items: Array<Record<string, unknown>>
+      jami_miqdor: number; jami_summa: number; soni: number
+    }>(`/api/v1/hisobot/defekt${qs ? `?${qs}` : ""}`)
+  },
+}
+
+// ── Ekspeditor hisoboti ─────────────────────────────────────────────────────
+export const ekspeditorService = {
+  list: (params?: { sana_dan?: string; sana_gacha?: string }) => {
+    const q = new URLSearchParams()
+    if (params?.sana_dan) q.set("sana_dan", params.sana_dan)
+    if (params?.sana_gacha) q.set("sana_gacha", params.sana_gacha)
+    const qs = q.toString()
+    return api.get<{
+      items: Array<Record<string, unknown>>
+      jami: Record<string, number>
+    }>(`/api/v1/hisobot/ekspeditor${qs ? `?${qs}` : ""}`)
+  },
+}
+
 // ── Van Selling Kunlik Hisobot ───────────────────────────────────────────────
 export const vanSellingService = {
   kunlik: (sana?: string) => {
