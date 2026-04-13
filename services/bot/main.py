@@ -1044,7 +1044,56 @@ async def boshlash(app:Application) -> None:
                 time=datetime.time(hour=9, minute=0, tzinfo=tz),
                 name="ertalab_hisobot",
             )
-            log.info("✅ Standalone: kunlik/haftalik/qarz/obuna/ertalab joblar yoqildi")
+            # ═══ v25.5 KUNLIK REESTR — 19:00 da avtomatik ═══
+            async def avto_kunlik_reestr(ctx: ContextTypes.DEFAULT_TYPE) -> None:
+                """Har kuni 19:00 — agentlar bo'yicha bugungi reestr."""
+                log.info("⏰ Kunlik reestr generatsiya...")
+                try:
+                    users = await db.faol_users()
+                    for user in users:
+                        try:
+                            async with db._P().acquire() as c:
+                                await c.execute(f"SET app.uid = '{user['id']}'")
+                                bugun = await c.fetch("""
+                                    SELECT ss.id, ss.klient_ismi, ss.jami, ss.sana,
+                                           COUNT(ch.id) AS tovar_soni
+                                    FROM sotuv_sessiyalar ss
+                                    LEFT JOIN chiqimlar ch ON ch.sessiya_id = ss.id
+                                    WHERE ss.user_id = $1
+                                      AND (ss.sana AT TIME ZONE 'Asia/Tashkent')::date = CURRENT_DATE
+                                      AND COALESCE(ss.holat, 'yangi') != 'bekor'
+                                    GROUP BY ss.id
+                                    ORDER BY ss.sana
+                                """, user["id"])
+                                if not bugun:
+                                    continue
+                                jami = sum(float(r["jami"]) for r in bugun)
+                                lines = [
+                                    f"📋 **KUNLIK REESTR** — {len(bugun)} ta zakaz",
+                                    f"💰 **JAMI: {pul(jami)}**\n",
+                                ]
+                                for i, r in enumerate(bugun, 1):
+                                    lines.append(
+                                        f"{i}. {r['klient_ismi'] or '—'} — "
+                                        f"{pul(float(r['jami']))} "
+                                        f"({r['tovar_soni']} tovar)"
+                                    )
+                                await ctx.bot.send_message(
+                                    user["id"],
+                                    "\n".join(lines),
+                                    parse_mode=ParseMode.MARKDOWN,
+                                )
+                        except Exception as ue:
+                            log.debug("reestr user %s: %s", user["id"], ue)
+                except Exception as e:
+                    log.error("avto_kunlik_reestr: %s", e, exc_info=True)
+
+            job_queue.run_daily(
+                avto_kunlik_reestr,
+                time=datetime.time(hour=19, minute=0, tzinfo=tz),
+                name="kunlik_reestr",
+            )
+            log.info("✅ Standalone: kunlik/haftalik/qarz/obuna/ertalab/REESTR joblar yoqildi")
 
             # ═══ v25.3.2 SMART NOTIFICATION JOBS ═══
             async def _smart_notify(ctx, turi):
