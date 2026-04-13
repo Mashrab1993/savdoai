@@ -78,7 +78,7 @@ export default function DashboardPage() {
           <>
             {/* Priority: Overdue Alert if critical */}
             {stats.overdueCount > 0 && (
-              <div className="bg-rose-500/10 dark:bg-red-950/20 border-l-4 border-rose-500 rounded-lg p-4 flex items-start gap-3">
+              <div className="bg-rose-500/10 dark:bg-rose-950/20 border-l-4 border-rose-500 rounded-lg p-4 flex items-start gap-3">
                 <AlertCircle className="w-5 h-5 text-rose-600 dark:text-rose-400 dark:text-rose-400 shrink-0 mt-0.5" />
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold text-rose-900 dark:text-rose-200 dark:text-red-300 text-sm">

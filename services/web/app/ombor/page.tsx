@@ -231,7 +231,7 @@ export default function OmborPage() {
                   const status = zaxira <= 0 ? "out" : zaxira <= minZaxira ? "low" : "ok"
 
                   return (
-                    <TableRow key={t.id || i} className={status === "out" ? "bg-rose-500/10/50 dark:bg-rose-950/10" : status === "low" ? "bg-amber-500/10/50 dark:bg-yellow-900/10" : ""}>
+                    <TableRow key={t.id || i} className={status === "out" ? "bg-rose-500/10 dark:bg-rose-950/10" : status === "low" ? "bg-amber-500/10 dark:bg-amber-900/10" : ""}>
                       <TableCell className="text-muted-foreground">{i + 1}</TableCell>
                       <TableCell>
                         <div className="font-medium">{t.nomi || "Nomsiz"}</div>

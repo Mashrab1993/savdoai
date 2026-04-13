@@ -61,7 +61,7 @@ function StatCard({ icon: Icon, label, value, trend, sparkData, color = "emerald
         </div>
         {sparkData && <Sparkline data={sparkData} color={color === "emerald" ? "#10b981" : color === "blue" ? "#3b82f6" : "#f59e0b"} />}
       </div>
-      <div className="text-2xl font-bold text-foreground dark:text-white">
+      <div className="text-2xl font-bold text-foreground text-foreground">
         <AnimatedNumber value={typeof value === "number" ? value : Number(value) || 0} />
       </div>
       <div className="flex items-center justify-between mt-1">

@@ -367,7 +367,7 @@ export default function ExpensesPage() {
                 <h3 className="font-semibold text-sm text-foreground mb-3 flex items-center gap-2">
                   <Clock className="w-4 h-4 text-amber-500" />
                   {locale === "uz" ? "Kutilayotgan tasdiqlar" : "Ожидают подтверждения"}
-                  <span className="ml-auto bg-amber-500/15 dark:bg-yellow-900/30 text-amber-700 dark:text-amber-300 dark:text-yellow-400 text-xs px-2 py-0.5 rounded-full font-medium">
+                  <span className="ml-auto bg-amber-500/15 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 text-xs px-2 py-0.5 rounded-full font-medium">
                     {pendingCount}
                   </span>
                 </h3>

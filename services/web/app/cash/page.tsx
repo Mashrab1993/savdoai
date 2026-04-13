@@ -197,11 +197,11 @@ export default function CashPage() {
           <div className={cn(
             "col-span-2 lg:col-span-1 rounded-2xl p-5 border flex flex-col gap-1",
             balanceTrend
-              ? "bg-emerald-500/10 dark:bg-emerald-950/20 border-emerald-500/30 dark:border-green-800"
+              ? "bg-emerald-500/10 dark:bg-emerald-950/20 border-emerald-500/30 dark:border-emerald-800"
               : "bg-rose-500/10 dark:bg-rose-950/20 border-rose-500/30 dark:border-rose-800"
           )}>
             <div className="flex items-center gap-2">
-              <Landmark className={cn("w-4 h-4", balanceTrend ? "text-emerald-600 dark:text-emerald-400 dark:text-emerald-400" : "text-destructive")} />
+              <Landmark className={cn("w-4 h-4", balanceTrend ? "text-emerald-600 dark:text-emerald-400" : "text-destructive")} />
               <p className="text-xs font-medium text-muted-foreground">{L.balance[locale]}</p>
             </div>
             <p className={cn("text-2xl font-bold mt-1", balanceTrend ? "text-emerald-700 dark:text-emerald-300 dark:text-green-300" : "text-destructive")}>
@@ -218,7 +218,7 @@ export default function CashPage() {
 
           <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl shadow-sm p-4 flex items-center gap-3 hover:border-border/70 transition-colors">
             <div className="p-2 rounded-lg bg-emerald-500/15 dark:bg-emerald-950/30 shrink-0">
-              <TrendingUp className="w-4 h-4 text-emerald-600 dark:text-emerald-400 dark:text-emerald-400" />
+              <TrendingUp className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
             </div>
             <div className="min-w-0">
               <p className="text-xs text-muted-foreground truncate">{L.income[locale]}</p>
@@ -227,7 +227,7 @@ export default function CashPage() {
           </div>
 
           <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl shadow-sm p-4 flex items-center gap-3 hover:border-border/70 transition-colors">
-            <div className="p-2 rounded-lg bg-rose-500/15 dark:bg-red-900/30 shrink-0">
+            <div className="p-2 rounded-lg bg-rose-500/15 dark:bg-rose-900/30 shrink-0">
               <TrendingDown className="w-4 h-4 text-destructive" />
             </div>
             <div className="min-w-0">
@@ -242,7 +242,7 @@ export default function CashPage() {
             </div>
             <div className="min-w-0">
               <p className="text-xs text-muted-foreground truncate">{L.monthlyProfit[locale]}</p>
-              <p className={cn("text-lg font-bold truncate", monthlyIncome - monthlyOutcome >= 0 ? "text-emerald-600 dark:text-emerald-400 dark:text-emerald-400" : "text-destructive")}>
+              <p className={cn("text-lg font-bold truncate", monthlyIncome - monthlyOutcome >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-destructive")}>
                 {fmt(monthlyIncome - monthlyOutcome)}
               </p>
             </div>
@@ -366,7 +366,7 @@ export default function CashPage() {
                         <span className="text-xs font-normal text-muted-foreground ml-2">{date}</span>
                       </p>
                       <div className="flex items-center gap-3 text-xs">
-                        <span className="text-emerald-600 dark:text-emerald-400 dark:text-emerald-400 font-medium">+{fmt(dayIncome)}</span>
+                        <span className="text-emerald-600 dark:text-emerald-400 font-medium">+{fmt(dayIncome)}</span>
                         <span className="text-destructive font-medium">−{fmt(dayOutcome)}</span>
                       </div>
                     </div>
@@ -377,10 +377,10 @@ export default function CashPage() {
                             "w-9 h-9 rounded-full flex items-center justify-center shrink-0",
                             tx.type === "income"
                               ? "bg-emerald-500/15 dark:bg-emerald-950/30"
-                              : "bg-rose-500/15 dark:bg-red-900/30"
+                              : "bg-rose-500/15 dark:bg-rose-900/30"
                           )}>
                             {tx.type === "income"
-                              ? <ArrowDownCircle className="w-4 h-4 text-emerald-600 dark:text-emerald-400 dark:text-emerald-400" />
+                              ? <ArrowDownCircle className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                               : <ArrowUpCircle className="w-4 h-4 text-destructive" />
                             }
                           </div>
@@ -393,7 +393,7 @@ export default function CashPage() {
                           <div className="flex items-center gap-3 shrink-0">
                             <p className={cn(
                               "text-sm font-bold",
-                              tx.type === "income" ? "text-emerald-600 dark:text-emerald-400 dark:text-emerald-400" : "text-destructive"
+                              tx.type === "income" ? "text-emerald-600 dark:text-emerald-400" : "text-destructive"
                             )}>
                               {tx.type === "income" ? "+" : "−"}{fmt(tx.amount)}
                             </p>
@@ -486,9 +486,9 @@ export default function CashPage() {
             <div className="bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl shadow-sm p-4 space-y-3">
               <h4 className="text-sm font-semibold text-foreground">{L.monthSummary[locale]}</h4>
               {[
-                { label: L.totalIncome[locale],  value: fmtFull(monthlyIncome),                    color: "text-emerald-600 dark:text-emerald-400 dark:text-emerald-400" },
+                { label: L.totalIncome[locale],  value: fmtFull(monthlyIncome),                    color: "text-emerald-600 dark:text-emerald-400" },
                 { label: L.totalOutcome[locale], value: fmtFull(monthlyOutcome),                   color: "text-destructive" },
-                { label: L.netProfit[locale],    value: fmtFull(monthlyIncome - monthlyOutcome),   color: monthlyIncome >= monthlyOutcome ? "text-emerald-600 dark:text-emerald-400 dark:text-emerald-400" : "text-destructive" },
+                { label: L.netProfit[locale],    value: fmtFull(monthlyIncome - monthlyOutcome),   color: monthlyIncome >= monthlyOutcome ? "text-emerald-600 dark:text-emerald-400" : "text-destructive" },
               ].map(row => (
                 <div key={row.label} className="flex items-center justify-between text-sm border-b border-border last:border-0 pb-2 last:pb-0">
                   <span className="text-muted-foreground">{row.label}</span>

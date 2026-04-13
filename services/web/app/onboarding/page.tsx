@@ -121,7 +121,7 @@ export default function OnboardingPage() {
             <Icon className={`w-8 h-8 text-${current.color}-600`} />
           </div>
 
-          <h2 className="text-xl font-bold text-foreground dark:text-white mb-3">
+          <h2 className="text-xl font-bold text-foreground text-foreground mb-3">
             {current.title}
           </h2>
           <p className="text-sm text-muted-foreground mb-6 leading-relaxed">
