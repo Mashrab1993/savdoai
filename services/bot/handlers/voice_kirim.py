@@ -227,6 +227,9 @@ async def handle_voice_kirim(update: Update, context: ContextTypes.DEFAULT_TYPE)
             reply_markup=keyboard,
         )
 
+        # Signal to main pipeline that kirim was handled
+        context.user_data["_voice_order_handled"] = True
+
     except Exception as e:
         log.error("voice_kirim: %s", e, exc_info=True)
         await msg.reply_text(f"⚠️ Xatolik: {str(e)[:200]}")

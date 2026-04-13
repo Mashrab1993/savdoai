@@ -237,6 +237,9 @@ async def handle_voice_order(update: Update, context: ContextTypes.DEFAULT_TYPE)
             reply_markup=keyboard,
         )
 
+        # Signal to main pipeline that order was handled
+        context.user_data["_voice_order_handled"] = True
+
     except Exception as e:
         log.error("voice_order: %s", e, exc_info=True)
         await msg.reply_text(f"⚠️ Xatolik: {str(e)[:200]}")
