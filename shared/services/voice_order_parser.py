@@ -88,9 +88,21 @@ def parse_order_text(text: str) -> dict:
             rest = parts[1].strip()
             # Do'kon name is usually short (1-5 words), doesn't contain numbers
             words = candidate.split()
-            if 1 <= len(words) <= 8 and not any(w.isdigit() for w in words[:2]):
+            has_digit = any(w.isdigit() for w in words)
+            if 1 <= len(words) <= 5 and not has_digit:
                 dokon = candidate
                 tovar_text = rest
+                break
+            # If candidate has digits — might be "Do'kon MIQDOR tovar, ..."
+            # Try to split at first digit
+            if not has_digit:
+                continue
+            for wi, w in enumerate(words):
+                if w.isdigit() and wi >= 2:
+                    dokon = " ".join(words[:wi])
+                    tovar_text = " ".join(words[wi:]) + sep + rest
+                    break
+            if dokon:
                 break
 
     # If no separator found, try first sentence
@@ -170,7 +182,7 @@ def parse_order_text(text: str) -> dict:
     for chunk in items_raw:
         # Split by comma only if what follows looks like a new item
         # (starts with a word, not a continuation like "qizil")
-        parts = re.split(r',\s*(?=[A-ZА-ЯЎҚҒҲa-zа-яўқғҳ])', chunk)
+        parts = re.split(r',\s*(?=[A-ZА-ЯЎҚҒҲa-zа-яўқғҳ0-9])', chunk)
         expanded.extend(parts)
     items_raw = expanded
 
@@ -225,12 +237,19 @@ def parse_order_text(text: str) -> dict:
                     nomi = item[:m2.start()].strip()
                     break
 
-        # Try: "MIQDOR tovar_name" (number at the beginning)
+        # Try: "MIQDOR tovar_name birlik" or "MIQDOR tovar_name" (number at the beginning)
         if miqdor == 0:
-            m3 = re.match(r'^(\d+)\s+(.+)', item)
+            m3 = re.match(
+                r'^(\d+)\s+(.+?)\s*(?:karobka|ta|dona|shtuk|sht|kg|pachka|quti|korobka|bl[oa]k)\s*$',
+                item, re.IGNORECASE,
+            )
+            if not m3:
+                m3 = re.match(r'^(\d+)\s+(.+)', item)
             if m3:
                 miqdor = int(m3.group(1))
                 nomi = m3.group(2).strip()
+                # Remove trailing birlik from nomi
+                nomi = re.sub(r'\s*(?:karobka|ta|dona|shtuk|sht|kg|pachka|quti|korobka)\s*$', '', nomi, flags=re.IGNORECASE).strip()
 
         # Default miqdor = 1 ONLY if a quantity indicator was found
         # (digit, "ta", "dona", O'zbek number word). Otherwise skip —
@@ -601,7 +620,7 @@ def parse_kirim_text(text: str) -> dict:
     # Expand comma splits
     expanded = []
     for chunk in items_raw:
-        parts = re.split(r',\s*(?=[A-ZА-ЯЎҚҒҲa-zа-яўқғҳ])', chunk)
+        parts = re.split(r',\s*(?=[A-ZА-ЯЎҚҒҲa-zа-яўқғҳ0-9])', chunk)
         expanded.extend(parts)
     items_raw = expanded
 
