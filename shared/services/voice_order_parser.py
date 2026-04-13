@@ -882,13 +882,13 @@ async def smart_parse_with_gemini(text: str, tovarlar_nomlari: list[str]) -> dic
     """
     import os
     try:
-        import google.generativeai as genai
+        from google import genai as _genai
         key = os.getenv("GEMINI_API_KEY", "")
         if not key:
             return parse_order_text(text)  # fallback to regex
 
-        genai.configure(api_key=key)
-        model = genai.GenerativeModel("gemini-3.1-pro-preview")
+        client = _genai.Client(api_key=key)
+        _model = "gemini-3.1-pro-preview"
 
         prompt = f"""Sen savdo agenti uchun ovozli buyurtmalarni parse qiluvchi AI'san.
 
@@ -908,7 +908,7 @@ Mavjud tovarlar ro'yxati:
 
 Matn: "{text}"
 """
-        resp = model.generate_content(prompt)
+        resp = client.models.generate_content(model=_model, contents=prompt)
         raw = resp.text.strip()
 
         # Extract JSON from response
@@ -977,13 +977,13 @@ async def smart_parse_kirim_with_gemini(text: str, tovarlar_nomlari: list[str]) 
     """
     import os
     try:
-        import google.generativeai as genai
+        from google import genai as _genai
         key = os.getenv("GEMINI_API_KEY", "")
         if not key:
             return parse_kirim_text(text)  # fallback to regex
 
-        genai.configure(api_key=key)
-        model = genai.GenerativeModel("gemini-3.1-pro-preview")
+        client = _genai.Client(api_key=key)
+        _model = "gemini-3.1-pro-preview"
 
         prompt = f"""Sen distributor uchun ovozli KIRIM (tovar tushumi) ma'lumotlarini parse qiluvchi AI'san.
 
@@ -1003,7 +1003,7 @@ Mavjud tovarlar ro'yxati (fuzzy match qil):
 
 Matn: "{text}"
 """
-        resp = model.generate_content(prompt)
+        resp = client.models.generate_content(model=_model, contents=prompt)
         raw = resp.text.strip()
 
         # Extract JSON from response
