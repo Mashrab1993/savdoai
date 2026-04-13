@@ -21,7 +21,10 @@ from celery.schedules import crontab
 
 log = logging.getLogger(__name__)
 
-REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+REDIS_URL = os.getenv("REDIS_URL")
+if not REDIS_URL:
+    log.warning("REDIS_URL not set — worker may fail to connect")
+    REDIS_URL = "redis://localhost:6379/0"
 
 app = Celery(
     "mashrab_moliya",
