@@ -285,14 +285,20 @@ async def klient_yarat(data: dict, uid: int = Depends(get_uid)):
     ism = (data.get("ism") or "").strip()
     if not ism:
         raise HTTPException(400, "Klient ismi bo'sh")
+    kredit_limit = data.get("kredit_limit", 0)
+    try:
+        kredit_limit = float(kredit_limit or 0)
+        if kredit_limit < 0 or kredit_limit > 9_999_999_999:
+            raise HTTPException(400, "Kredit limit 0 — 9,999,999,999 oralig'ida bo'lishi kerak")
+    except (TypeError, ValueError):
+        kredit_limit = 0
     async with rls_conn(uid) as c:
         klient = await c.fetchrow("""
             INSERT INTO klientlar(user_id, ism, telefon, manzil, kredit_limit)
             VALUES($1,$2,$3,$4,$5)
             ON CONFLICT(user_id, lower(ism)) DO UPDATE SET telefon=EXCLUDED.telefon
             RETURNING id, user_id, ism, telefon, manzil, kredit_limit, jami_sotib, yaratilgan
-        """, uid, ism, data.get("telefon"), data.get("manzil"),
-            data.get("kredit_limit", 0))
+        """, uid, ism, data.get("telefon"), data.get("manzil"), kredit_limit)
     await user_cache_tozala(uid)
     return dict(klient)
 

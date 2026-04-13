@@ -115,7 +115,11 @@ export default function ClientsPage() {
       setForm({})
       refetch()
     } catch (err) {
-      const msg = err instanceof ApiResponseError ? err.detail : (locale === "uz" ? "Saqlashda xato" : "Ошибка сохранения")
+      const msg = err instanceof ApiResponseError
+        ? err.detail
+        : err instanceof Error
+          ? err.message
+          : (locale === "uz" ? "Saqlashda xato" : "Ошибка сохранения")
       setSaveError(msg)
     } finally {
       setSaving(false)
