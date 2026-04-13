@@ -1130,3 +1130,92 @@ def parse_klient_text(text: str) -> dict:
         "kredit_limit": kredit_limit,
         "xato": None if ism else "Klient ismi aniqlanmadi",
     }
+
+
+# ════════════════════════════════════════════════════════════
+#  NARX PARSER — ovozdan tovar narxlarini ajratish
+# ════════════════════════════════════════════════════════════
+
+def parse_narx_text(text: str) -> dict:
+    """
+    Ovozdan tovar narxlarini ajratish.
+
+    Input examples:
+        "Dollux sotish narxi 85 ming, Rozabella arzon 98 ming"
+        "Narx o'rnat: Dollux 85000, Rozabella qimmat 115 ming"
+        "Dollux 85 mingdan, Rozabella arzon 98 mingdan sotamiz"
+
+    Returns:
+        {
+            "tovarlar": [
+                {"nomi": "Dollux", "sotish_narxi": 85000},
+                {"nomi": "Rozabella arzon", "sotish_narxi": 98000},
+            ],
+            "xato": None
+        }
+    """
+    text = text.strip()
+    if not text:
+        return {"tovarlar": [], "xato": "Bo'sh matn"}
+
+    # Remove prefix
+    text_clean = re.sub(
+        r'^(?:narx\s*(?:o\'rnat|qo\'y|belgilab?|yangilab?)\s*[:\-—.]?\s*)',
+        '', text, flags=re.IGNORECASE,
+    ).strip() or text
+
+    def _parse_price(s: str) -> int:
+        """Parse price: 85 ming → 85000, 1.5 mln → 1500000, 85000 → 85000"""
+        s = s.strip().lower()
+        s = re.sub(r"\s*so'm\s*$", "", s)
+        s = re.sub(r"\s*dan\s*$", "", s)
+        m = re.match(r'^([\d]+(?:[.,]\d+)?)\s*mln', s)
+        if m:
+            return int(float(m.group(1).replace(",", ".")) * 1_000_000)
+        m = re.match(r'^([\d]+(?:[.,]\d+)?)\s*ming', s)
+        if m:
+            return int(float(m.group(1).replace(",", ".")) * 1_000)
+        digits = re.sub(r'\s+', '', s)
+        if digits.isdigit():
+            return int(digits)
+        return 0
+
+    # Split by comma, period, "keyin", "yana"
+    items_raw = re.split(r'[,.]|\bkeyin\b|\byana\b', text_clean)
+
+    tovarlar = []
+    for item in items_raw:
+        item = item.strip()
+        if not item or len(item) < 3:
+            continue
+
+        # Pattern: "TOVAR_NOMI sotish narxi NARX" or "TOVAR_NOMI NARX mingdan"
+        # or just "TOVAR_NOMI NARX ming"
+        narx_match = re.search(
+            r'(?:sotish\s*narxi?|narxi?|sotishi)\s*([\d\s.,]+(?:\s*(?:ming|mln|so\'m))?)',
+            item, re.IGNORECASE,
+        )
+
+        if narx_match:
+            narx = _parse_price(narx_match.group(1))
+            nomi = item[:narx_match.start()].strip()
+        else:
+            # Try: "TOVAR NARX mingdan" or "TOVAR NARX"
+            m = re.search(r'([\d]+(?:[.,]\d+)?)\s*(?:ming|mln)?\s*(?:dan|ga)?\s*$', item, re.IGNORECASE)
+            if m:
+                narx = _parse_price(m.group(0))
+                nomi = item[:m.start()].strip()
+            else:
+                continue
+
+        # Clean name
+        nomi = re.sub(r'\s+', ' ', nomi).strip()
+        nomi = re.sub(r'\s+(dan|lik|ning|ga|ni|sotish|narx)$', '', nomi, flags=re.IGNORECASE)
+
+        if nomi and len(nomi) >= 2 and narx > 0:
+            tovarlar.append({"nomi": nomi, "sotish_narxi": narx})
+
+    return {
+        "tovarlar": tovarlar,
+        "xato": None if tovarlar else "Tovar yoki narx aniqlanmadi",
+    }

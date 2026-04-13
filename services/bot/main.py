@@ -502,7 +502,12 @@ async def ovoz_qabul(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
                          "yangi mijoz", "yangi do'kon", "do'kon qo'sh")
             is_klient = any(kw in matn_lower for kw in klient_kw)
 
-            # 2. Detect KIRIM (requires keyword + qty/price)
+            # 2. Detect NARX update
+            narx_kw = ("narx o'rnat", "narx qo'y", "narx belgilab",
+                       "narx yangilab", "sotish narxi", "sotish narx")
+            is_narx = any(kw in matn_lower for kw in narx_kw) and not is_klient
+
+            # 3. Detect KIRIM (requires keyword + qty/price)
             kirim_kw = ("keldi", "kelgan", "tushdi", "kirim", "kirimi",
                         "olish narx", "zavoddan", "fabrika", "kompaniyasidan")
             has_kirim_kw = any(kw in matn_lower for kw in kirim_kw)
@@ -510,11 +515,14 @@ async def ovoz_qabul(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
                 any(w.isdigit() for w in matn_words)
                 or any(kw in matn_lower for kw in ("narx", "ming", "mln", "ta ", "dona"))
             )
-            is_kirim = has_kirim_kw and has_qty_or_price and not is_klient
+            is_kirim = has_kirim_kw and has_qty_or_price and not is_klient and not is_narx
 
             if is_klient:
                 from services.bot.handlers.voice_klient import handle_voice_klient
                 await handle_voice_klient(update, ctx)
+            elif is_narx:
+                from services.bot.handlers.voice_narx import handle_voice_narx
+                await handle_voice_narx(update, ctx)
             elif is_kirim:
                 from services.bot.handlers.voice_kirim import handle_voice_kirim
                 await handle_voice_kirim(update, ctx)
@@ -1276,6 +1284,14 @@ def ilovani_qur(conf:Config) -> Application:
         log.info("✅ Voice Kirim callback handler ulandi")
     except Exception as e:
         log.warning("⚠️ Voice Kirim handler yuklanmadi: %s", e)
+
+    # ═══ v25.6 VOICE NARX — ovozdan narx o'rnatish ═══
+    try:
+        from services.bot.handlers.voice_narx import handle_voice_narx_callback
+        app.add_handler(CallbackQueryHandler(handle_voice_narx_callback, pattern=r"^voice_narx_"))
+        log.info("✅ Voice Narx callback handler ulandi")
+    except Exception as e:
+        log.warning("⚠️ Voice Narx handler yuklanmadi: %s", e)
 
     # ═══ v25.6 VOICE KLIENT — ovozdan yangi klient qo'shish ═══
     try:
