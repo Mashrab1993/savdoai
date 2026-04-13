@@ -88,8 +88,8 @@ async def pre_sale_checks(conn, uid: int, klient_ismi: str,
                     f"🎁 {daraja['emoji']} {klient_ismi} — {daraja['nomi']} "
                     f"({daraja['chegirma_foiz']}% chegirma imkoniyati)"
                 )
-        except Exception:
-            pass
+        except Exception as e:
+            log.debug("Loyalty profil: %s", e)
 
     # ── 3. Qoldiq yetarliligi ──
     for t in tovarlar:
@@ -170,8 +170,8 @@ async def post_sale_alerts(conn, uid: int, sessiya_id: int,
                 ogohlar.append(
                     f"⚠️ {t['nomi']}: {q:.0f} qoldi (min: {float(t['min_qoldiq']):.0f})"
                 )
-    except Exception:
-        pass
+    except Exception as e:
+        log.debug("Post-sale qoldiq check: %s", e)
 
     # ── 2. Loyalty ball ──
     if klient_id and jami_summa > 0:
@@ -180,7 +180,7 @@ async def post_sale_alerts(conn, uid: int, sessiya_id: int,
             ball = ball_hisoblash(jami_summa)
             if ball > 0:
                 ogohlar.append(f"⭐ Klientga +{ball} bonus ball qo'shildi")
-        except Exception:
-            pass
+        except Exception as e:
+            log.debug("Loyalty ball: %s", e)
 
     return ogohlar
