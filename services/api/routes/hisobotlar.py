@@ -592,6 +592,64 @@ async def hisobot_top_tovarlar(kunlar: int = 30, limit: int = 20, uid: int = Dep
     ]
 
 
+@router.get("/hisobot/ombor-holati")
+async def hisobot_ombor_holati(uid: int = Depends(get_uid)):
+    """
+    Ombor holati summary — dashboard widget uchun.
+
+    Response:
+      {
+        "jami_tovar": 245,
+        "jami_qiymat": 125400000,
+        "kam_qoldiq": 12,
+        "tugagan": 5,
+        "faol": 230,
+        "kategoriya_soni": 8,
+        "top_qimmat": [{nomi, qoldiq, qiymat}],
+        "top_kam": [{nomi, qoldiq, min_qoldiq}]
+      }
+    """
+    async with rls_conn(uid) as c:
+        stats = await c.fetchrow("""
+            SELECT
+                COUNT(*) AS jami_tovar,
+                COUNT(*) FILTER(WHERE faol = TRUE) AS faol,
+                COUNT(*) FILTER(WHERE qoldiq <= 0) AS tugagan,
+                COUNT(*) FILTER(WHERE min_qoldiq > 0 AND qoldiq <= min_qoldiq AND qoldiq > 0) AS kam_qoldiq,
+                COUNT(DISTINCT kategoriya) AS kategoriya_soni,
+                COALESCE(SUM(qoldiq * sotish_narxi), 0) AS jami_qiymat
+            FROM tovarlar
+            WHERE user_id = $1
+        """, uid)
+
+        top_qimmat = await c.fetch("""
+            SELECT nomi, qoldiq, (qoldiq * sotish_narxi) AS qiymat
+            FROM tovarlar
+            WHERE user_id = $1 AND qoldiq > 0
+            ORDER BY (qoldiq * sotish_narxi) DESC
+            LIMIT 5
+        """, uid)
+
+        top_kam = await c.fetch("""
+            SELECT nomi, qoldiq, min_qoldiq, birlik
+            FROM tovarlar
+            WHERE user_id = $1 AND min_qoldiq > 0 AND qoldiq <= min_qoldiq
+            ORDER BY qoldiq ASC
+            LIMIT 5
+        """, uid)
+
+    return {
+        "jami_tovar":     int(stats["jami_tovar"]),
+        "faol":           int(stats["faol"]),
+        "tugagan":        int(stats["tugagan"]),
+        "kam_qoldiq":     int(stats["kam_qoldiq"]),
+        "kategoriya_soni": int(stats["kategoriya_soni"]),
+        "jami_qiymat":    float(stats["jami_qiymat"]),
+        "top_qimmat":     [dict(r) for r in top_qimmat],
+        "top_kam":        [dict(r) for r in top_kam],
+    }
+
+
 @router.get("/hisobot/kunlik-trend")
 async def hisobot_kunlik_trend(kunlar: int = 30, uid: int = Depends(get_uid)):
     """Oxirgi N kunlik sotuv — dashboard grafigi uchun (real-time)."""
