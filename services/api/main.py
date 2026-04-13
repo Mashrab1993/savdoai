@@ -520,6 +520,13 @@ try:
 except Exception as e:
     log.warning("⚠️ Suppliers yuklanmadi: %s", e)
 
+try:
+    from services.api.routes.sozlamalar import router as sozlamalar_router
+    app.include_router(sozlamalar_router, tags=["Sozlamalar"])
+    log.info("✅ Sozlamalar (Settings) moduli ulandi")
+except Exception as e:
+    log.warning("⚠️ Sozlamalar yuklanmadi: %s", e)
+
 # ════════════════════════════════════════════════════════════
 #  JWT + AUTH — deps.py dan import (shared bilan kassa/ws)
 # ════════════════════════════════════════════════════════════

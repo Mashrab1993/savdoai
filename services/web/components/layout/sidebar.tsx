@@ -102,6 +102,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   // ═══════════════════════════════════════════════════════
 
   const navItemsSettings = [
+    { href: "/business-settings", label: "🏢 Biznes sozlamalar", icon: Settings },
     { href: "/config",      label: "⚙️ Sozlamalar",    icon: Settings },
     { href: "/settings",    label: "🔒 Hisobim",       icon: Shield },
   ]

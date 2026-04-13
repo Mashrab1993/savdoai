@@ -865,6 +865,14 @@ export const aiDashboardService = {
   tahlil: () => api.get<{ insightlar?: Array<Record<string, unknown>> }>("/tahlil"),
 }
 
+// ── Biznes Sozlamalar (SalesDoc-style settings) ─────────────────────────────
+export const sozlamalarService = {
+  list: (jadval: string) => api.get<{ items: Array<Record<string, unknown>> }>(`/api/v1/sozlamalar/${jadval}`),
+  create: (jadval: string, data: Record<string, unknown>) => api.post(`/api/v1/sozlamalar/${jadval}`, data),
+  update: (jadval: string, id: number, data: Record<string, unknown>) => api.put(`/api/v1/sozlamalar/${jadval}/${id}`, data),
+  remove: (jadval: string, id: number) => api.delete(`/api/v1/sozlamalar/${jadval}/${id}`),
+}
+
 // ── Config (Sozlamalar) ──────────────────────────────────────────────────────
 // Backend: /config/... (no /api/v1)
 export const configService = {
