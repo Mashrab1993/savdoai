@@ -279,7 +279,7 @@ async def handle_voice_kirim_callback(update: Update, context: ContextTypes.DEFA
             if result["success"]:
                 # Build success message with details
                 details = []
-                for m in result["matched_items"]:
+                for m in result.get("matched_items", []):
                     details.append(f"  • {m['nomi']}: +{m['miqdor']} {m.get('birlik', 'dona')}")
 
                 await query.edit_message_text(
