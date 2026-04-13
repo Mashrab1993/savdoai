@@ -123,6 +123,7 @@ async def handle_voice_kirim(update: Update, context: ContextTypes.DEFAULT_TYPE)
                 f"📝 Matn: {text[:200]}\n\n"
                 f"💡 Format: «Tovar 100 ta keldi, kirim narxi 69 ming, sotuv narxi 85 ming»"
             )
+            context.user_data["_voice_order_handled"] = True
             return
 
         # Match tovarlar
@@ -160,6 +161,7 @@ async def handle_voice_kirim(update: Update, context: ContextTypes.DEFAULT_TYPE)
                 + "\n".join(f"  • {n}" for n in not_found)
                 + "\n\n💡 Tovar nomini DB'dagi kabi ayting."
             )
+            context.user_data["_voice_order_handled"] = True
             return
 
         # Build confirmation message

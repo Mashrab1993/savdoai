@@ -135,6 +135,7 @@ async def handle_voice_order(update: Update, context: ContextTypes.DEFAULT_TYPE)
                 f"📝 Matn: {text[:200]}\n\n"
                 f"💡 Format: «Do'kon nomi — Tovar1 N ta, Tovar2 M ta»"
             )
+            context.user_data["_voice_order_handled"] = True
             return
 
         # Match do'kon
@@ -145,6 +146,7 @@ async def handle_voice_order(update: Update, context: ContextTypes.DEFAULT_TYPE)
                 f"💡 DB'dagi klientlardan birini ayting. "
                 f"Masalan: /klientlar buyrug'i bilan ro'yxatni ko'ring."
             )
+            context.user_data["_voice_order_handled"] = True
             return
 
         # Match tovarlar — using Decimal for all money
@@ -179,6 +181,7 @@ async def handle_voice_order(update: Update, context: ContextTypes.DEFAULT_TYPE)
                 + "\n".join(f"  • {n}" for n in not_found)
                 + "\n\n💡 Tovar nomini DB'dagi kabi ayting."
             )
+            context.user_data["_voice_order_handled"] = True
             return
 
         # Build confirmation message
