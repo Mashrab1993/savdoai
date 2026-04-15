@@ -69,13 +69,45 @@ async def rasm_qabul(update, ctx) -> None:
     if not update.message or not update.message.photo:
         return
 
-    # Chek rejimi (/chek buyrug'idan keyin)
+    # Chek vs Tovar — AVTO-ANIQLASH
     try:
         from services.bot.handlers.chek_xarajat import handle_chek_photo
-        if await handle_chek_photo(update, ctx):
-            return
+        # Manual /chek mode (eng yuqori prioritet)
+        if ctx.user_data.get("_chek_kutilmoqda"):
+            if await handle_chek_photo(update, ctx):
+                return
+        # Caption keyword
+        caption_lower = (update.message.caption or "").lower()
+        chek_kw = ("chek", "kassa", "azs", "uzgaz", "magnit",
+                   "dorixona", "transport", "benzin", "gaz xarajat",
+                   "to'lov chek", "kvitansiya")
+        if any(kw in caption_lower for kw in chek_kw):
+            ctx.user_data["_chek_kutilmoqda"] = True
+            if await handle_chek_photo(update, ctx):
+                return
+        # AVTO-ANIQLASH (Gemini Vision) — agar caption bo'sh bo'lsa
+        if not caption_lower:
+            import tempfile
+            photo = update.message.photo[-1]
+            file = await ctx.bot.get_file(photo.file_id)
+            with tempfile.NamedTemporaryFile(suffix=".jpg", delete=False) as tmp:
+                tmp_path = tmp.name
+            await file.download_to_drive(tmp_path)
+
+            from shared.services.rasm_tur_aniqlash import aniqlash
+            tur = await aniqlash(tmp_path)
+            try:
+                import os as _os
+                _os.remove(tmp_path)
+            except Exception:
+                pass
+
+            if tur == "chek":
+                ctx.user_data["_chek_kutilmoqda"] = True
+                if await handle_chek_photo(update, ctx):
+                    return
     except Exception as _e:
-        log.debug("chek photo handler: %s", _e)
+        log.debug("rasm tur aniqlash: %s", _e)
 
     uid = update.effective_user.id
     caption = update.message.caption or ""
