@@ -1307,6 +1307,9 @@ def ilovani_qur(conf:Config) -> Application:
         from services.bot.handlers.chek_xarajat import cmd_chek, handle_chek_callback
         app.add_handler(CommandHandler("chek", cmd_chek))
         app.add_handler(CallbackQueryHandler(handle_chek_callback, pattern=r"^chek_"))
+        # Kassa topshirish (shogird → ofis)
+        from services.bot.handlers.kassa_topshirish import handle_topshirish_callback
+        app.add_handler(CallbackQueryHandler(handle_topshirish_callback, pattern=r"^topsh_"))
         log.info("✅ Voice Narx callback handler ulandi")
     except Exception as e:
         log.warning("⚠️ Voice Narx handler yuklanmadi: %s", e)

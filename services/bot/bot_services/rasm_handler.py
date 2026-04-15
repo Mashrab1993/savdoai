@@ -69,6 +69,14 @@ async def rasm_qabul(update, ctx) -> None:
     if not update.message or not update.message.photo:
         return
 
+    # KASSA TOPSHIRISH — caption "topshirdi/kassaga/ofisga + summa"
+    try:
+        from services.bot.handlers.kassa_topshirish import handle_topshirish_photo
+        if await handle_topshirish_photo(update, ctx):
+            return
+    except Exception as _e:
+        log.debug("topshirish: %s", _e)
+
     # Chek vs Tovar — AVTO-ANIQLASH
     try:
         from services.bot.handlers.chek_xarajat import handle_chek_photo

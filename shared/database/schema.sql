@@ -1083,3 +1083,36 @@ ALTER TABLE ovoz_arxiv ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS ovoz_arxiv_iso ON ovoz_arxiv;
 CREATE POLICY ovoz_arxiv_iso ON ovoz_arxiv
     FOR ALL USING (user_id = NULLIF(current_setting('app.uid', true), '')::bigint);
+
+-- ═══ kassa_topshirish — shogird ofisga pul topshirish jurnali ═══
+CREATE TABLE IF NOT EXISTS kassa_topshirish (
+    id          BIGSERIAL   PRIMARY KEY,
+    admin_uid   BIGINT      NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    shogird_id  BIGINT      REFERENCES shogirdlar(id),
+    summa       DECIMAL(18,2) NOT NULL,
+    rasm_file_id TEXT,                     -- Telegram rasm file_id (dalil)
+    rasm_path   TEXT,                       -- Local API rasm yo'li
+    izoh        TEXT,
+    yaratgan_uid BIGINT     NOT NULL,       -- kim qo'shgan (admin yoki shogird)
+    tasdiqlangan BOOLEAN    DEFAULT FALSE,
+    tasdiqlagan_uid BIGINT,                 -- kim tasdiqlagan
+    sana        TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    tasdiqlangan_sana TIMESTAMPTZ
+);
+CREATE INDEX IF NOT EXISTS idx_kassa_topshirish_uid_sana
+    ON kassa_topshirish(admin_uid, sana DESC);
+CREATE INDEX IF NOT EXISTS idx_kassa_topshirish_shogird
+    ON kassa_topshirish(shogird_id, sana DESC) WHERE shogird_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_kassa_topshirish_pending
+    ON kassa_topshirish(admin_uid, tasdiqlangan, sana DESC) WHERE tasdiqlangan = FALSE;
+ALTER TABLE kassa_topshirish ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS kassa_topshirish_iso ON kassa_topshirish;
+-- Admin barcha topshirishlarni ko'radi, shogird faqat o'z topshirishlarini
+CREATE POLICY kassa_topshirish_iso ON kassa_topshirish
+    FOR ALL USING (
+        admin_uid = NULLIF(current_setting('app.uid', true), '')::bigint
+        OR shogird_id IN (
+            SELECT id FROM shogirdlar
+            WHERE telegram_uid = NULLIF(current_setting('app.uid', true), '')::bigint
+        )
+    );
