@@ -1078,7 +1078,8 @@ CREATE TABLE IF NOT EXISTS ovoz_arxiv (
 );
 CREATE INDEX IF NOT EXISTS idx_ovoz_arxiv_uid_sana ON ovoz_arxiv(user_id, sana DESC);
 CREATE INDEX IF NOT EXISTS idx_ovoz_arxiv_op ON ovoz_arxiv(user_id, operatsiya, sana DESC);
+CREATE INDEX IF NOT EXISTS idx_ovoz_arxiv_file ON ovoz_arxiv(user_id, ovoz_file_id);
 ALTER TABLE ovoz_arxiv ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS ovoz_arxiv_iso ON ovoz_arxiv;
 CREATE POLICY ovoz_arxiv_iso ON ovoz_arxiv
-    FOR ALL USING (user_id = current_setting('app.uid')::bigint);
+    FOR ALL USING (user_id = NULLIF(current_setting('app.uid', true), '')::bigint);

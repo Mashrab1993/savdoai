@@ -28,6 +28,9 @@ async def saqlash(
     muvaffaqiyat: bool = False,
     xato: Optional[str] = None,
 ) -> Optional[int]:
+    """See module docstring."""
+    if not conn or not user_id or not file_id:
+        return None
     """
     Ovozli xabarni arxivga saqlash.
 
@@ -67,6 +70,8 @@ async def yangilash(
     xato: Optional[str] = None,
 ) -> None:
     """Arxiv yozuvini yangilash (tasdiqlash yoki bekor qilingandan keyin)."""
+    if not conn or not arxiv_id:
+        return
     try:
         await conn.execute("""
             UPDATE ovoz_arxiv
