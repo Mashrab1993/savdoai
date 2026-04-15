@@ -254,6 +254,54 @@ def asosiy_menyu() -> InlineKeyboardMarkup:
 async def cmd_start(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
     uid=update.effective_user.id
     log.info("📩 /start: uid=%d name=%s", uid, update.effective_user.full_name)
+
+    # ── 1. SHOGIRD TEKSHIRUVI (ID asosida, oldindan) ──
+    # Agar bu uid shogirdlar jadvalida bo'lsa — admin onboarding o'tkazib yubor
+    try:
+        pool = db._P()
+        async with pool.acquire() as conn:
+            shogird = await conn.fetchrow(
+                "SELECT id, admin_uid, ism, lavozim, faol "
+                "FROM shogirdlar WHERE telegram_uid = $1 LIMIT 1",
+                uid,
+            )
+        if shogird:
+            if not shogird["faol"]:
+                await update.message.reply_text(
+                    "⏳ Hisobingiz vaqtincha o'chirilgan.\n"
+                    "Admin bilan bog'laning."
+                )
+                return ConversationHandler.END
+            # Admin ismini olib welcome ko'rsat
+            admin_ismi = "Admin"
+            try:
+                async with pool.acquire() as conn:
+                    arow = await conn.fetchrow(
+                        "SELECT ism FROM users WHERE id=$1", shogird["admin_uid"],
+                    )
+                if arow:
+                    admin_ismi = arow["ism"]
+            except Exception:
+                pass
+            await update.message.reply_text(
+                f"👋 Salom, *{shogird['ism']}*!\n\n"
+                f"🏢 Siz *{admin_ismi}* uchun ishlaysiz\n"
+                f"🎯 Lavozim: {shogird['lavozim'] or 'shogird'}\n"
+                f"━━━━━━━━━━━━━━━━━━━━━\n\n"
+                "🎤 *Ovoz yuboring:*\n"
+                "_\"Obed 50 ming\"_ — xarajat\n"
+                "_\"Salimovga 5 ta Ariel ketti\"_ — sotuv\n\n"
+                "📸 *Rasm + caption:*\n"
+                "_\"Ofisga 5 mln topshirdim\"_ — kassa topshirish\n"
+                "_(chek rasmi)_ — xarajat avto\n\n"
+                "ℹ️ Faqat o'z ma'lumotlaringizni ko'rasiz.",
+                parse_mode=ParseMode.MARKDOWN,
+            )
+            return ConversationHandler.END
+    except Exception as _e:
+        log.warning("/start shogird tekshiruv xato: %s", _e)
+
+    # ── 2. ADMIN TEKSHIRUVI ──
     try:
         user=await _user_ol_kesh(uid)
     except Exception as _e:
