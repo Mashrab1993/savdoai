@@ -507,7 +507,15 @@ async def ovoz_qabul(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
                        "narx yangilab", "sotish narxi", "sotish narx")
             is_narx = any(kw in matn_lower for kw in narx_kw) and not is_klient
 
-            # 3. Detect KIRIM (requires keyword + qty/price)
+            # 3. Detect XARAJAT (personal/shogird/oila expenses)
+            xarajat_kw = ("obed", "bozorlik", "benzin", "taksi", "yo'l kira",
+                          "telefon to'lov", "gaz to'lov", "elektr", "svet",
+                          "dori", "dorixona", "oylik", "avans", "maosh",
+                          "oila xarajat", "shaxsiy xarajat")
+            has_xarajat_kw = any(kw in matn_lower for kw in xarajat_kw)
+            is_xarajat = has_xarajat_kw and not is_klient and not is_narx
+
+            # 4. Detect KIRIM (requires keyword + qty/price)
             kirim_kw = ("keldi", "kelgan", "tushdi", "kirim", "kirimi",
                         "olish narx", "zavoddan", "fabrika", "kompaniyasidan")
             has_kirim_kw = any(kw in matn_lower for kw in kirim_kw)
@@ -515,7 +523,8 @@ async def ovoz_qabul(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
                 any(w.isdigit() for w in matn_words)
                 or any(kw in matn_lower for kw in ("narx", "ming", "mln", "ta ", "dona"))
             )
-            is_kirim = has_kirim_kw and has_qty_or_price and not is_klient and not is_narx
+            is_kirim = (has_kirim_kw and has_qty_or_price and not is_klient
+                        and not is_narx and not is_xarajat)
 
             if is_klient:
                 from services.bot.handlers.voice_klient import handle_voice_klient
@@ -523,6 +532,9 @@ async def ovoz_qabul(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
             elif is_narx:
                 from services.bot.handlers.voice_narx import handle_voice_narx
                 await handle_voice_narx(update, ctx)
+            elif is_xarajat:
+                from services.bot.handlers.voice_xarajat import handle_voice_xarajat
+                await handle_voice_xarajat(update, ctx)
             elif is_kirim:
                 from services.bot.handlers.voice_kirim import handle_voice_kirim
                 await handle_voice_kirim(update, ctx)
@@ -1289,6 +1301,8 @@ def ilovani_qur(conf:Config) -> Application:
     try:
         from services.bot.handlers.voice_narx import handle_voice_narx_callback
         app.add_handler(CallbackQueryHandler(handle_voice_narx_callback, pattern=r"^voice_narx_"))
+        from services.bot.handlers.voice_xarajat import handle_voice_xarajat_callback
+        app.add_handler(CallbackQueryHandler(handle_voice_xarajat_callback, pattern=r"^voice_xarajat_"))
         log.info("✅ Voice Narx callback handler ulandi")
     except Exception as e:
         log.warning("⚠️ Voice Narx handler yuklanmadi: %s", e)
