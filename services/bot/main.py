@@ -1303,6 +1303,10 @@ def ilovani_qur(conf:Config) -> Application:
         app.add_handler(CallbackQueryHandler(handle_voice_narx_callback, pattern=r"^voice_narx_"))
         from services.bot.handlers.voice_xarajat import handle_voice_xarajat_callback
         app.add_handler(CallbackQueryHandler(handle_voice_xarajat_callback, pattern=r"^voice_xarajat_"))
+        # Chek (receipt) handler
+        from services.bot.handlers.chek_xarajat import cmd_chek, handle_chek_callback
+        app.add_handler(CommandHandler("chek", cmd_chek))
+        app.add_handler(CallbackQueryHandler(handle_chek_callback, pattern=r"^chek_"))
         log.info("✅ Voice Narx callback handler ulandi")
     except Exception as e:
         log.warning("⚠️ Voice Narx handler yuklanmadi: %s", e)

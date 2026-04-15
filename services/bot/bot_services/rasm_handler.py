@@ -60,13 +60,22 @@ def _pul(v) -> str:
 async def rasm_qabul(update, ctx) -> None:
     """
     Rasm xabar handler PRO.
-    1. Caption dan tur aniqlash
-    2. Ko'p rasm guruhlash (15s ichida)
-    3. Vision AI PRO tahlil
-    4. Tasdiqlash tugmalari + DB + Nakladnoy
+    1. Chek rejimi tekshirish
+    2. Caption dan tur aniqlash
+    3. Ko'p rasm guruhlash (15s ichida)
+    4. Vision AI PRO tahlil
+    5. Tasdiqlash tugmalari + DB + Nakladnoy
     """
     if not update.message or not update.message.photo:
         return
+
+    # Chek rejimi (/chek buyrug'idan keyin)
+    try:
+        from services.bot.handlers.chek_xarajat import handle_chek_photo
+        if await handle_chek_photo(update, ctx):
+            return
+    except Exception as _e:
+        log.debug("chek photo handler: %s", _e)
 
     uid = update.effective_user.id
     caption = update.message.caption or ""
