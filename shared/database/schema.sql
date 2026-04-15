@@ -1063,3 +1063,22 @@ CREATE INDEX IF NOT EXISTS idx_sotuv_taglar ON sotuv_taglar(user_id, sotuv_id);
 ALTER TABLE sotuv_taglar ENABLE ROW LEVEL SECURITY;
 CREATE POLICY sotuv_taglar_iso ON sotuv_taglar
     FOR ALL USING (user_id = current_setting('app.uid')::bigint);
+
+-- ═══ ovoz_arxiv — ovozli xabarlar arxivi (debug/audit uchun) ═══
+CREATE TABLE IF NOT EXISTS ovoz_arxiv (
+    id          BIGSERIAL   PRIMARY KEY,
+    user_id     BIGINT      NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    ovoz_file_id TEXT       NOT NULL,          -- Telegram file_id
+    transkripsiya TEXT,                         -- Gemini STT natijasi
+    operatsiya  TEXT,                           -- zakaz/kirim/klient/narx/xarajat
+    parse_natija JSONB,                         -- parser natijasi
+    muvaffaqiyat BOOLEAN DEFAULT FALSE,         -- muvaffaqiyatli yakunlanganmi
+    xato        TEXT,                           -- xato xabari
+    sana        TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_ovoz_arxiv_uid_sana ON ovoz_arxiv(user_id, sana DESC);
+CREATE INDEX IF NOT EXISTS idx_ovoz_arxiv_op ON ovoz_arxiv(user_id, operatsiya, sana DESC);
+ALTER TABLE ovoz_arxiv ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS ovoz_arxiv_iso ON ovoz_arxiv;
+CREATE POLICY ovoz_arxiv_iso ON ovoz_arxiv
+    FOR ALL USING (user_id = current_setting('app.uid')::bigint);

@@ -1301,3 +1301,116 @@ def parse_narx_text(text: str) -> dict:
         "tovarlar": tovarlar,
         "xato": None if tovarlar else "Tovar yoki narx aniqlanmadi",
     }
+
+
+# ════════════════════════════════════════════════════════════
+#  XARAJAT PARSER — ovozdan xarajat ma'lumotlarini ajratish
+# ════════════════════════════════════════════════════════════
+
+def parse_xarajat_text(text: str, shogirdlar: list[dict] = None) -> dict:
+    """
+    Ovozdan xarajat ma'lumotlarini ajratish.
+
+    Input examples:
+        "Obidjon obed 50 ming"
+        "Anvar benzin 80 ming"
+        "Karim telefon 25 ming"
+        "Oila non 15 ming, choy 25 ming"
+        "Shaxsiy xarajat — yog' 30 ming"
+
+    Returns:
+        {
+            "shogird_ismi": "Obidjon",  # yoki "oila" yoki "shaxsiy"
+            "kategoriya": "ovqat",  # avto-aniqlanadi
+            "tavsif": "obed",
+            "summa": 50000,
+            "xato": None
+        }
+    """
+    text = text.strip()
+    if not text:
+        return {"shogird_ismi": "", "summa": 0, "xato": "Bo'sh matn"}
+
+    # Kategoriyalar
+    KATEGORIYALAR = {
+        "ovqat": ["obed", "non", "choy", "ovqat", "osh", "palov", "kofe",
+                  "gazirli", "nonushta", "tushlik", "kechki", "yemak",
+                  "shirinlik", "qandolat", "go'sht", "tovuq", "baliq"],
+        "bozorlik": ["bozorlik", "bozor", "oziq-ovqat xaridi", "sabzavot",
+                     "meva", "kartoshka", "piyoz", "sabzi", "pomidor", "bodring"],
+        "transport": ["benzin", "yonilg'i", "taksi", "yo'l kira", "parkovka",
+                      "marshrut", "avtobus", "metro", "dizel", "avtomashina", "texkor"],
+        "aloqa": ["telefon", "aloqa", "internet", "wifi", "mobil to'lov", "tarif"],
+        "oylik": ["oylik", "maosh", "ish haqi", "avans", "bonus", "haq"],
+        "kommunal": ["elektr", "svet", "gaz to'lovi", "kommunal",
+                     "uy to'lovi", "kvartplata", "ichimlik suv"],
+        "dori": ["dori", "dorixona", "sog'liq", "shifokor", "tabib", "klinika"],
+        "kiyim": ["kiyim", "ko'ylak", "shim", "tufli", "etik", "poyabzal",
+                  "kostyum", "paypoq"],
+        "boshqa": [],
+    }
+
+    def _parse_summa(s: str) -> int:
+        """50 ming → 50000, 1.5 mln → 1500000"""
+        s = s.strip().lower()
+        s = re.sub(r"\s*so'm\s*$", "", s)
+        m = re.search(r'([\d]+(?:[.,]\d+)?)\s*mln', s)
+        if m:
+            return int(float(m.group(1).replace(",", ".")) * 1_000_000)
+        m = re.search(r'([\d]+(?:[.,]\d+)?)\s*mlrd', s)
+        if m:
+            return int(float(m.group(1).replace(",", ".")) * 1_000_000_000)
+        m = re.search(r'([\d]+(?:[.,]\d+)?)\s*ming', s)
+        if m:
+            return int(float(m.group(1).replace(",", ".")) * 1_000)
+        digits = re.sub(r'\s+', '', s)
+        nums = re.findall(r'\d+', digits)
+        if nums:
+            return int(nums[-1])
+        return 0
+
+    text_lower = text.lower()
+
+    # Shogird topish (agar ro'yxat berilgan bo'lsa)
+    shogird_ismi = ""
+    shogird_id = None
+    if shogirdlar:
+        for s in shogirdlar:
+            ism = (s.get("ism") or "").lower().strip()
+            if ism and ism in text_lower:
+                shogird_ismi = s.get("ism", "")
+                shogird_id = s.get("id")
+                break
+
+    # "Oila" yoki "Shaxsiy" xarajat
+    is_oila = any(kw in text_lower for kw in ("oila", "oilaviy", "uy"))
+    is_shaxsiy = any(kw in text_lower for kw in ("shaxsiy", "o'zim", "men"))
+
+    # Kategoriyani aniqlash
+    kategoriya = "boshqa"
+    tavsif_raw = []
+    for cat, keywords in KATEGORIYALAR.items():
+        for kw in keywords:
+            if kw in text_lower:
+                kategoriya = cat
+                tavsif_raw.append(kw)
+                break
+        if kategoriya != "boshqa":
+            break
+
+    # Summa topish
+    summa = _parse_summa(text)
+
+    # Tavsif (nima uchun)
+    tavsif = ", ".join(tavsif_raw) if tavsif_raw else ""
+
+    return {
+        "shogird_ismi": shogird_ismi,
+        "shogird_id": shogird_id,
+        "is_oila": is_oila,
+        "is_shaxsiy": is_shaxsiy,
+        "kategoriya": kategoriya,
+        "tavsif": tavsif,
+        "summa": summa,
+        "xato": None if summa > 0 else "Summa aniqlanmadi",
+    }
