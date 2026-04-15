@@ -143,7 +143,21 @@ async def faol_tekshir(update: Update) -> bool:
     import datetime
     uid = update.effective_user.id
     user = await _user_ol_kesh(uid)
+    # ── Shogird tekshir: agar shogirdlar.telegram_uid bo'lsa — ruxsat ──
     if not user:
+        try:
+            from services.bot import db as _db
+            _pool = _db._P()
+            async with _pool.acquire() as _conn:
+                _shog = await _conn.fetchval(
+                    "SELECT 1 FROM shogirdlar "
+                    "WHERE telegram_uid=$1 AND faol=TRUE LIMIT 1",
+                    uid,
+                )
+            if _shog:
+                return True
+        except Exception:
+            pass
         msg = "❌ Siz ro'yxatdan o'tmagansiz. /start bosing."
     elif not user.get("faol", False):
         msg = "⏳ Hisobingiz hali tasdiqlanmagan."
