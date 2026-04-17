@@ -134,6 +134,86 @@ async def _fetch_raw_data(conn, uid: int) -> dict:
     """, uid)
     data["yoqolgan_klientlar"] = int(yoqolgan or 0)
 
+    # ── STORECHECK (kechagi tashriflar) ──
+    try:
+        tashrif_stat = await conn.fetchrow("""
+            SELECT COUNT(*) AS soni,
+                   COUNT(DISTINCT klient_id) AS noyob_klient,
+                   COUNT(DISTINCT shogird_id) AS ishlagan_shogird
+            FROM storecheck_sessions
+            WHERE user_id=$1 AND boshlangan::date = $2
+        """, uid, kecha)
+        data["storecheck_kecha"] = {
+            "soni": int(tashrif_stat["soni"] or 0),
+            "noyob_klient": int(tashrif_stat["noyob_klient"] or 0),
+            "ishlagan_shogird": int(tashrif_stat["ishlagan_shogird"] or 0),
+        }
+        # Kam uchraydigan (ko'p do'konda yo'q) tovar TOP-5
+        eng_yoq = await conn.fetch("""
+            SELECT sk.tovar_nomi,
+                   COUNT(*) AS tekshirilgan,
+                   COUNT(*) FILTER(WHERE NOT sk.mavjud) AS yoq_soni
+            FROM storecheck_sku sk
+            JOIN storecheck_sessions ss ON ss.id = sk.session_id
+            WHERE sk.user_id=$1 AND ss.boshlangan >= $2
+            GROUP BY sk.tovar_nomi
+            HAVING COUNT(*) >= 3 AND
+                   COUNT(*) FILTER(WHERE NOT sk.mavjud) * 2 > COUNT(*)
+            ORDER BY yoq_soni DESC LIMIT 5
+        """, uid, hafta_oldin)
+        data["storecheck_top_yoq"] = [dict(r) for r in eng_yoq]
+    except Exception as _e:
+        log.debug("storecheck brifing: %s", _e)
+        data["storecheck_kecha"] = {"soni": 0, "noyob_klient": 0, "ishlagan_shogird": 0}
+        data["storecheck_top_yoq"] = []
+
+    # ── VAZIFALAR (bugun muddati otgan + kutilayotgan) ──
+    try:
+        vazifa_stat = await conn.fetchrow("""
+            SELECT COUNT(*) FILTER(WHERE NOT bajarildi) AS kutilayotgan,
+                   COUNT(*) FILTER(WHERE NOT bajarildi AND deadline < CURRENT_DATE) AS muddati_otgan,
+                   COUNT(*) FILTER(WHERE bajarildi AND bajarilgan_vaqt::date = $2) AS kecha_bajarildi
+            FROM vazifalar
+            WHERE admin_uid=$1
+        """, uid, kecha)
+        data["vazifalar"] = {
+            "kutilayotgan": int(vazifa_stat["kutilayotgan"] or 0),
+            "muddati_otgan": int(vazifa_stat["muddati_otgan"] or 0),
+            "kecha_bajarildi": int(vazifa_stat["kecha_bajarildi"] or 0),
+        }
+    except Exception as _e:
+        data["vazifalar"] = {"kutilayotgan": 0, "muddati_otgan": 0, "kecha_bajarildi": 0}
+
+    # ── FEEDBACK (javobsiz shikoyatlar) ──
+    try:
+        fikr_stat = await conn.fetchrow("""
+            SELECT COUNT(*) FILTER(WHERE NOT javob_berildi AND turi='shikoyat') AS javobsiz_shikoyat,
+                   COUNT(*) FILTER(WHERE yaratilgan::date = $2) AS kecha_kelgan
+            FROM feedback
+            WHERE user_id=$1
+        """, uid, kecha)
+        data["feedback"] = {
+            "javobsiz_shikoyat": int(fikr_stat["javobsiz_shikoyat"] or 0),
+            "kecha_kelgan": int(fikr_stat["kecha_kelgan"] or 0),
+        }
+    except Exception as _e:
+        data["feedback"] = {"javobsiz_shikoyat": 0, "kecha_kelgan": 0}
+
+    # ── QAYTARISHLAR (kutilayotgan tasdiq) ──
+    try:
+        qayt_stat = await conn.fetchrow("""
+            SELECT COUNT(*) FILTER(WHERE holat='yangi') AS kutilayotgan,
+                   COUNT(*) FILTER(WHERE holat='tasdiqlandi' AND tugatilgan::date = $2) AS kecha_tasdiqlangan
+            FROM qaytarishlar
+            WHERE user_id=$1
+        """, uid, kecha)
+        data["qaytarishlar"] = {
+            "kutilayotgan": int(qayt_stat["kutilayotgan"] or 0),
+            "kecha_tasdiqlangan": int(qayt_stat["kecha_tasdiqlangan"] or 0),
+        }
+    except Exception as _e:
+        data["qaytarishlar"] = {"kutilayotgan": 0, "kecha_tasdiqlangan": 0}
+
     return data
 
 
@@ -147,20 +227,23 @@ async def _ai_briefing(raw_data: dict) -> Optional[str]:
 
     system = (
         "Siz SavdoAI biznes co-pilot'isiz. O'zbek savdogariga ERTALABKI BRIFING "
-        "berasiz. Kecha natijasi, hafta taqqoslash, ombor, qarz, klient — "
+        "berasiz. Ma'lumot manbalari: sotuv, qarz, ombor, top klientlar, "
+        "storecheck tashriflari, vazifalar (muddati otgan bormi?), "
+        "shikoyatlar (javobsiz bormi?), qaytarishlar (tasdiqlash kutayotganlar) — "
         "barchasini hisobga olib, quyidagi formatda javob bering:\n\n"
         "**☀️ Ertalabki Brifing — {sana}**\n\n"
         "**📊 KECHA NATIJA:**\n"
-        "[1-2 gap — kecha qancha sotuv, haftalik ortacha bilan taqqoslash]\n\n"
+        "[1-2 gap — kecha qancha sotuv, tashrif, hafta taqqoslashi]\n\n"
         "**🔍 3 ASOSIY XULOSA:**\n"
         "1. [xulosa 1 — aniq raqam bilan]\n"
         "2. [xulosa 2]\n"
         "3. [xulosa 3]\n\n"
         "**🎯 BUGUNGI 3 MUHIM ISH:**\n"
-        "🔴 [Urgent ish]\n"
-        "🟡 [Bu hafta ichida]\n"
-        "🟢 [Keyinroq, lekin nazarda tuting]\n\n"
+        "🔴 [Urgent — javobsiz shikoyat, muddati otgan vazifa, kam qoldiq]\n"
+        "🟡 [Bu hafta ichida — kutilayotgan qaytarish, kam tashrif]\n"
+        "🟢 [Keyinroq — plan, klient xavf]\n\n"
         "Qisqa, aniq, amaliy. Umumiy gaplar yo'q — faqat raqam va konkret harakat. "
+        "Agar muddati otgan vazifa yoki javobsiz shikoyat bo'lsa — hammadan avval e'tibor bering. "
         "O'zbek tilida. Markdown ishlatishi mumkin (Telegram mos)."
     )
 
@@ -192,6 +275,10 @@ def _fallback_text(raw: dict) -> str:
     q = raw.get("qarz", {})
     kam = raw.get("kam_tovarlar", [])
     top = raw.get("top_klientlar", [])
+    sc = raw.get("storecheck_kecha", {})
+    vz = raw.get("vazifalar", {})
+    fb = raw.get("feedback", {})
+    qay = raw.get("qaytarishlar", {})
     lines = [
         f"☀️ *Ertalabki Brifing — {raw.get('sana_bugun', '?')}*",
         "",
@@ -199,17 +286,48 @@ def _fallback_text(raw: dict) -> str:
         f"  • Sotuv: {k.get('sotuv_soni', 0)} ta, jami {k.get('sotuv_jami', 0):,.0f} so'm",
         f"  • Naqd: {k.get('naqd', 0):,.0f} so'm",
         f"  • Yangi qarz: {k.get('qarz_yangi', 0):,.0f} so'm",
+    ]
+    if sc.get("soni"):
+        lines.append(f"  • 🏪 Tashriflar: {sc.get('soni')} ta ({sc.get('noyob_klient', 0)} noyob klient)")
+    lines.extend([
         "",
         f"💰 *QARZ HOLATI:*",
         f"  • Jami qarz: {q.get('jami', 0):,.0f} so'm",
         f"  • Aktiv: {q.get('aktiv_soni', 0)} ta (kechikkan: {q.get('kechikkan_soni', 0)} ta)",
         "",
-    ]
+    ])
+
+    # URGENT alert'lar
+    urgent = []
+    if vz.get("muddati_otgan", 0) > 0:
+        urgent.append(f"🔴 Muddati o'tgan vazifa: *{vz['muddati_otgan']}* ta")
+    if fb.get("javobsiz_shikoyat", 0) > 0:
+        urgent.append(f"🔴 Javobsiz shikoyat: *{fb['javobsiz_shikoyat']}* ta")
+    if qay.get("kutilayotgan", 0) > 0:
+        urgent.append(f"🟡 Qaytarish tasdiq kutyapti: *{qay['kutilayotgan']}* ta")
+    if vz.get("kutilayotgan", 0) > 0:
+        urgent.append(f"🟡 Faol vazifalar: {vz['kutilayotgan']} ta")
+    if urgent:
+        lines.append("⚠️ *DIQQAT:*")
+        lines.extend(f"  {u}" for u in urgent)
+        lines.append("")
+
     if kam:
         lines.append("📦 *KAM TOVARLAR (darhol to'ldirish kerak):*")
         for t in kam[:5]:
             lines.append(f"  • {t['nomi']} — {t['qoldiq']:.0f} (min: {t['min']:.0f})")
         lines.append("")
+
+    # Storecheck'dan kelgan "ko'p do'konda yo'q" tovarlar
+    top_yoq = raw.get("storecheck_top_yoq", [])
+    if top_yoq:
+        lines.append("🔴 *Ko'p do'konda YO'Q (tashrif hisoboti):*")
+        for t in top_yoq[:5]:
+            lines.append(
+                f"  • {t['tovar_nomi']} — {int(t['yoq_soni'])}/{int(t['tekshirilgan'])} do'konda yo'q"
+            )
+        lines.append("")
+
     if top:
         lines.append("⭐ *TOP KLIENTLAR (hafta):*")
         for c in top[:3]:
