@@ -82,6 +82,13 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
     { href: "/inventory",       label: "📋 Inventarizatsiya", icon: Package },
     { href: "/territories",     label: "🗺️ Territoriyalar",  icon: MapPin },
     { href: "/payment-methods", label: "💳 To'lov usullari", icon: CreditCard },
+    // ── YANGI (2026-04-17) ─────────────────────────────────
+    { href: "/reports-hub",     label: "📊 Hisobotlar markazi", icon: BarChart3 },
+    { href: "/reports/agent",   label: "👥 Agent hisoboti",    icon: Users },
+    { href: "/rfm",             label: "🎯 RFM segmentatsiya",  icon: Target },
+    { href: "/pnl",             label: "💹 Foyda/Zarar",         icon: BarChart3 },
+    { href: "/ekspeditorlar",   label: "🚚 Ekspeditorlar",       icon: Package },
+    { href: "/skladlar",        label: "🏭 Skladlar (yangi)",    icon: Package },
   ]
 
   // ═══════════════════════════════════════════════════════
