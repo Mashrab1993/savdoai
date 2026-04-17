@@ -1354,6 +1354,19 @@ def ilovani_qur(conf:Config) -> Application:
     app.add_handler(CommandHandler("vazifa_stat",      cmd_vazifa_stat))
     app.add_handler(CommandHandler("bajardim",         cmd_bajardim))
     app.add_handler(CommandHandler("vazifalarim",      cmd_vazifalarim))
+
+    # v25.4.0 — RFM klient segmentatsiya (SalesDoc /report/rfm)
+    from services.bot.handlers.rfm import (
+        cmd_rfm, cmd_rfm_champions, cmd_rfm_loyal, cmd_rfm_atrisk,
+        cmd_rfm_lost, cmd_rfm_hibernating, cmd_rfm_klient,
+    )
+    app.add_handler(CommandHandler("rfm",              cmd_rfm))
+    app.add_handler(CommandHandler("rfm_champions",    cmd_rfm_champions))
+    app.add_handler(CommandHandler("rfm_loyal",        cmd_rfm_loyal))
+    app.add_handler(CommandHandler("rfm_atrisk",       cmd_rfm_atrisk))
+    app.add_handler(CommandHandler("rfm_lost",         cmd_rfm_lost))
+    app.add_handler(CommandHandler("rfm_hibernating",  cmd_rfm_hibernating))
+    app.add_handler(CommandHandler("rfm_klient",       cmd_rfm_klient))
     app.add_handler(CommandHandler("qarz",             cmd_qarz))
     app.add_handler(CommandHandler("foyda",            cmd_foyda))
     app.add_handler(CommandHandler("klient",           cmd_klient))
