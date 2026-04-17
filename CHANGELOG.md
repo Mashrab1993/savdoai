@@ -1,4 +1,117 @@
-# CHANGELOG — SavdoAI v25.3
+# CHANGELOG — SavdoAI v25.4
+
+## v25.4.1 — 10 ta yangi modul + voice-first (2026-04-17 ikkinchi yarmi)
+
+### 🌟 Yangi modullar (SalesDoc asosida)
+
+1. **Ertalabki Brifing** (`/ertalab`, `/brifing`)
+   - Claude Opus 4.7 — har kuni 09:00 da biznes xulosa + 3 tavsiya
+   - Avvo_ertalab_hisobot 09:00 cron bilan avtomatik push
+   - Ovoz: "Ertalabki brifing" / "Bugungi xulosa"
+
+2. **Hayotim moduli** (`/hayotim`, `/maqsad`, `/goya`, `/xarajatim`, `/oyim`)
+   - Admin uchun shaxsiy biznes co-pilot
+   - Maqsadlar, g'oyalar, shaxsiy xarajat (biznes xarajatdan alohida)
+   - Opus 4.7 1M context bilan 30 kunlik chuqur tahlil
+   - 3 ta yangi DB jadval RLS bilan
+
+3. **Narx turlari** (`/narx_turlari`, `/narx_turi_default`, `/klient_narx`)
+   - Multi-price: Chakana (0%), Optom (-10%), VIP (-15%), Diler (-20%)
+   - Tovar × Narx turi → aniq narx (yoki avto formula)
+   - Klient.narx_turi_id → avtomatik mos narx tanlash
+
+4. **Storecheck / Tashrif audit** (`/tashrif_boshla`, `/tashrif_tovar`, `/tashrif_yop`)
+   - Shogird do'konga borganda SKU + foto + poll
+   - 5 yangi DB jadval: sessions, sku, photos, poll, templates
+   - Ovoz: "Akmal do'koniga tashrif", "Ariel bor 56000", "Tashrif yop"
+   - Admin dashboard: TOP-10 yo'q bo'lgan tovarlar
+
+5. **Planning / Oylik plan** (`/plan`, `/plan_shogird`, `/outlet_plan`)
+   - Oylik sotuv / yangi klient / tashrif plan
+   - Kundalik progress + kutilgan foiz
+   - Holat emoji: 🟢 Oldinda / 🟡 Tartibda / 🟠 Orqada / 🔴 Kritik
+   - Ovoz: "Bu oy 30 million plan"
+
+6. **Vazifalar / Tasks** (`/vazifa_ber`, `/vazifalarim`, `/bajardim`)
+   - Admin shogirdga vazifa beradi → Telegram bildirish
+   - Shogird /bajardim bilan belgilaydi → admin xabar oladi
+   - Deadline + ustuvorlik (🔴🟡🟢)
+   - Shogird bo'yicha bajarish foizi
+   - Ovoz: "Vazifa ber Akbar yetkazib ber"
+
+7. **RFM klient segmentatsiya** (`/rfm`, `/rfm_champions`, `/rfm_atrisk`)
+   - PostgreSQL NTILE(5) — R/F/M ball avtomatik
+   - 6 segment: 🏆 Champions, 💎 Loyal, 🌱 Potential, ⚠️ At Risk,
+     😴 Hibernating, 💀 Lost
+   - Har segmentga amaliy tavsiya
+   - Ovoz: "Champion klientlar", "Xavf ostidagi klientlar"
+
+8. **Expeditor KPI** (`/shogird_kpi`, `/kpi_reyting`)
+   - 4 ko'rsatkich birlashgan 100 ballik score:
+     Sotuv 30%, Tashrif 20%, Vazifa 30%, Xarajat 20%
+   - 🥇🥈🥉 reyting
+   - Ovoz: "Shogirdlar reyting" / "Akbar KPI"
+
+9. **Feedback/Shikoyat** (`/fikr`, `/shikoyatlar`, `/javob`)
+   - Auto turi: 🎉 maqtov, ⚠️ shikoyat, 💡 taklif, 💬 fikr
+   - Admin push bildirish + javob berish
+   - Ovoz: "Shikoyat: Ariel paketi ochiq kelgan"
+
+10. **Qaytarish / Recovery Order** (`/qaytarishlar`, `/qaytarish_tasdiq`)
+    - 5 sabab: 🔴 brak, ⏰ muddati, ⚠️ sifatsiz, 🤝 kelishuv, 📦 boshqa
+    - Turi: qaytarish yoki almashtirish
+    - Tasdiqlangach stock avtomatik yangilanadi
+    - Ovoz: "Karim 5 ta Ariel qaytardi brak"
+
+### 🎤 Voice-First Architecture
+
+User kritik feedback: "Foydalanuvchilar /komanda tushunmaydi, hammasi OVOZ bilan."
+
+- **Universal voice intent router** (voice_master.py)
+- **30+ ovoz intent** har modul uchun
+- **Tasdiq/Bekor/O'zgartir** ovozda (pending state ustida)
+- Har yangi ficha OVOZ bilan ham ishlaydi (qoida xotiraga yozildi)
+
+### 🔧 Reliability fixes (20+ commit)
+
+- Whisper olib tashlandi (o'zbek tili yomon)
+- OpenAI GPT-5.4 → Claude Opus 4.7 (Sonnet 4.6 router'da)
+- Retry logic: Gemini + Claude 3x exp backoff
+- Pool pressure monitoring (80%+ WARN, 95% degraded)
+- JWT structured logging (brute-force aniqlash)
+- Rate limits: Opus 4.7 20/h, v0.dev 10/h, DeepSeek 200/h
+- Config validation at boot (JWT_SECRET len, DATABASE_URL format)
+- Offline queue + webhook exception handlers
+- Idempotency thread-lock
+- Redis silent fallback → ERROR
+- Celery exponential backoff retry
+- Per-task AI timeouts (Voice 20s, OCR 25s, Business 45s)
+- users fetch LIMIT 5000
+- Voice intent router kritik tuzatishlar (olish narx conflict)
+
+### 📊 DB: 12 yangi jadval
+
+- shaxsiy_maqsadlar, shaxsiy_goyalar, shaxsiy_xarajat (Hayotim)
+- narx_turlari, tovar_narxlari + klientlar.narx_turi_id
+- storecheck_sessions, storecheck_sku, storecheck_photos,
+  storecheck_poll, storecheck_templates
+- oylik_plan, outlet_plan
+- vazifalar
+- feedback
+- qaytarishlar
+
+Barcha jadvallarda RLS himoyasi.
+
+### 🏁 Jami bugun
+
+- 38 commit
+- 10 ta yangi yirik modul
+- 20+ reliability tuzatish
+- 3500+ qator yangi kod
+- 30+ voice intent
+- 0 ta buzilgan mavjud ficha
+
+---
 
 ## v25.4.0 — Opus 4.7 migration + audit cleanup (2026-04-17)
 
