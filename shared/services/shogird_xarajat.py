@@ -163,21 +163,46 @@ def kategoriya_aniqla(matn: str) -> tuple[str, str]:
 async def xarajat_saqlash(conn, admin_uid: int, shogird_id: int,
                            kategoriya_nomi: str, summa: float,
                            izoh: str = "", rasm_file_id: str = "") -> dict:
-    """Yangi xarajat saqlash"""
+    """Yangi xarajat saqlash — AVTONOM REJIM.
+
+    Avtonom mantiq:
+    - Limit ichida (kunlik/oylik) → auto-tasdiqlangan=TRUE (shogird tezda ishlaydi,
+      admin keyin ko'radi va kerak bo'lsa bekor qiladi)
+    - Limit oshgan → tasdiqlangan=FALSE (admin qaror qilishi kerak)
+    - Har holatda admin'ga bildirish yuboriladi
+
+    Bu v25.4.0 o'zgarish — oldin hammasi FALSE edi (har xarajatga manual tasdiq).
+    """
     summa_d = Decimal(str(summa))
-    
+
     # Limit tekshirish
     limit_info = await limit_tekshir(conn, admin_uid, shogird_id, summa_d)
-    
-    row = await conn.fetchrow("""
-        INSERT INTO xarajatlar (admin_uid, shogird_id, kategoriya_nomi, summa, izoh, rasm_file_id)
-        VALUES ($1, $2, $3, $4, $5, $6)
-        RETURNING id, summa, sana
-    """, admin_uid, shogird_id, kategoriya_nomi, summa_d, izoh, rasm_file_id or None)
-    
+    ruxsat = limit_info.get("ruxsat", True)
+    # Auto-tasdiq: agar limit ichida bo'lsa, tasdiqlangan=TRUE
+    # Admin keyin ro'yxatda ko'radi va kerak bo'lsa bekor qiladi
+    auto_tasdiq = bool(ruxsat)
+
+    if auto_tasdiq:
+        row = await conn.fetchrow("""
+            INSERT INTO xarajatlar (admin_uid, shogird_id, kategoriya_nomi, summa,
+                                    izoh, rasm_file_id, tasdiqlangan, tasdiq_vaqti)
+            VALUES ($1, $2, $3, $4, $5, $6, TRUE, NOW())
+            RETURNING id, summa, sana
+        """, admin_uid, shogird_id, kategoriya_nomi, summa_d, izoh, rasm_file_id or None)
+    else:
+        # Limit oshdi — manual tasdiq kerak
+        row = await conn.fetchrow("""
+            INSERT INTO xarajatlar (admin_uid, shogird_id, kategoriya_nomi, summa,
+                                    izoh, rasm_file_id, tasdiqlangan)
+            VALUES ($1, $2, $3, $4, $5, $6, FALSE)
+            RETURNING id, summa, sana
+        """, admin_uid, shogird_id, kategoriya_nomi, summa_d, izoh, rasm_file_id or None)
+
     result = dict(row)
     result["limit_info"] = limit_info
-    log.info("Xarajat saqlandi: #%d %s %s shogird=%d", row["id"], kategoriya_nomi, summa_d, shogird_id)
+    result["auto_tasdiqlangan"] = auto_tasdiq
+    log.info("Xarajat saqlandi: #%d %s %s shogird=%d (auto_tasdiq=%s)",
+             row["id"], kategoriya_nomi, summa_d, shogird_id, auto_tasdiq)
     return result
 
 

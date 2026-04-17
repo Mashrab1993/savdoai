@@ -201,36 +201,68 @@ async def _shogird_xarajat_qabul(update: Update, ctx: ContextTypes.DEFAULT_TYPE,
 
         limit_info = result.get("limit_info", {})
         ogohlantirish = limit_info.get("ogohlantirish", [])
+        auto_tasdiq = result.get("auto_tasdiqlangan", False)
+        xarajat_id = result.get("id")
 
-        javob = (
-            f"✅ *Xarajat saqlandi!*\n\n"
-            f"{kat_emoji} Kategoriya: *{kat_nomi}*\n"
-            f"💰 Summa: *{summa:,.0f} so'm*\n"
-            f"📝 Izoh: _{izoh[:50]}_\n"
-            f"\n📊 Bugun jami: *{limit_info.get('bugungi', 0) + Decimal(str(summa)):,.0f}* / "
-            f"{limit_info.get('kunlik_limit', 0):,.0f}\n"
-        )
+        # Shogird'ga javob — avtonom tasdiqlangan yoki kutilmoqda
+        if auto_tasdiq:
+            javob = (
+                f"✅ *Xarajat yozildi va tasdiqlandi!*\n\n"
+                f"{kat_emoji} Kategoriya: *{kat_nomi}*\n"
+                f"💰 Summa: *{summa:,.0f} so'm*\n"
+                f"📝 Izoh: _{izoh[:50]}_\n"
+                f"\n📊 Bugun jami: *{limit_info.get('bugungi', 0) + Decimal(str(summa)):,.0f}* / "
+                f"{limit_info.get('kunlik_limit', 0):,.0f}\n"
+            )
+        else:
+            javob = (
+                f"⏳ *Xarajat yozildi — tasdiq kutilmoqda*\n\n"
+                f"{kat_emoji} Kategoriya: *{kat_nomi}*\n"
+                f"💰 Summa: *{summa:,.0f} so'm*\n"
+                f"📝 Izoh: _{izoh[:50]}_\n"
+                f"\n🔴 LIMIT OSHDI — admin tekshirishi kerak.\n"
+            )
 
         if ogohlantirish:
             javob += "\n" + "\n".join(ogohlantirish)
 
-        if not limit_info.get("ruxsat", True):
-            javob += "\n\n🔴 *LIMIT OSHDI! Admin xabardor qilinadi.*"
-            try:
+        # Admin'ga bildirish — HAR xarajat haqida (avtonom rejimda shaffoflik)
+        try:
+            if auto_tasdiq:
+                # Avtonom tasdiqlangan — shunchaki xabar + bekor qilish tugmasi
                 admin_msg = (
-                    f"🔴 *LIMIT OGOHLANTIRISH!*\n\n"
+                    f"🤖 *AVTONOM TASDIQLANDI*\n\n"
                     f"👤 Shogird: *{shogird['ism']}*\n"
                     f"{kat_emoji} {kat_nomi}: *{summa:,.0f} so'm*\n"
+                    f"📝 {izoh[:60]}\n"
+                    f"📊 Bugun: {limit_info.get('bugungi', 0) + Decimal(str(summa)):,.0f} / "
+                    f"{limit_info.get('kunlik_limit', 0):,.0f}"
+                )
+                # Bekor qilish tugmasi (xato bo'lsa)
+                markup = tg([(f"❌ Bekor qilish #{xarajat_id}", f"sx:bekor:{xarajat_id}")])
+            else:
+                # Manual tasdiq kerak
+                admin_msg = (
+                    f"🔴 *LIMIT OGOHLANTIRISH — TASDIQLASH KERAK*\n\n"
+                    f"👤 Shogird: *{shogird['ism']}*\n"
+                    f"{kat_emoji} {kat_nomi}: *{summa:,.0f} so'm*\n"
+                    f"📝 {izoh[:60]}\n"
                     f"📊 Bugun: *{limit_info.get('bugungi', 0) + Decimal(str(summa)):,.0f}* / "
                     f"{limit_info.get('kunlik_limit', 0):,.0f}"
                 )
-                for aid in cfg().admin_ids:
-                    try:
-                        await ctx.bot.send_message(aid, admin_msg, parse_mode=ParseMode.MARKDOWN)
-                    except Exception:
-                        pass
-            except Exception as _ae:
-                log.warning("Admin xabar: %s", _ae)
+                markup = tg(
+                    [(f"✅ Tasdiq #{xarajat_id}", f"sx:tasdiq:{xarajat_id}"),
+                     (f"❌ Bekor #{xarajat_id}", f"sx:bekor:{xarajat_id}")]
+                )
+            for aid in cfg().admin_ids:
+                try:
+                    await ctx.bot.send_message(aid, admin_msg,
+                                                parse_mode=ParseMode.MARKDOWN,
+                                                reply_markup=markup)
+                except Exception:
+                    pass
+        except Exception as _ae:
+            log.warning("Admin xabar: %s", _ae)
 
         await update.message.reply_text(javob, parse_mode=ParseMode.MARKDOWN)
         return True
