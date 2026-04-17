@@ -1413,6 +1413,11 @@ def ilovani_qur(conf:Config) -> Application:
     app.add_handler(CommandHandler("narx_turi_qosh",   cmd_narx_turi_qosh))
     app.add_handler(CommandHandler("narx_turi_default", cmd_narx_turi_default))
     app.add_handler(CommandHandler("klient_narx",      cmd_klient_narx))
+
+    # v25.4.0 — KLIENT AI PROFIL (Opus 4.7)
+    from services.bot.handlers.klient_ai import cmd_klient_ai
+    app.add_handler(CommandHandler("klient_ai",        cmd_klient_ai))
+    app.add_handler(CommandHandler("klient_tahlil",    cmd_klient_ai))  # alias
     app.add_handler(CommandHandler("qarz",             cmd_qarz))
     app.add_handler(CommandHandler("foyda",            cmd_foyda))
     app.add_handler(CommandHandler("klient",           cmd_klient))

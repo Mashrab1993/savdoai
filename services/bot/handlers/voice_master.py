@@ -269,6 +269,15 @@ async def route_voice_to_module(update: Update, ctx: ContextTypes.DEFAULT_TYPE,
         except Exception as e:
             log.warning("voice /rfm xato: %s", e)
 
+    # ═══ KLIENT AI TAHLIL — "Karim aka tahlili" ═══
+    if _any(m, ("tahlil", "haqida aytib", "chuqur profil", "smart profil", "ai profil")):
+        try:
+            from services.bot.handlers.klient_ai import voice_klient_ai
+            if await voice_klient_ai(update, ctx, matn):
+                return True
+        except Exception as e:
+            log.warning("voice klient_ai xato: %s", e)
+
     # ═══ NARX TURLARI ═══
     if ("narx tur" in m or "chakana" in m or "optom" in m or
         " vip " in " " + m + " " or "diler" in m):
