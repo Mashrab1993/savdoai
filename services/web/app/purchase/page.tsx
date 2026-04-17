@@ -15,10 +15,11 @@ import {
 } from "@/components/ui/dialog"
 import {
   ShoppingBag, Plus, Package, AlertCircle, Trash2, Eye,
-  CheckCircle2, Clock, XCircle, Truck,
+  CheckCircle2, Clock, XCircle, Truck, PackageSearch,
 } from "lucide-react"
 import { PageHeader } from "@/components/ui/page-header"
 import { formatCurrency } from "@/lib/format"
+import { ProductBulkPicker, type BulkPickerResult } from "@/components/shared/product-bulk-picker"
 
 type Supplier = { id: number; nomi: string; telefon?: string }
 
@@ -79,6 +80,25 @@ export default function PurchasePage() {
     izoh: "",
     tovarlar: [] as PurchaseTovar[],
   })
+  const [bulkPickerOpen, setBulkPickerOpen] = useState(false)
+
+  const handleBulkPicked = useCallback((picked: BulkPickerResult[]) => {
+    setForm(f => {
+      const existingIds = new Set(f.tovarlar.filter(t => t.tovar_id).map(t => t.tovar_id))
+      const newItems: PurchaseTovar[] = picked
+        .filter(p => !existingIds.has(p.tovar_id))
+        .map(p => ({
+          tovar_id: p.tovar_id,
+          nomi:     p.nomi,
+          miqdor:   1,
+          narx:     p.olish_narxi || 0,
+          birlik:   p.birlik || "dona",
+        }))
+      // Agar forma bo'sh qator bo'lsa, o'chiramiz (user "Tanlash" bosganini bilsin)
+      const cleaned = f.tovarlar.filter(t => t.nomi.trim() || t.tovar_id)
+      return { ...f, tovarlar: [...cleaned, ...newItems] }
+    })
+  }, [])
 
   const fetchPurchases = useCallback(async () => {
     setLoading(true); setError("")
@@ -329,9 +349,19 @@ export default function PurchasePage() {
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <Label>Tovarlar</Label>
-                  <Button size="sm" variant="outline" onClick={addTovarRow}>
-                    <Plus className="w-3 h-3 mr-1" /> Qator qo&apos;shish
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      onClick={() => setBulkPickerOpen(true)}
+                      className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white hover:opacity-90"
+                    >
+                      <PackageSearch className="w-3.5 h-3.5 mr-1" />
+                      Ro&apos;yxatdan tanlash
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={addTovarRow}>
+                      <Plus className="w-3 h-3 mr-1" /> Qator qo&apos;shish
+                    </Button>
+                  </div>
                 </div>
                 <div className="space-y-2">
                   {form.tovarlar.map((t, i) => (
@@ -398,6 +428,15 @@ export default function PurchasePage() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        {/* Bulk product picker (SalesDoc "Выберите товары из списка") */}
+        <ProductBulkPicker
+          open={bulkPickerOpen}
+          onOpenChange={setBulkPickerOpen}
+          onConfirm={handleBulkPicked}
+          title="Xaridga tovar tanlash"
+          initialSelected={form.tovarlar.filter(t => t.tovar_id).map(t => t.tovar_id as number)}
+        />
 
         {/* Detail dialog */}
         <Dialog open={detailOpen} onOpenChange={setDetailOpen}>
