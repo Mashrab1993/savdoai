@@ -513,6 +513,13 @@ except Exception as e:
     log.warning("⚠️ Van Selling yuklanmadi: %s", e)
 
 try:
+    from services.api.routes.supervayzer import router as supervayzer_router
+    app.include_router(supervayzer_router, tags=["Supervayzer"])
+    log.info("✅ Supervayzer dashboard moduli ulandi")
+except Exception as e:
+    log.warning("⚠️ Supervayzer yuklanmadi: %s", e)
+
+try:
     from services.api.routes.pro_features import router as pro_router
     app.include_router(pro_router, tags=["Pro"])
     log.info("✅ Pro Features (360, marshrut, leaderboard) ulandi")

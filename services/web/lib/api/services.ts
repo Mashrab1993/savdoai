@@ -989,3 +989,37 @@ export const configService = {
   update:  (data: unknown) => api.post<unknown>("/config", data),
   modules: () => api.get<unknown>("/config/modullar"),
 }
+
+// ── Supervayzer Dashboard (SalesDoc+ style) ────────────────────────────────────
+export interface SupervayzerKpi {
+  tashrif_rate: number; tashrif_plan: number; tashrif_fact: number;
+  success_rate: number; success_fact: number;
+  gps_rate: number; gps_fact: number;
+  photo_rate: number; photo_fact: number;
+}
+export interface SupervayzerCategory {
+  nomi: string; summa: number; foiz: number; soni: number;
+}
+export interface SupervayzerResponse {
+  sana: string;
+  bugungi_jami: number;
+  bugungi_sotuv_soni: number;
+  bugungi_naqd: number;
+  bugungi_qarz: number;
+  kecha_jami: number;
+  kecha_soni: number;
+  taqqos_foiz: number;
+  kpi: SupervayzerKpi;
+  kategoriya_pie: SupervayzerCategory[];
+  top_tovarlar: Array<{nomi: string; summa: number; miqdor: number; soni: number}>;
+  alerts: {
+    muddati_otgan_vazifa: number;
+    javobsiz_shikoyat: number;
+    kutayotgan_qaytarish: number;
+  };
+}
+export const supervayzerService = {
+  get: (sana?: string) => api.get<SupervayzerResponse>(
+    `/api/v1/supervayzer${sana ? `?sana=${sana}` : ""}`
+  ),
+}
