@@ -297,6 +297,18 @@ async def route_voice_to_module(update: Update, ctx: ContextTypes.DEFAULT_TYPE,
         except Exception as e:
             log.warning("voice_copilot xato: %s", e)
 
+    # ═══ BIZNES SALOMATLIGI — "biznes salomatligi", "biznesim qanday" ═══
+    if any(kw in m for kw in (
+        "biznes salomatlig", "biznes ball", "biznesim qanday",
+        "biznes holat", "health score", "biznesim sog",
+    )):
+        try:
+            from services.bot.handlers.copilot_voice import voice_biznes_salomatlik
+            if await voice_biznes_salomatlik(update, ctx, matn):
+                return True
+        except Exception as e:
+            log.warning("voice_biznes_salomatlik xato: %s", e)
+
     # ═══ ANOMALIYA — "anomaliya", "xavf", "zararli sotuv" ═══
     if any(kw in m for kw in (
         "anomaliya", "g'ayrioddiy", "gayrioddiy", "noanormal",

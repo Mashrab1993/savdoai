@@ -94,6 +94,90 @@ JORIY HOLAT (7 kun):
         return True
 
 
+async def voice_biznes_salomatlik(update: Update, ctx: ContextTypes.DEFAULT_TYPE,
+                                    matn: str) -> bool:
+    """'biznes salomatligi' / 'biznes ball' / 'biznesim qanday'."""
+    m = matn.strip().lower()
+    if not any(kw in m for kw in (
+        "biznes salomatlig", "biznes ball", "biznesim qanday",
+        "biznes holat", "health score", "biznesim sog",
+    )):
+        return False
+
+    uid = update.effective_user.id
+    try:
+        # Tushum (7+7 kun), qarz, klient, anomaliya
+        from datetime import date, timedelta
+        today_ = date.today()
+        week_ago = today_ - timedelta(days=7)
+        two_weeks_ago = today_ - timedelta(days=14)
+        month_ago = today_ - timedelta(days=30)
+
+        async with rls_conn(uid) as c:
+            sotuv_shu = float(await c.fetchval("""
+                SELECT COALESCE(SUM(jami), 0) FROM sotuv_sessiyalar
+                WHERE user_id=$1 AND sana::date >= $2 AND sana::date < $3
+                  AND COALESCE(holat, 'yangi') != 'bekor'
+            """, uid, week_ago, today_) or 0)
+            sotuv_otgan = float(await c.fetchval("""
+                SELECT COALESCE(SUM(jami), 0) FROM sotuv_sessiyalar
+                WHERE user_id=$1 AND sana::date >= $2 AND sana::date < $3
+                  AND COALESCE(holat, 'yangi') != 'bekor'
+            """, uid, two_weeks_ago, week_ago) or 0)
+            jami_qarz = float(await c.fetchval("""
+                SELECT COALESCE(SUM(jami - tolangan), 0) FROM sotuv_sessiyalar
+                WHERE user_id=$1 AND jami > tolangan
+                  AND COALESCE(holat, 'yangi') != 'bekor'
+            """, uid) or 0)
+            jami_oborot = float(await c.fetchval("""
+                SELECT COALESCE(SUM(jami), 0) FROM sotuv_sessiyalar
+                WHERE user_id=$1 AND sana::date >= $2
+                  AND COALESCE(holat, 'yangi') != 'bekor'
+            """, uid, month_ago) or 1)
+
+        # Quick score
+        if sotuv_otgan > 0:
+            o_sish_foiz = (sotuv_shu - sotuv_otgan) / sotuv_otgan * 100
+        else:
+            o_sish_foiz = 0
+
+        qarz_foiz = (jami_qarz / jami_oborot * 100) if jami_oborot > 0 else 0
+
+        # Sodda ball taxmini
+        sotuv_ball = min(30, max(0, 15 + o_sish_foiz * 0.5))
+        qarz_ball = 20 if qarz_foiz < 10 else 15 if qarz_foiz < 20 else 10 if qarz_foiz < 40 else 5
+        ball = int(sotuv_ball + qarz_ball + 30)  # +30 for other components default
+
+        if ball >= 85:
+            emoji, daraja = "🏆", "A+ — A'lo"
+        elif ball >= 70:
+            emoji, daraja = "🟢", "A — Yaxshi"
+        elif ball >= 55:
+            emoji, daraja = "🟡", "B — O'rtacha"
+        elif ball >= 40:
+            emoji, daraja = "🟠", "C — Ehtiyot bo'ling"
+        else:
+            emoji, daraja = "🔴", "D — Kritik"
+
+        def fmt(v: float) -> str:
+            return f"{v:,.0f}".replace(",", " ")
+
+        text = f"{emoji} <b>BIZNES SALOMATLIGI</b>\n━━━━━━━━━━━━━━━━━━━━━\n\n"
+        text += f"<b>{ball}/100 ball</b> — {daraja}\n\n"
+        text += f"📈 Sotuv o'sishi: {o_sish_foiz:+.1f}% (shu hafta vs o'tgan)\n"
+        text += f"📊 Qarz nisbati: {qarz_foiz:.1f}% (oborotdan)\n"
+        text += f"💰 Shu hafta: {fmt(sotuv_shu)} so'm\n"
+        text += f"💰 O'tgan hafta: {fmt(sotuv_otgan)} so'm\n"
+        text += f"⚠️ Jami qarz: {fmt(jami_qarz)} so'm\n\n"
+        text += f"<i>🌐 To'liq: web /biznes-salomatlik sahifasida</i>"
+        await update.message.reply_text(text, parse_mode="HTML")
+        return True
+    except Exception as e:
+        log.error("voice_biznes_salomatlik xato: %s", e, exc_info=True)
+        await update.message.reply_text(f"❌ Xato: {str(e)[:150]}")
+        return True
+
+
 async def voice_anomaliya(update: Update, ctx: ContextTypes.DEFAULT_TYPE,
                            matn: str) -> bool:
     """'anomaliya' / 'g'ayrioddiy' / 'xavf'."""
