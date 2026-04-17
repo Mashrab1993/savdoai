@@ -269,6 +269,38 @@ async def route_voice_to_module(update: Update, ctx: ContextTypes.DEFAULT_TYPE,
         except Exception as e:
             log.warning("voice /rfm xato: %s", e)
 
+    # ═══ FEEDBACK / FIKR / SHIKOYAT ═══
+    # "Fikr: ..." / "Shikoyat: ..." / "Taklif: ..."
+    fikr_match = re.match(
+        r'^(fikr|shikoyat|taklif|maqtov)[:\s]+(.+)',
+        m, re.IGNORECASE,
+    )
+    if fikr_match:
+        matn_arg = fikr_match.group(2).strip(".,! ")
+        if matn_arg and len(matn_arg) > 2:
+            update.message.text = f"/fikr {matn_arg}"
+            try:
+                from services.bot.handlers.feedback_handler import cmd_fikr
+                await cmd_fikr(update, ctx)
+                return True
+            except Exception as e:
+                log.warning("voice /fikr xato: %s", e)
+    # "Fikrlar ro'yxat" / "Shikoyatlar" / "Javobsiz fikrlar"
+    if _any(m, ("fikrlar ro'yxat", "hamma fikrlar", "fikrlar ko'rsat")):
+        try:
+            from services.bot.handlers.feedback_handler import cmd_fikrlar
+            await cmd_fikrlar(update, ctx)
+            return True
+        except Exception as e:
+            log.warning("voice /fikrlar xato: %s", e)
+    if _any(m, ("shikoyatlar", "shikoyat ro'yxat", "javobsiz shikoyat")):
+        try:
+            from services.bot.handlers.feedback_handler import cmd_shikoyatlar
+            await cmd_shikoyatlar(update, ctx)
+            return True
+        except Exception as e:
+            log.warning("voice /shikoyatlar xato: %s", e)
+
     # ═══ EXPEDITOR KPI (shogirdlar reyting) ═══
     if _any(m, ("shogirdlar reyting", "kpi reyting", "kim yaxshi ishlayapti",
                  "shogird reyting", "shogirdlar kpi")):

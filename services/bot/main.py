@@ -1384,6 +1384,17 @@ def ilovani_qur(conf:Config) -> Application:
     app.add_handler(CommandHandler("shogird_kpi",      cmd_shogird_kpi))
     app.add_handler(CommandHandler("kpi_reyting",      cmd_kpi_reyting))
     app.add_handler(CommandHandler("kpi",              cmd_kpi_reyting))  # alias
+
+    # v25.4.0 — FEEDBACK / SHIKOYAT moduli
+    from services.bot.handlers.feedback_handler import (
+        cmd_fikr, cmd_fikrlar, cmd_shikoyatlar, cmd_javob, cmd_fikr_stat,
+    )
+    app.add_handler(CommandHandler("fikr",             cmd_fikr))
+    app.add_handler(CommandHandler("fikrlar",          cmd_fikrlar))
+    app.add_handler(CommandHandler("shikoyat",         cmd_fikr))        # alias
+    app.add_handler(CommandHandler("shikoyatlar",      cmd_shikoyatlar))
+    app.add_handler(CommandHandler("javob",            cmd_javob))
+    app.add_handler(CommandHandler("fikr_stat",        cmd_fikr_stat))
     app.add_handler(CommandHandler("qarz",             cmd_qarz))
     app.add_handler(CommandHandler("foyda",            cmd_foyda))
     app.add_handler(CommandHandler("klient",           cmd_klient))
