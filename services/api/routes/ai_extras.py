@@ -64,11 +64,40 @@ async def ai_status():
 
 
 import time as _time
-# Per-user rate limit for expensive Opus 4.7 audit calls.
-# Opus 4.7 = $5/M input, $25/M output — soatiga 20 ta so'rov bir user uchun
-# yetarli (haqiqiy audit uchun). Spam yoki abuse'dan himoya.
-_OPUS_AUDIT_MAX_PER_HOUR = 20
-_opus_audit_buckets: dict[int, list[float]] = {}
+
+# ── Per-endpoint, per-user rate limits (AI budjetni himoyalash)
+# Har endpoint alohida limit — arzon vs qimmat AI provider'lar farqli
+_AI_RATE_LIMITS = {
+    "second_opinion": 20,   # Opus 4.7 — $25/M output, soatiga 20
+    "batch":          200,  # DeepSeek — arzon, 200 OK
+    "market_intel":   40,   # Grok 4 — o'rta narx, 40/soat
+    "generate_ui":    10,   # v0.dev — qimmat, 10/soat
+}
+_ai_buckets: dict[tuple[str, int], list[float]] = {}
+
+
+def _check_rate(endpoint: str, uid: int) -> None:
+    """Per-user, per-endpoint rate limit — 429 HTTPException raise qiladi.
+
+    Sliding window (1 soat) pattern. Memory protection: 5000+ user bo'lsa
+    eski yozuvlar tozalanadi.
+    """
+    max_per_hour = _AI_RATE_LIMITS.get(endpoint, 60)
+    key = (endpoint, uid)
+    now = _time.time()
+    bucket = _ai_buckets.setdefault(key, [])
+    bucket[:] = [t for t in bucket if now - t < 3600]
+    if len(bucket) >= max_per_hour:
+        raise HTTPException(
+            429,
+            f"AI limiti: soatiga {max_per_hour} ta so'rov ({endpoint}). "
+            "Keyinroq urinib ko'ring."
+        )
+    if len(_ai_buckets) > 5000:
+        stale = [k for k, v in _ai_buckets.items() if not v or now - max(v) > 7200]
+        for k in stale:
+            _ai_buckets.pop(k, None)
+    bucket.append(now)
 
 
 @router.post("/second-opinion")
@@ -81,23 +110,7 @@ async def api_second_opinion(inp: SecondOpinionIn,
     if not claude_opus.ready:
         raise HTTPException(503, "ANTHROPIC_API_KEY sozlanmagan (Opus 4.7 kerak)")
 
-    # Per-user rate limit
-    now = _time.time()
-    bucket = _opus_audit_buckets.setdefault(uid, [])
-    # Oxirgi 1 soat ichidagi so'rovlarni saqlaymiz
-    bucket[:] = [t for t in bucket if now - t < 3600]
-    if len(bucket) >= _OPUS_AUDIT_MAX_PER_HOUR:
-        raise HTTPException(
-            429,
-            f"Opus 4.7 audit limiti: soatiga {_OPUS_AUDIT_MAX_PER_HOUR} ta so'rov. "
-            "Keyinroq urinib ko'ring."
-        )
-    # Xotira himoyasi — 5000+ user bo'lsa eski kalitlarni tozalash
-    if len(_opus_audit_buckets) > 5000:
-        stale = [k for k, v in _opus_audit_buckets.items() if not v or now - max(v) > 7200]
-        for k in stale:
-            _opus_audit_buckets.pop(k, None)
-    bucket.append(now)
+    _check_rate("second_opinion", uid)
 
     result = await second_opinion(
         inp.savol, inp.claude_javobi, context=inp.kontekst,
@@ -109,9 +122,11 @@ async def api_second_opinion(inp: SecondOpinionIn,
 
 @router.post("/batch")
 async def api_batch(inp: BatchIn, uid: int = Depends(get_uid)):
-    """DeepSeek V3 — arzon va tez batch chaqiruv."""
+    """DeepSeek V3 — arzon va tez batch chaqiruv. Soatiga 200 so'rov."""
     if not deepseek.ready:
         raise HTTPException(503, "DeepSeek kaliti sozlanmagan")
+
+    _check_rate("batch", uid)
 
     result = await cheap_batch(inp.system, inp.user)
     if result is None:
@@ -121,9 +136,11 @@ async def api_batch(inp: BatchIn, uid: int = Depends(get_uid)):
 
 @router.post("/market-intel")
 async def api_market_intel(inp: MarketIn, uid: int = Depends(get_uid)):
-    """Grok 4 — real-time bozor tahlil."""
+    """Grok 4 — real-time bozor tahlil. Soatiga 40 so'rov."""
     if not grok.ready:
         raise HTTPException(503, "Grok kaliti sozlanmagan")
+
+    _check_rate("market_intel", uid)
 
     result = await market_intel(inp.savol)
     if result is None:
@@ -133,9 +150,11 @@ async def api_market_intel(inp: MarketIn, uid: int = Depends(get_uid)):
 
 @router.post("/generate-ui")
 async def api_generate_ui(inp: UIGenIn, uid: int = Depends(get_uid)):
-    """v0.dev — matn → shadcn/ui + Tailwind React komponent."""
+    """v0.dev — matn → shadcn/ui + Tailwind React komponent. Soatiga 10 so'rov."""
     if not v0.ready:
         raise HTTPException(503, "v0.dev kaliti sozlanmagan")
+
+    _check_rate("generate_ui", uid)
 
     result = await generate_ui(inp.prompt)
     if result is None:
