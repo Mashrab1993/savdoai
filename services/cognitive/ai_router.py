@@ -81,6 +81,22 @@ _ROUTING_TABLE: dict[TaskType, AIModel] = {
     TaskType.EXPORT_ARCH:    AIModel.CLAUDE,
 }
 
+# Task turi bo'yicha timeout (sekund) — bot event loop'ni bloklashdan saqlash
+# uchun. Telegram webhook 60s'da timeout qiladi, shuning uchun har bir
+# task undan kam.
+_TASK_TIMEOUT_S: dict[TaskType, float] = {
+    TaskType.VOICE_STT:      20.0,  # ovoz STT — 20s'dan ko'p bo'lsa user kutmaydi
+    TaskType.IMAGE_OCR:      25.0,  # rasm OCR — chek/nakladnoy
+    TaskType.INVOICE_OCR:    30.0,  # murakkab nakladnoy — uzunroq
+    TaskType.INTENT_PARSE:   10.0,  # qisqa matn NLP — tezkor
+    TaskType.NLP_NORMALIZE:  10.0,
+    TaskType.BUSINESS_LOGIC: 45.0,  # Claude chuqur tahlil — sekinroq
+    TaskType.REPORT_GEN:     45.0,
+    TaskType.DATA_ANALYSIS:  45.0,
+    TaskType.DECISION_VALID: 15.0,  # qisqa ha/yo'q qaror
+    TaskType.EXPORT_ARCH:    30.0,
+}
+
 
 # ════════════════════════════════════════════════════════════════════
 #  REQUEST / RESPONSE MODELS
@@ -301,6 +317,11 @@ class CognitiveRouter:
         if not req.request_id:
             import uuid
             req.request_id = uuid.uuid4().hex[:12]
+        # Default timeout default 30s — agar task uchun maxsus qiymat
+        # bor bo'lsa va caller override qilmagan bo'lsa (30.0 qoldi) — task
+        # timeout'ini ishlatamiz. Caller aniq boshqa qiymat bersa, uni hurmat qilamiz.
+        if req.timeout == 30.0:
+            req.timeout = _TASK_TIMEOUT_S.get(req.task, 30.0)
 
         try:
             result = await self._dispatch(req, target_model)

@@ -12,12 +12,17 @@
 from __future__ import annotations
 import json
 import logging
+import os
 import time
 from typing import Any, Optional
 
 log = logging.getLogger(__name__)
 
 _redis = None
+# Cache sog'lig'i hisoblagichlari — Grafana/Prometheus'ga olib chiqish uchun
+_redis_disconnected_at: float = 0.0
+_cache_miss_due_to_redis_down = 0
+REDIS_OPTIONAL = os.getenv("REDIS_OPTIONAL", "false").lower() == "true"
 
 # TTL konstantalar (sekund)
 TTL_SESSIYA   = 1800   # 30 daqiqa
@@ -31,7 +36,7 @@ RATE_WINDOW   = 60     # sekund
 
 async def redis_init(url: str) -> None:
     """Redis ulanishini ishga tushirish"""
-    global _redis
+    global _redis, _redis_disconnected_at
     try:
         import redis.asyncio as aioredis
         _redis = aioredis.from_url(
@@ -43,10 +48,31 @@ async def redis_init(url: str) -> None:
             retry_on_timeout=True,
         )
         await _redis.ping()
+        _redis_disconnected_at = 0.0
         log.info("✅ Redis ulandi")
     except Exception as e:
-        log.warning("⚠️ Redis ulana olmadi: %s — memoriy fallback", e)
         _redis = None
+        _redis_disconnected_at = time.time()
+        # Production'da Redis yo'qligi ERROR darajasida — monitoring
+        # tizimlari alert chiqarishi kerak. REDIS_OPTIONAL=true bo'lsagina
+        # WARNING bo'ladi (dev/test muhiti uchun).
+        if REDIS_OPTIONAL:
+            log.warning("⚠️ Redis ulana olmadi: %s — memoriy fallback (REDIS_OPTIONAL=true)", e)
+        else:
+            log.error(
+                "❌ REDIS YO'Q — cache ishlamayapti! Ishlash darajasi va RLS sessiyalar "
+                "ta'sir ostida. URL=%s xato=%s. Monitoring alert tekshiring.",
+                url[:50] + "..." if len(url) > 50 else url, e,
+            )
+
+
+def cache_health() -> dict:
+    """Cache sog'lig'i — metriklar uchun (/health endpoint ishlatadi)."""
+    return {
+        "redis_connected": _redis is not None,
+        "redis_disconnected_since": _redis_disconnected_at,
+        "cache_misses_due_to_redis_down": _cache_miss_due_to_redis_down,
+    }
 
 
 def _r():
@@ -59,7 +85,9 @@ def _r():
 
 async def cache_ol(kalit: str) -> Optional[Any]:
     """Keshdan qiymat olish"""
+    global _cache_miss_due_to_redis_down
     if not _r():
+        _cache_miss_due_to_redis_down += 1
         return None
     try:
         qiymat = await _r().get(kalit)
