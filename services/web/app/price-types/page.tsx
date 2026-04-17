@@ -37,7 +37,7 @@ import { useApi } from "@/hooks/use-api"
 import { narxV2Service, type NarxTuri, type NarxTuriItem, type NarxTuriPayload } from "@/lib/api/services"
 import {
   Tag, Plus, Edit, Trash2, Check, X, Search, TrendingUp,
-  ShoppingCart, FileText, Calendar, Package,
+  ShoppingCart, FileText, Calendar, Package, DollarSign, Save,
 } from "lucide-react"
 
 const TURI_META: Record<NarxTuri, { label: string; desc: string; color: string; accent: string; icon: React.ComponentType<{ className?: string }> }> = {
@@ -233,6 +233,193 @@ function NarxTuriDialog({
 }
 
 
+// ═══ USTANOVIT SENY DIALOG ═══
+function BulkPriceEditor({
+  narxTuri, open, onOpenChange, onSaved,
+}: {
+  narxTuri: NarxTuriItem
+  open: boolean
+  onOpenChange: (v: boolean) => void
+  onSaved: () => void
+}) {
+  const [tovarlar, setTovarlar] = useState<Array<{
+    id: number; nomi: string; birlik: string | null
+    olish_narxi: number; sotish_narxi: number
+    joriy_narx: number; bor_yoqligi: boolean
+    new_narx: string
+  }>>([])
+  const [loading, setLoading] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [search, setSearch] = useState("")
+
+  useEffect(() => {
+    if (!open) return
+    setLoading(true)
+    narxV2Service.listTovarlar(narxTuri.id)
+      .then(d => setTovarlar(
+        d.tovarlar.map(t => ({ ...t, new_narx: String(t.joriy_narx || "") }))
+      ))
+      .catch(e => alert("Xato: " + (e instanceof Error ? e.message : e)))
+      .finally(() => setLoading(false))
+  }, [open, narxTuri.id])
+
+  const filtered = tovarlar.filter(t =>
+    !search || t.nomi.toLowerCase().includes(search.toLowerCase())
+  )
+
+  const changeNarx = (id: number, val: string) => {
+    setTovarlar(prev => prev.map(t => t.id === id ? { ...t, new_narx: val } : t))
+  }
+
+  const applyMarkupToEmpty = (foiz: number) => {
+    setTovarlar(prev => prev.map(t => {
+      if (t.new_narx && Number(t.new_narx) > 0) return t
+      const bazaviy = t.olish_narxi || 0
+      if (bazaviy <= 0) return t
+      return { ...t, new_narx: String(Math.round(bazaviy * (1 + foiz / 100))) }
+    }))
+  }
+
+  const save = async () => {
+    setSaving(true)
+    try {
+      const payload = tovarlar
+        .filter(t => t.new_narx !== String(t.joriy_narx))  // faqat o'zgarganlari
+        .map(t => ({
+          tovar_id: t.id,
+          narx: t.new_narx ? Number(t.new_narx) : null,
+        }))
+      if (payload.length === 0) {
+        alert("Hech nima o'zgarmadi")
+        return
+      }
+      const res = await narxV2Service.bulkSet(narxTuri.id, payload)
+      alert(`✅ Saqlandi\n\n• Yangi/yangilangan: ${res.saqlandi}\n• O'chirilgan: ${res.o_chirildi}`)
+      onSaved()
+      onOpenChange(false)
+    } catch (e) {
+      alert("Xato: " + (e instanceof Error ? e.message : String(e)))
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const meta = TURI_META[narxTuri.turi]
+  const o_zgargan = tovarlar.filter(t => t.new_narx !== String(t.joriy_narx)).length
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-4xl h-[85vh] flex flex-col p-0">
+        <DialogHeader className="px-6 pt-6 pb-2">
+          <DialogTitle className="flex items-center gap-2">
+            <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${meta.color} flex items-center justify-center`}>
+              <DollarSign className="w-4 h-4 text-white" />
+            </div>
+            {narxTuri.nomi} — narxlarni sozlash
+            {o_zgargan > 0 && (
+              <Badge className="ml-2 bg-orange-500">{o_zgargan} o&apos;zgartirildi</Badge>
+            )}
+          </DialogTitle>
+          <DialogDescription>
+            SalesDoc &quot;Установить цены&quot; — narx o&apos;rniga bo&apos;sh qoldirsangiz, o&apos;sha tovar narxi bekor qilinadi
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="px-6 pb-2 flex gap-2 flex-wrap">
+          <div className="flex-1 relative min-w-[200px]">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              placeholder="Tovar qidirish..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+          <Button size="sm" variant="outline" onClick={() => applyMarkupToEmpty(20)}>
+            Bo&apos;shlarga +20% qo&apos;llash
+          </Button>
+          <Button size="sm" variant="outline" onClick={() => applyMarkupToEmpty(30)}>
+            +30%
+          </Button>
+        </div>
+
+        <div className="flex-1 overflow-auto px-6">
+          {loading ? (
+            <div className="py-10 text-center">
+              <div className="animate-spin h-5 w-5 border-2 border-primary border-t-transparent rounded-full mx-auto" />
+            </div>
+          ) : (
+            <Table>
+              <TableHeader className="sticky top-0 bg-background z-10">
+                <TableRow>
+                  <TableHead className="w-14">#</TableHead>
+                  <TableHead>Tovar nomi</TableHead>
+                  <TableHead className="text-right">Olish narxi</TableHead>
+                  <TableHead className="text-right">Joriy narx</TableHead>
+                  <TableHead className="text-right w-40">Yangi narx</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filtered.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                      {search ? "Qidiruvga mos tovar yo'q" : "Tovarlar yo'q"}
+                    </TableCell>
+                  </TableRow>
+                ) : filtered.map((t) => {
+                  const o_zgargan = t.new_narx !== String(t.joriy_narx)
+                  return (
+                    <TableRow key={t.id} className={o_zgargan ? "bg-orange-500/5" : ""}>
+                      <TableCell className="font-mono text-xs">#{t.id}</TableCell>
+                      <TableCell>
+                        <div className="font-medium">{t.nomi}</div>
+                        <div className="text-xs text-muted-foreground">{t.birlik || "dona"}</div>
+                      </TableCell>
+                      <TableCell className="text-right font-mono text-sm">
+                        {t.olish_narxi.toLocaleString()}
+                      </TableCell>
+                      <TableCell className="text-right font-mono text-sm text-muted-foreground">
+                        {t.bor_yoqligi ? t.joriy_narx.toLocaleString() : "—"}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Input
+                          type="number"
+                          placeholder="0"
+                          value={t.new_narx}
+                          onChange={(e) => changeNarx(t.id, e.target.value)}
+                          className={`text-right font-mono ${o_zgargan ? "border-orange-500 ring-1 ring-orange-500/30" : ""}`}
+                        />
+                      </TableCell>
+                    </TableRow>
+                  )
+                })}
+              </TableBody>
+            </Table>
+          )}
+        </div>
+
+        <DialogFooter className="border-t px-6 py-3 flex-row items-center justify-between">
+          <span className="text-sm text-muted-foreground">
+            Jami <b className="text-foreground">{tovarlar.length}</b> ta tovar
+          </span>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => onOpenChange(false)}>Bekor</Button>
+            <Button
+              onClick={save}
+              disabled={saving || o_zgargan === 0}
+              className={`bg-gradient-to-r ${meta.color} text-white`}
+            >
+              <Save className="w-4 h-4 mr-2" />
+              {saving ? "Saqlanyapti..." : `Saqlash (${o_zgargan})`}
+            </Button>
+          </div>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+
 // ═══ MAIN PAGE ═══
 export default function PriceTypesPage() {
   const [activeTab, setActiveTab] = useState<"active" | "inactive" | "all">("active")
@@ -243,6 +430,8 @@ export default function PriceTypesPage() {
   const [markupFor, setMarkupFor] = useState<NarxTuriItem | null>(null)
   const [markupFoiz, setMarkupFoiz] = useState(20)
   const [markupSaving, setMarkupSaving] = useState(false)
+  const [bulkOpen, setBulkOpen] = useState(false)
+  const [bulkFor, setBulkFor] = useState<NarxTuriItem | null>(null)
 
   const { data, loading, error, refetch } = useApi(() => narxV2Service.list(), [])
 
@@ -427,8 +616,17 @@ export default function PriceTypesPage() {
                             </TableCell>
                             <TableCell className="text-right">
                               <div className="flex gap-1 justify-end">
+                                <Button
+                                  size="sm"
+                                  onClick={() => { setBulkFor(it); setBulkOpen(true) }}
+                                  className={`bg-gradient-to-r ${m.color} text-white hover:opacity-90`}
+                                  title="Har tovarga narx o'rnatish"
+                                >
+                                  <DollarSign className="w-3.5 h-3.5 mr-1" />
+                                  Narxlar
+                                </Button>
                                 <Button size="sm" variant="outline" onClick={() => openMarkup(it)} title="Naenka (markup) qo'llash">
-                                  +% Naenka
+                                  +%
                                 </Button>
                                 <Button size="sm" variant="ghost" onClick={() => handleEdit(it)}>
                                   <Edit className="w-3.5 h-3.5" />
@@ -456,6 +654,15 @@ export default function PriceTypesPage() {
             open={dialogOpen}
             onOpenChange={setDialogOpen}
             initial={editItem}
+            onSaved={refetch}
+          />
+        )}
+
+        {bulkOpen && bulkFor && (
+          <BulkPriceEditor
+            narxTuri={bulkFor}
+            open={bulkOpen}
+            onOpenChange={setBulkOpen}
             onSaved={refetch}
           />
         )}

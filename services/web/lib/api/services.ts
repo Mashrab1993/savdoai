@@ -1165,6 +1165,20 @@ export const narxV2Service = {
       `/api/v1/narx/markup`,
       { narx_turi_id, foiz, faqat_boshsiz }
     ),
+  listTovarlar: (narx_turi_id: number) =>
+    api.get<{
+      narx_turi: { id: number; nomi: string; turi: NarxTuri }
+      tovarlar: Array<{
+        id: number; nomi: string; birlik: string | null
+        olish_narxi: number; sotish_narxi: number
+        joriy_narx: number; bor_yoqligi: boolean
+      }>
+    }>(`/api/v1/narx/tovarlar/${narx_turi_id}`),
+  bulkSet: (narx_turi_id: number, narxlar: Array<{ tovar_id: number; narx: number | null }>) =>
+    api.post<{ ok: boolean; saqlandi: number; o_chirildi: number }>(
+      `/api/v1/narx/bulk_set`,
+      { narx_turi_id, narxlar }
+    ),
   templateUrl: (narx_turi_id: number) => {
     const base = getPublicApiBaseUrl()
     return `${base}/api/v1/narx/template?narx_turi_id=${narx_turi_id}`

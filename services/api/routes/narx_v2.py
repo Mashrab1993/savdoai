@@ -230,6 +230,121 @@ async def apply_markup(body: MarkupIn, uid: int = Depends(get_uid)):
 
 
 # ═══════════════════════════════════════════════════════════════════
+# USTANOVIT SENY — tovarlar ro'yxati + bulk narx saqlash
+# ═══════════════════════════════════════════════════════════════════
+
+@router.get("/tovarlar/{narx_turi_id}")
+async def list_tovarlar_narxlari(
+    narx_turi_id: int,
+    uid: int = Depends(get_uid),
+):
+    """Berilgan narx turi uchun barcha tovarlar + joriy narxlarini qaytaradi."""
+    async with rls_conn(uid) as c:
+        nt = await c.fetchrow(
+            "SELECT id, nomi, turi FROM narx_turlari WHERE id=$1 AND user_id=$2",
+            narx_turi_id, uid,
+        )
+        if not nt:
+            raise HTTPException(404, "Narx turi topilmadi")
+
+        rows = await c.fetch("""
+            SELECT t.id, t.nomi, t.birlik,
+                   COALESCE(t.olish_narxi, 0) AS olish_narxi,
+                   COALESCE(t.sotish_narxi, 0) AS sotish_narxi,
+                   COALESCE(tn.narx, 0) AS joriy_narx,
+                   tn.id AS narx_yozuvi_id
+            FROM tovarlar t
+            LEFT JOIN tovar_narxlari tn
+              ON tn.tovar_id = t.id AND tn.narx_turi_id = $1
+            WHERE t.user_id = $2
+            ORDER BY t.nomi
+        """, narx_turi_id, uid)
+
+    return {
+        "narx_turi": dict(nt),
+        "tovarlar": [
+            {
+                "id": r["id"],
+                "nomi": r["nomi"],
+                "birlik": r["birlik"],
+                "olish_narxi": float(r["olish_narxi"] or 0),
+                "sotish_narxi": float(r["sotish_narxi"] or 0),
+                "joriy_narx": float(r["joriy_narx"] or 0),
+                "bor_yoqligi": bool(r["narx_yozuvi_id"]),
+            }
+            for r in rows
+        ],
+    }
+
+
+class BulkNarxIn(BaseModel):
+    narx_turi_id: int
+    narxlar: list[dict] = Field(..., description="[{tovar_id, narx}]")
+
+
+@router.post("/bulk_set")
+async def bulk_set_prices(body: BulkNarxIn, uid: int = Depends(get_uid)):
+    """SalesDoc "Установить цены" — ko'p tovarga birdaniga narx o'rnatish.
+
+    narxlar ichidagi {tovar_id, narx} lar upsert qilinadi.
+    """
+    async with rls_conn(uid) as c:
+        nt = await c.fetchval(
+            "SELECT id FROM narx_turlari WHERE id=$1 AND user_id=$2",
+            body.narx_turi_id, uid,
+        )
+        if not nt:
+            raise HTTPException(404, "Narx turi topilmadi")
+
+        saqlangan = 0
+        o_chirildi = 0
+        async with c.transaction():
+            for item in body.narxlar:
+                try:
+                    tid = int(item.get("tovar_id"))
+                    narx_val = item.get("narx")
+                except (TypeError, ValueError):
+                    continue
+
+                if narx_val is None or narx_val == "":
+                    # Narx bo'sh => o'chirish (agar bor bo'lsa)
+                    res = await c.execute("""
+                        DELETE FROM tovar_narxlari
+                        WHERE user_id=$1 AND tovar_id=$2 AND narx_turi_id=$3
+                    """, uid, tid, body.narx_turi_id)
+                    if "DELETE 1" in res:
+                        o_chirildi += 1
+                    continue
+
+                try:
+                    narx = float(narx_val)
+                    if narx < 0:
+                        continue
+                except (TypeError, ValueError):
+                    continue
+
+                await c.execute("""
+                    INSERT INTO tovar_narxlari (user_id, tovar_id, narx_turi_id, narx)
+                    VALUES ($1, $2, $3, $4)
+                    ON CONFLICT (tovar_id, narx_turi_id)
+                    DO UPDATE SET narx = EXCLUDED.narx, yangilangan = NOW()
+                """, uid, tid, body.narx_turi_id, narx)
+                saqlangan += 1
+
+            await c.execute(
+                "UPDATE narx_turlari SET oxirgi_narx_sanasi = NOW() WHERE id=$1",
+                body.narx_turi_id,
+            )
+
+    return {
+        "ok": True,
+        "narx_turi_id": body.narx_turi_id,
+        "saqlandi": saqlangan,
+        "o_chirildi": o_chirildi,
+    }
+
+
+# ═══════════════════════════════════════════════════════════════════
 # EXCEL TEMPLATE DOWNLOAD + IMPORT
 # ═══════════════════════════════════════════════════════════════════
 
