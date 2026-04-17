@@ -60,7 +60,30 @@ async def ai_status():
         "deepseek":        deepseek.ready,
         "grok":            grok.ready,
         "v0":              v0.ready,
+        "rate_limits": {
+            "second_opinion": f"{_AI_RATE_LIMITS['second_opinion']}/soat",
+            "batch":          f"{_AI_RATE_LIMITS['batch']}/soat",
+            "market_intel":   f"{_AI_RATE_LIMITS['market_intel']}/soat",
+            "generate_ui":    f"{_AI_RATE_LIMITS['generate_ui']}/soat",
+        },
+        "version": "25.4.0",
     }
+
+
+@router.get("/my-usage")
+async def ai_my_usage(uid: int = Depends(get_uid)):
+    """Foydalanuvchining AI endpoint'lariga so'rov hisoblagichlari (oxirgi 1 soat)."""
+    now = _time.time()
+    usage = {}
+    for endpoint, limit in _AI_RATE_LIMITS.items():
+        bucket = _ai_buckets.get((endpoint, uid), [])
+        recent = [t for t in bucket if now - t < 3600]
+        usage[endpoint] = {
+            "used": len(recent),
+            "limit": limit,
+            "remaining": max(0, limit - len(recent)),
+        }
+    return {"uid": uid, "window_seconds": 3600, "usage": usage}
 
 
 import time as _time
