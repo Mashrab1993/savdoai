@@ -288,6 +288,20 @@ async def route_voice_to_module(update: Update, ctx: ContextTypes.DEFAULT_TYPE,
         except Exception as e:
             log.warning("voice narx_turi xato: %s", e)
 
+    # ═══ TOVAR KLASSIFIKATORI — "yangi brend Ariel", "kategoriya Sladus" ═══
+    if _any(m, (
+        "yangi brend", "yangi kategoriya", "yangi subkategoriya", "yangi segment",
+        "yangi gruppa", "yangi ishlab chiqaruvchi", "brend qo'sh", "brend qosh",
+        "kategoriya qo'sh", "kategoriya qosh", "segment qo'sh", "segment qosh",
+        "gruppa qo'sh", "gruppa qosh", "firma qo'sh", "ishlab chiqaruvchi qo'sh",
+    )):
+        try:
+            from services.bot.handlers.klassifikator import voice_klassifikator
+            if await voice_klassifikator(update, ctx, matn):
+                return True
+        except Exception as e:
+            log.warning("voice klassifikator xato: %s", e)
+
     # ═══ QAYTARISH — "Karim 5 ta Ariel qaytardi brak" ═══
     if _any(m, ("qaytardi", "qaytargan", "qaytarib ber", "qaytarmoqchi")):
         try:

@@ -39,7 +39,9 @@ import {
 import {
   Folder, Grid3x3, Package, Award, Factory, Tag, Layers,
   Plus, Search, Edit, Trash2, Check, X, Hash, Flag, Globe2,
+  FileDown, FileUp,
 } from "lucide-react"
+import { useRef } from "react"
 
 // Tab meta — icon + colors + label
 type TabMeta = {
@@ -300,6 +302,43 @@ export default function CategoriesPage() {
     setDialogOpen(true)
   }, [])
 
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [importing, setImporting] = useState(false)
+
+  const handleExport = useCallback(() => {
+    const token = localStorage.getItem("auth_token")
+    const url = classifierService.exportUrl(activeTab)
+    // Bearer token kerak — fetch+blob
+    fetch(url, { headers: { Authorization: `Bearer ${token}` } })
+      .then(async (r) => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`)
+        const blob = await r.blob()
+        const a = document.createElement("a")
+        const objUrl = URL.createObjectURL(blob)
+        a.href = objUrl
+        a.download = `${meta.label}_${new Date().toISOString().slice(0, 10)}.xlsx`
+        document.body.appendChild(a)
+        a.click()
+        a.remove()
+        URL.revokeObjectURL(objUrl)
+      })
+      .catch((e) => alert("Export xato: " + (e?.message || e)))
+  }, [activeTab, meta.label])
+
+  const handleImport = useCallback(async (file: File) => {
+    setImporting(true)
+    try {
+      const res = await classifierService.importXlsx(activeTab, file)
+      alert(`✅ Import tayyor\n\n• Yangi: ${res.yangi_qoshildi}\n• Yangilandi: ${res.yangilandi}${res.xatolar?.length ? `\n\n⚠️ Xatolar:\n${res.xatolar.join("\n")}` : ""}`)
+      refetch()
+    } catch (e) {
+      alert("Import xato: " + (e instanceof Error ? e.message : String(e)))
+    } finally {
+      setImporting(false)
+      if (fileInputRef.current) fileInputRef.current.value = ""
+    }
+  }, [activeTab, refetch])
+
   const handleDelete = useCallback(async (it: KlassifikatorItem) => {
     if (it.tovar_soni > 0) {
       if (!confirm(`⚠️ "${it.nomi}"ga bog'langan ${it.tovar_soni} ta tovar bor.\nO'chirsangiz, ular "tegilmagan"ga aylanadi. Davom etamizmi?`)) return
@@ -390,11 +429,40 @@ export default function CategoriesPage() {
                       className="pl-10"
                     />
                   </div>
-                  <div className="flex items-center gap-3">
-                    <label className="flex items-center gap-2 text-sm cursor-pointer">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <label className="flex items-center gap-2 text-sm cursor-pointer mr-2">
                       <Switch checked={showInactive} onCheckedChange={setShowInactive} />
                       <span>Nofaollar</span>
                     </label>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept=".xlsx,.xls"
+                      className="hidden"
+                      onChange={(e) => {
+                        const f = e.target.files?.[0]
+                        if (f) handleImport(f)
+                      }}
+                    />
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={importing}
+                      title="Excel fayldan import qilish"
+                    >
+                      <FileUp className="w-4 h-4 mr-1" />
+                      {importing ? "Yuklanmoqda..." : "Import"}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleExport}
+                      title="Joriy ro'yxatni Excelga yuklash"
+                    >
+                      <FileDown className="w-4 h-4 mr-1" />
+                      Excel
+                    </Button>
                     <Button
                       onClick={handleAdd}
                       className={`bg-gradient-to-r ${t.gradient} text-white hover:opacity-90`}

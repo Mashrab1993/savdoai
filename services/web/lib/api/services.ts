@@ -1083,4 +1083,31 @@ export const classifierService = {
     api.put<KlassifikatorItem>(`/api/v1/klassifikator/${id}`, data),
   remove: (id: number) =>
     api.delete<{ ok: boolean }>(`/api/v1/klassifikator/${id}`),
+  exportUrl: (turi?: KlassifikatorTuri) => {
+    const base = getPublicApiBaseUrl()
+    const q = turi ? `?turi=${turi}` : ""
+    return `${base}/api/v1/klassifikator/export${q}`
+  },
+  importXlsx: async (turi: KlassifikatorTuri, file: File) => {
+    const token = typeof window !== "undefined" ? localStorage.getItem("auth_token") : ""
+    const base = getPublicApiBaseUrl()
+    const form = new FormData()
+    form.append("file", file)
+    const res = await fetch(`${base}/api/v1/klassifikator/import?turi=${turi}`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+      body: form,
+    })
+    if (!res.ok) {
+      const txt = await res.text().catch(() => "")
+      throw new Error(txt || `HTTP ${res.status}`)
+    }
+    return res.json() as Promise<{
+      ok: boolean
+      turi: KlassifikatorTuri
+      yangi_qoshildi: number
+      yangilandi: number
+      xatolar: string[]
+    }>
+  },
 }
