@@ -217,6 +217,7 @@ class PaginatsiyaResponse(BaseModel):
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # ── Startup validation ──
+    # ── Majburiy env'larni tekshirish (bo'lmasa ishlab chiqarish imkonsiz)
     missing = []
     for var in ["DATABASE_URL", "JWT_SECRET"]:
         if not os.getenv(var):
@@ -227,14 +228,40 @@ async def lifespan(app: FastAPI):
 
     dsn = os.environ.get("DATABASE_URL", "")
 
-    # Ixtiyoriy sozlamalar haqida ogohlantirish
+    # ── Format va xavfsizlik tekshiruvi (production'da o'zgartirish qiyin,
+    # shuning uchun bootda aniqlaymiz, runtime'da emas)
+    config_errors = []
+    jwt_secret = os.getenv("JWT_SECRET", "")
+    if len(jwt_secret) < 16:
+        config_errors.append(
+            f"JWT_SECRET juda qisqa ({len(jwt_secret)} belgi). Minimum 16 "
+            "belgi kerak (HMAC xavfsizligi uchun). 32+ tavsiya."
+        )
+    if not (dsn.startswith("postgres://") or dsn.startswith("postgresql://")):
+        config_errors.append(
+            "DATABASE_URL format noto'g'ri — postgres:// yoki postgresql:// "
+            "bilan boshlanishi kerak."
+        )
+    is_railway = bool(os.getenv("RAILWAY_ENVIRONMENT") or os.getenv("RAILWAY_SERVICE_ID"))
+    if is_railway and not os.getenv("PRINT_SECRET", "").strip():
+        config_errors.append(
+            "PRINT_SECRET production'da majburiy (bot/API o'rtasida HMAC print "
+            "token sync). Railway'da qo'shing."
+        )
+    if config_errors:
+        log.critical("❌ Konfiguratsiya xato'lari:")
+        for e in config_errors:
+            log.critical("   • %s", e)
+        sys.exit(1)
+
+    # ── Ixtiyoriy sozlamalar haqida ogohlantirish
     optional_warns = []
     if not os.getenv("REDIS_URL"):
-        optional_warns.append("REDIS_URL (cache o'chirilgan)")
-    if not os.getenv("GOOGLE_API_KEY"):
-        optional_warns.append("GOOGLE_API_KEY (Gemini AI o'chirilgan)")
+        optional_warns.append("REDIS_URL (cache o'chirilgan — tezlik ta'sir qiladi)")
+    if not os.getenv("GOOGLE_API_KEY") and not os.getenv("GEMINI_API_KEY"):
+        optional_warns.append("GEMINI_API_KEY (Ovoz STT, Rasm OCR ishlamaydi)")
     if not os.getenv("ANTHROPIC_API_KEY"):
-        optional_warns.append("ANTHROPIC_API_KEY (Claude AI o'chirilgan)")
+        optional_warns.append("ANTHROPIC_API_KEY (Claude Brain-2 va Opus 4.7 audit o'chiq)")
     if not os.getenv("BOT_TOKEN"):
         optional_warns.append("BOT_TOKEN (Telegram bot o'chirilgan)")
     for w in optional_warns:
