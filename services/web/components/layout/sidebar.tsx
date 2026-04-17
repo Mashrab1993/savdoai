@@ -6,7 +6,7 @@ import {
   LayoutDashboard, Users, Package, CreditCard, FileText, BarChart3,
   Settings, ChevronLeft, ChevronRight, GraduationCap, Receipt, Tag,
   Landmark, ShoppingCart, Brain, Star, Target, Gift, RefreshCw,
-  MapPin, Shield, Activity, Wallet, Camera,
+  MapPin, Shield, Activity, Wallet, Camera, Heart,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useState } from "react"
@@ -92,6 +92,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
     { href: "/voice-help",      label: "🎤 Ovozli buyruqlar",    icon: Activity },
     { href: "/copilot",         label: "🧠 AI Copilot (Opus)",   icon: Brain },
     { href: "/anomaliya",       label: "🛡️ Anomaliya detektori", icon: Shield },
+    { href: "/biznes-salomatlik", label: "❤️ Biznes salomatligi", icon: Heart },
   ]
 
   // ═══════════════════════════════════════════════════════

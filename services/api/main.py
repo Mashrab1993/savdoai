@@ -596,6 +596,13 @@ try:
 except Exception as e:
     log.warning("⚠️ Anomaliya yuklanmadi: %s", e)
 
+try:
+    from services.api.routes.health_score import router as hs_router
+    app.include_router(hs_router, tags=["Biznes salomatligi"])
+    log.info("✅ Biznes salomatlik ko'rsatkichi moduli ulandi")
+except Exception as e:
+    log.warning("⚠️ Biznes salomatligi yuklanmadi: %s", e)
+
 # ════════════════════════════════════════════════════════════
 #  JWT + AUTH — deps.py dan import (shared bilan kassa/ws)
 # ════════════════════════════════════════════════════════════
