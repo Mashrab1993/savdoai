@@ -320,15 +320,26 @@ async def user_faollashtir(uid: int, obuna_kun: int = 30) -> None:
         )
 
 
-async def barcha_users() -> list:
+async def barcha_users(limit: int = 5000) -> list:
+    """Barcha foydalanuvchilar — default LIMIT 5000 (memory protection)."""
     async with _P().acquire() as c:
-        _rows = await c.fetch("SELECT id, ism, to_liq_ism, username, telefon, dokon_nomi, segment, faol, obuna_tugash, yaratilgan FROM users ORDER BY yaratilgan DESC")
+        _rows = await c.fetch(
+            "SELECT id, ism, to_liq_ism, username, telefon, dokon_nomi, segment, "
+            "faol, obuna_tugash, yaratilgan FROM users "
+            "ORDER BY yaratilgan DESC LIMIT $1",
+            limit,
+        )
         return [dict(r) for r in _rows]
 
 
-async def faol_users() -> list:
+async def faol_users(limit: int = 5000) -> list:
+    """Faol foydalanuvchilar — default LIMIT 5000."""
     async with _P().acquire() as c:
-        _rows = await c.fetch("SELECT id, ism, to_liq_ism, username, telefon, dokon_nomi, segment, faol, obuna_tugash, yaratilgan FROM users WHERE faol = TRUE")
+        _rows = await c.fetch(
+            "SELECT id, ism, to_liq_ism, username, telefon, dokon_nomi, segment, "
+            "faol, obuna_tugash, yaratilgan FROM users WHERE faol = TRUE LIMIT $1",
+            limit,
+        )
         return [dict(r) for r in _rows]
 
 
