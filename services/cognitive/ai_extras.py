@@ -6,8 +6,7 @@
 ║  quyidagilarni qo'shadi — har biri env key bor bo'lsa avtomatik     ║
 ║  yoqiladi, yo'q bo'lsa jim o'tkazib yuboriladi.                     ║
 ║                                                                      ║
-║   • OpenAI GPT-5 Pro    — OPENAI_API_KEY                             ║
-║   • OpenAI Whisper V3   — OPENAI_API_KEY (bitta kalit)              ║
+║   • OpenAI GPT-5.4 Pro  — OPENAI_API_KEY (faqat matematik audit)    ║
 ║   • DeepSeek V3         — DEEPSEEK_API_KEY                           ║
 ║   • xAI Grok 4          — XAI_API_KEY                                ║
 ║                                                                      ║
@@ -36,7 +35,6 @@ XAI_KEY      = os.getenv("XAI_API_KEY", "").strip()
 V0_KEY       = os.getenv("V0_API_KEY", "").strip()
 
 OPENAI_MODEL   = os.getenv("OPENAI_MODEL",   "gpt-5.4")       # override qilsa bo'ladi
-WHISPER_MODEL  = os.getenv("WHISPER_MODEL",  "whisper-1")
 DEEPSEEK_MODEL = os.getenv("DEEPSEEK_MODEL", "deepseek-chat")
 XAI_MODEL      = os.getenv("XAI_MODEL",      "grok-4")
 V0_MODEL       = os.getenv("V0_MODEL",       "v0-1.0-md")
@@ -202,51 +200,6 @@ def _extract_tsx(raw_content: str) -> str:
 def active_providers() -> list[str]:
     """Hozir yoqilgan providerlar ro'yxati."""
     return [p.name for p in _PROVIDERS if p.ready]
-
-
-# ════════════════════════════════════════════════════════════════════
-#  WHISPER — ovoz → matn (OpenAI audio.transcriptions)
-# ════════════════════════════════════════════════════════════════════
-
-async def whisper_transcribe(
-    audio_bytes: bytes,
-    filename: str = "voice.ogg",
-    language: Optional[str] = None,
-) -> Optional[str]:
-    """
-    Whisper V3 orqali ovozni matn qilish (Gemini fallback sifatida).
-
-    DIQQAT: Whisper-1 rasmiy ro'yxatida o'zbek tili (uz) YO'Q. Agar
-    o'zbek ovoz bo'lsa, language parametrini bermang — auto-detect
-    ishlaydi (Whisper ovozni qo'shni turkiy til sifatida transkriptsiya
-    qiladi, sifat past bo'lishi mumkin). Shuning uchun asosiy STT
-    Gemini 2.5 Pro — Whisper faqat zaxira sifatida.
-    """
-    if not OPENAI_KEY:
-        return None
-
-    headers = {"Authorization": f"Bearer {OPENAI_KEY}"}
-    files = {"file": (filename, audio_bytes, "audio/ogg")}
-    data = {
-        "model": WHISPER_MODEL,
-        "response_format": "text",
-    }
-    if language:
-        data["language"] = language
-
-    try:
-        async with httpx.AsyncClient(timeout=HTTP_TIMEOUT) as cli:
-            r = await cli.post(
-                "https://api.openai.com/v1/audio/transcriptions",
-                headers=headers,
-                files=files,
-                data=data,
-            )
-            r.raise_for_status()
-            return r.text.strip()
-    except Exception as e:
-        log.warning("whisper transcribe: %s", e)
-        return None
 
 
 # ════════════════════════════════════════════════════════════════════
