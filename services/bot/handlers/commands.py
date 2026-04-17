@@ -276,26 +276,55 @@ async def cmd_status(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
     hozir = datetime.now(tz).strftime("%d.%m.%Y %H:%M:%S")
     users = await db.barcha_users()
     faol  = sum(1 for u in users if u["faol"])
-    # DB ping
+    # DB ping + pool pressure
     db_ms = "?"
+    db_status_emoji = "✅"
+    db_pressure = 0
     try:
         from shared.database.pool import pool_health
         info = await pool_health()
         db_ms = f"{info.get('ping_ms', '?')}ms (pool: {info.get('used',0)}/{info.get('size',0)})"
+        db_pressure = info.get("pressure_pct", 0)
+        if db_pressure >= 95 or info.get("status") == "error":
+            db_status_emoji = "🔴"
+        elif db_pressure >= 80 or info.get("status") == "degraded":
+            db_status_emoji = "🟡"
     except Exception as _e: log.debug("silent: %s", _e)
+
+    # Cache (Redis) sog'lig'i
+    cache_emoji = "✅"
+    cache_info = ""
+    try:
+        from shared.cache.redis_cache import cache_health
+        ch = cache_health()
+        if not ch.get("redis_connected"):
+            cache_emoji = "🟡"
+            cache_info = " (Redis uzilgan — memory fallback)"
+        miss = ch.get("cache_misses_due_to_redis_down", 0)
+        if miss > 100:
+            cache_info += f" ({miss} miss)"
+    except Exception as _e: log.debug("silent: %s", _e)
+
+    # AI providerlar
+    import os as _os
+    ai_anthropic = "✅" if (_os.getenv("ANTHROPIC_API_KEY") or "").strip() else "⚪"
+    ai_gemini = "✅" if ((_os.getenv("GEMINI_API_KEY") or _os.getenv("GOOGLE_API_KEY") or "").strip()) else "⚪"
+
     matn = (
-        "⚙️ *BOT HOLATI (v25.3 PRODUCTION)*\n\n"
+        "⚙️ *TIZIM HOLATI (v25.3 PRODUCTION)*\n\n"
         + f"📅 Vaqt: `{hozir}`\n"
         + f"🐍 Python: `{sys.version.split()[0]}`\n"
         + f"💻 OS: `{platform.system()} {platform.release()}`\n\n"
         + f"👥 Foydalanuvchilar: {len(users)} (faol: {faol})\n"
-        + f"💾 Kesh: {len(_kesh)} ta yozuv\n\n"
+        + f"💾 Kesh: {len(_kesh)} ta yozuv{cache_info}\n\n"
         + "✅ Bot: Ishlayapti\n"
-        + f"✅ DB: {db_ms}\n"
-        + f"✅ AI: {cfg().claude_model}\n"
-        + f"✅ Ovoz: {cfg().gemini_model}\n"
-        + "✅ Vision AI: Faol\n"
-        + "✅ Kassa: Faol"
+        + f"{db_status_emoji} DB: {db_ms} — pressure {db_pressure}%\n"
+        + f"{cache_emoji} Cache\n"
+        + f"{ai_anthropic} Claude ({cfg().claude_model})\n"
+        + f"{ai_gemini} Gemini ({cfg().gemini_model})\n"
+        + f"{ai_anthropic} Opus 4.7 audit\n"
+        + "✅ Vision AI\n"
+        + "✅ Kassa"
     )
     await update.message.reply_text(matn, parse_mode="Markdown")
 
