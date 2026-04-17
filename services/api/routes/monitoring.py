@@ -24,6 +24,8 @@ __version__ = "25.3.2"
 
 @router.get("/health")
 async def health():
+    """Kengaytirilgan health check — DB, Redis, pool pressure, AI providers."""
+    from shared.cache.redis_cache import cache_health
     db = await pool_health()
     redis_ok = False
     redis_ms = None
@@ -39,15 +41,37 @@ async def health():
             redis_ok = True
             await r.close()
     except Exception as _e:
-        # Health check'da Redis fail silent — lekin log'ga yozamiz
-        # (production'da Redis'ni tiklash boshlanishi kerak)
         log.warning("Health check: Redis ping xato: %s", _e)
     latency_ms = round((_t.monotonic() - start) * 1000, 1)
+
+    # Umumiy holat — DB degraded yoki pool pressure yuqori bo'lsa aks ettiramiz
+    overall = "ok"
+    if db.get("status") in ("degraded", "error"):
+        overall = "degraded"
+    if not redis_ok and os.getenv("REDIS_URL"):
+        overall = "degraded"
+
+    # Cache sog'lig'i (Redis uzoq vaqt uzilgan bo'lsa ko'rsatadi)
+    cache_hlth = cache_health()
+
+    # AI providerlar (ANTHROPIC_API_KEY, GEMINI_API_KEY — bor/yo'q)
+    ai_providers = {
+        "anthropic": bool(os.getenv("ANTHROPIC_API_KEY", "").strip()),
+        "gemini": bool(os.getenv("GEMINI_API_KEY", "").strip() or
+                       os.getenv("GOOGLE_API_KEY", "").strip()),
+        "opus_4_7_audit": bool(os.getenv("ANTHROPIC_API_KEY", "").strip()),
+    }
+
     return {
-        "status": "ok", "version": __version__, "service": "api",
+        "status": overall, "version": __version__, "service": "api",
         "db_ping_ms": db.get("ping_ms"),
         "db_pool": f"{db.get('used',0)}/{db.get('size',0)}",
+        "db_pressure_pct": db.get("pressure_pct", 0),
+        "db_status": db.get("status"),
         "redis_ok": redis_ok, "redis_ms": redis_ms,
+        "redis_disconnected_since": cache_hlth.get("redis_disconnected_since", 0),
+        "cache_miss_due_to_redis_down": cache_hlth.get("cache_misses_due_to_redis_down", 0),
+        "ai_providers": ai_providers,
         "latency_ms": latency_ms,
         **process_info(),
     }
