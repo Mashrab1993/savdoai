@@ -550,29 +550,42 @@ async def ovoz_qabul(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
                          "yangi mijoz", "yangi do'kon", "do'kon qo'sh")
             is_klient = any(kw in matn_lower for kw in klient_kw)
 
-            # 2. Detect NARX update
-            narx_kw = ("narx o'rnat", "narx qo'y", "narx belgilab",
-                       "narx yangilab", "sotish narxi", "sotish narx")
-            is_narx = any(kw in matn_lower for kw in narx_kw) and not is_klient
-
-            # 3. Detect XARAJAT (personal/shogird/oila expenses)
-            xarajat_kw = ("obed", "bozorlik", "benzin", "taksi", "yo'l kira",
-                          "telefon to'lov", "gaz to'lov", "elektr", "svet",
-                          "dori", "dorixona", "oylik", "avans", "maosh",
-                          "oila xarajat", "shaxsiy xarajat")
-            has_xarajat_kw = any(kw in matn_lower for kw in xarajat_kw)
-            is_xarajat = has_xarajat_kw and not is_klient and not is_narx
-
-            # 4. Detect KIRIM (requires keyword + qty/price)
+            # 4. Detect KIRIM (requires keyword + qty/price) — AVVAL tekshiramiz
+            # Sabab: "olish narx" ikki joyda edi (NARX va KIRIM). Agar "keldi/kirim/zavoddan"
+            # bilan birga bo'lsa — aniq KIRIM, NARX emas.
+            # Eslatma: #1 kritik tuzatish (v25.4.0) — keyword tartibi o'zgartirildi.
             kirim_kw = ("keldi", "kelgan", "tushdi", "kirim", "kirimi",
-                        "olish narx", "zavoddan", "fabrika", "kompaniyasidan")
+                        "zavoddan", "fabrika", "kompaniyasidan", "yetkazib",
+                        "olib keldi", "qabul qil")
             has_kirim_kw = any(kw in matn_lower for kw in kirim_kw)
             has_qty_or_price = (
                 any(w.isdigit() for w in matn_words)
                 or any(kw in matn_lower for kw in ("narx", "ming", "mln", "ta ", "dona"))
             )
-            is_kirim = (has_kirim_kw and has_qty_or_price and not is_klient
-                        and not is_narx and not is_xarajat)
+            is_kirim = has_kirim_kw and has_qty_or_price and not is_klient
+
+            # 2. Detect NARX update — KIRIM bilan chegara bor
+            # "olish narx" alohida so'z bo'lsa ham, agar KIRIM keyword bo'lmasa → NARX
+            narx_kw = ("narx o'rnat", "narx qo'y", "narx belgilab",
+                       "narx yangilab", "sotish narxi", "sotish narx")
+            # "olish narx" faqat KIRIM bo'lmaganda NARX'ga kiradi
+            if "olish narx" in matn_lower and not has_kirim_kw:
+                is_narx = True
+            else:
+                is_narx = any(kw in matn_lower for kw in narx_kw) and not is_klient and not is_kirim
+
+            # 3. Detect XARAJAT (personal/shogird/oila expenses)
+            # #8 tuzatish: faqat kontekst raqami bo'lsa (xarajat raqamsiz bo'lmaydi)
+            xarajat_kw = ("obed", "bozorlik", "benzin", "taksi", "yo'l kira",
+                          "telefon to'lov", "gaz to'lov", "elektr", "svet",
+                          "dori", "dorixona", "avans",
+                          "oila xarajat", "shaxsiy xarajat")
+            # "oylik" va "maosh" tor qo'llaniladi — faqat raqam bilan
+            if any(kw in matn_lower for kw in ("oylik", "maosh")) and has_qty_or_price:
+                has_xarajat_kw = True
+            else:
+                has_xarajat_kw = any(kw in matn_lower for kw in xarajat_kw) and has_qty_or_price
+            is_xarajat = has_xarajat_kw and not is_klient and not is_narx and not is_kirim
 
             if is_klient:
                 from services.bot.handlers.voice_klient import handle_voice_klient
@@ -594,7 +607,12 @@ async def ovoz_qabul(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
                 del ctx.user_data["_voice_order_handled"]
                 return
         except Exception as _vo:
-            log.debug("Voice order/kirim/klient: %s", _vo)
+            # #3 tuzatish: silent swallow o'rniga aniq warning
+            # (user lag sezadi, lekin oldin sabab ko'rinmagan edi)
+            log.warning(
+                "Voice handler xato (intent router → fallback AI): %s [matn='%s']",
+                _vo, (matn or "")[:100], exc_info=True,
+            )
 
         await _qayta_ishlash(update,ctx,matn)
     except Exception as xato:
