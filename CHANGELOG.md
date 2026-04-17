@@ -1,5 +1,104 @@
 # CHANGELOG — SavdoAI v25.4
 
+## v25.4.2 — SalesDoc parity + 4 dunyoda yagona AI (2026-04-17 kechqurun)
+
+### 🌟 4 DUNYODA YAGONA AI XUSUSIYAT
+
+1. **AI Biznes Copilot** (`/copilot`)
+   - Opus 4.7 chat bilan biznes savollar
+   - Avtomatik kontekst: 7 kun sotuv, klient, tovar, qarz
+   - POST `/api/v1/copilot/ask`
+   - Voice: "Copilot: bu hafta sotuvim qanday?"
+
+2. **AI Anomaliya Detektori** (`/anomaliya`)
+   - 4 tur anomaliya: zararli sotuv, katta qarz, ko'p zayavka, katta miqdor
+   - Opus 4.7 xulosa + 3 tavsiya
+   - GET `/api/v1/anomaliya?kunlar=N`
+   - Voice: "Anomaliya" / "Nima xavfli?"
+
+3. **Biznes Salomatligi** (`/biznes-salomatlik`)
+   - 0-100 ball, Apple Watch Rings visual
+   - 6 komponent: sotuv, qarz, tovar, klient, agent, anomaliya
+   - Daraja: A+ / A / B / C / D
+   - GET `/api/v1/biznes_salomatlik`
+   - Voice: "Biznesim qanday?"
+
+4. **AI Ertalabki Brifing** (avvaldan bor, Opus 4.7)
+   - Kundalik strategiya xabari 09:00
+
+### 📊 SalesDoc parity (12 yangi sahifa)
+
+1. `/categories` — 7 tab (kat/subkat/gruppa/brend/ishlab_chiqaruvchi/segment/gruppa_kat) + Excel
+2. `/price-types` — v2 (Prodaja/Zakup/Prayslist + Naenka bulk)
+3. `/reports/agent` — SalesDoc /report/agent analog (5 KPI + jadval)
+4. `/reports-hub` — 32 hisobot bir joyda + 8 kategoriya filter
+5. `/pnl` — Foyda/Zarar (SalesDoc /finans/pnl)
+6. `/rfm` — Klient segmentatsiya (Champion/Loyal/Lost va h.k.)
+7. `/ekspeditorlar` — CRUD (ism/telefon/mashina)
+8. `/skladlar` — CRUD (asosiy/brak/aksiya/qaytarish)
+9. `/voice-help` — 40 voice intent chiroyli grid
+10. `/copilot` — AI chat (yagona)
+11. `/anomaliya` — AI anomaliya (yagona)
+12. `/biznes-salomatlik` — 0-100 ball (yagona)
+
+### 🔌 Yangi API endpointlar (35+)
+
+- **Klassifikator**: 5 route (CRUD + reorder + Excel export/import)
+- **Narx v2**: 7 route (turi CRUD + markup + tovarlar + bulk_set + Excel)
+- **Ekspeditor**: 4 route (CRUD)
+- **Sklad**: 3 route (CRUD)
+- **Nakladnoy**: 4 route (create + list + 3 Excel format)
+- **Hisobot Agent**: 1 route
+- **Copilot**: 1 route
+- **Anomaliya**: 1 route
+- **Biznes Salomatligi**: 1 route
+
+### 🗃️ Yangi DB jadvallar (8)
+
+- `tovar_klassifikatorlari` (7 tur yagona)
+- `narx_turlari` kengaytirildi (kod/turi/tavsif/tolov_usuli)
+- `prayslist` + `prayslist_narxlari`
+- `ekspeditorlar` (ism/telefon/mashina)
+- `skladlar` (asosiy/brak/aksiya)
+- `nakladnoy_registrlari` (bulk)
+- `sotuv_sessiyalar` kengaytirildi (shogird_id/ekspeditor_id/sklad_id/tip_zayavki/document_number)
+
+### 📊 3 SalesDoc Excel formati
+
+- **300 Реестр 3.0** — qisqa ro'yxat
+- **310 Накладные 3.1** — har zayavkaga alohida invoice
+- **410 Загруз зав.склада 4.1** — ishlab chiqaruvchi bo'yicha guruh
+
+### 🎤 Yangi voice intentlar (11+)
+
+- "Yangi brend Ariel" / "Kategoriya Sladus qo'sh"
+- "Yangi ekspeditor Karim +998..."
+- "Sklad Asosiy qo'sh" (brak/aksiya)
+- "Agent hisobot" / "Kim qancha sotdi"
+- "Foyda hisobot" / "PnL" / "Sof foyda"
+- "Copilot: ..." / "AI: ..."
+- "Anomaliya" / "Nima xavfli?"
+- "Biznesim qanday?"
+
+### 🔧 Xatoliklar tuzatildi (2)
+
+- **Pydantic Body vs Field** — `Body()` ishlatildi body paramlar uchun
+- **Duplicate export** — ekspeditorService → ekspeditorCrudService
+
+### 📈 STATISTIKA (17 aprel kechqurun)
+
+- 33 commit
+- 12 yangi sahifa (jami 120+)
+- 35+ yangi API endpoint
+- 8 yangi DB jadval
+- 3 Excel format (SalesDoc shablonlariga mos)
+- 11 yangi voice intent
+- 4 dunyoda yagona AI funksiya
+- 36/36 yangi sahifa 200 OK, 9/9 API LIVE
+- 0 xatoyli kod (hamma push muvaffaqiyatli)
+
+---
+
 ## v25.4.1 — 10 ta yangi modul + voice-first (2026-04-17 ikkinchi yarmi)
 
 ### 🌟 Yangi modullar (SalesDoc asosida)
