@@ -548,6 +548,15 @@ async def ovoz_qabul(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
         except Exception as _tv:
             log.warning("Voice tashrif handler xato: %s", _tv, exc_info=True)
 
+        # ═══ v25.4.0 VOICE MASTER ROUTER — yangi modullar (plan/vazifa/rfm/hayotim/brifing)
+        # Foydalanuvchilar /komanda tushunmaydi — hammasi ovoz bilan boshqariladi.
+        try:
+            from services.bot.handlers.voice_master import route_voice_to_module
+            if await route_voice_to_module(update, ctx, matn):
+                return
+        except Exception as _vm:
+            log.warning("Voice master router xato: %s", _vm, exc_info=True)
+
         # ═══ v25.6 VOICE: KLIENT / KIRIM / ORDER ═══
         try:
             ctx.user_data["last_transcription"] = matn
