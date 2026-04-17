@@ -1335,6 +1335,14 @@ def ilovani_qur(conf:Config) -> Application:
     app.add_handler(CommandHandler("tashrif_hisobot",  cmd_tashrif_hisobot))
     from telegram.ext import CallbackQueryHandler as _CQ
     app.add_handler(_CQ(tashrif_sku_cb, pattern=r"^sc:(bor|yoq):\d+$"))
+
+    # v25.4.0 — PLANNING moduli (SalesDoc /planning asosida)
+    from services.bot.handlers.planning import (
+        cmd_plan, cmd_plan_shogird, cmd_outlet_plan,
+    )
+    app.add_handler(CommandHandler("plan",             cmd_plan))
+    app.add_handler(CommandHandler("plan_shogird",     cmd_plan_shogird))
+    app.add_handler(CommandHandler("outlet_plan",      cmd_outlet_plan))
     app.add_handler(CommandHandler("qarz",             cmd_qarz))
     app.add_handler(CommandHandler("foyda",            cmd_foyda))
     app.add_handler(CommandHandler("klient",           cmd_klient))
