@@ -16,7 +16,7 @@ import logging
 from datetime import datetime
 from typing import Optional
 
-from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
+from fastapi import APIRouter, Body, Depends, File, HTTPException, Query, UploadFile
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field, validator
 from shared.database.pool import rls_conn
@@ -199,7 +199,7 @@ async def delete_klassifikator(klf_id: int, uid: int = Depends(get_uid)):
 
 @router.post("/reorder")
 async def reorder_klassifikatorlar(
-    items: list[dict] = Field(..., description="[{id, tartib}]"),
+    items: list[dict] = Body(..., description="[{id, tartib}]"),
     uid: int = Depends(get_uid),
 ):
     """Tartiblashtirish: [{id, tartib}] ro'yxati."""
