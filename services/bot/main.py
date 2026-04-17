@@ -1403,6 +1403,16 @@ def ilovani_qur(conf:Config) -> Application:
     app.add_handler(CommandHandler("qaytarishlar",     cmd_qaytarishlar))
     app.add_handler(CommandHandler("qaytarish_tasdiq", cmd_qaytarish_tasdiq))
     app.add_handler(CommandHandler("qaytarish_stat",   cmd_qaytarish_stat))
+
+    # v25.4.0 — NARX TURLARI bot handlerlari
+    from services.bot.handlers.narx_turi import (
+        cmd_narx_turlari, cmd_narx_turi_qosh,
+        cmd_narx_turi_default, cmd_klient_narx,
+    )
+    app.add_handler(CommandHandler("narx_turlari",     cmd_narx_turlari))
+    app.add_handler(CommandHandler("narx_turi_qosh",   cmd_narx_turi_qosh))
+    app.add_handler(CommandHandler("narx_turi_default", cmd_narx_turi_default))
+    app.add_handler(CommandHandler("klient_narx",      cmd_klient_narx))
     app.add_handler(CommandHandler("qarz",             cmd_qarz))
     app.add_handler(CommandHandler("foyda",            cmd_foyda))
     app.add_handler(CommandHandler("klient",           cmd_klient))

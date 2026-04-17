@@ -269,6 +269,16 @@ async def route_voice_to_module(update: Update, ctx: ContextTypes.DEFAULT_TYPE,
         except Exception as e:
             log.warning("voice /rfm xato: %s", e)
 
+    # ═══ NARX TURLARI ═══
+    if ("narx tur" in m or "chakana" in m or "optom" in m or
+        " vip " in " " + m + " " or "diler" in m):
+        try:
+            from services.bot.handlers.narx_turi import voice_narx_turi
+            if await voice_narx_turi(update, ctx, matn):
+                return True
+        except Exception as e:
+            log.warning("voice narx_turi xato: %s", e)
+
     # ═══ QAYTARISH — "Karim 5 ta Ariel qaytardi brak" ═══
     if _any(m, ("qaytardi", "qaytargan", "qaytarib ber", "qaytarmoqchi")):
         try:
