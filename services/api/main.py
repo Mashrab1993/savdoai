@@ -589,6 +589,13 @@ try:
 except Exception as e:
     log.warning("⚠️ AI Copilot yuklanmadi: %s", e)
 
+try:
+    from services.api.routes.anomaliya import router as anom_router
+    app.include_router(anom_router, tags=["AI Anomaliya"])
+    log.info("✅ AI Anomaliya detektori moduli ulandi")
+except Exception as e:
+    log.warning("⚠️ Anomaliya yuklanmadi: %s", e)
+
 # ════════════════════════════════════════════════════════════
 #  JWT + AUTH — deps.py dan import (shared bilan kassa/ws)
 # ════════════════════════════════════════════════════════════
