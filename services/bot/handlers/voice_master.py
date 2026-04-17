@@ -288,6 +288,48 @@ async def route_voice_to_module(update: Update, ctx: ContextTypes.DEFAULT_TYPE,
         except Exception as e:
             log.warning("voice narx_turi xato: %s", e)
 
+    # ═══ EKSPEDITOR — "yangi ekspeditor Karim aka +998..." ═══
+    if "yangi ekspeditor" in m or "ekspeditor qo'sh" in m or "ekspeditor qosh" in m:
+        try:
+            from services.bot.handlers.ekspeditor_sklad_voice import voice_ekspeditor
+            if await voice_ekspeditor(update, ctx, matn):
+                return True
+        except Exception as e:
+            log.warning("voice_ekspeditor xato: %s", e)
+
+    # ═══ SKLAD — "yangi sklad Asosiy" ═══
+    if "yangi sklad" in m or "sklad qo'sh" in m or "sklad qosh" in m:
+        try:
+            from services.bot.handlers.ekspeditor_sklad_voice import voice_sklad
+            if await voice_sklad(update, ctx, matn):
+                return True
+        except Exception as e:
+            log.warning("voice_sklad xato: %s", e)
+
+    # ═══ AGENT HISOBOTI — "agent hisobot", "kim qancha sotdi" ═══
+    if any(kw in m for kw in (
+        "agent hisobot", "agentlar hisobot", "agent stat", "agent reyting",
+        "kim qancha sotdi", "qaysi agent yaxshi",
+    )):
+        try:
+            from services.bot.handlers.ekspeditor_sklad_voice import voice_agent_hisobot
+            if await voice_agent_hisobot(update, ctx, matn):
+                return True
+        except Exception as e:
+            log.warning("voice_agent_hisobot xato: %s", e)
+
+    # ═══ PnL — "foyda hisobot", "sof foyda" ═══
+    if any(kw in m for kw in (
+        "pnl", "foyda hisobot", "foyda zarar", "sof foyda", "yalpi foyda",
+        "moliyaviy holat",
+    )):
+        try:
+            from services.bot.handlers.ekspeditor_sklad_voice import voice_pnl
+            if await voice_pnl(update, ctx, matn):
+                return True
+        except Exception as e:
+            log.warning("voice_pnl xato: %s", e)
+
     # ═══ TOVAR KLASSIFIKATORI — "yangi brend Ariel", "kategoriya Sladus" ═══
     if _any(m, (
         "yangi brend", "yangi kategoriya", "yangi subkategoriya", "yangi segment",
