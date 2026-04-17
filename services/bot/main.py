@@ -1313,6 +1313,19 @@ def ilovani_qur(conf:Config) -> Application:
     app.add_handler(CommandHandler("xarajat_stat",     cmd_xarajat_stat))
     app.add_handler(CommandHandler("oyim",             cmd_oyim))
     app.add_handler(CommandHandler("30kun",            cmd_oyim))  # alias
+
+    # v25.4.0 — STORECHECK moduli (SalesDoc /audit/storecheck asosida)
+    from services.bot.handlers.storecheck import (
+        cmd_tashrif_boshla, cmd_tashrif_tovar, cmd_tashrif_yop,
+        cmd_tashriflar, cmd_tashrif_hisobot, tashrif_sku_cb,
+    )
+    app.add_handler(CommandHandler("tashrif_boshla",   cmd_tashrif_boshla))
+    app.add_handler(CommandHandler("tashrif_tovar",    cmd_tashrif_tovar))
+    app.add_handler(CommandHandler("tashrif_yop",      cmd_tashrif_yop))
+    app.add_handler(CommandHandler("tashriflar",       cmd_tashriflar))
+    app.add_handler(CommandHandler("tashrif_hisobot",  cmd_tashrif_hisobot))
+    from telegram.ext import CallbackQueryHandler as _CQ
+    app.add_handler(_CQ(tashrif_sku_cb, pattern=r"^sc:(bor|yoq):\d+$"))
     app.add_handler(CommandHandler("qarz",             cmd_qarz))
     app.add_handler(CommandHandler("foyda",            cmd_foyda))
     app.add_handler(CommandHandler("klient",           cmd_klient))
