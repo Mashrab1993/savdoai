@@ -92,7 +92,9 @@ def kunlik_hisobot_barcha(self):
         asyncio.run(_kunlik_hisobot_async())
     except Exception as exc:
         log.error("Kunlik hisobot xato: %s", exc)
-        raise self.retry(exc=exc)
+        # Exponential backoff: 60s → 120s → 240s (10 daqiqadan oshmaydi)
+        countdown = min(60 * (2 ** self.request.retries), 600)
+        raise self.retry(exc=exc, countdown=countdown)
 
 
 async def _kunlik_hisobot_async():
@@ -151,7 +153,9 @@ def haftalik_hisobot_barcha(self):
     try:
         asyncio.run(_haftalik_hisobot_async())
     except Exception as exc:
-        raise self.retry(exc=exc)
+        # Exponential backoff: 60s → 120s → 240s (10 daqiqadan oshmaydi)
+        countdown = min(60 * (2 ** self.request.retries), 600)
+        raise self.retry(exc=exc, countdown=countdown)
 
 
 async def _haftalik_hisobot_async():
@@ -209,7 +213,9 @@ def qarz_eslatma_barcha(self):
     try:
         asyncio.run(_qarz_eslatma_async())
     except Exception as exc:
-        raise self.retry(exc=exc)
+        # Exponential backoff: 60s → 120s → 240s (10 daqiqadan oshmaydi)
+        countdown = min(60 * (2 ** self.request.retries), 600)
+        raise self.retry(exc=exc, countdown=countdown)
 
 
 async def _qarz_eslatma_async():
@@ -265,7 +271,9 @@ def obuna_eslatma_barcha(self):
         asyncio.run(_obuna_eslatma_async())
     except Exception as exc:
         log.error("Obuna eslatma task xato: %s", exc)
-        raise self.retry(exc=exc)
+        # Exponential backoff: 60s → 120s → 240s (10 daqiqadan oshmaydi)
+        countdown = min(60 * (2 ** self.request.retries), 600)
+        raise self.retry(exc=exc, countdown=countdown)
 
 
 async def _obuna_eslatma_async():
@@ -557,7 +565,9 @@ def db_backup(self):
         return {"status": "ok", "fayl": out_gz, "hajm_kb": size_kb}
     except Exception as exc:
         log.error("DB backup xato: %s", exc)
-        raise self.retry(exc=exc)
+        # Exponential backoff: 60s → 120s → 240s (10 daqiqadan oshmaydi)
+        countdown = min(60 * (2 ** self.request.retries), 600)
+        raise self.retry(exc=exc, countdown=countdown)
 
 
 @app.task(name="tasks.nakladnoy_yaratish")

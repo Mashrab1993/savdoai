@@ -89,6 +89,10 @@ def _redis():
 
 _mem: dict[str, PrintSession] = {}
 _idemp: dict[str, str] = {}
+# Idempotency lookup'ni atomik qilish uchun (thread-safe):
+# get + load o'rtasida boshqa thread delete qila olmasligi kerak.
+import threading
+_session_lock = threading.Lock()
 
 
 @dataclass
@@ -293,8 +297,12 @@ def create(
             _idemp.pop(ik, None)
 
     ik = f"{dtype}_{sid}_{uid}"
-    if ik in _idemp:
-        ex = _load(_idemp[ik])
+    # Atomic get: lock ostida dict'dan job_id olish — keyin load alohida
+    # (lock ushlab qolmasdan Redis'ga borish uchun)
+    with _session_lock:
+        existing_job_id = _idemp.get(ik)
+    if existing_job_id:
+        ex = _load(existing_job_id)
         if ex and not ex.expired() and ex.status not in ("done", "failed"):
             return ex
 
