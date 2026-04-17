@@ -950,6 +950,7 @@ from services.bot.handlers.commands import (
     cmd_sotuv_today, cmd_kirim_today,
     cmd_zayavkalar, cmd_otgruzka, cmd_yetkazildi, cmd_bekor_sotuv,
     cmd_sotuv_detail,
+    cmd_ertalab,  # v25.4.0 — Opus 4.7 ertalabki brifing
 )
 from services.bot.handlers.callbacks import (
     eksport_cb, nakladnoy_sessiya_cb, menyu_cb, paginatsiya_cb,
@@ -1277,6 +1278,9 @@ def ilovani_qur(conf:Config) -> Application:
     app.add_handler(CommandHandler("nakladnoy_excel",  cmd_nakladnoy_excel))
     app.add_handler(CommandHandler("reestr_excel",     cmd_reestr_excel))
     app.add_handler(CommandHandler("hisobot",          cmd_hisobot))
+    app.add_handler(CommandHandler("ertalab",          cmd_ertalab))  # Opus 4.7 brifing
+    app.add_handler(CommandHandler("brifing",          cmd_ertalab))  # alias
+    app.add_handler(CommandHandler("kun_xulosasi",     cmd_ertalab))  # alias
     app.add_handler(CommandHandler("qarz",             cmd_qarz))
     app.add_handler(CommandHandler("foyda",            cmd_foyda))
     app.add_handler(CommandHandler("klient",           cmd_klient))

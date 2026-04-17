@@ -67,6 +67,37 @@ async def cmd_menyu(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("📋 Asosiy menyu:",reply_markup=_get_asosiy_menyu()())
 
 
+async def cmd_ertalab(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    """/ertalab — Claude Opus 4.7 orqali ertalabki biznes brifing.
+
+    Kechagi sotuv + hafta taqqoslash + qarz + ombor + top klientlar →
+    AI tahlil va 3 ta amaliy tavsiya. Faol admin har kuni boshlanishida
+    ishlatadi.
+    """
+    if not await faol_tekshir(update): return
+    uid = update.effective_user.id
+    msg = await update.message.reply_text("☀️ Ertalabki brifing tayyorlanmoqda — Opus 4.7 tahlil...")
+    try:
+        from shared.services.morning_briefing import build_briefing
+        from shared.database.pool import rls_conn
+        async with rls_conn(uid) as c:
+            briefing = await build_briefing(c, uid)
+        # MarkdownV2 emas — oddiy Markdown (Opus chiqarishi turli belgilarni ishlatadi)
+        try:
+            await msg.edit_text(briefing, parse_mode=ParseMode.MARKDOWN)
+        except Exception:
+            # Agar Markdown parsing xato bo'lsa — oddiy matn
+            await msg.edit_text(briefing)
+    except Exception as e:
+        log.error("cmd_ertalab xato uid=%s: %s", uid, e, exc_info=True)
+        try:
+            await msg.edit_text(
+                "⚠️ Brifing tayyorlashda xato. Keyinroq urinib ko'ring yoki /hisobot ishlating."
+            )
+        except Exception:
+            pass
+
+
 async def cmd_hisobot(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
     if not await faol_tekshir(update): return
     uid = update.effective_user.id
