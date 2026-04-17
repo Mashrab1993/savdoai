@@ -1023,3 +1023,64 @@ export const supervayzerService = {
     `/api/v1/supervayzer${sana ? `?sana=${sana}` : ""}`
   ),
 }
+
+// ── Klassifikator (7 tab: kategoriya, subkat, gruppa, brend, ...) ────────────
+export type KlassifikatorTuri =
+  | "kategoriya"
+  | "subkategoriya"
+  | "gruppa"
+  | "brend"
+  | "ishlab_chiqaruvchi"
+  | "segment"
+  | "gruppa_kategoriya";
+
+export interface KlassifikatorItem {
+  id: number;
+  turi: KlassifikatorTuri;
+  nomi: string;
+  kod: string | null;
+  davlat: string | null;
+  birlik_id: number | null;
+  birlik_nomi: string | null;
+  parent_id: number | null;
+  parent_nomi: string | null;
+  tartib: number;
+  faol: boolean;
+  tovar_soni: number;
+  yaratilgan: string | null;
+}
+
+export interface KlassifikatorResponse {
+  items: Record<KlassifikatorTuri, KlassifikatorItem[]>;
+  totals: Record<KlassifikatorTuri, number>;
+  jami: number;
+}
+
+export interface KlassifikatorPayload {
+  turi: KlassifikatorTuri;
+  nomi: string;
+  kod?: string | null;
+  davlat?: string | null;
+  birlik_id?: number | null;
+  parent_id?: number | null;
+  tartib?: number;
+  faol?: boolean;
+}
+
+export const classifierService = {
+  list: (turi?: KlassifikatorTuri, faol?: boolean) => {
+    const q = new URLSearchParams()
+    if (turi) q.set("turi", turi)
+    if (faol !== undefined) q.set("faol", String(faol))
+    const qs = q.toString()
+    return api.get<KlassifikatorResponse>(
+      `/api/v1/klassifikator${qs ? `?${qs}` : ""}`
+    )
+  },
+  create: (data: KlassifikatorPayload) =>
+    api.post<KlassifikatorItem>("/api/v1/klassifikator", data),
+  update: (id: number, data: KlassifikatorPayload) =>
+    api.put<KlassifikatorItem>(`/api/v1/klassifikator/${id}`, data),
+  remove: (id: number) =>
+    api.delete<{ ok: boolean }>(`/api/v1/klassifikator/${id}`),
+}

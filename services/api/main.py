@@ -561,6 +561,13 @@ try:
 except Exception as e:
     log.warning("⚠️ Sozlamalar yuklanmadi: %s", e)
 
+try:
+    from services.api.routes.klassifikatorlar import router as klf_router
+    app.include_router(klf_router, tags=["Klassifikator"])
+    log.info("✅ Tovar klassifikatorlari (7 tab) moduli ulandi")
+except Exception as e:
+    log.warning("⚠️ Klassifikatorlar yuklanmadi: %s", e)
+
 # ════════════════════════════════════════════════════════════
 #  JWT + AUTH — deps.py dan import (shared bilan kassa/ws)
 # ════════════════════════════════════════════════════════════
