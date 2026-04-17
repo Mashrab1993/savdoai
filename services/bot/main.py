@@ -539,6 +539,15 @@ async def ovoz_qabul(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
         except Exception as _pi:
             log.debug("Print intent (ovoz): %s", _pi)
 
+        # ═══ v25.4.0 VOICE: STORECHECK (tashrif) — eng birinchi tekshiradi ═══
+        # Agar ochiq sessiya bor bo'lsa yoki tashrif keyword bo'lsa — shu handler oladi
+        try:
+            from services.bot.handlers.voice_tashrif import handle_voice_tashrif
+            if await handle_voice_tashrif(update, ctx, matn):
+                return
+        except Exception as _tv:
+            log.warning("Voice tashrif handler xato: %s", _tv, exc_info=True)
+
         # ═══ v25.6 VOICE: KLIENT / KIRIM / ORDER ═══
         try:
             ctx.user_data["last_transcription"] = matn
