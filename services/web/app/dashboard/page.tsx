@@ -404,8 +404,12 @@ export default function DashboardPage() {
                 {[
                   { label: locale === "uz" ? "Mijozlar" : "Клиенты",   href: "/clients",   icon: Users },
                   { label: locale === "uz" ? "Mahsulotlar" : "Товары",  href: "/products",  icon: Package },
-                  { label: locale === "uz" ? "Hisobotlar" : "Отчёты",   href: "/reports",   icon: TrendingUp },
-                  { label: locale === "uz" ? "Savdolar" : "Продажи",    href: "/invoices",  icon: FileText },
+                  { label: locale === "uz" ? "Hisobotlar markazi" : "Отчёты (hub)", href: "/reports-hub", icon: TrendingUp },
+                  { label: locale === "uz" ? "Savdolar" : "Продажи",    href: "/orders",    icon: FileText },
+                  { label: locale === "uz" ? "RFM klient" : "RFM сегм.", href: "/rfm",      icon: Users },
+                  { label: locale === "uz" ? "PnL" : "Прибыль",         href: "/pnl",       icon: TrendingUp },
+                  { label: locale === "uz" ? "Kategoriya" : "Категории", href: "/categories", icon: Package },
+                  { label: locale === "uz" ? "🎤 Ovozli buyruqlar" : "🎤 Голос", href: "/voice-help", icon: FileText },
                 ].map(({ label, href, icon: Icon }) => (
                   <Link key={href} href={href}>
                     <Button variant="outline" className="w-full h-10 justify-start gap-2 text-xs">
