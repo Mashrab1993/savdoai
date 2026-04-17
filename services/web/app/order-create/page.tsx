@@ -15,11 +15,12 @@ import {
 } from "@/components/ui/dialog"
 import {
   ShoppingCart, Save, X, Plus, Search, User, Trash2, Package,
-  CreditCard, AlertCircle, Check,
+  CreditCard, AlertCircle, Check, PackageSearch,
 } from "lucide-react"
 import { PageHeader } from "@/components/ui/page-header"
 import { formatCurrency } from "@/lib/format"
 import { productService, clientService, savdoService } from "@/lib/api/services"
+import { ProductBulkPicker, type BulkPickerResult } from "@/components/shared/product-bulk-picker"
 
 type Product = {
   id: number; nomi: string; birlik?: string;
@@ -51,6 +52,24 @@ export default function OrderCreatePage() {
 
   const [productSearch, setProductSearch] = useState("")
   const [showProductPicker, setShowProductPicker] = useState(false)
+  const [showBulkPicker, setShowBulkPicker] = useState(false)
+
+  const handleBulkPicked = (picked: BulkPickerResult[]) => {
+    setCart(prev => {
+      const existingIds = new Set(prev.filter(c => c.tovar_id).map(c => c.tovar_id))
+      const newItems: CartItem[] = picked
+        .filter(p => !existingIds.has(p.tovar_id))
+        .map(p => ({
+          tovar_id: p.tovar_id,
+          nomi: p.nomi,
+          birlik: p.birlik || "dona",
+          miqdor: 1,
+          narx: p.sotish_narxi || 0,
+          jami: p.sotish_narxi || 0,
+        }))
+      return [...prev, ...newItems]
+    })
+  }
 
   const [tolangan, setTolangan] = useState("")
   const [izoh, setIzoh] = useState("")
@@ -208,9 +227,15 @@ export default function OrderCreatePage() {
             <h2 className="font-bold flex items-center gap-2">
               <Package className="w-4 h-4" /> Tovarlar ({cart.length})
             </h2>
-            <Button size="sm" onClick={() => setShowProductPicker(true)}>
-              <Plus className="w-3 h-3 mr-1" /> Tovar qo&apos;shish
-            </Button>
+            <div className="flex gap-2">
+              <Button size="sm" onClick={() => setShowBulkPicker(true)}
+                className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white">
+                <PackageSearch className="w-3.5 h-3.5 mr-1" /> Ko&apos;p tovar (bulk)
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => setShowProductPicker(true)}>
+                <Plus className="w-3 h-3 mr-1" /> Tovar qo&apos;shish
+              </Button>
+            </div>
           </div>
 
           {cart.length === 0 ? (
@@ -362,6 +387,14 @@ export default function OrderCreatePage() {
         </Dialog>
 
         {/* Product picker dialog */}
+        <ProductBulkPicker
+          open={showBulkPicker}
+          onOpenChange={setShowBulkPicker}
+          onConfirm={handleBulkPicked}
+          title="Sotuvga tovar tanlash"
+          initialSelected={cart.filter(c => c.tovar_id).map(c => c.tovar_id as number)}
+        />
+
         <Dialog open={showProductPicker} onOpenChange={setShowProductPicker}>
           <DialogContent className="max-w-2xl">
             <DialogHeader>
