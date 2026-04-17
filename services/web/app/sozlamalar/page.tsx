@@ -19,6 +19,7 @@ import {
   Package, Tag, DollarSign, XCircle, RotateCcw, Camera,
   Box, Gift, Award, UserCog, Handshake, MessageSquare,
   Calendar, ClipboardList, Compass, ArrowRight,
+  Truck, Warehouse, Target, BarChart3, Mic,
 } from "lucide-react"
 
 type Status = "ready" | "partial" | "todo"
@@ -56,6 +57,14 @@ const SECTIONS: Section[] = [
   { n: 20, title: "Oy yopish",               desc: "Muflov, oxirgi balans",      icon: Calendar,   color: "from-stone-500 to-neutral-600", href: "/month-closures",     status: "todo" },
   { n: 21, title: "Vazifa turlari",          desc: "Tashrif, yetkazish, audit",  icon: ClipboardList, color: "from-orange-600 to-red-700",  href: "/task-types",         status: "todo" },
   { n: 22, title: "Savdo yunalishi",         desc: "FMCG, HoReCa, farma",        icon: Compass,    color: "from-yellow-600 to-orange-700", href: "/trade-directions",   status: "ready" },
+  // ── YANGI (2026-04-17) ────────────────────────────────────────────────────
+  { n: 23, title: "Ekspeditorlar",           desc: "Yetkazib beruvchilar, mashina", icon: Truck,    color: "from-amber-500 to-orange-600",  href: "/ekspeditorlar",      status: "ready" },
+  { n: 24, title: "Skladlar (yangi)",        desc: "Asosiy, brak, aksiya",       icon: Warehouse,  color: "from-cyan-500 to-blue-600",     href: "/skladlar",           status: "ready" },
+  { n: 25, title: "RFM segmentatsiya",       desc: "Champion/Loyal/At Risk",     icon: Target,     color: "from-violet-500 to-purple-600", href: "/rfm",                status: "ready" },
+  { n: 26, title: "PnL (Foyda/Zarar)",       desc: "Tushum, tannarx, sof foyda", icon: BarChart3,  color: "from-emerald-600 to-green-700", href: "/pnl",                status: "ready" },
+  { n: 27, title: "Hisobotlar markazi",      desc: "32 ta hisobot bir joyda",    icon: BarChart3,  color: "from-blue-500 to-indigo-600",   href: "/reports-hub",        status: "ready" },
+  { n: 28, title: "Agent hisoboti",          desc: "Shogirdlar KPI",             icon: Users,      color: "from-cyan-500 to-teal-600",     href: "/reports/agent",      status: "ready" },
+  { n: 29, title: "🎤 Ovozli buyruqlar",     desc: "40+ voice intent vizual",    icon: Mic,        color: "from-emerald-500 to-teal-600",  href: "/voice-help",         status: "ready" },
 ]
 
 function statusBadge(s: Status) {
