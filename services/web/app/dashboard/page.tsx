@@ -4,6 +4,7 @@ import { AdminLayout } from "@/components/layout/admin-layout"
 import KpiGridPremium from "@/components/dashboard/kpi-grid-premium"
 import AgentKpiBoard, { type AgentKpi } from "@/components/dashboard/agent-kpi-board"
 import SalesHeatmap from "@/components/dashboard/sales-heatmap"
+import { HealthScoreWidget } from "@/components/dashboard/health-score-widget"
 import {
   Users, Package, FileText,
   TrendingUp, AlertCircle,
@@ -384,6 +385,9 @@ export default function DashboardPage() {
                 )}
               </div>
             )}
+
+            {/* Biznes Salomatligi — 0-100 ball widget */}
+            <HealthScoreWidget />
 
             {/* Sales activity heatmap — real data from /api/v1/hisobot/heatmap */}
             {heatmapData?.matrix && (
