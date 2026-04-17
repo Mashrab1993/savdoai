@@ -671,6 +671,79 @@ async def hisobot_kunlik_trend(kunlar: int = 30, uid: int = Depends(get_uid)):
     return [dict(r) for r in rows]
 
 
+@router.get("/hisobot/agent")
+async def hisobot_agent(
+    sana_dan: str | None = None,
+    sana_gacha: str | None = None,
+    uid: int = Depends(get_uid),
+):
+    """SalesDoc /report/agent analog — shogird bo'yicha sotuv hisoboti."""
+    from datetime import date, timedelta
+    sd = date.fromisoformat(sana_dan) if sana_dan else (date.today() - timedelta(days=30))
+    sg = date.fromisoformat(sana_gacha) if sana_gacha else date.today()
+
+    async with rls_conn(uid) as c:
+        jami = await c.fetchrow("""
+            SELECT
+                COALESCE(SUM(jami), 0) AS obshchie_zakazy,
+                COALESCE(SUM(jami) FILTER (WHERE holat IN ('otgruzka', 'yetkazildi')), 0) AS otgruzka,
+                COALESCE(SUM(jami) FILTER (WHERE holat = 'yetkazildi'), 0) AS dostavka,
+                COALESCE(SUM(tolangan), 0) AS oplaty,
+                COALESCE(SUM(jami - tolangan) FILTER (WHERE jami > tolangan), 0) AS qarz,
+                COUNT(DISTINCT klient_id) AS akb
+            FROM sotuv_sessiyalar
+            WHERE user_id = $1 AND sana::date BETWEEN $2 AND $3
+              AND COALESCE(holat, 'yangi') != 'bekor'
+        """, uid, sd, sg)
+
+        agentlar: list[dict] = []
+        try:
+            rows = await c.fetch("""
+                SELECT
+                    s.id, s.ism,
+                    COALESCE(SUM(ss.jami), 0) AS obshchie,
+                    COALESCE(SUM(ss.jami) FILTER (WHERE ss.holat IN ('otgruzka','yetkazildi')), 0) AS otgruzka,
+                    COALESCE(SUM(ss.jami) FILTER (WHERE ss.holat = 'yetkazildi'), 0) AS dostavka,
+                    COALESCE(SUM(ss.tolangan), 0) AS oplaty,
+                    COALESCE(SUM(ss.jami - ss.tolangan) FILTER (WHERE ss.jami > ss.tolangan), 0) AS qarz,
+                    COUNT(DISTINCT ss.klient_id) AS akb
+                FROM shogirdlar s
+                LEFT JOIN sotuv_sessiyalar ss
+                  ON ss.shogird_id = s.id
+                  AND ss.sana::date BETWEEN $2 AND $3
+                  AND COALESCE(ss.holat, 'yangi') != 'bekor'
+                WHERE s.admin_uid = $1 AND s.faol = TRUE
+                GROUP BY s.id, s.ism
+                ORDER BY SUM(ss.jami) DESC NULLS LAST
+            """, uid, sd, sg)
+            agentlar = [
+                {
+                    "id": r["id"], "ism": r["ism"],
+                    "obshchie": float(r["obshchie"] or 0),
+                    "otgruzka": float(r["otgruzka"] or 0),
+                    "dostavka": float(r["dostavka"] or 0),
+                    "oplaty": float(r["oplaty"] or 0),
+                    "qarz": float(r["qarz"] or 0),
+                    "akb": int(r["akb"] or 0),
+                } for r in rows
+            ]
+        except Exception:
+            pass
+
+    return {
+        "davr": {"sana_dan": str(sd), "sana_gacha": str(sg)},
+        "jami": {
+            "obshchie_zakazy": float(jami["obshchie_zakazy"] or 0),
+            "otgruzka": float(jami["otgruzka"] or 0),
+            "dostavka": float(jami["dostavka"] or 0),
+            "oplaty": float(jami["oplaty"] or 0),
+            "qarz": float(jami["qarz"] or 0),
+            "akb": int(jami["akb"] or 0),
+        },
+        "agentlar": agentlar,
+    }
+
+
 @router.get("/agentlar/bugungi-kpi")
 async def agentlar_bugungi_kpi(uid: int = Depends(get_uid)):
     """
