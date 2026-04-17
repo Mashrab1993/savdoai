@@ -582,6 +582,13 @@ try:
 except Exception as e:
     log.warning("⚠️ Ekspeditor/Sklad yuklanmadi: %s", e)
 
+try:
+    from services.api.routes.copilot import router as copilot_router
+    app.include_router(copilot_router, tags=["AI Copilot"])
+    log.info("✅ AI Biznes Copilot (Opus 4.7) moduli ulandi")
+except Exception as e:
+    log.warning("⚠️ AI Copilot yuklanmadi: %s", e)
+
 # ════════════════════════════════════════════════════════════
 #  JWT + AUTH — deps.py dan import (shared bilan kassa/ws)
 # ════════════════════════════════════════════════════════════

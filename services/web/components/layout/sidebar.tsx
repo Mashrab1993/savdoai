@@ -90,6 +90,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
     { href: "/ekspeditorlar",   label: "🚚 Ekspeditorlar",       icon: Package },
     { href: "/skladlar",        label: "🏭 Skladlar (yangi)",    icon: Package },
     { href: "/voice-help",      label: "🎤 Ovozli buyruqlar",    icon: Activity },
+    { href: "/copilot",         label: "🧠 AI Copilot (Opus)",   icon: Brain },
   ]
 
   // ═══════════════════════════════════════════════════════
