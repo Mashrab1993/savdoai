@@ -1238,7 +1238,7 @@ export interface NakladnoyRegistr {
   yaratilgan: string | null
 }
 
-export const ekspeditorService = {
+export const ekspeditorCrudService = {
   list: (faol?: boolean) => {
     const q = faol !== undefined ? `?faol=${faol}` : ""
     return api.get<{ items: Ekspeditor[]; jami: number }>(`/api/v1/ekspeditorlar${q}`)
@@ -1248,7 +1248,7 @@ export const ekspeditorService = {
   remove: (id: number) => api.delete<{ ok: boolean }>(`/api/v1/ekspeditor/${id}`),
 }
 
-export const skladService = {
+export const skladCrudService = {
   list: (faol?: boolean) => {
     const q = faol !== undefined ? `?faol=${faol}` : ""
     return api.get<{ items: Sklad[]; jami: number }>(`/api/v1/skladlar${q}`)
