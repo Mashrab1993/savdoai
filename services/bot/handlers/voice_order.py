@@ -137,10 +137,29 @@ async def handle_voice_order(update: Update, context: ContextTypes.DEFAULT_TYPE)
                 log.debug("smart parse fallback: %s", _sp)
 
         if parsed.get("xato") or not parsed.get("tovarlar"):
+            # Aniqroq xato — user nima yetishmayotganini biladi
+            xato_sabab = parsed.get("xato", "")
+            if not parsed.get("tovarlar"):
+                sabab = "Tovar nomi topilmadi"
+                maslahat = (
+                    "💡 Tovarni aytish: '50 ta Ariel' yoki '3 karobka Persil'\n"
+                    "💡 Format: «Do'kon nomi — Tovar1 50 ta, Tovar2 3 karobka»"
+                )
+            elif not parsed.get("do'kon"):
+                sabab = "Klient/do'kon nomi topilmadi"
+                maslahat = (
+                    "💡 Klient nomini aytish: 'Salimovga' yoki 'Karim akaga'\n"
+                    "💡 /klientlar — mavjud ro'yxatni ko'rish"
+                )
+            else:
+                sabab = xato_sabab or "Umumiy chalkashlik"
+                maslahat = "💡 Format: «Do'kon nomi — Tovar1 50 ta, Tovar2 3 karobka»"
             await msg.reply_text(
-                f"⚠️ Tushunmadim:\n{parsed.get('xato', 'Tovarlar aniqlanmadi')}\n\n"
-                f"📝 Matn: {text[:200]}\n\n"
-                f"💡 Format: «Do'kon nomi — Tovar1 N ta, Tovar2 M ta»"
+                f"⚠️ *Ovozni tushunmadim*\n\n"
+                f"*Sabab:* {sabab}\n\n"
+                f"*Eshitdim:* _{text[:200]}_\n\n"
+                f"{maslahat}",
+                parse_mode="Markdown",
             )
             context.user_data["_voice_order_handled"] = True
             return
