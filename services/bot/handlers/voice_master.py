@@ -288,6 +288,27 @@ async def route_voice_to_module(update: Update, ctx: ContextTypes.DEFAULT_TYPE,
         except Exception as e:
             log.warning("voice narx_turi xato: %s", e)
 
+    # ═══ AI COPILOT — "copilot: ..." yoki "AI: ..." prefix ═══
+    if re.match(r'^(?:copilot|ai|aida)\s*[:,.]?\s+', m, re.IGNORECASE):
+        try:
+            from services.bot.handlers.copilot_voice import voice_copilot
+            if await voice_copilot(update, ctx, matn):
+                return True
+        except Exception as e:
+            log.warning("voice_copilot xato: %s", e)
+
+    # ═══ ANOMALIYA — "anomaliya", "xavf", "zararli sotuv" ═══
+    if any(kw in m for kw in (
+        "anomaliya", "g'ayrioddiy", "gayrioddiy", "noanormal",
+        "zararli sotuv", "nima xavfli",
+    )):
+        try:
+            from services.bot.handlers.copilot_voice import voice_anomaliya
+            if await voice_anomaliya(update, ctx, matn):
+                return True
+        except Exception as e:
+            log.warning("voice_anomaliya xato: %s", e)
+
     # ═══ EKSPEDITOR — "yangi ekspeditor Karim aka +998..." ═══
     if "yangi ekspeditor" in m or "ekspeditor qo'sh" in m or "ekspeditor qosh" in m:
         try:
