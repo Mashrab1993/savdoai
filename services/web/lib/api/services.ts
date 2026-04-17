@@ -1198,3 +1198,85 @@ export const narxV2Service = {
     }>
   },
 }
+
+// ── Ekspeditor / Sklad / Nakladnoy ───────────────────────────────────────────
+export interface Ekspeditor {
+  id: number
+  ism: string
+  telefon: string | null
+  mashina_nomi: string | null
+  mashina_raqami: string | null
+  faol: boolean
+  sotuv_soni: number
+  yaratilgan: string | null
+}
+
+export interface Sklad {
+  id: number
+  nomi: string
+  turi: string | null
+  kod: string | null
+  faol: boolean
+  sotuv_soni: number
+  yaratilgan: string | null
+}
+
+export interface NakladnoyRegistr {
+  id: number
+  nomi: string
+  sana: string | null
+  shogird_id: number | null
+  shogird_nomi: string | null
+  ekspeditor_id: number | null
+  ekspeditor_nomi: string | null
+  sklad_id: number | null
+  sklad_nomi: string | null
+  sessiya_idlar: number[]
+  jami_summa: number
+  tolangan: number
+  izoh: string | null
+  yaratilgan: string | null
+}
+
+export const ekspeditorService = {
+  list: (faol?: boolean) => {
+    const q = faol !== undefined ? `?faol=${faol}` : ""
+    return api.get<{ items: Ekspeditor[]; jami: number }>(`/api/v1/ekspeditorlar${q}`)
+  },
+  create: (data: Partial<Ekspeditor>) => api.post<Ekspeditor>("/api/v1/ekspeditor", data),
+  update: (id: number, data: Partial<Ekspeditor>) => api.put<Ekspeditor>(`/api/v1/ekspeditor/${id}`, data),
+  remove: (id: number) => api.delete<{ ok: boolean }>(`/api/v1/ekspeditor/${id}`),
+}
+
+export const skladService = {
+  list: (faol?: boolean) => {
+    const q = faol !== undefined ? `?faol=${faol}` : ""
+    return api.get<{ items: Sklad[]; jami: number }>(`/api/v1/skladlar${q}`)
+  },
+  create: (data: Partial<Sklad>) => api.post<Sklad>("/api/v1/sklad", data),
+  update: (id: number, data: Partial<Sklad>) => api.put<Sklad>(`/api/v1/sklad/${id}`, data),
+  remove: (id: number) => api.delete<{ ok: boolean }>(`/api/v1/sklad/${id}`),
+}
+
+export const nakladnoyService = {
+  create: (data: {
+    nomi: string
+    sana?: string
+    shogird_id?: number | null
+    ekspeditor_id?: number | null
+    sklad_id?: number | null
+    sessiya_idlar: number[]
+    izoh?: string
+  }) => api.post<NakladnoyRegistr & { sessiya_soni: number }>("/api/v1/nakladnoy_registr", data),
+  list: (sana_dan?: string, sana_gacha?: string) => {
+    const q = new URLSearchParams()
+    if (sana_dan) q.set("sana_dan", sana_dan)
+    if (sana_gacha) q.set("sana_gacha", sana_gacha)
+    const qs = q.toString()
+    return api.get<{ items: NakladnoyRegistr[] }>(`/api/v1/nakladnoy_registrlari${qs ? `?${qs}` : ""}`)
+  },
+  excelUrl: (id: number, format: "reestr" | "nakladnye" | "sklad_zagruz") => {
+    const base = getPublicApiBaseUrl()
+    return `${base}/api/v1/nakladnoy_registr/${id}/excel?format=${format}`
+  },
+}
