@@ -46,6 +46,97 @@ async def route_voice_to_module(update: Update, ctx: ContextTypes.DEFAULT_TYPE,
         return False
     m = matn.lower().strip()
 
+    # ═══ UNIVERSAL TASDIQ / BEKOR — pending state bor bo'lsa ═══
+    # "Ha tasdiq" / "Bekor qil" / "Yo'q kerak emas"
+    has_pending = any(k in ctx.user_data for k in
+                      ("kutilayotgan", "kutilayotgan_majbur", "draft_info",
+                       "pending_images", "storecheck_session"))
+    if has_pending:
+        # BEKOR qilish — eng birinchi (xavfsiz)
+        if _any(m, ("bekor qil", "bekor qilaman", "to'xtat", "yo'q kerak emas",
+                     "kerak emas", "rad qil", "tashla", "unut")):
+            # Barcha pending state tozalash (lekin storecheck_session tegilmaydi — /tashrif_yop orqali)
+            cleared = []
+            for k in ("kutilayotgan", "kutilayotgan_majbur", "draft_info",
+                      "_tahr_rejim", "pending_images", "waiting_price"):
+                if ctx.user_data.pop(k, None) is not None:
+                    cleared.append(k)
+            if cleared:
+                await update.message.reply_text(
+                    f"❌ Bekor qilindi. ({len(cleared)} ta pending tozalandi)"
+                )
+                return True
+
+        # TASDIQ (faqat savdo/kutilayotgan uchun — storecheck o'zining oqimida)
+        if _any(m, ("ha tasdiq", "tasdiq", "tasdiqla", "ha saqla",
+                     "ha davom", "ha kerak", "ma'qul", "davom et",
+                     "ha yozib qo'y", "majbur saqla", "zarar bilan")):
+            kutilayotgan = ctx.user_data.get("kutilayotgan")
+            kutilayotgan_majbur = ctx.user_data.get("kutilayotgan_majbur")
+            # Majbur (qoldiq yetmasa ham) — birinchi ustuvorlik
+            if kutilayotgan_majbur:
+                try:
+                    from services.bot.handlers.savdo import _qayta_ishlash_tasdiq
+                    # callback emulator — majbur save qilish
+                    import services.bot.db as _db
+                    from services.bot.bot_helpers import _user_ol_kesh
+                    uid = update.effective_user.id
+                    user = await _user_ol_kesh(uid)
+                    dokon = (user.get("dokon_nomi") or "") if user else ""
+                    natija_m = ctx.user_data.pop("kutilayotgan_majbur", None)
+                    sotuv_m = await _db.sotuv_saqlash(uid, natija_m)
+                    from shared.utils.fmt import sotuv_cheki, chek_md
+                    chek_m = sotuv_cheki(natija_m, dokon)
+                    await update.message.reply_text(
+                        "✅ Sotuv saqlandi (majbur rejim)\n\n" + chek_m,
+                    )
+                    return True
+                except Exception as e:
+                    log.error("voice tasdiq (majbur): %s", e, exc_info=True)
+                    await update.message.reply_text("⚠️ Saqlashda xato.")
+                    return True
+            # Oddiy kutilayotgan — auto-save
+            if kutilayotgan:
+                try:
+                    import services.bot.db as _db
+                    from services.bot.bot_helpers import _user_ol_kesh
+                    from shared.utils.fmt import sotuv_cheki
+                    uid = update.effective_user.id
+                    user = await _user_ol_kesh(uid)
+                    dokon = (user.get("dokon_nomi") or "") if user else ""
+                    natija = ctx.user_data.pop("kutilayotgan", None)
+                    ctx.user_data.pop("draft_info", None)
+                    if natija.get("amal") == "kirim":
+                        await _db.kirim_saqlash(uid, natija)
+                        await update.message.reply_text("✅ Kirim saqlandi")
+                    else:
+                        sotuv = await _db.sotuv_saqlash(uid, natija)
+                        chek = sotuv_cheki(natija, dokon)
+                        await update.message.reply_text(
+                            f"✅ Sotuv saqlandi\n\n{chek}"
+                        )
+                    return True
+                except Exception as e:
+                    log.error("voice tasdiq: %s", e, exc_info=True)
+                    await update.message.reply_text(
+                        f"⚠️ Saqlashda xato. Tugmani bosing:\n/menyu"
+                    )
+                    return True
+
+        # O'ZGARTIR — user "o'zgartir" desa, qaysi fieldni so'raymiz
+        if _any(m, ("o'zgartir", "ozgartir", "tahrir", "tuzat")) and ctx.user_data.get("kutilayotgan"):
+            await update.message.reply_text(
+                "🔧 Nimani o'zgartiramiz?\n\n"
+                "Ovozda ayting:\n"
+                "  • *\"Klient Karim aka\"* — klient o'zgartir\n"
+                "  • *\"Narx 48000\"* — narx o'zgartir\n"
+                "  • *\"Miqdor 30\"* — miqdor o'zgartir\n"
+                "  • *\"Bekor qil\"* — butunlay bekor",
+                parse_mode="Markdown",
+            )
+            ctx.user_data["_voice_edit_mode"] = True
+            return True
+
     # ═══ ERTALABKI BRIFING — Opus 4.7 ═══
     if _any(m, (
         "ertalabki brifing", "ertalab brifing", "ertalabki xulosa",
