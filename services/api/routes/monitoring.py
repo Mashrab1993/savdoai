@@ -38,8 +38,10 @@ async def health():
             redis_ms = round((_t.monotonic() - rs) * 1000, 1)
             redis_ok = True
             await r.close()
-    except Exception:
-        pass
+    except Exception as _e:
+        # Health check'da Redis fail silent — lekin log'ga yozamiz
+        # (production'da Redis'ni tiklash boshlanishi kerak)
+        log.warning("Health check: Redis ping xato: %s", _e)
     latency_ms = round((_t.monotonic() - start) * 1000, 1)
     return {
         "status": "ok", "version": __version__, "service": "api",

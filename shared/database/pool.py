@@ -122,8 +122,12 @@ async def pool_close() -> None:
         log.info("DB pool yopildi")
 
 
+_POOL_PRESSURE_LAST_WARN: float = 0.0
+
+
 async def pool_health() -> dict:
     """DB pool holati — monitoring uchun"""
+    global _POOL_PRESSURE_LAST_WARN
     if not _pool:
         return {"status": "closed", "size": 0}
     try:
@@ -131,14 +135,33 @@ async def pool_health() -> dict:
         async with _pool.acquire() as c:
             await c.fetchval("SELECT 1")
         ping_ms = round((time.monotonic() - start) * 1000, 1)
+        size = _pool.get_size()
+        free = _pool.get_idle_size()
+        used = size - free
+        max_size = _pool.get_max_size()
+        # Pressure alerting — agar 80%+ band bo'lsa, 60 sekundda bir marta WARN
+        # (spam qilmasligi uchun rate-limited)
+        if max_size > 0 and used / max_size >= 0.8:
+            now = time.monotonic()
+            if now - _POOL_PRESSURE_LAST_WARN > 60:
+                log.warning(
+                    "⚠️ DB POOL PRESSURE: %d/%d connection band (%.0f%%) — "
+                    "traffic oshishi bilan request queue bloklanishi mumkin",
+                    used, max_size, used / max_size * 100,
+                )
+                _POOL_PRESSURE_LAST_WARN = now
+        status = "ok"
+        if max_size > 0 and used / max_size >= 0.95:
+            status = "degraded"  # health endpoint ko'radi, Kubernetes/Railway liveness fail qilishi mumkin
         return {
-            "status": "ok",
+            "status": status,
             "ping_ms": ping_ms,
-            "size": _pool.get_size(),
-            "free": _pool.get_idle_size(),
-            "used": _pool.get_size() - _pool.get_idle_size(),
+            "size": size,
+            "free": free,
+            "used": used,
             "min": _pool.get_min_size(),
-            "max": _pool.get_max_size(),
+            "max": max_size,
+            "pressure_pct": round((used / max_size * 100) if max_size else 0, 1),
         }
     except Exception as e:
         return {"status": "error", "error": str(e)}

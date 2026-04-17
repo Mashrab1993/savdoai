@@ -919,25 +919,25 @@ async def dashboard(uid: int = Depends(get_uid)):
             WHERE yopildi=FALSE AND qolgan>0 AND muddat < CURRENT_DATE
         """)
 
-        # Kutilayotgan xarajatlar
+        # Kutilayotgan xarajatlar (jadval yo'q bo'lsa 0 qaytariladi — sokin fallback)
         pending_exp = 0
         try:
             pending_exp = await c.fetchval("""
                 SELECT COUNT(*) FROM xarajatlar
                 WHERE admin_uid=$1 AND NOT tasdiqlangan AND NOT bekor_qilingan
             """, uid) or 0
-        except Exception:
-            pass
+        except Exception as _e:
+            log.debug("dashboard: pending_exp olishda xato (fallback 0): %s", _e)
 
-        # Faol shogirdlar
+        # Faol shogirdlar (jadval yo'q bo'lsa 0 qaytariladi)
         active_app = 0
         try:
             active_app = await c.fetchval("""
                 SELECT COUNT(*) FROM shogirdlar
                 WHERE admin_uid=$1 AND faol=TRUE
             """, uid) or 0
-        except Exception:
-            pass
+        except Exception as _e:
+            log.debug("dashboard: active_app olishda xato (fallback 0): %s", _e)
 
     result = {
         "bugun_sotuv_soni":  int(bugun["sotuv_soni"]),

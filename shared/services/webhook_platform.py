@@ -126,7 +126,21 @@ async def webhook_yuborish(conn, uid: int, event: str, data: dict) -> int:
 
     yuborildi = 0
     for wh in webhooklar:
-        asyncio.create_task(_yuborish_retry(conn, wh, event, payload))
+        # Fire-and-forget xato'larini ushlash uchun done_callback qo'shamiz
+        # (aks holda task jim o'ladi, monitoring ko'rmaydi)
+        task = asyncio.create_task(_yuborish_retry(conn, wh, event, payload))
+        wh_id = wh.get("id", "?")
+        wh_url_preview = (wh.get("url") or "")[:40]
+        def _make_cb(wid, url_p):
+            def _cb(t: asyncio.Task) -> None:
+                if t.cancelled():
+                    return
+                exc = t.exception()
+                if exc is not None:
+                    log.error("❌ Webhook task xato id=%s url=%s...: %s",
+                              wid, url_p, exc, exc_info=exc)
+            return _cb
+        task.add_done_callback(_make_cb(wh_id, wh_url_preview))
         yuborildi += 1
 
     return yuborildi
