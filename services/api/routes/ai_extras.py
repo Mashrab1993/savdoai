@@ -63,12 +63,41 @@ async def ai_status():
     }
 
 
+import time as _time
+# Per-user rate limit for expensive Opus 4.7 audit calls.
+# Opus 4.7 = $5/M input, $25/M output — soatiga 20 ta so'rov bir user uchun
+# yetarli (haqiqiy audit uchun). Spam yoki abuse'dan himoya.
+_OPUS_AUDIT_MAX_PER_HOUR = 20
+_opus_audit_buckets: dict[int, list[float]] = {}
+
+
 @router.post("/second-opinion")
 async def api_second_opinion(inp: SecondOpinionIn,
                               uid: int = Depends(get_uid)):
-    """Claude Opus 4.7 dan birlamchi javobni mustaqil tekshirish (audit)."""
+    """Claude Opus 4.7 dan birlamchi javobni mustaqil tekshirish (audit).
+
+    Narx: $5/M input, $25/M output. Soatiga 20 so'rov cheklangan (per user).
+    """
     if not claude_opus.ready:
         raise HTTPException(503, "ANTHROPIC_API_KEY sozlanmagan (Opus 4.7 kerak)")
+
+    # Per-user rate limit
+    now = _time.time()
+    bucket = _opus_audit_buckets.setdefault(uid, [])
+    # Oxirgi 1 soat ichidagi so'rovlarni saqlaymiz
+    bucket[:] = [t for t in bucket if now - t < 3600]
+    if len(bucket) >= _OPUS_AUDIT_MAX_PER_HOUR:
+        raise HTTPException(
+            429,
+            f"Opus 4.7 audit limiti: soatiga {_OPUS_AUDIT_MAX_PER_HOUR} ta so'rov. "
+            "Keyinroq urinib ko'ring."
+        )
+    # Xotira himoyasi — 5000+ user bo'lsa eski kalitlarni tozalash
+    if len(_opus_audit_buckets) > 5000:
+        stale = [k for k, v in _opus_audit_buckets.items() if not v or now - max(v) > 7200]
+        for k in stale:
+            _opus_audit_buckets.pop(k, None)
+    bucket.append(now)
 
     result = await second_opinion(
         inp.savol, inp.claude_javobi, context=inp.kontekst,

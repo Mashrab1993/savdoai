@@ -139,23 +139,65 @@ async def readyz():
 
 @router.get("/metrics")
 async def metrics():
-    """Prometheus-compat metrics"""
+    """Prometheus-compat metrics — pool, cache, AI provider holatlari."""
+    from shared.cache.redis_cache import cache_health as _cache_health
+    user_count = 0
+    pool_size = 0
+    pool_used = 0
+    pool_free = 0
+    pool_pressure_pct = 0.0
     try:
         async with get_pool().acquire() as c:
             user_count = await c.fetchval(
                 "SELECT COUNT(*) FROM users WHERE faol=TRUE"
-            )
-            pool = get_pool()
-            pool_size = pool.get_size() if hasattr(pool, 'get_size') else 0
-    except Exception:
-        user_count = 0
-        pool_size = 0
+            ) or 0
+        # Pool holati — o'rtacha pressure'ni hisoblash uchun
+        pool = get_pool()
+        if hasattr(pool, 'get_size'):
+            pool_size = pool.get_size()
+            pool_free = pool.get_idle_size() if hasattr(pool, 'get_idle_size') else 0
+            pool_used = pool_size - pool_free
+            pool_max = pool.get_max_size() if hasattr(pool, 'get_max_size') else 0
+            if pool_max > 0:
+                pool_pressure_pct = round(pool_used / pool_max * 100, 1)
+    except Exception as _e:
+        log.debug("metrics: user_count/pool olishda xato: %s", _e)
+
+    # Cache sog'lig'i
+    ch = _cache_health()
+    redis_connected = 1 if ch.get("redis_connected") else 0
+    cache_miss_down = ch.get("cache_misses_due_to_redis_down", 0)
+
+    # AI providerlar
+    anthropic_ready = 1 if (os.getenv("ANTHROPIC_API_KEY") or "").strip() else 0
+    gemini_ready = 1 if ((os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY") or "").strip()) else 0
 
     return (
         f"# HELP mm_faol_users Faol foydalanuvchilar\n"
         f"# TYPE mm_faol_users gauge\n"
         f"mm_faol_users {user_count}\n"
-        f"# HELP mm_db_pool DB pool holati\n"
-        f"# TYPE mm_db_pool gauge\n"
+        f"# HELP mm_db_pool_size DB pool hajmi\n"
+        f"# TYPE mm_db_pool_size gauge\n"
         f"mm_db_pool_size {pool_size}\n"
+        f"# HELP mm_db_pool_used DB pool band connectionlar\n"
+        f"# TYPE mm_db_pool_used gauge\n"
+        f"mm_db_pool_used {pool_used}\n"
+        f"# HELP mm_db_pool_free DB pool bo'sh connectionlar\n"
+        f"# TYPE mm_db_pool_free gauge\n"
+        f"mm_db_pool_free {pool_free}\n"
+        f"# HELP mm_db_pool_pressure_pct Pool bandlik foizi (0-100)\n"
+        f"# TYPE mm_db_pool_pressure_pct gauge\n"
+        f"mm_db_pool_pressure_pct {pool_pressure_pct}\n"
+        f"# HELP mm_redis_connected Redis ulangan (1) yoki uzilgan (0)\n"
+        f"# TYPE mm_redis_connected gauge\n"
+        f"mm_redis_connected {redis_connected}\n"
+        f"# HELP mm_cache_miss_due_to_redis_down Redis tushgan paytda cache miss\n"
+        f"# TYPE mm_cache_miss_due_to_redis_down counter\n"
+        f"mm_cache_miss_due_to_redis_down {cache_miss_down}\n"
+        f"# HELP mm_ai_anthropic Anthropic API kaliti mavjud (1) yoki yo'q (0)\n"
+        f"# TYPE mm_ai_anthropic gauge\n"
+        f"mm_ai_anthropic {anthropic_ready}\n"
+        f"# HELP mm_ai_gemini Gemini API kaliti mavjud (1) yoki yo'q (0)\n"
+        f"# TYPE mm_ai_gemini gauge\n"
+        f"mm_ai_gemini {gemini_ready}\n"
     )
