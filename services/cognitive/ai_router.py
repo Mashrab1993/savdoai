@@ -164,12 +164,38 @@ class _GeminiClient:
         return (response.text or "").strip()
 
     async def call(self, content_parts: list, timeout: float = 30) -> str:
-        """Async Gemini chaqiruv"""
+        """Async Gemini chaqiruv — transient xato'larga chidamli (3x retry, exp backoff).
+
+        Gemini API ba'zan 503/429 qaytaradi (rate limit, service overload) —
+        darhol Claude fallback'ga o'tish o'rniga avval 2 marta qayta urinamiz
+        (o'zbek tili uchun Gemini eng yaxshi, shuning uchun arziydi).
+        """
         loop = asyncio.get_running_loop()
-        return await asyncio.wait_for(
-            loop.run_in_executor(None, lambda: self._call_sync(content_parts)),
-            timeout=timeout,
-        )
+        last_err = None
+        for attempt in range(3):
+            try:
+                return await asyncio.wait_for(
+                    loop.run_in_executor(None, lambda: self._call_sync(content_parts)),
+                    timeout=timeout,
+                )
+            except asyncio.TimeoutError:
+                # Timeout — retry qilmaymiz, fallback'ga berish to'g'riroq
+                raise
+            except Exception as e:
+                last_err = e
+                msg = str(e).lower()
+                # Transient xato'lar — retry qiymati bor
+                is_transient = any(k in msg for k in (
+                    "429", "503", "rate", "quota", "unavailable", "overload", "connection"
+                ))
+                if not is_transient or attempt == 2:
+                    raise
+                wait = 1.0 * (2 ** attempt)  # 1s → 2s → (yo'q)
+                log.warning("Gemini transient xato (urinish %d/3, %.1fs kutish): %s",
+                            attempt + 1, wait, str(e)[:150])
+                await asyncio.sleep(wait)
+        # Bu yerga kelmasligi kerak — for body'da return yoki raise bor
+        raise last_err or RuntimeError("Gemini retry mantiq xato")
 
 
 class _ClaudeClient:
@@ -207,15 +233,37 @@ class _ClaudeClient:
 
     async def call(self, system: str, user_msg: str,
                     max_tokens: int = 4096, timeout: float = 30) -> str:
-        """Async Claude chaqiruv"""
+        """Async Claude chaqiruv — transient xato'larga chidamli (3x retry).
+
+        Anthropic API 429 (rate) va 529 (overloaded) qaytarishi mumkin —
+        Gemini fallback ishlab bermasa, avval qayta urinish yaxshi.
+        """
         loop = asyncio.get_running_loop()
-        return await asyncio.wait_for(
-            loop.run_in_executor(
-                None,
-                lambda: self._call_sync(system, user_msg, max_tokens)
-            ),
-            timeout=timeout,
-        )
+        last_err = None
+        for attempt in range(3):
+            try:
+                return await asyncio.wait_for(
+                    loop.run_in_executor(
+                        None,
+                        lambda: self._call_sync(system, user_msg, max_tokens)
+                    ),
+                    timeout=timeout,
+                )
+            except asyncio.TimeoutError:
+                raise
+            except Exception as e:
+                last_err = e
+                msg = str(e).lower()
+                is_transient = any(k in msg for k in (
+                    "429", "529", "rate", "overload", "unavailable", "connection"
+                ))
+                if not is_transient or attempt == 2:
+                    raise
+                wait = 1.5 * (2 ** attempt)  # 1.5s → 3s
+                log.warning("Claude transient xato (urinish %d/3, %.1fs kutish): %s",
+                            attempt + 1, wait, str(e)[:150])
+                await asyncio.sleep(wait)
+        raise last_err or RuntimeError("Claude retry mantiq xato")
 
 
 # Global client instances
