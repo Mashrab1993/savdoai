@@ -1,5 +1,75 @@
 # CHANGELOG — SavdoAI v25.3
 
+## v25.4.0 — Opus 4.7 migration + audit cleanup (2026-04-17)
+
+### 🚀 Asosiy o'zgarish: OpenAI GPT-5.4 → Claude Opus 4.7
+
+**Sabab:** Claude Opus 4.7 (2026-04-16 chiqdi) benchmark'da GPT-5.4 dan kuchliroq:
+- SWE-bench Verified 87.6% vs ~80%
+- MCP-Atlas 77.3% vs 68.1%
+- OSWorld 78.0% vs 75.0%
+- Narx bir xil ($5 input, $25 output)
+- 1M context, 128k max output
+
+**Migration detali:**
+- `services/cognitive/ai_extras.py` — `gpt5` ChatProvider olib tashlandi
+- Yangi `_ClaudeOpusClient` (Anthropic /v1/messages API)
+- `second_opinion()` endi Opus 4.7 ishlatadi
+- `gpt5_pro_responses()` → `opus_pro_audit()` (alias saqlangan — backward compat)
+- `.env.example` + `railway.toml`: OPENAI_API_KEY/OPENAI_MODEL olib tashlandi
+- `CLAUDE_OPUS_MODEL=claude-opus-4-7` qo'shildi
+
+### 🎤 Voice STT: Whisper butunlay olib tashlandi → faqat Gemini
+- `services/cognitive/ai_extras.py:211-249` — `whisper_transcribe()` funksiyasi o'chirildi
+- Sabab: Whisper o'zbek tilini yomon tushinadi, Gemini mukammal
+- Production STT allaqachon Gemini edi — endi dead code ham yo'q
+
+### 🛡️ Reliability va observability
+- **AI Router request_id** — UUID trace har AI chaqiruviga (`ai_router.py`)
+- **Per-task timeouts** — Voice 20s, OCR 25s, Business 45s (`ai_router.py`)
+- **Gemini + Claude retry** — 3x exp backoff 429/503/529 uchun (`ai_router.py`)
+- **Offline queue exception handler** — fire-and-forget xato'lari ko'rinadi (`offline_queue.py`)
+- **Webhook task exception handler** — same pattern (`webhook_platform.py`)
+- **Celery exponential backoff** — 60s → 120s → 240s (`worker/tasks.py`)
+
+### 🔐 Xavfsizlik
+- **JWT validation structured logging** — invalid_format, signature_mismatch (brute-force),
+  expired, payload_not_json — har rad etish sababi log'ga (`api/deps.py`)
+- **Boot-time config validation** — JWT_SECRET≥16, DATABASE_URL format,
+  PRINT_SECRET majburiy (Railway) (`api/main.py`)
+
+### 💾 Data safety
+- **Atomic Redis alert** — Redis o'chgan bo'lsa ERROR (oldin WARNING), REDIS_OPTIONAL bayroq
+- **cache_health() funksiya** — health endpoint uchun metrika
+- **Print session memory cap** — 2000+ sessiya bo'lsa eskilarini chiqarish
+- **Idempotency atomik lookup** — threading.Lock (thread race oldini olish)
+
+### 📊 Monitoring
+- **Pool pressure alerting** — 80%+ band bo'lsa WARN, 95%+ degraded
+- **`/health` kengaytirildi** — db_pressure_pct, cache_miss counter, ai_providers
+- **Bot `/status`** — DB emoji (✅/🟡/🔴), cache, Claude/Gemini/Opus bayroqlar
+
+### 📚 Hujjatlar
+- `shared/services/DOMAINS.md` — 79 ta fayl 5 domain'ga (AI, Commerce, Reporting, Ops, Audit)
+
+### 📦 Commitlar
+1. `9fef2ee` refactor(ai): Whisper'ni butunlay olib tashlash
+2. `0dc875c` refactor(ai): Opus 4.7'ga migrate + audit bug fixes
+3. `e8c691f` fix(reliability): Redis alert + per-task timeouts
+4. `51c0ae4` security(audit): JWT logging + print_session memory cap
+5. `bbcd546` fix(reliability): Celery backoff + idempotency lock
+6. `b7d86b7` fix(reliability): webhook handler + pool pressure + bare except
+7. `2a28cfb` feat(safety): boot-time config validation
+8. `7559e9b` fix(ai): Gemini + Claude transient retry
+9. `f295499` feat(monitoring): /health kengaytirildi
+10. `b7e7ccc` feat(bot): /status endi pool pressure + AI providers
+11. `3b54ae5` docs(architecture): shared/services/ DOMAINS.md
+
+Jami: 20+ fayl, 600+ qator yangi kod, 0 ta buzilgan ficha.
+Risk: 0 (barcha o'zgarishlar QO'SHIMCHA — hech narsa olib tashlanmadi).
+
+---
+
 ## v25.3.2-audit (2026-04-04)
 
 ### 🔴 Kritik tuzatishlar
