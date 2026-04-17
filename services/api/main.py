@@ -2371,15 +2371,23 @@ async def savdolar_royxati(
         rows = await c.fetch(f"""
             SELECT ss.id, ss.klient_ismi, ss.jami, ss.tolangan, ss.qarz,
                    ss.izoh, ss.sana, ss.holat, ss.holat_yangilangan,
+                   ss.document_number, ss.tip_zayavki,
                    COALESCE(k.telefon, '')  AS telefon,
                    COALESCE(k.manzil, '')   AS manzil,
                    COALESCE(k.ism, '')      AS klient_nomi,
+                   sh.ism                   AS agent_nomi,
+                   eksp.ism                 AS ekspeditor_nomi,
+                   sk.nomi                  AS sklad_nomi,
                    COUNT(ch.id)             AS tovar_soni
             FROM sotuv_sessiyalar ss
             LEFT JOIN chiqimlar ch ON ch.sessiya_id = ss.id
             LEFT JOIN klientlar  k ON k.id = ss.klient_id
+            LEFT JOIN shogirdlar sh ON sh.id = ss.shogird_id
+            LEFT JOIN ekspeditorlar eksp ON eksp.id = ss.ekspeditor_id
+            LEFT JOIN skladlar sk ON sk.id = ss.sklad_id
             WHERE 1=1 {where_sql}
-            GROUP BY ss.id, k.telefon, k.manzil, k.ism
+            GROUP BY ss.id, k.telefon, k.manzil, k.ism,
+                     sh.ism, eksp.ism, sk.nomi
             ORDER BY {order_by}
             LIMIT $1 OFFSET $2
         """, *params)
