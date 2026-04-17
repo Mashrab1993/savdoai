@@ -756,7 +756,10 @@ async def cmd_yordam(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
         "/hayotim, /ertalab, /oyim\n"
         "/tashriflar, /fikrlar, /qaytarishlar\n"
         "/narx_turlari, /shogirdlar\n"
-        "/bekor — jarayonni to'xtatish",
+        "/bekor — jarayonni to'xtatish\n\n"
+        "🌐 *Web interfeys:*\n"
+        "savdoai-web-production.up.railway.app/voice-help\n"
+        "— barcha 40+ ovozli buyruq vizual grid",
         parse_mode=ParseMode.MARKDOWN)
 
 
