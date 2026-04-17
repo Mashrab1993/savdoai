@@ -568,6 +568,13 @@ try:
 except Exception as e:
     log.warning("⚠️ Klassifikatorlar yuklanmadi: %s", e)
 
+try:
+    from services.api.routes.narx_v2 import router as narx_v2_router
+    app.include_router(narx_v2_router, tags=["Narx v2"])
+    log.info("✅ Narx turlari v2 (priceType+prices) moduli ulandi")
+except Exception as e:
+    log.warning("⚠️ Narx v2 yuklanmadi: %s", e)
+
 # ════════════════════════════════════════════════════════════
 #  JWT + AUTH — deps.py dan import (shared bilan kassa/ws)
 # ════════════════════════════════════════════════════════════

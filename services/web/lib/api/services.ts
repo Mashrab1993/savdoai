@@ -1111,3 +1111,76 @@ export const classifierService = {
     }>
   },
 }
+
+// ── Narx turi v2 (SalesDoc /settings/priceType + /settings/prices) ───────────
+export type NarxTuri = "prodaja" | "zakup" | "prayslist"
+
+export interface NarxTuriItem {
+  id: number
+  kod: string | null
+  nomi: string
+  turi: NarxTuri
+  tavsif: string | null
+  tolov_usuli: string | null
+  foiz_chegirma: number
+  klient_turi_id: number | null
+  klient_turi_nomi: string | null
+  tartib: number
+  faol: boolean
+  tovar_soni: number
+  oxirgi_narx_sanasi: string | null
+  yaratilgan: string | null
+}
+
+export interface NarxTuriPayload {
+  nomi: string
+  kod?: string | null
+  turi: NarxTuri
+  tavsif?: string | null
+  tolov_usuli?: string | null
+  foiz_chegirma?: number
+  klient_turi_id?: number | null
+  tartib?: number
+  faol?: boolean
+}
+
+export const narxV2Service = {
+  list: (turi?: NarxTuri, faol?: boolean) => {
+    const q = new URLSearchParams()
+    if (turi) q.set("turi", turi)
+    if (faol !== undefined) q.set("faol", String(faol))
+    const qs = q.toString()
+    return api.get<{ items: NarxTuriItem[]; jami: number }>(
+      `/api/v1/narx/turlari${qs ? `?${qs}` : ""}`
+    )
+  },
+  create: (data: NarxTuriPayload) =>
+    api.post<NarxTuriItem>("/api/v1/narx/turi", data),
+  update: (id: number, data: NarxTuriPayload) =>
+    api.put<NarxTuriItem>(`/api/v1/narx/turi/${id}`, data),
+  remove: (id: number) =>
+    api.delete<{ ok: boolean }>(`/api/v1/narx/turi/${id}`),
+  applyMarkup: (narx_turi_id: number, foiz: number, faqat_boshsiz = true) =>
+    api.post<{ ok: boolean; tovarlar_soni: number; foiz: number }>(
+      `/api/v1/narx/markup`,
+      { narx_turi_id, foiz, faqat_boshsiz }
+    ),
+  templateUrl: (narx_turi_id: number) => {
+    const base = getPublicApiBaseUrl()
+    return `${base}/api/v1/narx/template?narx_turi_id=${narx_turi_id}`
+  },
+  importPrices: async (narx_turi_id: number, file: File) => {
+    const token = typeof window !== "undefined" ? localStorage.getItem("auth_token") : ""
+    const base = getPublicApiBaseUrl()
+    const form = new FormData()
+    form.append("file", file)
+    const res = await fetch(
+      `${base}/api/v1/narx/import?narx_turi_id=${narx_turi_id}`,
+      { method: "POST", headers: { Authorization: `Bearer ${token}` }, body: form }
+    )
+    if (!res.ok) throw new Error(await res.text().catch(() => `HTTP ${res.status}`))
+    return res.json() as Promise<{
+      ok: boolean; import_qilindi: number; xatolar: string[]
+    }>
+  },
+}
