@@ -1376,6 +1376,14 @@ def ilovani_qur(conf:Config) -> Application:
     app.add_handler(CommandHandler("rfm_lost",         cmd_rfm_lost))
     app.add_handler(CommandHandler("rfm_hibernating",  cmd_rfm_hibernating))
     app.add_handler(CommandHandler("rfm_klient",       cmd_rfm_klient))
+
+    # v25.4.0 — EXPEDITOR KPI (SalesDoc /dashboard/kpiExpeditor)
+    from services.bot.handlers.expeditor_kpi import (
+        cmd_shogird_kpi, cmd_kpi_reyting,
+    )
+    app.add_handler(CommandHandler("shogird_kpi",      cmd_shogird_kpi))
+    app.add_handler(CommandHandler("kpi_reyting",      cmd_kpi_reyting))
+    app.add_handler(CommandHandler("kpi",              cmd_kpi_reyting))  # alias
     app.add_handler(CommandHandler("qarz",             cmd_qarz))
     app.add_handler(CommandHandler("foyda",            cmd_foyda))
     app.add_handler(CommandHandler("klient",           cmd_klient))

@@ -269,6 +269,37 @@ async def route_voice_to_module(update: Update, ctx: ContextTypes.DEFAULT_TYPE,
         except Exception as e:
             log.warning("voice /rfm xato: %s", e)
 
+    # ═══ EXPEDITOR KPI (shogirdlar reyting) ═══
+    if _any(m, ("shogirdlar reyting", "kpi reyting", "kim yaxshi ishlayapti",
+                 "shogird reyting", "shogirdlar kpi")):
+        try:
+            from services.bot.handlers.expeditor_kpi import cmd_kpi_reyting
+            await cmd_kpi_reyting(update, ctx)
+            return True
+        except Exception as e:
+            log.warning("voice /kpi_reyting xato: %s", e)
+    # "Akbar KPI" — shogird ismi bo'yicha
+    kpi_match = re.match(r'^([a-zA-Z\u0400-\u04ff\']+)\s+kpi', m, re.IGNORECASE)
+    if kpi_match:
+        shogird_nom = kpi_match.group(1).strip()
+        try:
+            from shared.database.pool import get_pool
+            uid = update.effective_user.id
+            async with get_pool().acquire() as c:
+                shogird = await c.fetchrow("""
+                    SELECT id FROM shogirdlar
+                    WHERE admin_uid=$1 AND faol=TRUE
+                      AND lower(ism) LIKE '%' || lower($2) || '%'
+                    LIMIT 1
+                """, uid, shogird_nom)
+            if shogird:
+                update.message.text = f"/shogird_kpi {shogird['id']}"
+                from services.bot.handlers.expeditor_kpi import cmd_shogird_kpi
+                await cmd_shogird_kpi(update, ctx)
+                return True
+        except Exception as e:
+            log.warning("voice shogird kpi xato: %s", e)
+
     # ═══ OYLIK PLAN ═══
     # "Bu oy 30 million plan" / "30 mln plan" / "Plan 25 mln"
     if _any(m, ("plan qo'y", "plan qo'yamiz", "oylik plan")) or (
