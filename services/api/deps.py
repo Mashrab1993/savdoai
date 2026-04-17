@@ -35,11 +35,17 @@ def _get_jwt_secret() -> str:
 
 
 def jwt_tekshir(token: str) -> Optional[int]:
-    """JWT tokenni tekshirib user_id qaytarish"""
+    """JWT tokenni tekshirib user_id qaytarish.
+
+    Xato sabablari log'ga yozildi — brute-force yoki malformed token
+    hujumlari monitoring'da ko'rinadi. Secret o'zi hech qachon log'ga
+    chiqmaydi.
+    """
     try:
         secret = _get_jwt_secret()
         parts = token.split(".")
         if len(parts) != 3:
+            log.info("JWT reject: invalid_format parts=%d", len(parts))
             return None
         h64, p64, s64 = parts
         msg = f"{h64}.{p64}".encode()
@@ -47,13 +53,26 @@ def jwt_tekshir(token: str) -> Optional[int]:
             hmac.new(secret.encode(), msg, "sha256").digest()
         ).rstrip(b"=").decode()
         if not hmac.compare_digest(s64, kutilgan):
+            log.warning("JWT reject: signature_mismatch (brute-force xavfi?)")
             return None
         pad = p64 + "=" * (-len(p64) % 4)
         payload = json.loads(base64.urlsafe_b64decode(pad))
         if payload.get("exp", 0) < time.time():
+            log.info("JWT reject: expired sub=%s exp=%s", payload.get("sub"), payload.get("exp"))
             return None
         return int(payload.get("sub", 0)) or None
-    except Exception:
+    except json.JSONDecodeError as e:
+        log.warning("JWT reject: payload_not_json %s", e)
+        return None
+    except (ValueError, TypeError) as e:
+        log.warning("JWT reject: decode_error %s", e)
+        return None
+    except RuntimeError as e:
+        # JWT_SECRET yo'q bo'lsa — bu deployment muammosi, sirni yashirmaslik
+        log.error("JWT reject: config_error %s", e)
+        return None
+    except Exception as e:
+        log.warning("JWT reject: unexpected %s: %s", type(e).__name__, e)
         return None
 
 

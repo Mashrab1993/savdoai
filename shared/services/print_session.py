@@ -197,8 +197,27 @@ def _verify_compat(token: str, job_id: str, uid: int, created_ts: float) -> bool
     return False
 
 
+_MEM_SOFT_LIMIT = 2000  # xotira himoyasi — 2000'dan ko'p bo'lsa eskisini chiqarib tashlash
+
+
 def _save(s: PrintSession) -> None:
     _mem[s.job_id] = s
+    # Xotira himoyasi: agar _mem juda katta bo'lsa — eng eski sessiyani chiqarish.
+    # Lazy cleanup (create() da ham bor), bu qo'shimcha xavfsizlik.
+    if len(_mem) > _MEM_SOFT_LIMIT:
+        now = time.time()
+        # Eng eski muddati o'tgan 100 tani topib o'chirish
+        expired = sorted(
+            ((k, v) for k, v in _mem.items() if now > v.expires_at + 120),
+            key=lambda kv: kv[1].expires_at,
+        )[:100]
+        for k, sv in expired:
+            _mem.pop(k, None)
+            if sv.idemp_key:
+                _idemp.pop(sv.idemp_key, None)
+        if expired:
+            log.info("print_session: xotira tozalandi — %d ta expired sessiya chiqarildi (mem=%d)",
+                     len(expired), len(_mem))
     r = _redis()
     if r:
         try:
