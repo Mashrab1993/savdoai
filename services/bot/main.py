@@ -1281,6 +1281,20 @@ def ilovani_qur(conf:Config) -> Application:
     app.add_handler(CommandHandler("ertalab",          cmd_ertalab))  # Opus 4.7 brifing
     app.add_handler(CommandHandler("brifing",          cmd_ertalab))  # alias
     app.add_handler(CommandHandler("kun_xulosasi",     cmd_ertalab))  # alias
+
+    # v25.4.0 — HAYOTIM moduli
+    from services.bot.handlers.hayotim import (
+        cmd_hayotim, cmd_maqsad, cmd_maqsad_bajardim,
+        cmd_goya, cmd_xarajatim, cmd_xarajat_stat, cmd_oyim,
+    )
+    app.add_handler(CommandHandler("hayotim",          cmd_hayotim))
+    app.add_handler(CommandHandler("maqsad",           cmd_maqsad))
+    app.add_handler(CommandHandler("maqsad_bajardim",  cmd_maqsad_bajardim))
+    app.add_handler(CommandHandler("goya",             cmd_goya))
+    app.add_handler(CommandHandler("xarajatim",        cmd_xarajatim))
+    app.add_handler(CommandHandler("xarajat_stat",     cmd_xarajat_stat))
+    app.add_handler(CommandHandler("oyim",             cmd_oyim))
+    app.add_handler(CommandHandler("30kun",            cmd_oyim))  # alias
     app.add_handler(CommandHandler("qarz",             cmd_qarz))
     app.add_handler(CommandHandler("foyda",            cmd_foyda))
     app.add_handler(CommandHandler("klient",           cmd_klient))
