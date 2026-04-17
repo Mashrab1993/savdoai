@@ -185,6 +185,21 @@ async def avto_ertalab_hisobot(ctx: ContextTypes.DEFAULT_TYPE) -> None:
                 except Exception as pdf_e:
                     log.debug("Ertalab PDF: %s", pdf_e)
 
+                # ═══ v25.4.0 — OPUS 4.7 BRIFING (qo'shimcha, AI bor bo'lsa) ═══
+                try:
+                    from shared.services.morning_briefing import build_briefing
+                    from shared.database.pool import rls_conn as _rls_conn
+                    async with _rls_conn(uid) as _c:
+                        brifing = await build_briefing(_c, uid)
+                    if brifing:
+                        try:
+                            await ctx.bot.send_message(uid, brifing, parse_mode=ParseMode.MARKDOWN)
+                        except Exception:
+                            # Markdown parsing xato bo'lsa — plain text
+                            await ctx.bot.send_message(uid, brifing)
+                except Exception as bre:
+                    log.debug("Opus brifing uid=%s: %s", uid, bre)
+
                 yuborildi += 1
 
             except Exception as e:
