@@ -575,6 +575,13 @@ try:
 except Exception as e:
     log.warning("⚠️ Narx v2 yuklanmadi: %s", e)
 
+try:
+    from services.api.routes.ekspeditor_sklad import router as eksp_router
+    app.include_router(eksp_router, tags=["Ekspeditor/Sklad"])
+    log.info("✅ Ekspeditor/Sklad/Nakladnoy moduli ulandi")
+except Exception as e:
+    log.warning("⚠️ Ekspeditor/Sklad yuklanmadi: %s", e)
+
 # ════════════════════════════════════════════════════════════
 #  JWT + AUTH — deps.py dan import (shared bilan kassa/ws)
 # ════════════════════════════════════════════════════════════
