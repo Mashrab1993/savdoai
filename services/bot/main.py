@@ -1395,6 +1395,14 @@ def ilovani_qur(conf:Config) -> Application:
     app.add_handler(CommandHandler("shikoyatlar",      cmd_shikoyatlar))
     app.add_handler(CommandHandler("javob",            cmd_javob))
     app.add_handler(CommandHandler("fikr_stat",        cmd_fikr_stat))
+
+    # v25.4.0 — QAYTARISH (recovery order) moduli
+    from services.bot.handlers.qaytarish import (
+        cmd_qaytarishlar, cmd_qaytarish_tasdiq, cmd_qaytarish_stat,
+    )
+    app.add_handler(CommandHandler("qaytarishlar",     cmd_qaytarishlar))
+    app.add_handler(CommandHandler("qaytarish_tasdiq", cmd_qaytarish_tasdiq))
+    app.add_handler(CommandHandler("qaytarish_stat",   cmd_qaytarish_stat))
     app.add_handler(CommandHandler("qarz",             cmd_qarz))
     app.add_handler(CommandHandler("foyda",            cmd_foyda))
     app.add_handler(CommandHandler("klient",           cmd_klient))

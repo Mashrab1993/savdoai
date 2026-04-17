@@ -269,6 +269,29 @@ async def route_voice_to_module(update: Update, ctx: ContextTypes.DEFAULT_TYPE,
         except Exception as e:
             log.warning("voice /rfm xato: %s", e)
 
+    # ═══ QAYTARISH — "Karim 5 ta Ariel qaytardi brak" ═══
+    if _any(m, ("qaytardi", "qaytargan", "qaytarib ber", "qaytarmoqchi")):
+        try:
+            from services.bot.handlers.qaytarish import voice_qaytarish
+            if await voice_qaytarish(update, ctx, matn):
+                return True
+        except Exception as e:
+            log.warning("voice qaytarish xato: %s", e)
+    if _any(m, ("qaytarishlar ro'yxat", "qaytarishlar", "qaytarilgan tovarlar")):
+        try:
+            from services.bot.handlers.qaytarish import cmd_qaytarishlar
+            await cmd_qaytarishlar(update, ctx)
+            return True
+        except Exception as e:
+            log.warning("voice /qaytarishlar xato: %s", e)
+    if _any(m, ("qaytarish statistika", "qaytarish hisobot")):
+        try:
+            from services.bot.handlers.qaytarish import cmd_qaytarish_stat
+            await cmd_qaytarish_stat(update, ctx)
+            return True
+        except Exception as e:
+            log.warning("voice /qaytarish_stat xato: %s", e)
+
     # ═══ FEEDBACK / FIKR / SHIKOYAT ═══
     # "Fikr: ..." / "Shikoyat: ..." / "Taklif: ..."
     fikr_match = re.match(
