@@ -1343,6 +1343,17 @@ def ilovani_qur(conf:Config) -> Application:
     app.add_handler(CommandHandler("plan",             cmd_plan))
     app.add_handler(CommandHandler("plan_shogird",     cmd_plan_shogird))
     app.add_handler(CommandHandler("outlet_plan",      cmd_outlet_plan))
+
+    # v25.4.0 — VAZIFALAR moduli (SalesDoc /agents/taskNew asosida)
+    from services.bot.handlers.vazifalar import (
+        cmd_vazifa_ber, cmd_vazifalar, cmd_vazifa_stat,
+        cmd_bajardim, cmd_vazifalarim,
+    )
+    app.add_handler(CommandHandler("vazifa_ber",       cmd_vazifa_ber))
+    app.add_handler(CommandHandler("vazifalar",        cmd_vazifalar))
+    app.add_handler(CommandHandler("vazifa_stat",      cmd_vazifa_stat))
+    app.add_handler(CommandHandler("bajardim",         cmd_bajardim))
+    app.add_handler(CommandHandler("vazifalarim",      cmd_vazifalarim))
     app.add_handler(CommandHandler("qarz",             cmd_qarz))
     app.add_handler(CommandHandler("foyda",            cmd_foyda))
     app.add_handler(CommandHandler("klient",           cmd_klient))
