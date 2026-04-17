@@ -276,8 +276,20 @@ async def list_nakladnoy(
 
 
 @router.get("/nakladnoy_registr/{rid}/excel")
-async def export_nakladnoy_excel(rid: int, uid: int = Depends(get_uid)):
-    """Nakladnoy registrni Excel formatda yuklab olish."""
+async def export_nakladnoy_excel(
+    rid: int,
+    format: str = Query("reestr", description="reestr (3.0) | nakladnye (3.1) | sklad_zagruz (4.1)"),
+    uid: int = Depends(get_uid),
+):
+    """Nakladnoy registrni SalesDoc formatlarida Excel yuklab olish.
+
+    3 format:
+    - reestr (3.0): Qisqa ro'yxat — bir mijoz bir qatorda
+    - nakladnye (3.1): Har mijozga alohida nakladnoy + item list
+    - sklad_zagruz (4.1): Ishlab chiqaruvchi bo'yicha guruhlangan sklad yuk
+    """
+    if format not in {"reestr", "nakladnye", "sklad_zagruz"}:
+        raise HTTPException(400, "format kerak: reestr, nakladnye yoki sklad_zagruz")
     try:
         from openpyxl import Workbook
         from openpyxl.styles import Alignment, Font, PatternFill
@@ -287,6 +299,8 @@ async def export_nakladnoy_excel(rid: int, uid: int = Depends(get_uid)):
     async with rls_conn(uid) as c:
         reg = await c.fetchrow("""
             SELECT n.*, s.ism AS shogird_nomi, e.ism AS ekspeditor_nomi,
+                   e.telefon AS ekspeditor_tel,
+                   e.mashina_nomi, e.mashina_raqami,
                    sk.nomi AS sklad_nomi
             FROM nakladnoy_registrlari n
             LEFT JOIN shogirdlar s ON s.id = n.shogird_id
@@ -301,70 +315,174 @@ async def export_nakladnoy_excel(rid: int, uid: int = Depends(get_uid)):
             SELECT ss.id, ss.document_number, ss.tip_zayavki, ss.holat,
                    ss.sana, ss.jami, ss.tolangan,
                    COALESCE(ss.jami - ss.tolangan, 0) AS qarz,
-                   k.ismi AS klient_ismi, k.telefon AS klient_tel
+                   k.ismi AS klient_ismi, k.telefon AS klient_tel,
+                   k.manzil AS klient_manzil,
+                   sh.ism AS shogird_nomi,
+                   sh.telefon AS shogird_tel
             FROM sotuv_sessiyalar ss
             LEFT JOIN klientlar k ON k.id = ss.klient_id
+            LEFT JOIN shogirdlar sh ON sh.id = ss.shogird_id
             WHERE ss.id = ANY($1::bigint[]) AND ss.user_id = $2
-            ORDER BY ss.sana DESC
+            ORDER BY sh.ism NULLS LAST, ss.sana
         """, list(reg["sessiya_idlar"] or []), uid)
+
+        # Har sessiya uchun itemlar (nakladnye va sklad_zagruz formati uchun)
+        items_by_session = {}
+        if format in ("nakladnye", "sklad_zagruz"):
+            items_rows = await c.fetch("""
+                SELECT ch.sessiya_id, ch.tovar_nomi, ch.miqdor, ch.narx,
+                       ch.jami AS summa, t.birlik, t.kategoriya
+                FROM chiqimlar ch
+                LEFT JOIN tovarlar t ON t.id = ch.tovar_id
+                WHERE ch.sessiya_id = ANY($1::bigint[])
+                ORDER BY ch.sessiya_id, ch.id
+            """, list(reg["sessiya_idlar"] or []))
+            for ir in items_rows:
+                items_by_session.setdefault(ir["sessiya_id"], []).append(dict(ir))
 
     wb = Workbook()
     ws = wb.active
-    ws.title = "Nakladnoy"
-
-    # Header
-    ws.cell(row=1, column=1, value=f"Nakladnoy registr: {reg['nomi']}").font = Font(bold=True, size=14)
-    ws.cell(row=2, column=1, value=f"Sana: {reg['sana']}")
-    ws.cell(row=3, column=1, value=f"Agent: {reg['shogird_nomi'] or '—'}")
-    ws.cell(row=4, column=1, value=f"Ekspeditor: {reg['ekspeditor_nomi'] or '—'}")
-    ws.cell(row=5, column=1, value=f"Sklad: {reg['sklad_nomi'] or '—'}")
-
-    # Table header
-    headers = ["#", "Hujjat №", "Tip", "Holat", "Sana", "Klient", "Telefon",
-               "Jami summa", "To'langan", "Qarz"]
     HF = PatternFill(start_color="4F46E5", end_color="4F46E5", fill_type="solid")
     HFont = Font(bold=True, color="FFFFFF")
-    for col, h in enumerate(headers, 1):
-        cell = ws.cell(row=7, column=col, value=h)
-        cell.font = HFont
-        cell.fill = HF
-        cell.alignment = Alignment(horizontal="center")
+    BoldFont = Font(bold=True)
 
-    for i, s in enumerate(sessions, 8):
-        ws.cell(row=i, column=1, value=i - 7)
-        ws.cell(row=i, column=2, value=s["document_number"] or f"#{s['id']}")
-        ws.cell(row=i, column=3, value=s["tip_zayavki"])
-        ws.cell(row=i, column=4, value=s["holat"])
-        ws.cell(row=i, column=5, value=str(s["sana"]))
-        ws.cell(row=i, column=6, value=s["klient_ismi"] or "—")
-        ws.cell(row=i, column=7, value=s["klient_tel"] or "")
-        ws.cell(row=i, column=8, value=float(s["jami"] or 0))
-        ws.cell(row=i, column=9, value=float(s["tolangan"] or 0))
-        ws.cell(row=i, column=10, value=float(s["qarz"] or 0))
+    if format == "reestr":
+        # ═══ 3.0 REESTR — qisqa ro'yxat ═══
+        ws.title = "Reestr 3.0"
+        ws.cell(row=1, column=1, value=f"Reestr {reg['sana']} — {reg['nomi']}").font = Font(bold=True, size=14)
+        ws.cell(row=2, column=1, value=f"Agent: {reg['shogird_nomi'] or '—'}  |  Ekspeditor: {reg['ekspeditor_nomi'] or '—'}")
 
-    # TOTAL row
-    total_row = 8 + len(sessions)
-    ws.cell(row=total_row, column=1, value="JAMI:").font = Font(bold=True)
-    ws.cell(row=total_row, column=8, value=float(reg["jami_summa"] or 0)).font = Font(bold=True)
-    ws.cell(row=total_row, column=9, value=float(reg["tolangan"] or 0)).font = Font(bold=True)
-    ws.cell(
-        row=total_row, column=10,
-        value=float(reg["jami_summa"] or 0) - float(reg["tolangan"] or 0),
-    ).font = Font(bold=True)
+        headers = ["№", "Yetkazish sanasi", "Savdo nuqtasi", "Manzil", "Telefon",
+                   "Agent (TP)", "Balans", "Summa", "Izoh"]
+        for col, h in enumerate(headers, 1):
+            c = ws.cell(row=4, column=col, value=h)
+            c.font = HFont; c.fill = HF; c.alignment = Alignment(horizontal="center")
 
-    for col in range(1, 11):
-        max_len = max(
-            (len(str(ws.cell(row=r, column=col).value or "")) for r in range(1, ws.max_row + 1)),
-            default=10,
-        )
-        ws.column_dimensions[ws.cell(row=1, column=col).column_letter].width = min(max_len + 2, 40)
-    ws.freeze_panes = "A8"
+        for i, s in enumerate(sessions, 5):
+            ws.cell(row=i, column=1, value=i - 4)
+            ws.cell(row=i, column=2, value=str(s["sana"])[:10] if s["sana"] else "")
+            ws.cell(row=i, column=3, value=s["klient_ismi"] or "—")
+            ws.cell(row=i, column=4, value=s["klient_manzil"] or "")
+            ws.cell(row=i, column=5, value=s["klient_tel"] or "")
+            ws.cell(row=i, column=6, value=s["shogird_nomi"] or "—")
+            ws.cell(row=i, column=7, value=float(s["qarz"] or 0) or "")
+            ws.cell(row=i, column=8, value=float(s["jami"] or 0))
+            ws.cell(row=i, column=9, value="")
+
+        # TOTAL
+        tot_row = 5 + len(sessions)
+        ws.cell(row=tot_row, column=1, value="JAMI:").font = BoldFont
+        ws.cell(row=tot_row, column=8, value=float(reg["jami_summa"] or 0)).font = BoldFont
+        ws.freeze_panes = "A5"
+
+    elif format == "nakladnye":
+        # ═══ 3.1 NAKLADNYE — har zayavkaga alohida invoice ═══
+        ws.title = "Nakladnye 3.1"
+        row = 1
+
+        for s in sessions:
+            # HEADER bloki
+            ws.cell(row=row, column=3, value=f"Накладная №{s['document_number'] or s['id']}  от  {str(s['sana'])[:10]}").font = Font(bold=True, size=12)
+            row += 1
+            ws.cell(row=row, column=2, value=f"Kimga: {s['klient_ismi'] or '—'}")
+            ws.cell(row=row, column=5, value=f"TP: {s['shogird_nomi'] or '—'}")
+            row += 1
+            ws.cell(row=row, column=2, value=f"Manzil: {s['klient_manzil'] or ''}")
+            ws.cell(row=row, column=5, value=f"Tel(tp): {s['shogird_tel'] or ''}")
+            row += 1
+            ws.cell(row=row, column=2, value=f"Tel: {s['klient_tel'] or ''}")
+            ws.cell(row=row, column=5, value=f"Ekspeditor: {reg['ekspeditor_nomi'] or '—'} ({reg['ekspeditor_tel'] or ''})")
+            row += 1
+            ws.cell(row=row, column=2, value=f"Balans klienta: {float(s['qarz'] or 0):,.0f}")
+            row += 2
+
+            # Items jadvali
+            heads = ["№", "Nomi", "Miqdor", "Birlik", "Narx", "Summa"]
+            for col, h in enumerate(heads, 1):
+                c = ws.cell(row=row, column=col, value=h)
+                c.font = HFont; c.fill = HF
+            row += 1
+
+            items = items_by_session.get(s["id"], [])
+            for i, item in enumerate(items, 1):
+                ws.cell(row=row, column=1, value=i)
+                ws.cell(row=row, column=2, value=item["tovar_nomi"] or "")
+                ws.cell(row=row, column=3, value=float(item["miqdor"] or 0))
+                ws.cell(row=row, column=4, value=item["birlik"] or "dona")
+                ws.cell(row=row, column=5, value=float(item["narx"] or 0))
+                ws.cell(row=row, column=6, value=float(item["summa"] or 0))
+                row += 1
+
+            # ITOGO
+            ws.cell(row=row, column=1, value="Jami:").font = BoldFont
+            ws.cell(row=row, column=6, value=float(s["jami"] or 0)).font = BoldFont
+            row += 2  # bo'shliq blok orasida
+
+        for col in range(1, 7):
+            ws.column_dimensions[ws.cell(row=1, column=col).column_letter].width = [5, 40, 10, 10, 12, 14][col - 1]
+
+    else:  # sklad_zagruz
+        # ═══ 4.1 SKLAD ZAGRUZ — ishlab chiqaruvchi bo'yicha guruh ═══
+        ws.title = "Sklad Zagruz 4.1"
+        ws.cell(row=1, column=1, value=f"Tovar-transport nakladnoy: {reg['nomi']}").font = Font(bold=True, size=14)
+        ws.cell(row=1, column=7, value=str(reg["sana"])).font = BoldFont
+        ws.cell(row=2, column=1, value=f"Avtomashina: {reg['mashina_nomi'] or '—'} {reg['mashina_raqami'] or ''}")
+        ws.cell(row=3, column=1, value=f"Ekspeditor: {reg['ekspeditor_nomi'] or '—'}  |  Tel: {reg['ekspeditor_tel'] or ''}")
+
+        heads = ["№", "Nomi", "Blok", "Miqdor", "Hajm", "Og'irlik", "Summa", "Qaytarish"]
+        for col, h in enumerate(heads, 1):
+            c = ws.cell(row=4, column=col, value=h)
+            c.font = HFont; c.fill = HF
+
+        # Guruhlarga bo'lib chiqaramiz — item kategoriyasi bo'yicha
+        groups: dict[str, list] = {}
+        for s in sessions:
+            for item in items_by_session.get(s["id"], []):
+                k = item.get("kategoriya") or "Boshqa"
+                groups.setdefault(k, []).append(item)
+
+        row = 5
+        for grp_name, items in groups.items():
+            # Guruh nomi
+            ws.cell(row=row, column=2, value=grp_name).font = Font(bold=True, color="4F46E5")
+            row += 1
+
+            tot_miqdor = 0.0
+            tot_summa = 0.0
+            for i, item in enumerate(items, 1):
+                ws.cell(row=row, column=1, value=i)
+                ws.cell(row=row, column=2, value=item["tovar_nomi"] or "")
+                ws.cell(row=row, column=3, value=f"{float(item['miqdor'] or 0):.0f} bl")
+                ws.cell(row=row, column=4, value=float(item["miqdor"] or 0))
+                ws.cell(row=row, column=5, value="")
+                ws.cell(row=row, column=6, value="")
+                ws.cell(row=row, column=7, value=float(item["summa"] or 0))
+                tot_miqdor += float(item["miqdor"] or 0)
+                tot_summa += float(item["summa"] or 0)
+                row += 1
+
+            # Itogo guruh ichida
+            ws.cell(row=row, column=2, value="Itogo").font = BoldFont
+            ws.cell(row=row, column=3, value=f"{tot_miqdor:.0f} bl").font = BoldFont
+            ws.cell(row=row, column=4, value=tot_miqdor).font = BoldFont
+            ws.cell(row=row, column=7, value=tot_summa).font = BoldFont
+            row += 2
+
+        for col, w in enumerate([5, 40, 10, 10, 10, 10, 14, 14], 1):
+            ws.column_dimensions[ws.cell(row=1, column=col).column_letter].width = w
+
+    # Auto-width (bir xil qilib)
+    if format == "reestr":
+        widths = {1: 5, 2: 15, 3: 35, 4: 35, 5: 18, 6: 20, 7: 12, 8: 14, 9: 20}
+        for col, w in widths.items():
+            ws.column_dimensions[ws.cell(row=1, column=col).column_letter].width = w
 
     buf = io.BytesIO()
     wb.save(buf)
     buf.seek(0)
 
-    fname = f"nakladnoy_{reg['nomi'].replace(' ', '_')}_{reg['sana']}.xlsx"
+    fname_prefix = {"reestr": "300_Reestr", "nakladnye": "310_Nakladnye", "sklad_zagruz": "410_SkladZagruz"}[format]
+    fname = f"{fname_prefix}_{reg['nomi'].replace(' ', '_')}_{reg['sana']}.xlsx"
     return StreamingResponse(
         buf,
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
