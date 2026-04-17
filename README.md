@@ -1,4 +1,4 @@
-# 🤖 SavdoAI v25.3.2a
+# 🤖 SavdoAI v25.4.0
 
 **O'zbekiston savdogarlari uchun AI-powered savdo boshqaruv tizimi**
 
@@ -6,8 +6,12 @@ Telegram bot + Web panel + FastAPI backend + PostgreSQL + Redis
 
 [![Tests](https://img.shields.io/badge/tests-1564%20passed-brightgreen)]()
 [![Endpoints](https://img.shields.io/badge/API-107%20endpoints-blue)]()
-[![Version](https://img.shields.io/badge/version-25.3.2a-blue)]()
+[![Version](https://img.shields.io/badge/version-25.4.0-blue)]()
+[![AI](https://img.shields.io/badge/AI-Opus%204.7%20%2B%20Sonnet%204.6%20%2B%20Gemini-purple)]()
 [![License](https://img.shields.io/badge/license-proprietary-red)]()
+
+> **v25.4.0 yangiligi (2026-04-17):** Claude Opus 4.7 (kecha chiqdi) audit uchun
+> ulandi, OpenAI GPT-5.4 va Whisper olib tashlandi. To'liq CHANGELOG.md'da.
 
 ---
 
