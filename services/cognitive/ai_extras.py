@@ -6,12 +6,13 @@
 ║  quyidagilarni qo'shadi — har biri env key bor bo'lsa avtomatik     ║
 ║  yoqiladi, yo'q bo'lsa jim o'tkazib yuboriladi.                     ║
 ║                                                                      ║
-║   • OpenAI GPT-5.4 Pro  — OPENAI_API_KEY (faqat matematik audit)    ║
+║   • Claude Opus 4.7     — ANTHROPIC_API_KEY (audit / second_opinion)║
 ║   • DeepSeek V3         — DEEPSEEK_API_KEY                           ║
 ║   • xAI Grok 4          — XAI_API_KEY                                ║
 ║                                                                      ║
-║  Har bir provider oddiy (system, user) → str chat() metoduga ega.   ║
-║  Ularni `second_opinion()` yoki `cheap_batch()` orqali chaqiring.    ║
+║  Eslatma: OpenAI GPT-5.4 olib tashlandi — Claude Opus 4.7 (2026-04) ║
+║  benchmark va matematik vazifalarda undan kuchli, yagona kalit       ║
+║  (ANTHROPIC_API_KEY) bilan ishlaydi.                                 ║
 ╚══════════════════════════════════════════════════════════════════════╝
 """
 from __future__ import annotations
@@ -29,15 +30,17 @@ log = logging.getLogger(__name__)
 #  CONFIG — env'dan o'qiladi, keys keyinroq kelsa ham ishlaydi
 # ════════════════════════════════════════════════════════════════════
 
-OPENAI_KEY   = os.getenv("OPENAI_API_KEY", "").strip()
-DEEPSEEK_KEY = os.getenv("DEEPSEEK_API_KEY", "").strip()
-XAI_KEY      = os.getenv("XAI_API_KEY", "").strip()
-V0_KEY       = os.getenv("V0_API_KEY", "").strip()
+ANTHROPIC_KEY = os.getenv("ANTHROPIC_API_KEY", "").strip()
+DEEPSEEK_KEY  = os.getenv("DEEPSEEK_API_KEY", "").strip()
+XAI_KEY       = os.getenv("XAI_API_KEY", "").strip()
+V0_KEY        = os.getenv("V0_API_KEY", "").strip()
 
-OPENAI_MODEL   = os.getenv("OPENAI_MODEL",   "gpt-5.4")       # override qilsa bo'ladi
-DEEPSEEK_MODEL = os.getenv("DEEPSEEK_MODEL", "deepseek-chat")
-XAI_MODEL      = os.getenv("XAI_MODEL",      "grok-4")
-V0_MODEL       = os.getenv("V0_MODEL",       "v0-1.0-md")
+# Claude Opus 4.7 (2026-04-16 chiqdi) — eng kuchli umumiy model.
+# 1M context, SWE-bench 87.6%, matematik audit uchun GPT-5.4 dan kuchli.
+CLAUDE_OPUS_MODEL = os.getenv("CLAUDE_OPUS_MODEL", "claude-opus-4-7")
+DEEPSEEK_MODEL    = os.getenv("DEEPSEEK_MODEL", "deepseek-chat")
+XAI_MODEL         = os.getenv("XAI_MODEL",      "grok-4")
+V0_MODEL          = os.getenv("V0_MODEL",       "v0-1.0-md")
 
 HTTP_TIMEOUT = float(os.getenv("AI_EXTRAS_TIMEOUT", "60"))
 
@@ -109,13 +112,8 @@ class ChatProvider:
 #  PROVIDER INSTANCES — modul import bo'lganda yaratiladi
 # ════════════════════════════════════════════════════════════════════
 
-gpt5 = ChatProvider(
-    name="GPT-5",
-    base_url="https://api.openai.com/v1",
-    model=OPENAI_MODEL,
-    api_key=OPENAI_KEY,
-)
-
+# Claude Opus 4.7 — Anthropic /v1/messages endpoint (OpenAI uyg'un emas).
+# Maxsus klient pastda — _ClaudeOpusClient.
 deepseek = ChatProvider(
     name="DeepSeek V3",
     base_url="https://api.deepseek.com/v1",
@@ -139,7 +137,73 @@ v0 = ChatProvider(
     api_key=V0_KEY,
 )
 
-_PROVIDERS = [gpt5, deepseek, grok, v0]
+
+# ── Claude Opus 4.7 client (Anthropic Messages API) ─────────────────
+class _ClaudeOpusClient:
+    """
+    Anthropic Messages API klient (Opus 4.7 uchun).
+    OpenAI'dan farqli — boshqa endpoint, boshqa header'lar, system alohida maydon.
+    """
+
+    BASE = "https://api.anthropic.com/v1/messages"
+    name = "Claude Opus 4.7"
+
+    @property
+    def ready(self) -> bool:
+        return bool(ANTHROPIC_KEY)
+
+    @property
+    def model(self) -> str:
+        return CLAUDE_OPUS_MODEL
+
+    async def chat(
+        self,
+        system: str,
+        user: str,
+        *,
+        max_tokens: int = 2048,
+        json_mode: bool = False,
+    ) -> str:
+        """Opus 4.7 chaqiruv. JSON mode uchun system'ga qo'shimcha ko'rsatma yoziladi."""
+        if not self.ready:
+            raise RuntimeError("Claude Opus: ANTHROPIC_API_KEY yo'q")
+
+        if json_mode:
+            system = (
+                system
+                + "\n\nMUHIM: Faqat valid JSON qaytar. ```json fence'siz, izohsiz. "
+                "Qo'shimcha matn yozma — javob to'g'ridan-to'g'ri JSON parser'ga uzatiladi."
+            )
+
+        body = {
+            "model": CLAUDE_OPUS_MODEL,
+            "max_tokens": max_tokens,
+            "system": system,
+            "messages": [{"role": "user", "content": user}],
+        }
+        headers = {
+            "x-api-key": ANTHROPIC_KEY,
+            "anthropic-version": "2023-06-01",
+            "content-type": "application/json",
+        }
+        async with httpx.AsyncClient(timeout=HTTP_TIMEOUT) as cli:
+            r = await cli.post(self.BASE, json=body, headers=headers)
+            r.raise_for_status()
+            data = r.json()
+            # Anthropic javob: {content: [{type: "text", text: "..."}, ...]}
+            for block in data.get("content", []):
+                if block.get("type") == "text":
+                    return block.get("text", "").strip()
+            return ""
+
+
+claude_opus = _ClaudeOpusClient()
+
+# Eski kod yo'lidagi alias'lar — second_opinion va boshqa eski chaqiruvchilar
+# uchun (ularni hech narsa o'zgartirmasdan ishlashi). Yangi kod — claude_opus.
+gpt5 = claude_opus  # noqa: legacy alias — endi Opus 4.7'ni nazarda tutadi
+
+_PROVIDERS = [claude_opus, deepseek, grok, v0]
 
 
 # ── v0.dev dedicated client (chat-based, not chat/completions) ─────
@@ -206,67 +270,45 @@ def active_providers() -> list[str]:
 #  HIGH-LEVEL HELPERS — asosiy kod ushbularni chaqiradi
 # ════════════════════════════════════════════════════════════════════
 
-async def gpt5_pro_responses(
+async def opus_pro_audit(
     system: str,
     user: str,
     *,
-    max_tokens: int = 3500,
-    model: str = "gpt-5.4-pro",
+    max_tokens: int = 4096,
 ) -> Optional[str]:
     """
-    gpt-5.4-pro orqali chuqur audit (Responses API, deep reasoning).
+    Claude Opus 4.7 orqali chuqur audit / matematik tekshiruv.
 
-    Chat Completions endpoint bilan ishlamaydi — faqat /v1/responses.
-    Reasoning token'lari bor, javob sekin (60-150s), lekin sifat eng yuqori.
-    Faqat eng muhim auditlar uchun ishlating — arzon emas.
+    Avval gpt-5.4-pro Responses API ishlatardik — endi Opus 4.7
+    benchmark va matematik vazifalarda undan kuchli, narx bir xil.
 
-    Returns plain text content of the assistant message, or None.
+    Returns plain text content, or None on error.
     """
-    if not OPENAI_KEY:
+    if not claude_opus.ready:
+        return None
+    try:
+        return await claude_opus.chat(system, user, max_tokens=max_tokens)
+    except Exception as e:
+        log.warning("opus_pro_audit: %s", e)
         return None
 
-    headers = {
-        "Authorization": f"Bearer {OPENAI_KEY}",
-        "Content-Type":  "application/json",
-    }
-    # Responses API: `instructions` + `input`
-    body = {
-        "model": model,
-        "instructions": system,
-        "input": user,
-        "max_output_tokens": max_tokens,
-    }
-    try:
-        async with httpx.AsyncClient(timeout=240) as cli:
-            r = await cli.post(
-                "https://api.openai.com/v1/responses",
-                json=body,
-                headers=headers,
-            )
-            if r.status_code >= 400:
-                log.warning("gpt5_pro_responses: %s %s", r.status_code, r.text[:300])
-                return None
-            data = r.json()
-            # Flatten the output_text from the message block
-            for item in data.get("output", []):
-                if item.get("type") == "message":
-                    for c in item.get("content", []):
-                        if c.get("type") == "output_text":
-                            return c.get("text", "")
-            return None
-    except Exception as e:
-        log.warning("gpt5_pro_responses: %s", e)
-        return None
+
+# Eski nom — chaqiruvchi kodlar yangilash kerak emas (alias)
+gpt5_pro_responses = opus_pro_audit
 
 
 async def second_opinion(
     question: str,
-    claude_answer: str,
+    primary_answer: str,
     *,
     context: str = "",
 ) -> Optional[dict]:
     """
-    GPT-5'dan Claude javobini tekshirishni so'raydi.
+    Claude Opus 4.7 dan birinchi modelning javobini tekshirishni so'raydi.
+
+    Avval GPT-5'dan so'rardik — endi Opus 4.7 (Anthropic'ning eng kuchli
+    GA modeli, 2026-04-16 chiqdi). Asosiy router Sonnet 4.6 ishlatadi —
+    Opus 4.7 esa "katta birodar" sifatida ikkinchi fikr beradi.
 
     Returns:
         {
@@ -276,28 +318,35 @@ async def second_opinion(
             "correction": str | None,  # agar agree=False bo'lsa
         }
     """
-    if not gpt5.ready:
+    if not claude_opus.ready:
         return None
 
     system = (
-        "Siz SavdoAI biznes tizimining ikkinchi fikr auditchisi (independent "
-        "reviewer). Vazifangiz — Claude tomonidan berilgan javobni "
-        "xolisona tekshirish. Agar xato bo'lsa — aniq ayting. Faqat JSON "
-        "formatda javob bering, boshqa matn qo'shmang."
+        "Siz SavdoAI biznes tizimining mustaqil ikkinchi fikr auditchisisiz "
+        "(independent reviewer). Sizning vazifangiz — birlamchi modelning "
+        "javobini xolis tekshirish. Agar xato bo'lsa — aniq ayting va "
+        "to'g'risini ko'rsating. Faqat JSON formatda javob bering."
     )
     user = (
         f"SAVOL:\n{question}\n\n"
-        f"CLAUDE JAVOBI:\n{claude_answer}\n\n"
+        f"BIRLAMCHI JAVOB:\n{primary_answer}\n\n"
         + (f"QO'SHIMCHA KONTEKST:\n{context}\n\n" if context else "")
         + 'JSON sxema: {"agree": bool, "confidence": 0..1 float, '
           '"reasoning": "2-3 gapda sabab", "correction": "agar xato — to\'g\'risi"}'
     )
     try:
-        raw = await gpt5.chat(system, user, temperature=0.1, json_mode=True)
+        raw = await claude_opus.chat(system, user, json_mode=True, max_tokens=2048)
         import json
-        return json.loads(raw)
+        # Opus ba'zan JSON'ni ```json fence ichida qaytarishi mumkin — tozalaymiz
+        s = raw.strip()
+        if s.startswith("```"):
+            s = s.split("```", 2)[1]
+            if s.startswith("json"):
+                s = s[4:]
+            s = s.rsplit("```", 1)[0].strip()
+        return json.loads(s)
     except Exception as e:
-        log.warning("second_opinion: %s", e)
+        log.warning("second_opinion (Opus 4.7): %s", e)
         return None
 
 

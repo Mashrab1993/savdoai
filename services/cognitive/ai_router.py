@@ -97,6 +97,7 @@ class AIRequest:
     context: dict = field(default_factory=dict)  # Qo'shimcha kontekst
     user_id: int = 0                     # Foydalanuvchi ID
     timeout: float = 30.0               # Timeout (sekund)
+    request_id: str = ""                 # Trace ID (observability uchun)
 
 
 @dataclass
@@ -296,6 +297,10 @@ class CognitiveRouter:
         self._call_count += 1
         target_model = _ROUTING_TABLE.get(req.task, AIModel.CLAUDE)
         start = time.monotonic()
+        # Request ID yo'q bo'lsa — avtomatik yaratamiz (log trace uchun)
+        if not req.request_id:
+            import uuid
+            req.request_id = uuid.uuid4().hex[:12]
 
         try:
             result = await self._dispatch(req, target_model)
@@ -305,8 +310,9 @@ class CognitiveRouter:
             parsed = self._try_parse_json(result)
 
             self._record_metric(target_model, latency)
-            log.info("✅ AI [%s] %s → %dms (%d chars)",
-                     target_model.value, req.task.value, latency, len(result))
+            log.info("✅ AI [rid=%s uid=%s model=%s task=%s] → %dms (%d chars)",
+                     req.request_id, req.user_id, target_model.value,
+                     req.task.value, latency, len(result))
 
             return AIResponse(
                 success=True,
@@ -318,8 +324,9 @@ class CognitiveRouter:
             )
 
         except (asyncio.TimeoutError, Exception) as primary_err:
-            log.warning("⚠️ AI [%s] %s xato: %s — fallback urinish",
-                        target_model.value, req.task.value, primary_err)
+            log.warning("⚠️ AI PRIMARY FAIL [rid=%s uid=%s model=%s task=%s] xato=%s — fallback urinish",
+                        req.request_id, req.user_id, target_model.value,
+                        req.task.value, primary_err)
 
             # ── FALLBACK: ikkinchi model ──
             fallback_model = (
@@ -331,8 +338,9 @@ class CognitiveRouter:
                 latency = round((time.monotonic() - start) * 1000, 1)
                 parsed = self._try_parse_json(result)
                 self._record_metric(fallback_model, latency)
-                log.info("✅ AI FALLBACK [%s] %s → %dms",
-                         fallback_model.value, req.task.value, latency)
+                log.info("✅ AI FALLBACK OK [rid=%s uid=%s model=%s task=%s] → %dms",
+                         req.request_id, req.user_id, fallback_model.value,
+                         req.task.value, latency)
 
                 return AIResponse(
                     success=True,
@@ -345,7 +353,8 @@ class CognitiveRouter:
             except Exception as fallback_err:
                 self._error_count += 1
                 latency = round((time.monotonic() - start) * 1000, 1)
-                log.error("❌ AI ikki model ham ishlamadi: primary=%s fallback=%s",
+                log.error("❌ AI ALL FAIL [rid=%s uid=%s task=%s] primary=%s fallback=%s",
+                          req.request_id, req.user_id, req.task.value,
                           primary_err, fallback_err)
                 return AIResponse(
                     success=False,

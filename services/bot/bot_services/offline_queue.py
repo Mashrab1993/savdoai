@@ -72,8 +72,16 @@ async def navbatga_qosh(uid: int, func: Callable[..., Coroutine],
     q.append(item)
     log.info("📋 Navbatga qo'shildi (uid=%d, navbat=%d)", uid, len(q))
 
-    # Darhol qayta urinish boshlash
-    asyncio.create_task(_retry_item(item))
+    # Darhol qayta urinish boshlash — task'ning xato'sini ushlab log'ga yozamiz
+    # (aks holda fire-and-forget — yashirin xato bo'lib qoladi)
+    task = asyncio.create_task(_retry_item(item))
+    def _on_done(t: asyncio.Task) -> None:
+        if t.cancelled():
+            return
+        exc = t.exception()
+        if exc is not None:
+            log.error("❌ Navbat retry task xato (uid=%d): %s", item.uid, exc, exc_info=exc)
+    task.add_done_callback(_on_done)
     return True
 
 

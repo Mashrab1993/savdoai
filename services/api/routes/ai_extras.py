@@ -1,5 +1,5 @@
 """
-AI Extras endpoints — GPT-5 second opinion, DeepSeek batch, Grok market intel.
+AI Extras endpoints — Claude Opus 4.7 second opinion, DeepSeek batch, Grok market intel.
 
 Faqat tegishli env key bor bo'lsa ishlaydi. Key bo'lmasa 503 qaytadi.
 """
@@ -11,8 +11,8 @@ from pydantic import BaseModel, Field
 from services.cognitive.ai_extras import (
     active_providers,
     cheap_batch,
+    claude_opus,
     generate_ui,
-    gpt5,
     deepseek,
     grok,
     market_intel,
@@ -56,25 +56,25 @@ async def ai_status():
     """
     return {
         "faol": active_providers(),
-        "gpt5":     gpt5.ready,
-        "deepseek": deepseek.ready,
-        "grok":     grok.ready,
-        "v0":       v0.ready,
+        "claude_opus_4_7": claude_opus.ready,
+        "deepseek":        deepseek.ready,
+        "grok":            grok.ready,
+        "v0":              v0.ready,
     }
 
 
 @router.post("/second-opinion")
 async def api_second_opinion(inp: SecondOpinionIn,
                               uid: int = Depends(get_uid)):
-    """GPT-5 dan Claude javobini tekshirishni so'rash."""
-    if not gpt5.ready:
-        raise HTTPException(503, "GPT-5 kaliti sozlanmagan")
+    """Claude Opus 4.7 dan birlamchi javobni mustaqil tekshirish (audit)."""
+    if not claude_opus.ready:
+        raise HTTPException(503, "ANTHROPIC_API_KEY sozlanmagan (Opus 4.7 kerak)")
 
     result = await second_opinion(
         inp.savol, inp.claude_javobi, context=inp.kontekst,
     )
     if result is None:
-        raise HTTPException(502, "GPT-5 javob qaytarmadi")
+        raise HTTPException(502, "Opus 4.7 javob qaytarmadi")
     return result
 
 

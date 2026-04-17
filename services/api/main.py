@@ -495,7 +495,7 @@ except Exception as e:
 try:
     from services.api.routes.ai_extras import router as ai_extras_router
     app.include_router(ai_extras_router)
-    log.info("✅ AI Extras (GPT-5, DeepSeek, Grok, v0) endpoint ulandi")
+    log.info("✅ AI Extras (Claude Opus 4.7, DeepSeek, Grok, v0) endpoint ulandi")
 except Exception as e:
     log.warning("⚠️ AI Extras yuklanmadi: %s", e)
 
