@@ -64,7 +64,13 @@ export default function ExpensesPage() {
   const [formErrors, setFormErrors] = useState<Partial<typeof emptyForm>>({})
   const [actionLoading, setActionLoading] = useState<string | null>(null)
 
-  const expenses: ExpenseVM[] = (rawExpenses ?? []).map(normalizeExpense)
+  // Backend /xarajatlar/oylik returns { shogirdlar: [...], jami: N } not an array.
+  // Accept either shape; if it's the old list-of-expenses shape map it directly,
+  // if it's the new per-apprentice summary shape we have nothing to list yet.
+  const rawList = Array.isArray(rawExpenses)
+    ? rawExpenses
+    : (rawExpenses as { items?: unknown[] } | null)?.items ?? []
+  const expenses: ExpenseVM[] = (rawList as Parameters<typeof normalizeExpense>[0][]).map(normalizeExpense)
 
   const filtered = expenses.filter(e => {
     const matchSearch = e.description.toLowerCase().includes(search.toLowerCase()) ||

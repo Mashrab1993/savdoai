@@ -155,7 +155,7 @@ export default function TransfersPage() {
         {filiallar.length < 2 && (
           <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-4 text-sm text-amber-800 dark:text-amber-300">
             ⚠️ Transfer qilish uchun kamida 2 ta filial kerak.{" "}
-            <a href="/warehouses" className="underline font-semibold">/warehouses</a> sahifasida qo&apos;shing.
+            <a href="/filial" className="underline font-semibold">Filiallar</a> sahifasida qo&apos;shing.
           </div>
         )}
 
