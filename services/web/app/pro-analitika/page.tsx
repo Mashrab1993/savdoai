@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { PageLoading } from "@/components/shared/page-states"
 import { BarChart3 } from "lucide-react";
 import { PageHeader } from "@/components/ui/page-header";
+import { AdminLayout } from "@/components/layout/admin-layout";
 
 function Card({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return <div className={`bg-card rounded-xl border border-border dark:border-border ${className}`}>{children}</div>;
@@ -40,6 +41,7 @@ export default function AnalytikaPage() {
   ];
 
   return (
+    <AdminLayout>
     <div className="max-w-6xl mx-auto p-4 sm:p-6">
       <div className="mb-6">
         <PageHeader
@@ -214,5 +216,6 @@ export default function AnalytikaPage() {
         </Card>
       )}
     </div>
+    </AdminLayout>
   );
 }

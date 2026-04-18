@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { PageLoading } from "@/components/shared/page-states"
 import { Link } from "lucide-react"
 import { PageHeader } from "@/components/ui/page-header"
+import { AdminLayout } from "@/components/layout/admin-layout";
 
 const EVENT_ICONS: Record<string, string> = {
   "sotuv.yaratildi": "💰", "sotuv.bekor_qilindi": "↩️", "sotuv.tasdiqlandi": "✅",
@@ -52,9 +53,10 @@ export default function WebhookPage() {
     alert("Test yuborildi!");
   };
 
-  if (loading) return <PageLoading />;
+  if (loading) return <AdminLayout><PageLoading /></AdminLayout>;
 
   return (
+    <AdminLayout>
     <div className="max-w-4xl mx-auto p-4 sm:p-6">
       <div className="flex items-center justify-between mb-6">
         <div>
@@ -142,5 +144,6 @@ export default function WebhookPage() {
         )}
       </div>
     </div>
+    </AdminLayout>
   );
 }

@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { PageLoading } from "@/components/shared/page-states"
 import { RefreshCw } from "lucide-react"
 import { PageHeader } from "@/components/ui/page-header"
+import { AdminLayout } from "@/components/layout/admin-layout";
 
 export default function SyncLogPage() {
   const [logs, setLogs] = useState<any[]>([]);
@@ -18,9 +19,10 @@ export default function SyncLogPage() {
   const success = logs.filter((l: any) => l.muvaffaqiyatli).length;
   const fail = logs.filter((l: any) => !l.muvaffaqiyatli).length;
 
-  if (loading) return <PageLoading />;
+  if (loading) return <AdminLayout><PageLoading /></AdminLayout>;
 
   return (
+    <AdminLayout>
     <div className="max-w-5xl mx-auto p-4 sm:p-6">
       <PageHeader
           icon={RefreshCw}
@@ -72,5 +74,6 @@ export default function SyncLogPage() {
         {logs.length === 0 && <div className="text-center py-12 text-muted-foreground">Sync loglar yo&apos;q</div>}
       </div>
     </div>
+    </AdminLayout>
   );
 }

@@ -4,6 +4,7 @@ import { PageHeader } from "@/components/ui/page-header"
 import { Settings } from "lucide-react"
 import { useState, useEffect, useCallback } from "react";
 import { PageLoading } from "@/components/shared/page-states"
+import { AdminLayout } from "@/components/layout/admin-layout";
 
 // ═══════════════════════════════════════════════════════════
 //  CONFIG MODULLAR RO'YXATI
@@ -194,13 +195,16 @@ export default function ConfigPage() {
 
   if (loading) {
     return (
+      <AdminLayout>
       <div className="flex items-center justify-center h-96">
         <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary border-t-transparent" />
       </div>
+      </AdminLayout>
     );
   }
 
   return (
+    <AdminLayout>
     <div className="max-w-6xl mx-auto p-4 sm:p-6">
       <div className="mb-6">
         <PageHeader
@@ -306,5 +310,6 @@ export default function ConfigPage() {
         </div>
       </div>
     </div>
+    </AdminLayout>
   );
 }

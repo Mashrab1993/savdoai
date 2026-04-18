@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { PageLoading } from "@/components/shared/page-states"
 import { Gift } from "lucide-react"
 import { PageHeader } from "@/components/ui/page-header"
+import { AdminLayout } from "@/components/layout/admin-layout";
 
 const TURLAR: Record<string, { label: string; icon: string }> = {
   foiz_chegirma: { label: "Foiz chegirma", icon: "%" },
@@ -40,9 +41,10 @@ export default function AksiyaPage() {
     setAksiyalar(p => p.map((a: any) => a.id === id ? { ...a, faol: !faol } : a));
   };
 
-  if (loading) return <PageLoading />;
+  if (loading) return <AdminLayout><PageLoading /></AdminLayout>;
 
   return (
+    <AdminLayout>
     <div className="max-w-4xl mx-auto p-4 sm:p-6">
       <div className="mb-6">
         <PageHeader
@@ -136,5 +138,6 @@ export default function AksiyaPage() {
         {aksiyalar.length === 0 && <div className="text-center py-12 text-muted-foreground">Hali aksiyalar yo&apos;q</div>}
       </div>
     </div>
+    </AdminLayout>
   );
 }

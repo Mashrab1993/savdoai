@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { PageLoading } from "@/components/shared/page-states"
 import { Trophy } from "lucide-react";
 import { PageHeader } from "@/components/ui/page-header";
+import { AdminLayout } from "@/components/layout/admin-layout";
 
 export default function LeaderboardPage() {
   const [myStats, setMyStats] = useState<any>(null);
@@ -20,12 +21,13 @@ export default function LeaderboardPage() {
     ]).then(([me, lb]) => { setMyStats(me); setBoard(lb); }).finally(() => setLoading(false));
   }, [davr]);
 
-  if (loading) return <PageLoading />;
+  if (loading) return <AdminLayout><PageLoading /></AdminLayout>;
 
   const nextXP = myStats?.keyingi_xp || 0;
   const progress = nextXP > 0 ? Math.min(100, ((myStats?.xp || 0) / ((myStats?.xp || 0) + nextXP)) * 100) : 100;
 
   return (
+    <AdminLayout>
     <div className="max-w-4xl mx-auto p-4 sm:p-6 space-y-5">
       <PageHeader
         icon={Trophy}
@@ -122,5 +124,6 @@ export default function LeaderboardPage() {
         {board.length === 0 && <div className="text-center py-12 text-muted-foreground">Hali reyting yo&apos;q</div>}
       </div>
     </div>
+    </AdminLayout>
   );
 }

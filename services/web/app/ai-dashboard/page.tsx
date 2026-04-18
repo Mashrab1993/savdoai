@@ -4,6 +4,7 @@ import { PageLoading } from "@/components/shared/page-states"
 import { Brain } from "lucide-react"
 import { PageHeader } from "@/components/ui/page-header"
 import { aiDashboardService, configService } from "@/lib/api/services"
+import { AdminLayout } from "@/components/layout/admin-layout";
 
 function Card({ children, className = "" }: { children: ReactNode; className?: string }) {
   return <div className={`bg-card rounded-xl border border-border dark:border-border p-4 ${className}`}>{children}</div>;
@@ -45,12 +46,14 @@ export default function AIDashboard() {
   }, []);
 
   if (loading) return (
+    <AdminLayout>
     <div className="flex items-center justify-center h-96">
       <div className="text-center">
         <div className="animate-spin rounded-full h-10 w-10 border-2 border-primary border-t-transparent mx-auto mb-3" />
         <div className="text-sm text-muted-foreground">AI tahlil qilmoqda...</div>
       </div>
     </div>
+    </AdminLayout>
   );
 
   const bugun = data?.bugun || {};
@@ -64,6 +67,7 @@ export default function AIDashboard() {
   ];
 
   return (
+    <AdminLayout>
     <div className="max-w-6xl mx-auto p-4 sm:p-6">
       <div className="flex items-center justify-between mb-6">
         <div>
@@ -229,5 +233,6 @@ export default function AIDashboard() {
         </div>
       )}
     </div>
+    </AdminLayout>
   );
 }
