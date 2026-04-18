@@ -50,7 +50,7 @@ export default function AbcXyzPage() {
   const [activeCell, setActiveCell] = useState<MatritsaKalit | null>(null)
 
   const fetcher = useCallback(
-    () => api.get<any>(`/api/v1/analitika/abc-xyz?kunlar=${kunlar}`),
+    () => api.get<any>(`/analitika/abc-xyz?kunlar=${kunlar}`),
     [kunlar],
   )
   const { data, loading, error, refetch } = useApi(fetcher, [kunlar])
