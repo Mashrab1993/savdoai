@@ -10,10 +10,9 @@ import { OfflineBanner } from '@/components/shared/offline-banner'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'SavdoAI — Biznes boshqaruv tizimi',
-  description: 'Mijozlar, mahsulotlar, qarzdorliklar, hisob-fakturalar va hisobotlarni boshqarish uchun zamonaviy admin paneli.',
+  title: 'SavdoAI — AI-powered savdo boshqaruv',
+  description: 'Mijozlar, mahsulotlar, qarzdorliklar, hisob-fakturalar va hisobotlarni AI yordamida boshqarish uchun zamonaviy admin paneli.',
   manifest: '/manifest.json',
-  themeColor: '#1a56db',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
@@ -26,6 +25,10 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#0EA5E9' },
+    { media: '(prefers-color-scheme: dark)', color: '#0F131C' },
+  ],
 }
 
 export default function RootLayout({
