@@ -5,7 +5,7 @@ import { Bell, Search, Moon, Sun, ChevronDown, Menu, Settings, LogOut,
          AlertTriangle, PackageMinus, Clock } from "lucide-react"
 import { useTheme } from "next-themes"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+import { CommandPalette, useCommandPalette } from "@/components/command-palette"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -123,6 +123,7 @@ export function TopHeader({ title, onMenuClick }: TopHeaderProps) {
   const { locale } = useLocale()
   const h = translations.header
   const { user, logout } = useAuth()
+  const { open: cmdOpen, setOpen: setCmdOpen } = useCommandPalette()
 
   const displayName = user?.ism?.trim() || user?.full_name?.trim() || user?.username?.trim() || user?.dokon_nomi?.trim() || ""
   const shortName = displayName.split(" ")[0] || ""
@@ -138,7 +139,9 @@ export function TopHeader({ title, onMenuClick }: TopHeaderProps) {
     : (locale === "uz" ? "Admin" : "Администратор")
 
   return (
-    <header className="flex items-center justify-between h-14 px-4 md:px-6 border-b border-border bg-card/95 backdrop-blur-sm shrink-0">
+    <>
+    <CommandPalette open={cmdOpen} onOpenChange={setCmdOpen} />
+    <header className="flex items-center justify-between h-14 px-4 md:px-6 border-b border-border/70 bg-card/95 backdrop-blur-sm shrink-0 sticky top-0 z-20">
       {/* Left: mobile menu + page title */}
       <div className="flex items-center gap-3 min-w-0 flex-1">
         <Button
@@ -156,16 +159,30 @@ export function TopHeader({ title, onMenuClick }: TopHeaderProps) {
       {/* Right: actions */}
       <div className="flex items-center gap-1 ml-auto shrink-0">
 
-        {/* Global search — desktop only, navigates to /search */}
-        <div className="relative hidden lg:block mr-1 cursor-pointer" onClick={() => window.location.href = "/search"}>
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
-          <Input
-            placeholder={h.search[locale]}
-            className="pl-8 w-44 h-8 bg-background text-xs border-border/60 focus-visible:ring-1 cursor-pointer"
-            readOnly
-            onFocus={() => window.location.href = "/search"}
-          />
-        </div>
+        {/* Global search — opens Cmd+K palette */}
+        <button
+          type="button"
+          onClick={() => setCmdOpen(true)}
+          className="relative hidden lg:flex items-center gap-2 mr-1 h-8 px-2.5 pr-2 rounded-lg border border-border/70 bg-background hover:bg-accent/50 transition-colors"
+          aria-label={h.search[locale]}
+        >
+          <Search className="w-3.5 h-3.5 text-muted-foreground" />
+          <span className="text-xs text-muted-foreground font-medium">{h.search[locale]}</span>
+          <kbd className="ml-2 hidden xl:inline-flex items-center gap-0.5 rounded bg-muted px-1.5 py-0.5 text-[10px] font-mono font-medium text-muted-foreground">
+            <span className="text-[10px]">⌘</span>K
+          </kbd>
+        </button>
+
+        {/* Mobile search icon — opens palette */}
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setCmdOpen(true)}
+          className="lg:hidden h-8 w-8"
+          aria-label={h.search[locale]}
+        >
+          <Search className="h-4 w-4" />
+        </Button>
 
         {/* Language */}
         <LanguageSwitcher />
@@ -250,5 +267,6 @@ export function TopHeader({ title, onMenuClick }: TopHeaderProps) {
         </DropdownMenu>
       </div>
     </header>
+    </>
   )
 }
