@@ -8,10 +8,7 @@ import { Label } from "@/components/ui/label"
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog"
-import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from "@/components/ui/select"
-import { Search, Plus, Users, DollarSign, AlertCircle } from "lucide-react"
+import { Plus, Users, DollarSign, AlertCircle } from "lucide-react"
 import { PageHeader } from "@/components/ui/page-header"
 import ClientDirectoryTable, { type ClientRowData } from "@/components/dashboard/client-directory-table"
 import { useLocale } from "@/lib/locale-context"
@@ -39,8 +36,6 @@ export default function ClientsPage() {
 
   const { data: rawClients, loading, error, refetch } = useApi(clientService.list)
   const [optimisticClients, setOptimisticClients] = useState<ClientVM[]>([])
-  const [search, setSearch] = useState("")
-  const [statusFilter, setStatusFilter] = useState<string>("all")
   const [modalOpen, setModalOpen] = useState(false)
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
@@ -62,22 +57,6 @@ export default function ClientsPage() {
     ...serverClients,
   ]
 
-  const filtered = clients.filter(c => {
-    const matchesSearch =
-      c.name.toLowerCase().includes(search.toLowerCase()) ||
-      (c.phone || "").toLowerCase().includes(search.toLowerCase()) ||
-      (c.address || "").toLowerCase().includes(search.toLowerCase())
-    const matchesStatus = statusFilter === "all" || c.status === statusFilter
-    return matchesSearch && matchesStatus
-  })
-
-  function openAdd() {
-    setForm({})
-    setFormErrors({})
-    setSaveError(null)
-    setEditingClientId(null)
-    setModalOpen(true)
-  }
 
   function validateForm() {
     const e: Record<string, string> = {}
@@ -182,33 +161,9 @@ export default function ClientsPage() {
           </div>
         </div>
 
-        {/* Toolbar */}
-        <div className="flex flex-col sm:flex-row gap-2.5 items-start sm:items-center justify-between">
-          <div className="flex gap-2 flex-1 max-w-md">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input placeholder={L.searchPlaceholder[locale]} className="pl-9" value={search} onChange={e => setSearch(e.target.value)} />
-            </div>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-36">
-                <SelectValue placeholder={L.allStatus[locale]} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">{L.allStatus[locale]}</SelectItem>
-                <SelectItem value="active">{translations.status.active[locale]}</SelectItem>
-                <SelectItem value="inactive">{translations.status.inactive[locale]}</SelectItem>
-                <SelectItem value="prospect">{translations.status.prospect[locale]}</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <Button onClick={openAdd} className="gap-2 shrink-0">
-            <Plus className="w-4 h-4" /> {L.addClient[locale]}
-          </Button>
-        </div>
-
-        {/* Premium client directory (v0.dev → GPT-5 pipeline) */}
+        {/* Premium client directory — search + debt/category filters are inside the table */}
         <ClientDirectoryTable
-          clients={filtered.map<ClientRowData>(c => ({
+          clients={clients.map<ClientRowData>(c => ({
             id:            Number(c.id),
             ism:           c.name,
             telefon:       c.phone || undefined,
