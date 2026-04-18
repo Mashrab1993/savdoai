@@ -14,6 +14,7 @@ from fastapi import APIRouter, HTTPException, Depends
 
 from shared.database.pool import rls_conn
 from shared.cache.redis_cache import cache_ol, cache_yoz, TTL_HISOBOT
+from shared.utils import like_escape
 from services.api.deps import get_uid
 
 log = logging.getLogger(__name__)
@@ -904,7 +905,7 @@ async def photo_reports(
         params.append(sana_gacha)
         where.append(f"co.vaqt < ${len(params)}::timestamptz + interval '1 day'")
     if qidiruv:
-        params.append(f"%{qidiruv}%")
+        params.append(f"%{like_escape(qidiruv)}%")
         where.append(f"k.ism ILIKE ${len(params)}")
     if agent_id:
         params.append(agent_id)
@@ -975,7 +976,7 @@ async def qaytarishlar_list(
         params.append(sana_gacha)
         where.append(f"sana < ${len(params)}::timestamptz + interval '1 day'")
     if qidiruv:
-        params.append(f"%{qidiruv}%")
+        params.append(f"%{like_escape(qidiruv)}%")
         where.append(
             f"(klient_ismi ILIKE ${len(params)} OR tovar_nomi ILIKE ${len(params)})"
         )
@@ -1148,9 +1149,9 @@ async def report_sales_detail(
     if kategoriya:
         add(f"ch.kategoriya = ${len(params)+1}", kategoriya)
     if klient:
-        add(f"lower(ch.klient_ismi) LIKE lower(${len(params)+1})", f"%{klient}%")
+        add(f"lower(ch.klient_ismi) LIKE lower(${len(params)+1})", f"%{like_escape(klient)}%")
     if tovar:
-        add(f"lower(ch.tovar_nomi) LIKE lower(${len(params)+1})", f"%{tovar}%")
+        add(f"lower(ch.tovar_nomi) LIKE lower(${len(params)+1})", f"%{like_escape(tovar)}%")
 
     where_sql = " AND ".join(where)
     params.append(limit); params.append(offset)

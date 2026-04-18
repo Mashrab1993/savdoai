@@ -1562,7 +1562,7 @@ async def kirimlar_royxati(
         params.append(kategoriya)
         where.append(f"kategoriya = ${len(params)}")
     if qidiruv:
-        params.append(f"%{qidiruv}%")
+        params.append(f"%{like_escape(qidiruv)}%")
         where.append(
             f"(tovar_nomi ILIKE ${len(params)} OR manba ILIKE ${len(params)})"
         )

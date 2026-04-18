@@ -11,6 +11,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel, Field
 
 from shared.database.pool import rls_conn
+from shared.utils import like_escape
 from services.api.deps import get_uid
 
 log = logging.getLogger(__name__)
@@ -64,7 +65,7 @@ async def suppliers_list(
     where = ["user_id = $1"]
     params: list = [uid]
     if qidiruv:
-        params.append(f"%{qidiruv}%")
+        params.append(f"%{like_escape(qidiruv)}%")
         where.append(f"(nomi ILIKE ${len(params)} OR telefon ILIKE ${len(params)})")
     if faol_only:
         where.append("faol = TRUE")

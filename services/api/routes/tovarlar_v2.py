@@ -21,6 +21,7 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))))
 from services.api.deps import get_uid
 from shared.database.pool import get_conn
+from shared.utils import like_escape
 
 log = logging.getLogger(__name__)
 router = APIRouter(prefix="/tovarlar/v2", tags=["tovarlar-v2"])
@@ -155,7 +156,7 @@ async def tovarlar_filtrla(filtr: TovarFiltr, uid: int = Depends(get_uid)):
         # Qidiruv (fuzzy)
         if filtr.qidiruv.strip():
             query += f" AND t.nomi ILIKE ${idx}"
-            params.append(f"%{filtr.qidiruv.strip()}%")
+            params.append(f"%{like_escape(filtr.qidiruv.strip())}%")
             idx += 1
 
         # Saralash
