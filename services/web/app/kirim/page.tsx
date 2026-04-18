@@ -27,15 +27,14 @@ type KirimRow = {
   manba?: string; izoh?: string; sana: string;
 }
 
-const todayISO    = () => new Date().toISOString().split("T")[0]
-const monthAgoISO = () => new Date(Date.now() - 30 * 86400000).toISOString().split("T")[0]
-
 export default function KirimPage() {
   const [items, setItems] = useState<KirimRow[]>([])
   const [stats, setStats] = useState<{ soni?: number; jami_summa?: number; jami_miqdor?: number; turli_tovar?: number }>({})
   const [products, setProducts] = useState<Array<{ id: number; nomi: string; birlik?: string; olish_narxi?: number }>>([])
-  const [sanaDan, setSanaDan] = useState(monthAgoISO())
-  const [sanaGacha, setSanaGacha] = useState(todayISO())
+  // Default to empty (all-time) because backend /kirimlar returns 500 whenever
+  // sana_dan/sana_gacha are supplied. User can still pick a date range manually.
+  const [sanaDan, setSanaDan] = useState("")
+  const [sanaGacha, setSanaGacha] = useState("")
   const [search, setSearch] = useState("")
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
@@ -51,7 +50,8 @@ export default function KirimPage() {
     setLoading(true); setError("")
     try {
       const data = await kirimService.list({
-        sana_dan: sanaDan, sana_gacha: sanaGacha,
+        sana_dan: sanaDan || undefined,
+        sana_gacha: sanaGacha || undefined,
         qidiruv: search || undefined,
         limit: 200,
       })
