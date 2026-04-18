@@ -68,8 +68,9 @@ export default function PurchasePage() {
   const [stats, setStats] = useState<{ soni?: number; jami?: number; pending?: number; yetkazilgan?: number }>({})
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
-  const [sanaDan, setSanaDan] = useState(monthAgo())
-  const [sanaGacha, setSanaGacha] = useState(today())
+  // Backend /purchase returns 500 for any sana_dan/sana_gacha — start empty.
+  const [sanaDan, setSanaDan] = useState("")
+  const [sanaGacha, setSanaGacha] = useState("")
   const [showAdd, setShowAdd] = useState(false)
   const [saving, setSaving] = useState(false)
   const [detailOpen, setDetailOpen] = useState(false)
@@ -103,9 +104,12 @@ export default function PurchasePage() {
   const fetchPurchases = useCallback(async () => {
     setLoading(true); setError("")
     try {
-      const qs = new URLSearchParams({ sana_dan: sanaDan, sana_gacha: sanaGacha })
+      const qs = new URLSearchParams()
+      if (sanaDan)   qs.set("sana_dan", sanaDan)
+      if (sanaGacha) qs.set("sana_gacha", sanaGacha)
+      const qsStr = qs.toString()
       const data = await api<{ items: Purchase[]; stats: typeof stats }>(
-        `/api/v1/purchase?${qs}`
+        `/api/v1/purchase${qsStr ? `?${qsStr}` : ""}`
       )
       setPurchases(data.items || [])
       setStats(data.stats || {})

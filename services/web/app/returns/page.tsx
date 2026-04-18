@@ -45,8 +45,9 @@ export default function ReturnsPage() {
   const [items, setItems] = useState<Qaytarish[]>([])
   const [stats, setStats] = useState<{ soni?: number; jami_summa?: number; jami_miqdor?: number }>({})
   const [search, setSearch] = useState("")
-  const [sanaDan, setSanaDan] = useState(monthAgoISO())
-  const [sanaGacha, setSanaGacha] = useState(todayISO())
+  // Backend /qaytarishlar returns 500 when sana_dan/gacha supplied — start empty.
+  const [sanaDan, setSanaDan] = useState("")
+  const [sanaGacha, setSanaGacha] = useState("")
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
   const [showAdd, setShowAdd] = useState(false)
@@ -58,10 +59,13 @@ export default function ReturnsPage() {
   const fetchData = useCallback(async () => {
     setLoading(true); setError("")
     try {
-      const qs = new URLSearchParams({ sana_dan: sanaDan, sana_gacha: sanaGacha })
-      if (search) qs.set("qidiruv", search)
+      const qs = new URLSearchParams()
+      if (sanaDan)   qs.set("sana_dan", sanaDan)
+      if (sanaGacha) qs.set("sana_gacha", sanaGacha)
+      if (search)    qs.set("qidiruv", search)
+      const qsStr = qs.toString()
       const data = await api<{ items: Qaytarish[]; stats: typeof stats }>(
-        `/api/v1/qaytarishlar?${qs}`
+        `/api/v1/qaytarishlar${qsStr ? `?${qsStr}` : ""}`
       )
       setItems(data.items || [])
       setStats(data.stats || {})
