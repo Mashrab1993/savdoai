@@ -11,17 +11,17 @@ import { PageHeader } from "@/components/ui/page-header"
 import { formatCurrency } from "@/lib/format"
 
 const BONUS_TYPES = [
-  { key: "qty_quantity",      label: "Bonus за количество",          icon: "📦" },
-  { key: "qty_amount",        label: "Bonus за сумму заказа",        icon: "💰" },
-  { key: "qty_volume",        label: "Bonus за объем",               icon: "📊" },
-  { key: "mml_min_qty",       label: "MML товары (мин. кол-во)",     icon: "⬇️" },
-  { key: "mml_max_qty",       label: "MML товары (макс. кол-во)",    icon: "⬆️" },
-  { key: "mml_total_qty",     label: "MML товары (общ. кол-во)",     icon: "📊" },
-  { key: "mml_cat_min",       label: "MML категория (мин.)",         icon: "📁⬇️" },
-  { key: "mml_cat_max",       label: "MML категория (макс.)",        icon: "📁⬆️" },
-  { key: "mml_cat_total",     label: "MML категория (общ.)",         icon: "📁📊" },
-  { key: "block_whole",       label: "Bonus за блок (целый)",        icon: "🎁" },
-  { key: "block_total",       label: "Bonus за блок (общий)",        icon: "🎯" },
+  { key: "qty_quantity",      label: "Miqdor uchun bonus",            icon: "📦" },
+  { key: "qty_amount",        label: "Buyurtma summasi uchun",        icon: "💰" },
+  { key: "qty_volume",        label: "Hajm uchun bonus",              icon: "📊" },
+  { key: "mml_min_qty",       label: "MML tovar (min. miqdor)",       icon: "⬇️" },
+  { key: "mml_max_qty",       label: "MML tovar (maks. miqdor)",      icon: "⬆️" },
+  { key: "mml_total_qty",     label: "MML tovar (umumiy miqdor)",     icon: "📊" },
+  { key: "mml_cat_min",       label: "MML kategoriya (min.)",         icon: "📁" },
+  { key: "mml_cat_max",       label: "MML kategoriya (maks.)",        icon: "📁" },
+  { key: "mml_cat_total",     label: "MML kategoriya (umumiy)",       icon: "📁" },
+  { key: "block_whole",       label: "Blok uchun (to'liq)",           icon: "🎁" },
+  { key: "block_total",       label: "Blok uchun (umumiy)",           icon: "🎯" },
 ]
 
 export default function BonusesPage() {
