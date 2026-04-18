@@ -26,7 +26,7 @@ MAHSULOT_TUZATISH = {
     "tariq": "Ariel", "tarik": "Ariel", "ariyel": "Ariel",
     "ariyol": "Ariel", "oriel": "Ariel", "ariyal": "Ariel",
     "arial": "Ariel", "arel": "Ariel",
-    "tayd": "Tide", "tayt": "Tide", "tayd": "Tide",
+    "tayd": "Tide", "tayt": "Tide",
     "taid": "Tide", "taed": "Tide",
     "persil": "Persil", "pirsil": "Persil",
     "mif": "Mif", "myf": "Mif",

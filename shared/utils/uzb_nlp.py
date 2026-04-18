@@ -97,8 +97,7 @@ BIRLAR: dict[str, int] = {
     "tört":   4,                       # eski yozuv / Qoraqalpog'
     "to`rt":  4,                       # backtick
     "to4rt":  4,                       # sonli almashtirib yozish
-    "turt":   4,                       # Xorazm shevasi
-    "tört":   4,                       # Farg'ona shevasi
+    "turt":   4,                       # Farg'ona shevasi
     "4":      4,
 
     # 5
@@ -134,7 +133,7 @@ BIRLAR: dict[str, int] = {
 O_NLAR: dict[str, int] = {
     # 10
     "oʻn":    10, "o'n":  10, "on":   10,
-    "o`n":    10, "oʻn":  10,
+    "o`n":    10,
     "10":     10,
 
     # 20
@@ -218,9 +217,6 @@ KASR: dict[str, Decimal] = {
     "полтора":       Decimal("1.5"),
     "tvert":         Decimal("0.25"),  # четверть
     "четверть":      Decimal("0.25"),
-
-    # Xorazm shevasi
-    "yarmi":         Decimal("0.5"),
     "yarmisi":       Decimal("0.5"),
 }
 
@@ -459,13 +455,12 @@ BIRLIK_MAP: dict[str, str] = {
     "mg":        "mg",    "milligram":"mg",
 
     # ── Tojik ────────────────────────────────────────────
-    "адад":      "dona",  "дона":     "dona",   # Tojik: dona
-    "кг":        "kg",    "литр":     "litr",
+    "адад":      "dona",  "дона":     "dona",    "литр":     "litr",
 
     # ── Hajm ──────────────────────────────────────────────
     "litr":      "litr",  "l":        "litr",
     "litrli":    "litr",  "л":        "litr",
-    "litrga":    "litr",  "литр":     "litr",
+    "litrga":    "litr",
     "ml":        "ml",    "millilitr":"ml",
     "kubometr":  "m3",    "m3":       "m3",
 
@@ -492,8 +487,7 @@ BIRLIK_MAP: dict[str, str] = {
 
     # ── Kiyim/gazlama ─────────────────────────────────────
     "juft":      "juft",  "para":     "juft",
-    "пара":      "juft",  "komplekt": "komplekt",
-    "metr":      "metr",  # gazlama uchun ham
+    "пара":      "juft",  "komplekt": "komplekt",  # gazlama uchun ham
 
     # ── Boshqa ────────────────────────────────────────────
     "bolak":     "bolak", "parcha":   "bolak",
