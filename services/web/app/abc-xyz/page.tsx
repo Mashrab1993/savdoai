@@ -94,7 +94,23 @@ export default function AbcXyzPage() {
         />
 
         {loading && <PageLoading />}
-        {error && <PageError message="ABC-XYZ yuklashda xato" onRetry={refetch} />}
+        {error && (
+          <div className="flex flex-col items-center justify-center py-16 gap-3 text-center">
+            <div className="p-3 rounded-full bg-primary/10">
+              <Grid3X3 className="w-6 h-6 text-primary" />
+            </div>
+            <div>
+              <p className="font-semibold text-foreground">
+                {locale === "uz" ? "ABC-XYZ tez orada" : "ABC-XYZ скоро"}
+              </p>
+              <p className="text-sm text-muted-foreground mt-1 max-w-sm">
+                {locale === "uz"
+                  ? "Tovarlaringizni daromad (ABC) × barqarorlik (XYZ) bo'yicha avtomatik segmentatsiya qiladi. Modul hozir tayyorlanmoqda."
+                  : "Автоматическая сегментация товаров по доходу (ABC) × стабильности (XYZ). Модуль готовится."}
+              </p>
+            </div>
+          </div>
+        )}
 
         {!loading && !error && tovarlar.length > 0 && (
           <>
