@@ -33,3 +33,7 @@ tsconfig.tsbuildinfo
 
 # Keraksiz arxiv
 _zip_extract/
+
+# Local scripts may contain secrets (token, credentials)
+scripts/health_check.sh
+scripts/*_local.sh
