@@ -616,7 +616,6 @@ class CognitiveDvigatel:
 
     def _parse_json(self, matn: str) -> dict:
         """JSON ni xavfsiz parse qilish"""
-        import re
         toza = re.sub(r"```(?:json)?\s*", "", matn).strip().rstrip("`").strip()
         try:
             return json.loads(toza)

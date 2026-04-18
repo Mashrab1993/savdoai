@@ -289,12 +289,12 @@ def rag_ol() -> QdrantRAG:
 
 UZBEK_STOPWORDS: frozenset = frozenset({
     # Yordamchi so'zlar
-    "va", "bilan", "uchun", "ham", "lekin", "ammo", "yoki", "yoki",
+    "va", "bilan", "uchun", "ham", "lekin", "ammo", "yoki",
     "bu", "u", "ul", "o", "shu", "ana", "mana", "ha", "yo",
     # Olmoshlar
     "men", "sen", "biz", "ular", "siz", "uni", "unga", "undan",
     # Ko'makchilar
-    "da", "dan", "ga", "ni", "ning", "dagi", "dan",
+    "da", "dan", "ga", "ni", "ning", "dagi",
     # Hujayra so'zlari
     "edi", "bo", "bo'l", "qil", "et", "ol",
     # Sonlar uchun emas

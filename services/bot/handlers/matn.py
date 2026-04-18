@@ -479,7 +479,6 @@ async def matn_qabul(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
     # ═══ OCHIQ SAVAT BUYRUQLARI ═══
 
     # 1. "Klient bo'ldi / tugadi" → savat yopish
-    import re as _re_savat
     _boldi_pattern = _re_savat.match(
         r"^(.+?)\s+(boldi|bo'ldi|tugadi|yopish|tamom|yop|nakladnoy|chek)\s*$",
         matn, _re_savat.IGNORECASE
