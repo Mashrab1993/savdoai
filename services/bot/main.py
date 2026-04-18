@@ -1243,6 +1243,31 @@ async def boshlash(app:Application) -> None:
             log.info("✅ Smart notification joblar yoqildi (kechki, critical)")
         else:
             log.info("✅ Worker rejim: scheduling Worker/Beat tomonida boshqariladi")
+
+    # 3. STT Cache Bus listener — API tomondan cross-service invalidation
+    # Redis Pub/Sub orqali yangi tovar qo'shilganda bot STT kesh'ini tozalaydi
+    try:
+        from shared.services.stt_cache_bus import start_invalidate_listener
+
+        async def _on_stt_invalidate(uid: int, reason: str) -> None:
+            try:
+                ovoz_xizmat.stt_cache_tozala(uid)
+            except Exception as _ce:
+                log.debug("stt_cache_tozala xato: %s", _ce)
+            try:
+                from services.bot.bot_services.fuzzy_matcher import fuzzy_matcher
+                fuzzy_matcher.cache_tozala(uid)
+            except Exception as _ce:
+                log.debug("fuzzy_matcher cache tozalash xato: %s", _ce)
+            log.info("🔄 STT cache invalidation uid=%d reason=%s", uid, reason)
+
+        # Background task — daimiy listener (bot shutdown'gacha)
+        import asyncio as _asyncio
+        _asyncio.create_task(start_invalidate_listener(_on_stt_invalidate))
+        log.info("✅ STT cache bus listener yoqildi")
+    except Exception as _e:
+        log.warning("⚠️ STT cache bus listener ishga tushmadi: %s", _e)
+
 # ════════════ OCHIQ SAVAT (Multi-Klient) ════════════
 
 def ilovani_qur(conf:Config) -> Application:

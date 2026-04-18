@@ -290,6 +290,12 @@ async def tovar_yarat(data: TovarYaratSorov, uid: int = Depends(get_uid)):
             d.get("tavsif"), d.get("savdo_yonalishi"),
         )
     await user_cache_tozala(uid)
+    # Cross-service STT cache invalidation — bot protsessiga Redis orqali xabar
+    try:
+        from shared.services.stt_cache_bus import publish_invalidate
+        await publish_invalidate(uid, reason="tovar_yarat")
+    except Exception as _e:
+        log.debug("stt_cache_bus publish skip: %s", _e)
     log.info("📦 Tovar yaratildi: %s (uid=%d)", data.nomi, uid)
     return {"id": tovar["id"], "nomi": tovar["nomi"], "status": "yaratildi"}
 
