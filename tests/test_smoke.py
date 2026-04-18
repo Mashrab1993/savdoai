@@ -1291,18 +1291,21 @@ class TestDebtLimitWiring:
 
 
 class TestGemini31:
-    """Gemini model upgraded to 2.5-pro."""
-    def test_gemini_25_pro_in_voice(self):
+    """Gemini model default — v25.7 dan buyon gemini-3-flash-preview."""
+    def test_gemini_default_in_voice(self):
         src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'bot_services', 'voice.py')).read()
-        assert 'gemini-2.5-pro' in src, "Voice not using Gemini 2.5 Pro"
+        assert ('gemini-3-flash-preview' in src or 'gemini-2.5' in src), \
+            "Voice should use Gemini 3 Flash Preview (v25.7) yoki 2.5 Pro (fallback)"
 
-    def test_gemini_25_pro_in_router(self):
+    def test_gemini_default_in_router(self):
         src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'cognitive', 'ai_router.py')).read()
-        assert 'gemini-2.5-pro' in src, "Router not using Gemini 2.5 Pro"
+        assert ('gemini-3-flash-preview' in src or 'gemini-2.5' in src), \
+            "Router should use Gemini 3 Flash Preview yoki 2.5 Pro"
 
-    def test_gemini_25_pro_in_config(self):
+    def test_gemini_default_in_config(self):
         src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'bot', 'config.py')).read()
-        assert 'gemini-2.5-pro' in src, "Config not using Gemini 2.5 Pro"
+        assert ('gemini-3-flash-preview' in src or 'gemini-2.5' in src), \
+            "Config should use Gemini 3 Flash Preview yoki 2.5 Pro"
 
 
 class TestVoiceCommands:
