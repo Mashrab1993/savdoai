@@ -34,7 +34,7 @@ type DatePreset = "today" | "week" | "month" | "all"
 export default function InvoicesPage() {
   const { locale } = useLocale()
   const [search, setSearch] = useState("")
-  const [datePreset, setDatePreset] = useState<DatePreset>("today")
+  const [datePreset, setDatePreset] = useState<DatePreset>("all")
   const [customFrom, setCustomFrom] = useState("")
   const [customTo, setCustomTo] = useState("")
   const [page, setPage] = useState(0)
@@ -75,7 +75,7 @@ export default function InvoicesPage() {
     klient: search.trim() || undefined, ...dateFilters,
   }), [cacheKey])
 
-  const { data, loading, error, refetch } = useApi(fetchFn)
+  const { data, loading, error, refetch } = useApi(fetchFn, [cacheKey])
 
   const items: SavdoDto[] = data?.items ?? []
   const total = data?.total ?? 0

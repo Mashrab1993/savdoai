@@ -53,7 +53,7 @@ export default function AbcXyzPage() {
     () => api.get<any>(`/api/v1/analitika/abc-xyz?kunlar=${kunlar}`),
     [kunlar],
   )
-  const { data, loading, error, refetch } = useApi(fetcher)
+  const { data, loading, error, refetch } = useApi(fetcher, [kunlar])
 
   const tovarlar = data?.tovarlar ?? []
   const stat = data?.matritsa_statistika ?? {}

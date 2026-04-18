@@ -60,7 +60,7 @@ export default function VisitReportPage() {
     () => api.get<VizitResponse>(`/api/v1/hisobot/vizitlar?sana_dan=${sanaDan}&sana_gacha=${sanaGacha}`),
     [sanaDan, sanaGacha],
   )
-  const { data, loading, error, refetch } = useApi(fetcher)
+  const { data, loading, error, refetch } = useApi(fetcher, [sanaDan, sanaGacha])
 
   const items = data?.items ?? []
   const jami = data?.jami ?? { vizitlar: 0, sotuv_qilgan: 0 }

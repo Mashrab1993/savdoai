@@ -110,7 +110,7 @@ export default function StockForecastPage() {
     () => api.get<StockForecastResponse>(`/api/v1/hisobot/tavsiya-qoldiq?kunlar=${kunlar}`),
     [kunlar],
   )
-  const { data, loading, error, refetch } = useApi(fetcher)
+  const { data, loading, error, refetch } = useApi(fetcher, [kunlar])
 
   const items = data?.items ?? []
 
