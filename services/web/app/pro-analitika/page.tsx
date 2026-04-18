@@ -70,6 +70,29 @@ export default function AnalytikaPage() {
         </div>
       )}
 
+      {/* 'Coming soon' empty state when the analytics endpoint has no data yet */}
+      {!loading && (
+        (tab === "abc" && !abc) ||
+        (tab === "churn" && !churn) ||
+        (tab === "reorder" && reorder.length === 0)
+      ) && (
+        <div className="flex flex-col items-center justify-center py-16 gap-3 text-center">
+          <div className="p-3 rounded-full bg-primary/10">
+            <BarChart3 className="w-6 h-6 text-primary" />
+          </div>
+          <div>
+            <p className="font-semibold text-foreground">
+              {tab === "abc" ? "ABC-XYZ matritsa tez orada"
+                : tab === "churn" ? "Churn prognoz tez orada"
+                : "Auto buyurtma tez orada"}
+            </p>
+            <p className="text-sm text-muted-foreground mt-1 max-w-md">
+              Bu modul Pro Analitika paketi doirasida tayyorlanmoqda — sotuv ma&apos;lumotlari yetarli to&apos;planganidan so&apos;ng avtomatik yoqiladi.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* ═══ ABC-XYZ MATRITSA ═══ */}
       {!loading && tab === "abc" && abc && (
         <>
