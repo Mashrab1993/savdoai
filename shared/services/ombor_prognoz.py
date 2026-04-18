@@ -17,7 +17,8 @@ from decimal import Decimal
 
 log = logging.getLogger(__name__)
 
-D = lambda v: Decimal(str(v or 0))
+def D(v):
+    return Decimal(str(v or 0))
 
 
 async def ombor_prognoz(conn, uid: int, kunlar: int = 30,

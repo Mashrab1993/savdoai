@@ -33,7 +33,8 @@ from decimal import Decimal
 from collections import defaultdict
 
 log = logging.getLogger(__name__)
-D = lambda v: Decimal(str(v or 0))
+def D(v):
+    return Decimal(str(v or 0))
 
 # ════════════════════════════════════════════════════════════
 #  MATRITSA TAVSIFLARI

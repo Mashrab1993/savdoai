@@ -36,7 +36,8 @@ from decimal import Decimal, ROUND_HALF_UP
 
 log = logging.getLogger(__name__)
 
-D = lambda v: Decimal(str(v or 0)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP) if v else Decimal("0")
+def D(v):
+    return Decimal(str(v or 0)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP) if v else Decimal("0")
 
 
 # ═══════════════════════════════════════════════════════════════

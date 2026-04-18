@@ -57,7 +57,8 @@ from datetime import date
 from decimal import Decimal, ROUND_HALF_UP
 
 log = logging.getLogger(__name__)
-D = lambda v: Decimal(str(v or 0)).quantize(Decimal("0.01"), ROUND_HALF_UP)
+def D(v):
+    return Decimal(str(v or 0)).quantize(Decimal("0.01"), ROUND_HALF_UP)
 
 # ════════════════════════════════════════════════════════════
 #  MIGRATION SQL

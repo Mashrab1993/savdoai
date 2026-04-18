@@ -24,7 +24,8 @@ import pytz
 
 log = logging.getLogger(__name__)
 TZ = pytz.timezone("Asia/Tashkent")
-D = lambda v: Decimal(str(v or 0))
+def D(v):
+    return Decimal(str(v or 0))
 
 
 async def talab_prognozi(conn, uid: int, kunlar: int = 7) -> list[dict]:

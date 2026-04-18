@@ -22,7 +22,8 @@ import logging
 from decimal import Decimal
 
 log = logging.getLogger(__name__)
-D = lambda v: Decimal(str(v or 0))
+def D(v):
+    return Decimal(str(v or 0))
 
 
 async def pre_sale_checks(conn, uid: int, klient_ismi: str,
