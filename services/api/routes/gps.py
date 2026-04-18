@@ -71,14 +71,16 @@ async def save_tracks(body: TracksPayload, uid: int = Depends(get_uid)):
 async def get_tracks(sana: str | None = None, limit: int = 200,
                       uid: int = Depends(get_uid)):
     """GPS tracklar ro'yxatini olish."""
+    _cols = ("id, user_id, latitude, longitude, accuracy, provider, "
+             "battery_level, track_date, track_time, timestamp, created_at")
     async with get_conn(uid) as conn:
         if sana:
             rows = await conn.fetch(
-                "SELECT * FROM gps_tracks WHERE user_id=$1 AND track_date=$2::date "
+                f"SELECT {_cols} FROM gps_tracks WHERE user_id=$1 AND track_date=$2::date "
                 "ORDER BY timestamp DESC LIMIT $3", uid, sana, limit)
         else:
             rows = await conn.fetch(
-                "SELECT * FROM gps_tracks WHERE user_id=$1 "
+                f"SELECT {_cols} FROM gps_tracks WHERE user_id=$1 "
                 "ORDER BY created_at DESC LIMIT $2", uid, limit)
         return [dict(r) for r in rows]
 
@@ -86,9 +88,11 @@ async def get_tracks(sana: str | None = None, limit: int = 200,
 @router.get("/oxirgi")
 async def oxirgi_lokatsiya(uid: int = Depends(get_uid)):
     """Eng so'nggi GPS lokatsiyani olish."""
+    _cols = ("id, user_id, latitude, longitude, accuracy, provider, "
+             "battery_level, track_date, track_time, timestamp, created_at")
     async with get_conn(uid) as conn:
         row = await conn.fetchrow(
-            "SELECT * FROM gps_tracks WHERE user_id=$1 ORDER BY created_at DESC LIMIT 1", uid)
+            f"SELECT {_cols} FROM gps_tracks WHERE user_id=$1 ORDER BY created_at DESC LIMIT 1", uid)
         return dict(row) if row else None
 
 

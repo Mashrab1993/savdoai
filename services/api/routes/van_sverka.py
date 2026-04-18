@@ -68,7 +68,10 @@ async def marshrut_olish(mid: int, uid: int = Depends(get_uid)):
 async def marshrutlar_royxati(limit: int = 20, uid: int = Depends(get_uid)):
     async with get_conn(uid) as conn:
         rows = await conn.fetch(
-            "SELECT * FROM van_marshrut WHERE user_id=$1 ORDER BY sana DESC LIMIT $2",
+            "SELECT id, user_id, sana, mashina_raqami, haydovchi, holat, "
+            "boshlangan, yakunlangan, jami_summa, yetkazilgan_summa, "
+            "qaytarilgan_summa, izoh, yaratilgan "
+            "FROM van_marshrut WHERE user_id=$1 ORDER BY sana DESC LIMIT $2",
             uid, limit)
         return [dict(r) for r in rows]
 

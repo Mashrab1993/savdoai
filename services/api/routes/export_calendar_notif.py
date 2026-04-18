@@ -195,7 +195,8 @@ async def notif_list(faqat_oqilmagan: bool = False, limit: int = 50,
                       uid: int = Depends(get_uid)):
     """Bildirishnomalar ro'yxati."""
     async with get_conn(uid) as conn:
-        query = "SELECT * FROM bildirishnomalar WHERE user_id=$1"
+        query = ("SELECT id, user_id, turi, sarlavha, matn, oqildi, muhimlik, "
+                 "havolah, yaratilgan FROM bildirishnomalar WHERE user_id=$1")
         if faqat_oqilmagan:
             query += " AND oqildi=FALSE"
         query += " ORDER BY yaratilgan DESC LIMIT $2"

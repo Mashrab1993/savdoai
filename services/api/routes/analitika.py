@@ -96,7 +96,8 @@ async def test_webhook(webhook_id: int, uid: int = Depends(get_uid)):
     """Webhook'ni sinab ko'rish."""
     async with get_conn(uid) as conn:
         wh = await conn.fetchrow(
-            "SELECT * FROM webhooklar WHERE id=$1 AND user_id=$2", webhook_id, uid)
+            "SELECT id, user_id, url, event_type, faol, secret, yaratilgan "
+            "FROM webhooklar WHERE id=$1 AND user_id=$2", webhook_id, uid)
         if not wh:
             raise HTTPException(404, "Webhook topilmadi")
         sent = await webhook_yuborish(conn, uid, "test.ping", {"xabar": "SavdoAI webhook test"})
