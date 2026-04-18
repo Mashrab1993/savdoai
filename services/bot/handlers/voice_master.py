@@ -562,8 +562,21 @@ async def route_voice_to_module(update: Update, ctx: ContextTypes.DEFAULT_TYPE,
 # ════════════════════════════════════════════════════════════════════
 
 def _any(matn: str, keywords: tuple[str, ...]) -> bool:
-    """Matn ichida biror keyword bormi?"""
-    return any(kw in matn for kw in keywords)
+    """Matn ichida biror keyword bormi? — XAVFSIZ VARIANT (v25.7+).
+
+    Avvalgi substring matching'dan farqli o'laroq:
+      • Word-boundary tekshiradi ("shokirim" → "kirim" MATCH QILMAYDI)
+      • Negation aniqlaydi ("bekor qilmay" → "bekor qil" TRIGGER QILMAYDI)
+
+    Silent fallback: agar shared helper import bo'lmasa, eski substring
+    match ishlatiladi (back-compat).
+    """
+    try:
+        from shared.services.voice_helpers import _safe_intent_match
+        return _safe_intent_match(matn, keywords)
+    except Exception:
+        # Fallback — eski substring (back-compat, safety net)
+        return any(kw in matn for kw in keywords)
 
 
 def _has_money(matn: str) -> bool:
