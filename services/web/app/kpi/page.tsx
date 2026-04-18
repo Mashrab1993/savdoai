@@ -27,8 +27,8 @@ export default function KpiPage() {
   const { data: kpi, loading, error } = useApi(() => kpiService.get(30))
   const { data: trend } = useApi(() => kpiService.trend(14))
 
-  if (loading) return <PageLoading />
-  if (error || !kpi) return <PageError message="KPI yuklashda xato" />
+  if (loading) return <AdminLayout><PageLoading /></AdminLayout>
+  if (error || !kpi) return <AdminLayout><PageError message="KPI yuklashda xato" /></AdminLayout>
 
   const reyMeta = REYTING_META[kpi.reyting] || REYTING_META.C
   const trendEmoji = kpi.trend === "o'sish" ? "📈" : kpi.trend === "tushish" ? "📉" : "➡️"
