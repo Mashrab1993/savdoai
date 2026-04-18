@@ -171,7 +171,7 @@ export default function LoginPage() {
           <div className="space-y-6">
             <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs text-white/80 backdrop-blur">
               <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
-              <span>AI-powered \u00b7 v25.7</span>
+              <span>AI-powered · v25.7</span>
             </div>
             <h2 className="text-5xl xl:text-6xl font-bold text-white leading-[1.05] tracking-tight text-balance">
               {t.headline}
