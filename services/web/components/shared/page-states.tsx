@@ -1,6 +1,6 @@
 "use client"
 
-import { AlertCircle, RefreshCw, Inbox } from "lucide-react"
+import { AlertCircle, RefreshCw, Inbox, Sparkles } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useLocale } from "@/lib/locale-context"
 
@@ -30,6 +30,28 @@ export function TableSkeleton({ rows = 5, cols = 4 }: { rows?: number; cols?: nu
           ))}
         </div>
       ))}
+    </div>
+  )
+}
+
+/** AI thinking state — for pages where the model needs seconds to respond */
+export function AILoading({ label }: { label?: string }) {
+  const { locale } = useLocale()
+  const text = label ?? (locale === "ru" ? "AI анализирует..." : "AI tahlil qilmoqda...")
+  return (
+    <div className="flex flex-col items-center justify-center py-20 gap-4 text-center">
+      <div className="relative">
+        <div className="absolute inset-0 rounded-full bg-primary/20 blur-xl animate-pulse" />
+        <div className="relative p-4 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 ring-1 ring-primary/30">
+          <Sparkles className="w-6 h-6 text-primary animate-pulse" />
+        </div>
+      </div>
+      <div>
+        <p className="font-semibold text-foreground text-sm">{text}</p>
+        <p className="text-xs text-muted-foreground mt-1">
+          {locale === "ru" ? "Обычно 5-20 секунд" : "Odatda 5-20 soniya"}
+        </p>
+      </div>
     </div>
   )
 }

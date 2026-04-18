@@ -14,7 +14,7 @@ import { Input } from "@/components/ui/input"
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table"
-import { PageLoading, PageError } from "@/components/shared/page-states"
+import { AILoading, PageError } from "@/components/shared/page-states"
 import { useApi } from "@/hooks/use-api"
 import { api } from "@/lib/api/client"
 import { formatCurrency } from "@/lib/format"
@@ -122,7 +122,7 @@ export default function RFMPage() {
           </div>
         </Card>
 
-        {loading && <PageLoading />}
+        {loading && <AILoading />}
         {error && !loading && <PageError message={error} onRetry={refetch} />}
 
         {!loading && !error && data && (

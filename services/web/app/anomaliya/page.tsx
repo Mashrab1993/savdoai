@@ -17,7 +17,7 @@ import { AdminLayout } from "@/components/layout/admin-layout"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { PageLoading, PageError } from "@/components/shared/page-states"
+import { AILoading, PageError } from "@/components/shared/page-states"
 import { useApi } from "@/hooks/use-api"
 import { api } from "@/lib/api/client"
 import { formatCurrency } from "@/lib/format"
@@ -100,7 +100,7 @@ export default function AnomaliyaPage() {
           </div>
         </Card>
 
-        {loading && <PageLoading />}
+        {loading && <AILoading />}
         {error && !loading && <PageError message={String(error)} onRetry={refetch} />}
 
         {!loading && !error && data && (
