@@ -26,19 +26,19 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   // ═══════════════════════════════════════════════════════
 
   const navItems = [
-    { href: "/live",        label: "🔴 LIVE",              icon: Activity },
-    { href: "/dashboard",   label: nav.dashboard[locale],   icon: LayoutDashboard },
-    { href: "/order-create", label: locale === "uz" ? "💰 Yangi sotuv (POS)" : "💰 Новая продажа", icon: ShoppingCart },
-    { href: "/sales",       label: locale === "uz" ? "Sotuv" : "Продажа", icon: ShoppingCart },
-    { href: "/clients",     label: nav.clients[locale],     icon: Users },
-    { href: "/products",    label: nav.products[locale],    icon: Package },
-    { href: "/debts",       label: nav.debts[locale],       icon: CreditCard },
-    { href: "/invoices",    label: nav.invoices[locale],    icon: FileText },
-    { href: "/reports",     label: nav.reports[locale],     icon: BarChart3 },
-    { href: "/orders",      label: locale === "uz" ? "Buyurtmalar" : "Заказы", icon: ShoppingCart },
-    { href: "/ombor",       label: locale === "uz" ? "Ombor" : "Склад", icon: Package },
+    { href: "/live",         label: locale === "uz" ? "Live kuzatuv" : "Live", icon: Activity, badge: "LIVE" },
+    { href: "/dashboard",    label: nav.dashboard[locale], icon: LayoutDashboard },
+    { href: "/order-create", label: locale === "uz" ? "Yangi sotuv (POS)" : "Новая продажа", icon: ShoppingCart },
+    { href: "/sales",        label: locale === "uz" ? "Sotuvlar" : "Продажи", icon: ShoppingCart },
+    { href: "/clients",      label: nav.clients[locale], icon: Users },
+    { href: "/products",     label: nav.products[locale], icon: Package },
+    { href: "/debts",        label: nav.debts[locale], icon: CreditCard },
+    { href: "/invoices",     label: nav.invoices[locale], icon: FileText },
+    { href: "/reports",      label: nav.reports[locale], icon: BarChart3 },
+    { href: "/orders",       label: locale === "uz" ? "Buyurtmalar" : "Заказы", icon: ShoppingCart },
+    { href: "/ombor",        label: locale === "uz" ? "Ombor" : "Склад", icon: Package },
     { href: "/material-report", label: locale === "uz" ? "Material hisobot" : "Материальный", icon: BarChart3 },
-    { href: "/gps",        label: "GPS", icon: MapPin },
+    { href: "/gps",          label: "GPS", icon: MapPin },
   ]
 
   // ═══════════════════════════════════════════════════════
@@ -46,53 +46,52 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   // ═══════════════════════════════════════════════════════
 
   const navItemsNew = [
-    { href: "/moliya",          label: "💼 Moliya",          icon: CreditCard },
-    { href: "/aksiya",          label: "🎁 Aksiyalar",       icon: Gift },
-    { href: "/staff",           label: "👥 Xodimlar",        icon: Users },
-    { href: "/planning",        label: "🎯 Rejalashtirish",  icon: Target },
-    { href: "/returns",         label: "↩️ Qaytarishlar",    icon: RefreshCw },
-    { href: "/write-off",       label: "🗑️ Spisanie",       icon: Target },
-    { href: "/transfers",       label: "🔄 Ko'chirish",      icon: RefreshCw },
-    { href: "/pro-analitika",   label: "📊 Pro Analitika",   icon: BarChart3 },
-    { href: "/klient360",       label: "👤 Klient 360°",     icon: Users },
-    { href: "/tasks",           label: "📋 Topshiriqlar",    icon: Target },
-    { href: "/kalendar",        label: "📅 Kalendar",        icon: Star },
-    { href: "/leaderboard",     label: "🏆 Leaderboard",     icon: Star },
-    { href: "/van-selling",     label: "🚛 Van Selling",     icon: Target },
-    { href: "/route",           label: "🗺️ Marshrut",       icon: MapPin },
-    { href: "/filial",          label: "🏢 Filiallar",       icon: Shield },
-    { href: "/agent-monitor",   label: "📡 Agent Monitor",   icon: Activity },
-    { href: "/sverka",          label: "📋 Akt Sverki",      icon: Shield },
-    { href: "/tashrif",         label: "📍 Tashriflar",      icon: MapPin },
-    { href: "/visit-report",    label: "📊 Vizit hisoboti",  icon: MapPin },
-    { href: "/photo-reports",   label: "📸 Foto hisobotlar", icon: Camera },
-    { href: "/webhook",         label: "🔗 Webhook",         icon: RefreshCw },
-    { href: "/sync-log",        label: "🔄 Sync log",        icon: RefreshCw },
-    { href: "/suppliers",       label: "🏭 Postavshiklar",   icon: Shield },
-    { href: "/purchase",        label: "🛒 Xarid buyurtma",  icon: Package },
-    { href: "/kirim",           label: "📥 Kirimlar (Postuplenie)", icon: Package },
-    { href: "/sklad-qogozi",    label: "📄 Sklad qog'ozi",   icon: FileText },
-    { href: "/warehouses",      label: "🏢 Skladlar",         icon: Package },
-    { href: "/price-types",     label: "💰 Narx turlari",    icon: Tag },
-    { href: "/price-list",      label: "📋 Prays-list",      icon: FileText },
-    { href: "/price-history",   label: "📈 Narx tarixi",     icon: BarChart3 },
-    { href: "/audit-dashboard", label: "✅ Audit",            icon: Shield },
-    { href: "/categories",      label: "📁 Kategoriyalar",   icon: Package },
-    { href: "/bonuses",         label: "🎁 Bonuslar",        icon: Gift },
-    { href: "/inventory",       label: "📋 Inventarizatsiya", icon: Package },
-    { href: "/territories",     label: "🗺️ Territoriyalar",  icon: MapPin },
-    { href: "/payment-methods", label: "💳 To'lov usullari", icon: CreditCard },
-    // ── YANGI (2026-04-17) ─────────────────────────────────
-    { href: "/reports-hub",     label: "📊 Hisobotlar markazi", icon: BarChart3 },
-    { href: "/reports/agent",   label: "👥 Agent hisoboti",    icon: Users },
-    { href: "/rfm",             label: "🎯 RFM segmentatsiya",  icon: Target },
-    { href: "/pnl",             label: "💹 Foyda/Zarar",         icon: BarChart3 },
-    { href: "/ekspeditorlar",   label: "🚚 Ekspeditorlar",       icon: Package },
-    { href: "/skladlar",        label: "🏭 Skladlar (yangi)",    icon: Package },
-    { href: "/voice-help",      label: "🎤 Ovozli buyruqlar",    icon: Activity },
-    { href: "/copilot",         label: "🧠 AI Copilot (Opus)",   icon: Brain },
-    { href: "/anomaliya",       label: "🛡️ Anomaliya detektori", icon: Shield },
-    { href: "/biznes-salomatlik", label: "❤️ Biznes salomatligi", icon: Heart },
+    { href: "/moliya",          label: locale === "uz" ? "Moliya" : "Финансы", icon: CreditCard },
+    { href: "/aksiya",          label: locale === "uz" ? "Aksiyalar" : "Акции", icon: Gift },
+    { href: "/staff",           label: locale === "uz" ? "Xodimlar" : "Сотрудники", icon: Users },
+    { href: "/planning",        label: locale === "uz" ? "Rejalashtirish" : "Планирование", icon: Target },
+    { href: "/returns",         label: locale === "uz" ? "Qaytarishlar" : "Возвраты", icon: RefreshCw },
+    { href: "/write-off",       label: locale === "uz" ? "Spisanie" : "Списание", icon: Target },
+    { href: "/transfers",       label: locale === "uz" ? "Ko'chirish" : "Переводы", icon: RefreshCw },
+    { href: "/pro-analitika",   label: locale === "uz" ? "Pro Analitika" : "Pro Аналитика", icon: BarChart3 },
+    { href: "/klient360",       label: locale === "uz" ? "Klient 360°" : "Клиент 360°", icon: Users },
+    { href: "/tasks",           label: locale === "uz" ? "Topshiriqlar" : "Задачи", icon: Target },
+    { href: "/kalendar",        label: locale === "uz" ? "Kalendar" : "Календарь", icon: Star },
+    { href: "/leaderboard",     label: "Leaderboard", icon: Star },
+    { href: "/van-selling",     label: "Van Selling", icon: Target },
+    { href: "/route",           label: locale === "uz" ? "Marshrut" : "Маршрут", icon: MapPin },
+    { href: "/filial",          label: locale === "uz" ? "Filiallar" : "Филиалы", icon: Shield },
+    { href: "/agent-monitor",   label: "Agent Monitor", icon: Activity },
+    { href: "/sverka",          label: locale === "uz" ? "Akt Sverki" : "Акт сверки", icon: Shield },
+    { href: "/tashrif",         label: locale === "uz" ? "Tashriflar" : "Визиты", icon: MapPin },
+    { href: "/visit-report",    label: locale === "uz" ? "Vizit hisoboti" : "Отчёт визитов", icon: MapPin },
+    { href: "/photo-reports",   label: locale === "uz" ? "Foto hisobotlar" : "Фото-отчёты", icon: Camera },
+    { href: "/webhook",         label: "Webhook", icon: RefreshCw },
+    { href: "/sync-log",        label: locale === "uz" ? "Sync log" : "Лог синхронизации", icon: RefreshCw },
+    { href: "/suppliers",       label: locale === "uz" ? "Postavshiklar" : "Поставщики", icon: Shield },
+    { href: "/purchase",        label: locale === "uz" ? "Xarid buyurtma" : "Заказ закупки", icon: Package },
+    { href: "/kirim",           label: locale === "uz" ? "Kirimlar" : "Поступления", icon: Package },
+    { href: "/sklad-qogozi",    label: locale === "uz" ? "Sklad qog'ozi" : "Складская бумага", icon: FileText },
+    { href: "/warehouses",      label: locale === "uz" ? "Skladlar" : "Склады", icon: Package },
+    { href: "/price-types",     label: locale === "uz" ? "Narx turlari" : "Типы цен", icon: Tag },
+    { href: "/price-list",      label: locale === "uz" ? "Prays-list" : "Прайс-лист", icon: FileText },
+    { href: "/price-history",   label: locale === "uz" ? "Narx tarixi" : "История цен", icon: BarChart3 },
+    { href: "/audit-dashboard", label: "Audit", icon: Shield },
+    { href: "/categories",      label: locale === "uz" ? "Kategoriyalar" : "Категории", icon: Package },
+    { href: "/bonuses",         label: locale === "uz" ? "Bonuslar" : "Бонусы", icon: Gift },
+    { href: "/inventory",       label: locale === "uz" ? "Inventarizatsiya" : "Инвентаризация", icon: Package },
+    { href: "/territories",     label: locale === "uz" ? "Territoriyalar" : "Территории", icon: MapPin },
+    { href: "/payment-methods", label: locale === "uz" ? "To'lov usullari" : "Способы оплаты", icon: CreditCard },
+    { href: "/reports-hub",     label: locale === "uz" ? "Hisobotlar markazi" : "Центр отчётов", icon: BarChart3 },
+    { href: "/reports/agent",   label: locale === "uz" ? "Agent hisoboti" : "Отчёт агентов", icon: Users },
+    { href: "/rfm",             label: locale === "uz" ? "RFM segmentatsiya" : "RFM сегментация", icon: Target },
+    { href: "/pnl",             label: locale === "uz" ? "Foyda/Zarar" : "Прибыль/Убыток", icon: BarChart3 },
+    { href: "/ekspeditorlar",   label: locale === "uz" ? "Ekspeditorlar" : "Экспедиторы", icon: Package },
+    { href: "/skladlar",        label: locale === "uz" ? "Skladlar (v2)" : "Склады (v2)", icon: Package },
+    { href: "/voice-help",      label: locale === "uz" ? "Ovozli buyruqlar" : "Голосовые команды", icon: Activity, badge: "AI" },
+    { href: "/copilot",         label: locale === "uz" ? "AI Copilot" : "AI Copilot", icon: Brain, badge: "AI" },
+    { href: "/anomaliya",       label: locale === "uz" ? "Anomaliya detektori" : "Детектор аномалий", icon: Shield, badge: "AI" },
+    { href: "/biznes-salomatlik", label: locale === "uz" ? "Biznes salomatligi" : "Здоровье бизнеса", icon: Heart, badge: "AI" },
   ]
 
   // ═══════════════════════════════════════════════════════
@@ -100,15 +99,15 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   // ═══════════════════════════════════════════════════════
 
   const navItemsSecondary = [
-    { href: "/kpi",          label: "📊 KPI",              icon: Target },
-    { href: "/abc-xyz",      label: "📦 ABC-XYZ Matritsa", icon: BarChart3 },
-    { href: "/stock-forecast", label: "📦 Tavsiya qoldiq", icon: Package },
-    { href: "/analytics",    label: "🧠 AI Tahlil",        icon: Brain },
-    { href: "/loyalty",      label: "⭐ Loyalty",           icon: Star },
-    { href: "/apprentices", label: nav.apprentices[locale], icon: GraduationCap },
-    { href: "/expenses",    label: nav.expenses[locale],    icon: Receipt },
-    { href: "/prices",      label: nav.prices[locale],      icon: Tag },
-    { href: "/cash",        label: nav.cash[locale],        icon: Landmark },
+    { href: "/kpi",            label: "KPI", icon: Target },
+    { href: "/abc-xyz",        label: locale === "uz" ? "ABC-XYZ Matritsa" : "ABC-XYZ Матрица", icon: BarChart3 },
+    { href: "/stock-forecast", label: locale === "uz" ? "Tavsiya qoldiq" : "Прогноз остатков", icon: Package },
+    { href: "/analytics",      label: locale === "uz" ? "AI Tahlil" : "AI Аналитика", icon: Brain, badge: "AI" },
+    { href: "/loyalty",        label: "Loyalty", icon: Star },
+    { href: "/apprentices",    label: nav.apprentices[locale], icon: GraduationCap },
+    { href: "/expenses",       label: nav.expenses[locale], icon: Receipt },
+    { href: "/prices",         label: nav.prices[locale], icon: Tag },
+    { href: "/cash",           label: nav.cash[locale], icon: Landmark },
   ]
 
   // ═══════════════════════════════════════════════════════
@@ -116,12 +115,14 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   // ═══════════════════════════════════════════════════════
 
   const navItemsSettings = [
-    { href: "/business-settings", label: "🏢 Biznes sozlamalar", icon: Settings },
-    { href: "/config",      label: "⚙️ Sozlamalar",    icon: Settings },
-    { href: "/settings",    label: "🔒 Hisobim",       icon: Shield },
+    { href: "/business-settings", label: locale === "uz" ? "Biznes sozlamalar" : "Настройки бизнеса", icon: Settings },
+    { href: "/config",            label: locale === "uz" ? "Sozlamalar" : "Настройки", icon: Settings },
+    { href: "/settings",          label: locale === "uz" ? "Hisobim" : "Мой аккаунт", icon: Shield },
   ]
 
-  const renderSection = (items: typeof navItems, title?: string) => (
+  type NavItem = { href: string; label: string; icon: React.ElementType; badge?: string }
+
+  const renderSection = (items: NavItem[], title?: string) => (
     <>
       {title && !collapsed && (
         <div className="px-3 pt-4 pb-1">
@@ -153,7 +154,23 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
               />
             )}
             <item.icon className={cn("h-4 w-4 flex-shrink-0", isActive ? "text-primary" : "")} />
-            {!collapsed && <span className="truncate">{item.label}</span>}
+            {!collapsed && (
+              <>
+                <span className="truncate">{item.label}</span>
+                {item.badge && (
+                  <span
+                    className={cn(
+                      "ml-auto text-[9px] font-bold px-1.5 py-0.5 rounded tracking-wider uppercase",
+                      item.badge === "LIVE"
+                        ? "bg-rose-500/15 text-rose-600 dark:text-rose-400"
+                        : "bg-primary/15 text-primary",
+                    )}
+                  >
+                    {item.badge}
+                  </span>
+                )}
+              </>
+            )}
           </Link>
         )
       })}
@@ -222,12 +239,11 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
       <nav className="flex-1 overflow-y-auto py-2 px-2 space-y-0.5">
         {renderSection(navItems)}
 
-        {/* Yangi modullar — ajratilgan */}
-        {!collapsed && <div className="my-2 mx-3 border-t border-border/60" />}
-        {renderSection(navItemsNew, "Yangi")}
+        {!collapsed && <div className="my-2 mx-3 border-t border-border/70" />}
+        {renderSection(navItemsNew, locale === "uz" ? "Kengaytirilgan" : "Расширенные")}
 
-        {!collapsed && <div className="my-2 mx-3 border-t border-border/60" />}
-        {renderSection(navItemsSecondary, "Boshqa")}
+        {!collapsed && <div className="my-2 mx-3 border-t border-border/70" />}
+        {renderSection(navItemsSecondary, locale === "uz" ? "Qo'shimcha" : "Дополнительно")}
       </nav>
 
       {/* Bottom settings */}
