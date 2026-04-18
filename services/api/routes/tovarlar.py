@@ -632,6 +632,7 @@ async def tovar_excel_export(uid: int = Depends(get_uid)):
 @router.post("/tovar/import/excel")
 async def tovar_import_excel(
     file_base64: str,
+    request: Request,
     uid: int = Depends(get_uid),
 ):
     """Excel faylidan tovarlarni import qilish.
@@ -639,7 +640,13 @@ async def tovar_import_excel(
     Shablondan (GET /tovar/shablon/excel) yuklab olingan formatdagi
     27 ustunli xlsx faylni qabul qiladi. Birinchi 1-qator sarlavha,
     2-qator namuna (o'chiriladi), 3-qatordan boshlab real tovarlar.
+
+    Security:
+      - Rate limit: "import" endpoint (daqiqada N marta)
+      - Max 1000 tovar: DoS / OOM himoyasi (katta Excel hujum vektori)
     """
+    await endpoint_rate_check(request, "import")
+
     import io as _io
     import base64 as _b64
     try:
@@ -661,6 +668,9 @@ async def tovar_import_excel(
     rows = list(ws.iter_rows(min_row=2, values_only=True))
     if not rows:
         raise HTTPException(400, "Tovarlar topilmadi")
+    # DoS himoyasi — maksimum 1000 ta tovar bir import'da
+    if len(rows) > 1000:
+        raise HTTPException(413, "Import max 1000 ta tovar — katta faylni bo'ling")
 
     # Shablon ustun tartibi (GET /tovar/shablon/excel bilan mos)
     fields = [
