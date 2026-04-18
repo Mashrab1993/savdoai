@@ -20,18 +20,30 @@ function MobileBottomNav() {
     { href: "/debts",     icon: CreditCard,       label: "Qarz" },
   ]
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-30 md:hidden bg-card/70 backdrop-blur-xl border-t border-border/60">
-      <div className="flex items-center justify-around h-14">
-        {items.map(item => {
+    <nav
+      className="fixed bottom-0 left-0 right-0 z-30 md:hidden bg-card/95 backdrop-blur-md border-t border-border/70"
+      style={{ paddingBottom: "max(0px, env(safe-area-inset-bottom))" }}
+    >
+      <div className="flex items-stretch justify-around h-16">
+        {items.map((item) => {
           const active = pathname === item.href || pathname.startsWith(item.href + "/")
           return (
-            <Link key={item.href} href={item.href}
+            <Link
+              key={item.href}
+              href={item.href}
               className={cn(
-                "flex flex-col items-center justify-center gap-0.5 w-full h-full text-[10px] font-medium transition-colors",
-                active ? "text-primary" : "text-muted-foreground"
-              )}>
+                "relative flex flex-col items-center justify-center gap-0.5 flex-1 text-[10px] font-medium transition-colors min-h-[44px]",
+                active ? "text-primary" : "text-muted-foreground hover:text-foreground",
+              )}
+            >
+              {active && (
+                <span
+                  aria-hidden
+                  className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 rounded-b-full bg-primary"
+                />
+              )}
               <item.icon className={cn("w-5 h-5", active && "text-primary")} />
-              {item.label}
+              <span>{item.label}</span>
             </Link>
           )
         })}
@@ -52,7 +64,7 @@ export function AdminLayout({ children, title = "SavdoAI" }: AdminLayoutProps) {
     <div className="relative flex h-screen bg-background overflow-hidden">
       <AuroraBg />
       {/* Desktop Sidebar */}
-      <div className="hidden md:block md:w-60 md:border-r md:border-border/60 md:bg-sidebar/70 md:backdrop-blur-xl">
+      <div className="hidden md:block md:border-r md:border-border/70 md:bg-sidebar">
         <Sidebar />
       </div>
 

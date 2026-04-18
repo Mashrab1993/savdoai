@@ -138,19 +138,22 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
             href={item.href}
             onClick={handleNavClick}
             className={cn(
-              "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all",
+              "group relative flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
               isActive
                 ? "bg-primary/10 text-primary"
-                : "text-muted-foreground hover:bg-muted/60",
-              collapsed && "justify-center px-2"
+                : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
+              collapsed && "justify-center px-2",
             )}
             title={collapsed ? item.label : undefined}
           >
-            <item.icon className={cn("h-4.5 w-4.5 flex-shrink-0", isActive ? "text-primary" : "")} />
-            {!collapsed && <span className="truncate">{item.label}</span>}
-            {isActive && !collapsed && (
-              <div className="ml-auto w-1.5 h-1.5 rounded-full bg-emerald-500" />
+            {isActive && (
+              <span
+                aria-hidden
+                className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 rounded-r-full bg-primary"
+              />
             )}
+            <item.icon className={cn("h-4 w-4 flex-shrink-0", isActive ? "text-primary" : "")} />
+            {!collapsed && <span className="truncate">{item.label}</span>}
           </Link>
         )
       })}
@@ -158,30 +161,62 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   )
 
   return (
-    <aside className={cn(
-      "flex flex-col h-full bg-sidebar border-r border-border transition-all duration-200",
-      collapsed ? "w-16" : "w-56"
-    )}>
+    <aside
+      className={cn(
+        "flex flex-col h-full bg-sidebar border-r border-border/70 transition-[width] duration-200",
+        collapsed ? "w-16" : "w-60",
+      )}
+    >
       {/* Logo */}
-      <div className="flex items-center justify-between px-3 py-4 border-b border-border/60">
+      <div className="flex items-center justify-between px-3 py-4 border-b border-border/70 h-14">
         {!collapsed && (
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
-              <span className="text-white text-sm font-bold">S</span>
+          <div className="flex items-center gap-2.5">
+            <div
+              className="w-9 h-9 rounded-xl flex items-center justify-center shadow-md"
+              style={{
+                background: "linear-gradient(135deg, oklch(0.64 0.17 237), oklch(0.72 0.17 156))",
+              }}
+            >
+              <span className="text-white text-sm font-bold tracking-tight">S</span>
             </div>
-            <div>
-              <div className="text-sm font-bold text-foreground">SavdoAI</div>
-              <div className="text-[10px] text-muted-foreground">v25.6.0 Premium</div>
+            <div className="min-w-0">
+              <div className="text-sm font-bold text-foreground tracking-tight">SavdoAI</div>
+              <div className="text-[10px] text-muted-foreground font-medium tracking-wider uppercase">
+                v25.7 AI
+              </div>
             </div>
+          </div>
+        )}
+        {collapsed && (
+          <div
+            className="w-9 h-9 rounded-xl flex items-center justify-center shadow-md mx-auto"
+            style={{
+              background: "linear-gradient(135deg, oklch(0.64 0.17 237), oklch(0.72 0.17 156))",
+            }}
+          >
+            <span className="text-white text-sm font-bold tracking-tight">S</span>
           </div>
         )}
         <button
           onClick={() => setCollapsed(!collapsed)}
-          className="p-1 rounded-md hover:bg-muted text-muted-foreground"
+          className={cn(
+            "p-1 rounded-md hover:bg-muted text-muted-foreground transition-colors",
+            collapsed && "hidden",
+          )}
+          aria-label="toggle sidebar"
         >
-          {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+          <ChevronLeft className="h-4 w-4" />
         </button>
       </div>
+      {collapsed && (
+        <button
+          onClick={() => setCollapsed(false)}
+          className="mx-auto my-1.5 p-1 rounded-md hover:bg-muted text-muted-foreground transition-colors"
+          aria-label="expand sidebar"
+        >
+          <ChevronRight className="h-4 w-4" />
+        </button>
+      )}
 
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto py-2 px-2 space-y-0.5">
