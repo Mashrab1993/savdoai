@@ -290,7 +290,7 @@ async def biznes_koeffitsientlar(conn, uid: int, kunlar: int = 30) -> dict:
         WHERE user_id = $1 AND NOT yopildi
     """, uid) or 0)
 
-    klient_soni = await conn.fetchval(f"""
+    klient_soni = await conn.fetchval("""
         SELECT COUNT(DISTINCT klient_id) FROM sotuv_sessiyalar
         WHERE user_id = $1
           AND sana >= NOW() - make_interval(days => $2)

@@ -14,7 +14,6 @@
 from __future__ import annotations
 
 import logging
-from datetime import date, datetime, timedelta
 from decimal import Decimal, InvalidOperation
 
 from telegram import Update
@@ -47,7 +46,7 @@ async def cmd_hayotim(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     lines = [
         f"🌟 *HAYOTIM — {d['sana']}*",
         "",
-        f"💰 *Bu oy*",
+        "💰 *Bu oy*",
         f"  • Biznes daromad: *{d['biznes_daromad_oy']:,.0f}* so'm",
         f"  • Shaxsiy xarajat: *{d['xarajat_oy']:,.0f}* so'm",
         f"  • Sof qolgan: *{d['sof_oy']:,.0f}* so'm",
@@ -291,7 +290,7 @@ async def cmd_xarajat_stat(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         return
 
     lines = [
-        f"💸 *30 kunlik shaxsiy xarajat*",
+        "💸 *30 kunlik shaxsiy xarajat*",
         "",
         f"  Jami: *{s['jami']:,.0f}* so'm",
         f"  Kunlik ortacha: *{s['ortacha_kunlik']:,.0f}* so'm",

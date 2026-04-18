@@ -6,12 +6,11 @@
 """
 from __future__ import annotations
 import logging
-from typing import Optional
 
 from fastapi import APIRouter, HTTPException, Depends
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
-from shared.database.pool import rls_conn, get_pool
+from shared.database.pool import rls_conn
 from shared.utils import like_escape
 from services.api.deps import get_uid
 

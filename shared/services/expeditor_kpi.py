@@ -16,8 +16,6 @@ from __future__ import annotations
 
 import logging
 from datetime import date, datetime, timedelta
-from decimal import Decimal
-from typing import Optional
 
 log = logging.getLogger(__name__)
 
@@ -36,7 +34,7 @@ async def shogird_kpi(conn, admin_uid: int, shogird_id: int,
         return {}
 
     chegara_dt = datetime.now() - timedelta(days=kun)
-    chegara_date = date.today() - timedelta(days=kun)
+    date.today() - timedelta(days=kun)
     bugun = date.today()
     oy_boshi = bugun.replace(day=1)
 

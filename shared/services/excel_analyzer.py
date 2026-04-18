@@ -15,9 +15,9 @@
 ╚══════════════════════════════════════════════════════════════╝
 """
 from __future__ import annotations
-import io, re, logging
+import io
+import logging
 from collections import defaultdict
-from typing import Optional
 
 log = logging.getLogger("savdoai.excel_analyzer")
 

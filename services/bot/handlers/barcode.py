@@ -17,7 +17,7 @@ from telegram.constants import ParseMode
 from telegram.ext import ContextTypes
 
 import services.bot.db as db
-from services.bot.bot_helpers import faol_tekshir, cfg
+from services.bot.bot_helpers import faol_tekshir
 from shared.utils.fmt import pul
 
 log = logging.getLogger("savdoai.bot.barcode")
@@ -124,7 +124,6 @@ async def barcode_cb(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     except (ValueError, IndexError):
         return
 
-    uid = q.from_user.id
 
     if action == "sell":
         ctx.user_data["barcode_sell"] = tovar_id

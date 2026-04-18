@@ -29,9 +29,7 @@
 """
 from __future__ import annotations
 import logging
-import math
 from decimal import Decimal
-from typing import List, Optional
 from collections import defaultdict
 
 log = logging.getLogger(__name__)

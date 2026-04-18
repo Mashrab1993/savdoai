@@ -8,11 +8,11 @@ Pipeline:
 3. Natijalar birlashtiriladi
 """
 from __future__ import annotations
-import asyncio, logging, os, tempfile
+import asyncio
+import logging
+import os
 import time
 from pathlib import Path
-from typing import Optional
-from collections.abc import Callable
 from tenacity import (
     retry, stop_after_attempt,
     wait_exponential, retry_if_exception,
@@ -108,7 +108,6 @@ _PROMPT_USER = (
 
 async def _build_stt_extra_for_user(uid: int) -> str:
     """RLS kontekstida shu foydalanuvchining BARCHA tovar/klientlari (STT uchun qo'shimcha blok)."""
-    from shared.database.pool import get_pool
 
     products = []
     clients = []
@@ -227,7 +226,6 @@ def _is_retryable(exc: Exception) -> bool:
     reraise=True,
 )
 def _gemini_sync(audio_bytes: bytes, mime: str, system_instruction: str) -> str:
-    from google import genai
     from google.genai import types
     try:
         response = _client.models.generate_content(

@@ -15,9 +15,8 @@ from __future__ import annotations
 
 import logging
 import json
-from datetime import date, datetime, timedelta
+from datetime import date, timedelta
 from decimal import Decimal
-from typing import Optional
 
 log = logging.getLogger(__name__)
 

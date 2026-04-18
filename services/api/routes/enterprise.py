@@ -3,10 +3,10 @@ SAVDOAI v25.4.0 — ENTERPRISE API (Task, Foto, Uskuna, Filial, Kassa)
 SD Agent + Smartup'dan OLDINDA bo'lish uchun.
 """
 from __future__ import annotations
-import os, sys, logging
-from typing import Optional, List
-from datetime import date
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
+import os
+import sys
+import logging
+from fastapi import APIRouter, Depends, Form
 from pydantic import BaseModel
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))))

@@ -9,11 +9,9 @@ from __future__ import annotations
 
 import time
 import logging
-from typing import Optional
 
 from thefuzz import fuzz, process
 
-from shared.database.pool import rls_conn
 
 logger = logging.getLogger(__name__)
 

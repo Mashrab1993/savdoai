@@ -7,7 +7,6 @@ import logging
 import time as _time
 
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.constants import ParseMode
 from telegram.error import BadRequest
 
 import services.bot.db as db

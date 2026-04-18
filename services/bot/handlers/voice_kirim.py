@@ -157,7 +157,7 @@ async def handle_voice_kirim(update: Update, context: ContextTypes.DEFAULT_TYPE)
 
         if not matched:
             await msg.reply_text(
-                f"⚠️ Birorta ham tovar topilmadi:\n"
+                "⚠️ Birorta ham tovar topilmadi:\n"
                 + "\n".join(f"  • {n}" for n in not_found)
                 + "\n\n💡 Tovar nomini DB'dagi kabi ayting."
             )
@@ -293,7 +293,7 @@ async def handle_voice_kirim_callback(update: Update, context: ContextTypes.DEFA
                     f"📦 {result['tovarlar_soni']} ta tovar\n"
                     f"💰 {_fmt(float(result['jami_summa']))}\n\n"
                     + "\n".join(details) + "\n\n"
-                    f"🔄 Qoldiq va narxlar yangilandi!",
+                    "🔄 Qoldiq va narxlar yangilandi!",
                     parse_mode="Markdown",
                 )
             else:

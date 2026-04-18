@@ -21,8 +21,7 @@ from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes
 
 from services.bot import db
-from shared.services.voice_order_parser import parse_xarajat_text, _to_decimal
-from shared.services import ovoz_arxiv
+from shared.services.voice_order_parser import parse_xarajat_text
 
 log = logging.getLogger(__name__)
 

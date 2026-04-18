@@ -14,7 +14,6 @@
 from __future__ import annotations
 import logging
 from decimal import Decimal
-from typing import Optional
 
 log = logging.getLogger(__name__)
 

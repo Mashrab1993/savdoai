@@ -3,8 +3,9 @@ SAVDOAI v25.4.0 — ADVANCED ANALYTICS + WEBHOOK API
 Dunyo TOP-10 darajasidagi analitika endpointlari.
 """
 from __future__ import annotations
-import os, sys, logging
-from typing import Optional, List
+import os
+import sys
+import logging
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 

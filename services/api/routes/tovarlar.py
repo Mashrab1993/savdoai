@@ -8,12 +8,11 @@ from __future__ import annotations
 import io
 import base64
 import logging
-from typing import Optional, List
 
 from fastapi import APIRouter, HTTPException, Depends, Request
 from pydantic import BaseModel, Field
 
-from shared.database.pool import rls_conn, get_pool
+from shared.database.pool import rls_conn
 from shared.utils import like_escape
 from services.api.deps import get_uid, endpoint_rate_check
 
@@ -434,10 +433,10 @@ async def tovar_shablon_excel(uid: int = Depends(get_uid)):
 
     28 ta ustun: SalesDoc-compatible hamma maydonlar.
     """
-    import io as _io, base64 as _b64
+    import io as _io
+    import base64 as _b64
     from openpyxl import Workbook
     from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
-    from openpyxl.worksheet.datavalidation import DataValidation
 
     wb = Workbook()
     ws = wb.active
@@ -478,7 +477,7 @@ async def tovar_shablon_excel(uid: int = Depends(get_uid)):
     ]
 
     header_fill     = PatternFill(start_color="0A819C", end_color="0A819C", fill_type="solid")
-    header_font     = Font(bold=True, color="FFFFFF", size=11)
+    Font(bold=True, color="FFFFFF", size=11)
     required_fill   = PatternFill(start_color="FFECB3", end_color="FFECB3", fill_type="solid")
     thin = Side(style="thin", color="888888")
     border = Border(left=thin, right=thin, top=thin, bottom=thin)
@@ -635,7 +634,8 @@ async def tovar_import_excel(
     27 ustunli xlsx faylni qabul qiladi. Birinchi 1-qator sarlavha,
     2-qator namuna (o'chiriladi), 3-qatordan boshlab real tovarlar.
     """
-    import io as _io, base64 as _b64
+    import io as _io
+    import base64 as _b64
     try:
         from openpyxl import load_workbook
     except ImportError:

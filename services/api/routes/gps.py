@@ -3,11 +3,11 @@ SAVDOAI v25.4.0 — GPS TRACKING API
 Android GpsTrackingService dan kelgan lokatsiya ma'lumotlarini qabul qilish.
 """
 from __future__ import annotations
-import os, sys, logging
-from typing import List, Optional
-from datetime import datetime
+import os
+import sys
+import logging
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))))

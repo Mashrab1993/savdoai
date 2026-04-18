@@ -30,10 +30,8 @@ from __future__ import annotations
 
 import json
 import logging
-import os
-from datetime import date, datetime, timedelta
-from decimal import Decimal
-from typing import Any, Optional
+from datetime import date, timedelta
+from typing import Any
 
 log = logging.getLogger(__name__)
 
@@ -291,7 +289,7 @@ def _fallback_text(raw: dict) -> str:
         lines.append(f"  • 🏪 Tashriflar: {sc.get('soni')} ta ({sc.get('noyob_klient', 0)} noyob klient)")
     lines.extend([
         "",
-        f"💰 *QARZ HOLATI:*",
+        "💰 *QARZ HOLATI:*",
         f"  • Jami qarz: {q.get('jami', 0):,.0f} so'm",
         f"  • Aktiv: {q.get('aktiv_soni', 0)} ta (kechikkan: {q.get('kechikkan_soni', 0)} ta)",
         "",

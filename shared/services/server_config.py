@@ -19,7 +19,7 @@ import json
 import logging
 from dataclasses import dataclass, field, asdict
 from decimal import Decimal
-from typing import Optional, List, Any
+from typing import Any
 from datetime import datetime
 
 log = logging.getLogger(__name__)

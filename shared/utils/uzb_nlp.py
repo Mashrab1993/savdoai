@@ -24,8 +24,8 @@
 """
 from __future__ import annotations
 import re
-from decimal import Decimal, ROUND_HALF_UP, InvalidOperation, getcontext
-from typing import Any, Optional
+from decimal import Decimal, ROUND_HALF_UP, getcontext
+from typing import Any
 
 # ── Matematik aniqlik ─────────────────────────────────────────────
 getcontext().prec    = 28

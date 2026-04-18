@@ -8,7 +8,6 @@ import re
 import time
 
 from .fuzzy_matcher import fuzzy_matcher
-from .text_fixer import fix_stt_text  # passthrough, import buzilmasin
 
 logger = logging.getLogger(__name__)
 

@@ -20,18 +20,16 @@ from decimal import Decimal
 
 from telegram import (
     Update, InputFile,
-    InlineKeyboardButton, InlineKeyboardMarkup,
 )
 from telegram.constants import ParseMode
 from telegram.ext import ContextTypes
-from telegram.helpers import escape_markdown
 
 import services.bot.db as db
 import services.bot.bot_services.analyst as ai_xizmat
 import services.bot.bot_services.export_pdf as pdf_xizmat
 import services.bot.bot_services.nakladnoy as nakl_xizmat
 from services.bot.bot_helpers import (
-    _user_ol_kesh, _kesh_tozala, xat, tg, _truncate, cfg,
+    _user_ol_kesh, xat, tg,
 )
 from shared.utils.fmt import (
     pul, chek_md, kunlik_matn,
@@ -112,7 +110,6 @@ async def _qayta_ishlash(update:Update, ctx:ContextTypes.DEFAULT_TYPE,
                 kunlik, haftalik, oylik, qarz_hisobot,
                 hisobot_matn, qarz_hisobot_matn, hisobot_turini_aniqla
             )
-            from shared.database.pool import get_pool
             tur = hisobot_turini_aniqla(matn)
             async with db._P().acquire() as hc:
                 if tur == "qarz":
@@ -160,7 +157,7 @@ async def _qayta_ishlash(update:Update, ctx:ContextTypes.DEFAULT_TYPE,
             return
 
     # ═══ PIPELINE: AI → SMART NARX → DRAFT → CONFIDENCE → CONFIRM ═══
-    from shared.services.pipeline import create_draft, TxType, TxStatus
+    from shared.services.pipeline import create_draft, TxType
     tx_map = {"kirim": TxType.KIRIM, "chiqim": TxType.SOTUV, "sotuv": TxType.SOTUV,
               "qaytarish": TxType.QAYTARISH, "qarz_tolash": TxType.QARZ_TOLASH}
     tx_type = tx_map.get(amal, TxType.SOTUV)
@@ -262,7 +259,6 @@ async def _qayta_ishlash(update:Update, ctx:ContextTypes.DEFAULT_TYPE,
     if natija.get("amal") in ("chiqim", "sotuv") and natija.get("tovarlar"):
         try:
             from shared.services.advanced_features import zarar_tekshir, zarar_ogohlantirish_matn
-            from shared.database.pool import get_pool
             async with db._P().acquire() as _zc:
                 _zararlar = await zarar_tekshir(_zc, uid, natija["tovarlar"])
                 if _zararlar:
@@ -514,7 +510,7 @@ async def tasdiq_cb(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
             async with db._P().acquire() as c:
                 savatlar_r = await ochiq_savatlar(c, uid)
             await xat(q, ochiq_savatlar_matn(savatlar_r))
-        except Exception as e:
+        except Exception:
             await xat(q, "🛒 Ochiq savat yo'q")
         return
 
@@ -1010,7 +1006,7 @@ async def _savat_qosh_va_javob(update: Update, uid: int, natija: dict, tahrirlas
             )
             markup = tg(
                 [(f"📋 {klient} nakladnoy", f"t:savat_yop:{klient}")],
-                [(f"🛒 Savatlar", "t:savatlar")],
+                [("🛒 Savatlar", "t:savatlar")],
             )
             if tahrirlash:
                 await tahrirlash.edit_text(matn, reply_markup=markup)

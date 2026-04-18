@@ -215,7 +215,7 @@ def kirim_validatsiya(item: dict) -> tuple[bool, str]:
     narx   = D(item.get("narx",0))
     if not nomi:                      return False, "Tovar nomi bo'sh"
     if miqdor <= ZERO:                return False, f"Miqdor musbat bo'lsin ({miqdor})"
-    if narx < ZERO:                   return False, f"Narx manfiy bo'lmaydi"
+    if narx < ZERO:                   return False, "Narx manfiy bo'lmaydi"
     if miqdor > D("100000"):          return False, f"Miqdor juda katta: {pul_r(miqdor)}"
     if narx > D("100000000"):         return False, f"Narx juda katta: {pul_r(narx)}"
     return True, ""

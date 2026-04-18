@@ -22,11 +22,9 @@
 """
 from __future__ import annotations
 from shared.utils import like_escape
-import asyncio
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime
 from decimal import Decimal
-from typing import Optional
 
 import pytz
 
@@ -192,7 +190,7 @@ def tovar_ekspert_matn(d: dict) -> str:
     kunlar = d["kunlar_qoldi"]
 
     if kunlar <= 3:
-        t += f"🔴 *SHOSHILINCH BUYURTMA KERAK!*\n"
+        t += "🔴 *SHOSHILINCH BUYURTMA KERAK!*\n"
         t += f"   Qoldiq: {qoldiq} {d['birlik']} — faqat {kunlar} kunga yetadi!\n"
         if kunlik > 0:
             t += f"   Kuniga {kunlik:.0f} {d['birlik']} sotiladi\n"
@@ -200,7 +198,7 @@ def tovar_ekspert_matn(d: dict) -> str:
             t += f"   💡 Tavsiya: {tavsiya_miqdor} {d['birlik']} buyurtma bering\n"
     elif kunlar <= 7:
         t += f"🟡 Qoldiq: {qoldiq} {d['birlik']} — {kunlar} kunga yetadi\n"
-        t += f"   Buyurtma berishni rejalashtiring\n"
+        t += "   Buyurtma berishni rejalashtiring\n"
     else:
         t += f"🟢 Qoldiq: {qoldiq} {d['birlik']} — {kunlar} kunga yetadi ✅\n"
 
@@ -221,11 +219,11 @@ def tovar_ekspert_matn(d: dict) -> str:
         else:
             t += f"   🟢 Markup: {d['markup']}% — yaxshi foyda\n"
     elif d["olish_narxi"] > 0 and d["ort_narx"] > 0 and d["ort_narx"] <= d["olish_narxi"]:
-        t += f"   🔴 *ZARAR!* Sotish narxi olish narxidan past!\n"
+        t += "   🔴 *ZARAR!* Sotish narxi olish narxidan past!\n"
 
     # SOTUV DINAMIKASI
     if d["sotuv_soni"] > 0:
-        t += f"\n📊 *SHU OY SOTUV:*\n"
+        t += "\n📊 *SHU OY SOTUV:*\n"
         t += f"   {d['sotuv_soni']} ta sotuv, {d['jami_miqdor']:.0f} {d['birlik']}\n"
         t += f"   Jami: {_pul(d['jami_summa'])}\n"
         if d["jami_foyda"] > 0:
@@ -237,7 +235,7 @@ def tovar_ekspert_matn(d: dict) -> str:
 
     # TOP KLIENTLAR
     if d.get("top_klientlar"):
-        t += f"\n👥 *ENG KO'P SOTIB OLGANLAR:*\n"
+        t += "\n👥 *ENG KO'P SOTIB OLGANLAR:*\n"
         for i, kl in enumerate(d["top_klientlar"][:3], 1):
             t += f"   {i}. {kl['ism']} — {kl['miqdor']:.0f} {d['birlik']} ({_pul(kl['jami'])})\n"
 
@@ -405,7 +403,7 @@ def klient_ekspert_matn(d: dict) -> str:
 
     # QARZ HOLATI
     if d["aktiv_qarz"] > 0:
-        t += f"\n💳 *QARZ HOLATI:*\n"
+        t += "\n💳 *QARZ HOLATI:*\n"
         t += f"   Aktiv qarz: {_pul(d['aktiv_qarz'])}\n"
         if d["muddati_otgan"] > 0:
             t += f"   🔴 {d['muddati_otgan']} ta qarz muddati o'tgan!\n"
@@ -413,17 +411,17 @@ def klient_ekspert_matn(d: dict) -> str:
             foiz = round(d["aktiv_qarz"] / d["kredit_limit"] * 100, 1)
             t += f"   Kredit limit: {_pul(d['kredit_limit'])} ({foiz}% ishlatilgan)\n"
     else:
-        t += f"\n✅ Qarz yo'q — a'lo klient!\n"
+        t += "\n✅ Qarz yo'q — a'lo klient!\n"
 
     # TOP TOVARLAR
     if d.get("top_tovar"):
-        t += f"\n📦 *ENG KO'P OLGAN TOVARLAR:*\n"
+        t += "\n📦 *ENG KO'P OLGAN TOVARLAR:*\n"
         for i, tv in enumerate(d["top_tovar"][:5], 1):
             t += f"   {i}. {tv['nomi']} — {tv['miqdor']:.0f} dona ({_pul(tv['jami'])})\n"
 
     # OYLIK TREND
     if d.get("oylik_trend") and len(d["oylik_trend"]) > 1:
-        t += f"\n📈 *OYLIK TREND:*\n"
+        t += "\n📈 *OYLIK TREND:*\n"
         for oy in d["oylik_trend"]:
             t += f"   {oy['oy']}: {_pul(oy['jami'])}\n"
 
@@ -472,7 +470,6 @@ def ekspert_sorov_bormi(matn: str) -> bool:
 
 def ekspert_nom_ajrat(matn: str) -> str | None:
     """Matndan tovar yoki klient nomini ajratish."""
-    import re
     for s in TAHLIL_SOZLAR:
         if s in matn.lower():
             idx = matn.lower().index(s)

@@ -6,7 +6,8 @@
 ╚══════════════════════════════════════════════════════════════════╝
 """
 from __future__ import annotations
-import io, logging
+import io
+import logging
 from collections import defaultdict
 log = logging.getLogger(__name__)
 
@@ -152,7 +153,7 @@ def nakladnoy_xulosa_matn(data: dict, fayl_nomi: str = "") -> str:
     if "xato" in data: return f"❌ {data['xato']}"
     if data["jami_soni"] == 0: return "📋 Nakladnoy topilmadi."
 
-    m = f"📋 *NAKLADNOY TAHLILI*\n━━━━━━━━━━━━━━━━━━━━━\n"
+    m = "📋 *NAKLADNOY TAHLILI*\n━━━━━━━━━━━━━━━━━━━━━\n"
     if fayl_nomi: m += f"📁 {fayl_nomi[:40]}\n"
     if data["sana"]: m += f"📅 {data['sana']}\n"
     if data["firma"]: m += f"🏢 {data['firma'][:40]}\n"

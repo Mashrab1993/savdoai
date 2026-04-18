@@ -13,9 +13,7 @@
 from __future__ import annotations
 import io
 import logging
-import re
 from decimal import Decimal
-from typing import Any, Optional
 
 log = logging.getLogger(__name__)
 
@@ -268,7 +266,7 @@ def excel_preview_text(data: dict) -> str:
 
     xatolar = data.get("xatolar", [])
     if xatolar:
-        lines.append(f"\n⚠️ *Xatolar:*")
+        lines.append("\n⚠️ *Xatolar:*")
         for x in xatolar[:5]:
             lines.append(f"  ❌ {x}")
 

@@ -11,7 +11,6 @@ from __future__ import annotations
 import io
 import logging
 import datetime
-from typing import Optional
 
 log = logging.getLogger("savdoai.auto_report")
 
@@ -121,9 +120,9 @@ def kunlik_pdf(data: dict, qarzlar: list, kam_qoldiq: list,
     ts = ParagraphStyle('T', fontName=_FONT_B, fontSize=14, leading=18, textColor=BLUE, spaceAfter=6)
     hs = ParagraphStyle('H', fontName=_FONT_B, fontSize=11, leading=15, textColor=BLUE, spaceBefore=14, spaceAfter=6)
     bs = ParagraphStyle('B', fontName=_FONT, fontSize=10, leading=13, textColor=DARK, spaceAfter=4)
-    bbs = ParagraphStyle('BB', fontName=_FONT_B, fontSize=10, leading=13, textColor=DARK, spaceAfter=4)
-    gs = ParagraphStyle('G', fontName=_FONT, fontSize=9, textColor=GREEN)
-    rs = ParagraphStyle('R', fontName=_FONT, fontSize=9, textColor=RED)
+    ParagraphStyle('BB', fontName=_FONT_B, fontSize=10, leading=13, textColor=DARK, spaceAfter=4)
+    ParagraphStyle('G', fontName=_FONT, fontSize=9, textColor=GREEN)
+    ParagraphStyle('R', fontName=_FONT, fontSize=9, textColor=RED)
 
     story = []
 

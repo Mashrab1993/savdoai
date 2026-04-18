@@ -71,7 +71,7 @@ async def cmd_kpi_reyting(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
             parse_mode=ParseMode.MARKDOWN,
         )
         return
-    lines = [f"🏆 *SHOGIRDLAR KPI REYTING* (oxirgi 30 kun)", ""]
+    lines = ["🏆 *SHOGIRDLAR KPI REYTING* (oxirgi 30 kun)", ""]
     for i, k in enumerate(ns, 1):
         emoji_place = "🥇" if i == 1 else ("🥈" if i == 2 else ("🥉" if i == 3 else f"{i}."))
         lines.append(

@@ -2,10 +2,10 @@
 SAVDOAI v25.4.0 — MOLIYA + LIVE FEED + KUNLIK REJA API
 """
 from __future__ import annotations
-import os, sys, logging
-from typing import Optional
+import os
+import sys
+import logging
 from fastapi import APIRouter, Depends
-from pydantic import BaseModel
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))))
 from services.api.deps import get_uid

@@ -9,7 +9,8 @@
 ╚══════════════════════════════════════════════════════════════════════╝
 """
 from __future__ import annotations
-import io, logging
+import io
+import logging
 from datetime import datetime
 from decimal import Decimal
 from typing import Any
@@ -39,7 +40,7 @@ def nakladnoy_nomeri() -> str:
 
 def yaratish_word(data: dict) -> bytes:
     from docx import Document
-    from docx.shared import Pt, Cm, RGBColor, Inches
+    from docx.shared import Pt, Cm, RGBColor
     from docx.enum.text import WD_ALIGN_PARAGRAPH
     from docx.oxml.ns import qn
     from docx.oxml import OxmlElement
@@ -54,7 +55,7 @@ def yaratish_word(data: dict) -> bytes:
     section.bottom_margin = Cm(1.5)
 
     KOK = RGBColor(0x1a, 0x56, 0xdb)
-    QORA = RGBColor(0x00, 0x00, 0x00)
+    RGBColor(0x00, 0x00, 0x00)
     KULRANG = RGBColor(0x6b, 0x72, 0x80)
     QIZIL = RGBColor(0xDC, 0x26, 0x26)
 
@@ -241,9 +242,9 @@ def yaratish_word(data: dict) -> bytes:
     imzo_tbl.style = "Table Grid"
 
     imzo_data = [
-        (f"TOPSHIRDI: ________________", f"QABUL QILDI: ________________"),
-        (f"F.I.O: ________________", f"F.I.O: ________________"),
-        (f"Imzo: ________________", f"Imzo: ________________"),
+        ("TOPSHIRDI: ________________", "QABUL QILDI: ________________"),
+        ("F.I.O: ________________", "F.I.O: ________________"),
+        ("Imzo: ________________", "Imzo: ________________"),
         (f"Sana: {sana}", f"Sana: {sana}"),
     ]
     for ri, (left, right) in enumerate(imzo_data):

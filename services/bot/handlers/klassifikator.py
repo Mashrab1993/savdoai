@@ -12,7 +12,6 @@ from __future__ import annotations
 
 import logging
 import re
-from typing import Optional
 
 from telegram import Update
 from telegram.ext import ContextTypes
@@ -118,7 +117,7 @@ async def voice_klassifikator(update: Update, ctx: ContextTypes.DEFAULT_TYPE,
         text += f"📝 Nomi: <b>{row['nomi']}</b>\n"
         if davlat:
             text += f"🌍 Davlat: {davlat}\n"
-        text += f"\n<i>Web: /categories sahifasida ko'rish mumkin.</i>"
+        text += "\n<i>Web: /categories sahifasida ko'rish mumkin.</i>"
         await update.message.reply_text(text, parse_mode="HTML")
         log.info("Voice klassifikator qo'shildi: uid=%s turi=%s nomi=%s", uid, turi, nomi)
         return True

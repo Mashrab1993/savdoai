@@ -14,7 +14,6 @@ from __future__ import annotations
 from shared.utils import like_escape
 import re
 import logging
-from typing import Optional
 
 log = logging.getLogger(__name__)
 

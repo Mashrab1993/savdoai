@@ -8,8 +8,11 @@
 ╚══════════════════════════════════════════════════════════════════════════╝
 """
 from __future__ import annotations
-import io, json, logging, re, datetime
-from typing import Optional
+import io
+import json
+import logging
+import re
+import datetime
 from collections import defaultdict
 log = logging.getLogger(__name__)
 
@@ -112,7 +115,6 @@ def excel_toliq_oqi(data: bytes) -> dict:
 
             # JAMI qatorini o'qish
             kun_data = {"sheet": sn, "tovar": 0, "dolg": 0, "oplata": 0, "vozvrat": 0, "sales": 0, "rasxod": 0, "fakt": 0}
-            jami_row_idx = 0
             if jami_row:
                 vals = []
                 for c in jami_row:
@@ -273,7 +275,7 @@ def _pul(v):
 
 def excel_xulosa_matn(r: dict, fayl_nomi: str) -> str:
     """AUDITOR darajasidagi xulosa — Telegram uchun."""
-    t = f"📊 *MASHRAB MOLIYA*\n"
+    t = "📊 *MASHRAB MOLIYA*\n"
     t += f"📂 {fayl_nomi}\n"
     t += "━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
 
@@ -473,7 +475,8 @@ def savol_javob(r: dict, savol: str) -> str:
 
 async def excel_ai_savol(r: dict, savol: str, gemini_key: str = "") -> str:
     """Avval o'zimiz javob, topilmasa AI."""
-    import asyncio, os
+    import asyncio
+    import os
 
     # 1. O'zimiz javob — ANIQ, XATOSIZ
     javob = savol_javob(r, savol)
@@ -548,9 +551,9 @@ def excel_pdf_hisobot(r: dict, fayl_nomi: str) -> bytes:
     from reportlab.lib.pagesizes import A4
     from reportlab.lib import colors
     from reportlab.lib.units import mm
-    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, PageBreak
+    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
     from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-    from reportlab.lib.enums import TA_CENTER, TA_RIGHT, TA_LEFT
+    from reportlab.lib.enums import TA_CENTER, TA_RIGHT
 
     buf = io.BytesIO()
     doc = SimpleDocTemplate(buf, pagesize=A4,

@@ -23,16 +23,13 @@
 from __future__ import annotations
 
 import asyncio
-import base64
-import io
 import json
 import logging
 import os
-import re
 import time
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Optional, Union
+from typing import Any
 
 log = logging.getLogger(__name__)
 
@@ -156,7 +153,6 @@ class _GeminiClient:
 
     def _call_sync(self, content_parts: list) -> str:
         """Sinxron Gemini chaqiruv (thread pool da ishlatiladi)"""
-        from google.genai import types
         response = self._client.models.generate_content(
             model=self._model,
             contents=content_parts,

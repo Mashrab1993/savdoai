@@ -27,10 +27,8 @@ import os
 import shutil
 import subprocess
 import tempfile
-import time
 from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
-from typing import Optional
 
 log = logging.getLogger(__name__)
 
@@ -278,7 +276,7 @@ async def process_audio(input_path: str,
         log.info("✅ Audio pipeline: %d chunk tayyor", len(chunks))
         return chunks, temp_dir
     
-    except Exception as e:
+    except Exception:
         # Xato bo'lsa — tozalash
         cleanup_temp(temp_dir)
         raise

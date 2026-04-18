@@ -17,7 +17,6 @@ import logging
 import time
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Optional
 
 from shared.services.thermal_receipt import format_thermal_receipt
 

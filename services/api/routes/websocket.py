@@ -11,7 +11,6 @@ from __future__ import annotations
 import json
 import logging
 import time
-from typing import Optional
 
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
@@ -81,7 +80,8 @@ def get_manager() -> ConnectionManager:
 
 def _jwt_tekshir(token: str, secret: str) -> int | None:
     """JWT dan user_id ajratish"""
-    import base64, hashlib, hmac
+    import base64
+    import hmac
     try:
         parts = token.split(".")
         if len(parts) != 3: return None

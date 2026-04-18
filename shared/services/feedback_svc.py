@@ -13,9 +13,7 @@
 from __future__ import annotations
 
 import logging
-import re
-from datetime import date, datetime, timedelta
-from typing import Optional
+from datetime import datetime, timedelta
 
 log = logging.getLogger(__name__)
 

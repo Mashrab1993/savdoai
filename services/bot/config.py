@@ -4,7 +4,9 @@
 ╚══════════════════════════════════════════════════════════╝
 """
 from __future__ import annotations
-import os, sys, logging
+import os
+import sys
+import logging
 from dataclasses import dataclass, field
 from dotenv import load_dotenv
 

@@ -11,7 +11,6 @@
 from __future__ import annotations
 import logging
 from decimal import Decimal
-from typing import Optional
 
 from shared.utils import like_escape
 

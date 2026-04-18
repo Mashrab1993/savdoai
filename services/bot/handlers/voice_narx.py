@@ -15,7 +15,7 @@ from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes
 
 from services.bot import db
-from shared.services.voice_order_parser import parse_narx_text, fuzzy_match_tovar, _to_decimal
+from shared.services.voice_order_parser import parse_narx_text, fuzzy_match_tovar
 
 log = logging.getLogger(__name__)
 

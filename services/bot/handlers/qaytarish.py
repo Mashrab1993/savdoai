@@ -18,7 +18,7 @@ import logging
 import re
 from decimal import Decimal, InvalidOperation
 
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram import Update
 from telegram.constants import ParseMode
 from telegram.ext import ContextTypes
 
@@ -121,7 +121,7 @@ async def cmd_qaytarish_stat(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     sabab_emoji = {"brak": "🔴", "muddati": "⏰", "sifatsiz": "⚠️",
                     "kelishuv": "🤝", "boshqa": "📦"}
     lines = [
-        f"📊 *Qaytarish statistika — 30 kun*",
+        "📊 *Qaytarish statistika — 30 kun*",
         "",
         f"🔄 Jami: *{s['jami']}* ta",
         f"  ✅ Tasdiqlandi: {s['tasdiqlangan']}",

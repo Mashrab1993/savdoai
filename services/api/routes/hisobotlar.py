@@ -9,7 +9,6 @@ from __future__ import annotations
 import logging
 from datetime import datetime, timezone
 from decimal import Decimal
-from typing import Optional
 
 from fastapi import APIRouter, HTTPException, Depends
 
@@ -1196,7 +1195,8 @@ async def report_sales_detail_excel(
     uid: int = Depends(get_uid),
 ):
     """Sotuv detail hisobotini Excel faylga export qilish."""
-    import io, base64
+    import io
+    import base64
     from openpyxl import Workbook
     from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 

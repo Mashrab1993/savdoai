@@ -10,9 +10,7 @@ import time
 import json
 import hmac
 import base64
-import hashlib
 import logging
-from typing import Optional
 
 from fastapi import HTTPException, Depends, Request, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials

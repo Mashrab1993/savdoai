@@ -23,7 +23,6 @@
 from __future__ import annotations
 import math
 import logging
-from typing import List, Optional, Tuple
 
 log = logging.getLogger(__name__)
 

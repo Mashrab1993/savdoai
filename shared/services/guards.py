@@ -13,7 +13,6 @@ import hashlib
 import logging
 import time
 from decimal import Decimal
-from typing import Any, Optional
 
 log = logging.getLogger(__name__)
 

@@ -29,7 +29,6 @@ import logging
 import time
 import asyncio
 from datetime import datetime
-from typing import List, Optional
 from decimal import Decimal
 
 log = logging.getLogger(__name__)

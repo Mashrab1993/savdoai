@@ -5,13 +5,12 @@
 ╚══════════════════════════════════════════════════════════════╝
 """
 from __future__ import annotations
-import io
 import logging
 from decimal import Decimal
 
 import os as _os
 from telegram import (
-    Update, InputFile, InlineKeyboardButton, InlineKeyboardMarkup,
+    Update, InlineKeyboardButton, InlineKeyboardMarkup,
     InlineQueryResultArticle, InputTextMessageContent,
 )
 
@@ -20,11 +19,10 @@ from telegram.ext import ContextTypes
 
 import services.bot.db as db
 from services.bot.bot_helpers import (
-    faol_tekshir, _user_ol_kesh, xat, tg, _truncate, cfg,
-    _kesh_tozala,
+    faol_tekshir, _user_ol_kesh, tg, _truncate, cfg,
 )
 from shared.utils import like_escape
-from shared.utils.fmt import pul, SAHIFA, kunlik_matn, foyda_matn
+from shared.utils.fmt import pul, kunlik_matn, foyda_matn
 from services.bot.bot_helpers import _kesh
 
 log = logging.getLogger("mm")
@@ -134,7 +132,6 @@ async def cmd_tez(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     uid = update.effective_user.id
     try:
         from shared.services.advanced_features import tezkor_tugmalar
-        from shared.database.pool import get_pool
         async with db._P().acquire() as c:
             data = await tezkor_tugmalar(c, uid)
 
@@ -300,7 +297,8 @@ async def cmd_ombor(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
 async def cmd_status(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
     """Bot va tizim holati"""
     if not cfg().is_admin(update.effective_user.id): return
-    import platform, sys
+    import platform
+    import sys
     from datetime import datetime
     import pytz
     tz = pytz.timezone("Asia/Tashkent")
@@ -431,7 +429,7 @@ async def cmd_faktura(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
     if not await faol_tekshir(update): return
     uid = update.effective_user.id
     user = await _user_ol_kesh(uid)
-    dokon = (user.get("dokon_nomi") or "Mashrab Moliya") if user else "Mashrab Moliya"
+    (user.get("dokon_nomi") or "Mashrab Moliya") if user else "Mashrab Moliya"
 
     # Oxirgi sotuv sessiyasini topish
     try:
@@ -445,7 +443,7 @@ async def cmd_faktura(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
         if oxirgi:
             markup = tg(
                 [(f"📋 Faktura #{oxirgi['id']}", f"fkt:sess:{oxirgi['id']}")],
-                [(f"📋 Boshqa sessiya", "fkt:tanlash")],
+                [("📋 Boshqa sessiya", "fkt:tanlash")],
             )
             await update.message.reply_text(
                 "📋 *HISOB-FAKTURA*\n\n"
@@ -882,7 +880,6 @@ async def _ovoz_buyruq_bajar(update:Update, ctx:ContextTypes.DEFAULT_TYPE,
         natija = ctx.user_data.get("kutilayotgan")
         if natija:
             # tasdiq_cb simulating
-            from telegram import Update as _U
             ctx.user_data["_voice_confirm"] = True
             await update.message.reply_text("✅ Ovoz bilan tasdiqlandi! Saqlanmoqda...")
             # tasdiq flow will pick up kutilayotgan
@@ -904,7 +901,6 @@ async def _ovoz_buyruq_bajar(update:Update, ctx:ContextTypes.DEFAULT_TYPE,
                 kunlik, haftalik, oylik, qarz_hisobot,
                 hisobot_matn, qarz_hisobot_matn
             )
-            from shared.database.pool import get_pool
             async with db._P().acquire() as _rc:
                 if sub == "daily":
                     _rd = await kunlik(_rc, uid)
@@ -1001,7 +997,7 @@ async def _ovoz_buyruq_bajar(update:Update, ctx:ContextTypes.DEFAULT_TYPE,
         elif sub == "reprint":
             job_id = ctx.user_data.get("last_print_job")
             if job_id:
-                from shared.services.print_status import request_reprint, get_job, job_status_text
+                from shared.services.print_status import request_reprint, job_status_text
                 new_job = request_reprint(job_id)
                 if new_job:
                     await update.message.reply_text(
@@ -1013,9 +1009,9 @@ async def _ovoz_buyruq_bajar(update:Update, ctx:ContextTypes.DEFAULT_TYPE,
                 await update.message.reply_text("❌ Oldingi chek topilmadi.")
     elif action == "export":
         await update.message.reply_text(
-            f"📤 *EXPORT*\n\nOvoz yuboring:\n"
-            f"_\"PDF chiqar\"_ yoki _\"Excel chiqar\"_\n\n"
-            f"Yoki /hisobot → PDF/Excel tugmalari",
+            "📤 *EXPORT*\n\nOvoz yuboring:\n"
+            "_\"PDF chiqar\"_ yoki _\"Excel chiqar\"_\n\n"
+            "Yoki /hisobot → PDF/Excel tugmalari",
             parse_mode=ParseMode.MARKDOWN)
     elif action == "balans":
         await cmd_balans(update, ctx)
@@ -1097,7 +1093,11 @@ async def cmd_token(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
             parse_mode=ParseMode.MARKDOWN_V2)
         return
     # JWT yaratish (API bilan bir xil format)
-    import json as _tj, time as _tt, hmac as _th, base64 as _tb, hashlib as _thl
+    import json as _tj
+    import time as _tt
+    import hmac as _th
+    import base64 as _tb
+    import hashlib as _thl
     h64 = _tb.urlsafe_b64encode(b'{"alg":"HS256","typ":"JWT"}').rstrip(b"=").decode()
     payload = _tj.dumps({"sub": str(uid), "exp": int(_tt.time()) + 86400})
     p64 = _tb.urlsafe_b64encode(payload.encode()).rstrip(b"=").decode()
@@ -1116,7 +1116,6 @@ async def cmd_token(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
 
 async def cmd_webapp(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     from telegram import WebAppInfo
-    uid = update.effective_user.id
     web_url = _os.getenv("WEB_URL", "https://savdoai-web-production.up.railway.app")
     tg_url = f"{web_url}/tg"
     kb = InlineKeyboardMarkup([
@@ -1171,7 +1170,8 @@ async def cmd_parol(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         return
 
     try:
-        import hashlib as _ph, os as _po
+        import hashlib as _ph
+        import os as _po
         salt = _po.urandom(16).hex()
         hashed = f"{salt}:{_ph.pbkdf2_hmac('sha256', new_parol.encode(), salt.encode(), 100_000).hex()}"
 
@@ -1201,14 +1201,14 @@ async def cmd_parol(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
 
         ism = user.get("ism", "")
         tel = user.get("telefon", "")
-        msg = f"✅ *Parol o'rnatildi\\!*\n\n"
+        msg = "✅ *Parol o'rnatildi\\!*\n\n"
         msg += f"👤 {esc(ism or str(target_id))}\n"
         if new_login:
             msg += f"🔑 Login: `{esc(new_login)}`\n"
         if tel:
             msg += f"📱 Telefon: `{esc(tel)}`\n"
         msg += f"🔒 Parol: `{esc(new_parol)}`\n\n"
-        msg += f"Web panel: login yoki telefon \\+ parol bilan kiradi\\."
+        msg += "Web panel: login yoki telefon \\+ parol bilan kiradi\\."
         await update.message.reply_text(msg, parse_mode=ParseMode.MARKDOWN_V2)
     except Exception as e:
         log.error("cmd_parol: %s", e, exc_info=True)
@@ -1297,7 +1297,7 @@ async def cmd_narx_tavsiya(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         if len(tavsiyalar) > 7:
             parts.append(f"\n... va {len(tavsiyalar) - 7} ta boshqa")
 
-        parts.append(f"\n\n💡 Narxni o'zgartirish: /narx")
+        parts.append("\n\n💡 Narxni o'zgartirish: /narx")
 
         await msg.edit_text("\n".join(parts), parse_mode=ParseMode.MARKDOWN)
 
@@ -1853,7 +1853,7 @@ async def cmd_sotuv_detail(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
 
         parts = [
             f"📋 *SOTUV #{sess_id}*",
-            f"━━━━━━━━━━━━━━━━━━",
+            "━━━━━━━━━━━━━━━━━━",
             f"{holat_emoji} Holat: *{sess['holat'].upper()}*",
             f"👤 Mijoz: *{sess['klient_ismi'] or 'Mijoz'}*",
         ]

@@ -44,7 +44,7 @@ async def cmd_rfm(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         return
 
     lines = [
-        f"📊 *RFM SEGMENTATSIYA* (oxirgi 6 oy)",
+        "📊 *RFM SEGMENTATSIYA* (oxirgi 6 oy)",
         "",
         f"👥 Jami klient: *{s['jami_klient']}*",
         f"💰 Jami aylanma: *{s['jami_monetary']:,.0f}* so'm",

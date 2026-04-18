@@ -18,11 +18,9 @@
 ╚══════════════════════════════════════════════════════════════════════════╝
 """
 from __future__ import annotations
-import json
 import logging
 from datetime import datetime
 from decimal import Decimal
-from typing import Optional
 
 log = logging.getLogger(__name__)
 
@@ -76,7 +74,7 @@ def klient_eventi(klient_nomi: str) -> LiveEvent:
 def qarz_eventi(klient_nomi: str, summa: Decimal) -> LiveEvent:
     return LiveEvent(
         turi="qarz_tolov", emoji="💳",
-        sarlavha=f"Qarz to'landi",
+        sarlavha="Qarz to'landi",
         tafsilot=klient_nomi, summa=f"{summa:,.0f}",
         klient=klient_nomi)
 

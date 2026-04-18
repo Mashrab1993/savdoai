@@ -11,12 +11,12 @@
 from __future__ import annotations
 import logging
 from decimal import Decimal
-from typing import Optional
 
 from fastapi import APIRouter, HTTPException, Depends, Query
 from pydantic import BaseModel, Field
 
-import sys, os
+import sys
+import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))))
 from shared.database.pool import rls_conn
 from shared.utils.hisob import D

@@ -14,7 +14,6 @@ from __future__ import annotations
 import io
 import logging
 from datetime import datetime
-from typing import Optional
 
 from fastapi import APIRouter, Body, Depends, File, HTTPException, Query, UploadFile
 from fastapi.responses import StreamingResponse

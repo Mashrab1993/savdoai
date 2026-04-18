@@ -6,7 +6,6 @@
 """
 from __future__ import annotations
 import logging
-from typing import Optional
 
 from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel, Field
@@ -143,7 +142,8 @@ async def ombor_prognoz_v2(kunlar: int = 30, limit: int = 500,
 @router.get("/ombor/prognoz/excel", tags=["Tovarlar"])
 async def ombor_prognoz_excel(kunlar: int = 30, uid: int = Depends(get_uid)):
     """Ombor prognozini Excel faylga export qilish."""
-    import io, base64
+    import io
+    import base64
     from openpyxl import Workbook
     from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
     from shared.services.ombor_prognoz import ombor_prognoz

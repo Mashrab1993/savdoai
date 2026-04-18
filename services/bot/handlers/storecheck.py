@@ -16,9 +16,6 @@
 from __future__ import annotations
 
 import logging
-from datetime import date, datetime, timedelta
-from decimal import Decimal, InvalidOperation
-from typing import Optional
 
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.constants import ParseMode
@@ -199,11 +196,11 @@ async def cmd_tashrif_yop(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         async with rls_conn(uid) as c:
             sku_list = await session_sku_royxat(c, uid, sid)
             fotolar = await session_fotolar(c, uid, sid)
-            ok = await session_yop(c, uid, sid, izoh=izoh)
+            await session_yop(c, uid, sid, izoh=izoh)
         ctx.user_data.pop("storecheck_session", None)
         mavjud_soni = sum(1 for s in sku_list if s["mavjud"])
         yoq_soni = sum(1 for s in sku_list if not s["mavjud"])
-        belgilanmagan = len(sku_list) - mavjud_soni - yoq_soni  # (lekin FALSE default, bu 0)
+        len(sku_list) - mavjud_soni - yoq_soni  # (lekin FALSE default, bu 0)
         msg = (
             f"✅ *Tashrif #{sid} yakunlandi*\n\n"
             f"📋 SKU tekshirildi: {len(sku_list)}\n"

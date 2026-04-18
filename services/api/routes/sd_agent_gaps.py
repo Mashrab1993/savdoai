@@ -3,8 +3,9 @@ SAVDOAI v25.4.0 — SD AGENT GAPS API
 Tara, Oddment, Replacement, QR, Knowledge Base, CheckDiscount
 """
 from __future__ import annotations
-import os, sys, logging
-from typing import Optional, List
+import os
+import sys
+import logging
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 

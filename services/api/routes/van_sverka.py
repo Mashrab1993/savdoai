@@ -2,11 +2,12 @@
 SAVDOAI v25.4.0 — VAN SELLING + AKT SVERKI API
 """
 from __future__ import annotations
-import os, sys, logging
-from typing import Optional, List
+import os
+import sys
+import logging
 from decimal import Decimal
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))))

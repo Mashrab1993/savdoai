@@ -27,7 +27,7 @@ import io
 import logging
 from datetime import datetime
 from decimal import Decimal
-from typing import List, Optional, Any
+from typing import Any
 
 log = logging.getLogger(__name__)
 

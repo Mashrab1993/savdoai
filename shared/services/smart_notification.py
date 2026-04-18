@@ -21,9 +21,6 @@
 """
 from __future__ import annotations
 import logging
-from datetime import datetime, date
-from decimal import Decimal
-from typing import Optional
 
 import pytz
 
@@ -279,8 +276,8 @@ async def critical_alert(conn, uid: int) -> str | None:
         return None
 
     return (
-        f"🔔 *MUHIM OGOHLANTIRISH*\n"
-        f"━━━━━━━━━━━━━━━━━━━━━\n\n"
+        "🔔 *MUHIM OGOHLANTIRISH*\n"
+        "━━━━━━━━━━━━━━━━━━━━━\n\n"
         + "\n".join(alerts)
         + "\n\n_Darhol choralar ko'ring!_"
     )

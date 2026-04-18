@@ -8,7 +8,6 @@
 """
 from __future__ import annotations
 import logging
-from decimal import Decimal
 
 log = logging.getLogger(__name__)
 

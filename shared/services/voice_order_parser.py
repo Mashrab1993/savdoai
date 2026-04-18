@@ -17,8 +17,7 @@
 from __future__ import annotations
 import logging
 import re
-from decimal import Decimal, ROUND_HALF_UP
-from typing import Optional
+from decimal import Decimal
 
 log = logging.getLogger(__name__)
 

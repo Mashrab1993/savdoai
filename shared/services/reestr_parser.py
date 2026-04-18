@@ -11,7 +11,8 @@
 ╚══════════════════════════════════════════════════════════════════╝
 """
 from __future__ import annotations
-import io, logging
+import io
+import logging
 from collections import defaultdict
 log = logging.getLogger(__name__)
 
@@ -150,7 +151,7 @@ def reestr_xulosa_matn(data: dict, fayl_nomi: str = "") -> str:
     if "xato" in data: return f"❌ {data['xato']}"
     if data["jami_soni"] == 0: return "📋 Reestr ma'lumoti topilmadi."
 
-    m = f"📊 *REESTR TAHLILI*\n━━━━━━━━━━━━━━━━━━━━━\n"
+    m = "📊 *REESTR TAHLILI*\n━━━━━━━━━━━━━━━━━━━━━\n"
     if fayl_nomi:
         m += f"📁 {fayl_nomi[:40]}\n"
     if data["sanalar"]:
@@ -178,7 +179,7 @@ def reestr_xulosa_matn(data: dict, fayl_nomi: str = "") -> str:
 
     # Qarzli
     if data["qarzli"]:
-        jami_qarz = sum(abs(q.get("balans", 0)) if isinstance(q.get("balans"), (int, float)) else 0 for q in data["qarzli"])
+        sum(abs(q.get("balans", 0)) if isinstance(q.get("balans"), (int, float)) else 0 for q in data["qarzli"])
         m += f"\n⚠️ *Qarzli: {len(data['qarzli'])} ta*\n"
         for q in sorted(data["qarzli"], key=lambda x: float(str(x.get("balans","0")).replace(",","").replace(" ","")) if str(x.get("balans","0")).replace(",","").replace(" ","").replace("-","").isdigit() else 0)[:5]:
             m += f"  📝 {q['ism']}: {q['balans']}\n"

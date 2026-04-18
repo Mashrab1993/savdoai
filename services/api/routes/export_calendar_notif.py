@@ -2,10 +2,12 @@
 SAVDOAI v25.4.0 — TASHRIF KALENDARI + UNIVERSAL EXPORT + NOTIFICATION API
 """
 from __future__ import annotations
-import os, sys, io, logging
-from typing import Optional, List
-from datetime import date, timedelta
-from fastapi import APIRouter, Depends, HTTPException
+import os
+import sys
+import io
+import logging
+from datetime import date
+from fastapi import APIRouter, Depends
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 

@@ -13,8 +13,15 @@
 """
 from __future__ import annotations
 from shared.utils import like_escape
-import io, json, logging, os, re, tempfile, time, hashlib, sqlite3
-from typing import Optional
+import io
+import json
+import logging
+import os
+import re
+import tempfile
+import time
+import hashlib
+import sqlite3
 from collections import Counter
 log = logging.getLogger(__name__)
 

@@ -17,7 +17,6 @@
 """
 from __future__ import annotations
 import logging
-import json
 import time
 import uuid
 from decimal import Decimal
@@ -118,7 +117,7 @@ async def handle_voice_order(update: Update, context: ContextTypes.DEFAULT_TYPE)
 
         # Parse the text — try regex first, then Gemini AI
         tovar_nomlari = [t.get("nomi", "") for t in tovarlar_list]
-        klient_nomlari = [k.get("ism", "") for k in klientlar_list]
+        [k.get("ism", "") for k in klientlar_list]
 
         parsed = parse_order_text(text)
 
@@ -205,7 +204,7 @@ async def handle_voice_order(update: Update, context: ContextTypes.DEFAULT_TYPE)
 
         if not matched:
             await msg.reply_text(
-                f"⚠️ Birorta ham tovar topilmadi:\n"
+                "⚠️ Birorta ham tovar topilmadi:\n"
                 + "\n".join(f"  • {n}" for n in not_found)
                 + "\n\n💡 Tovar nomini DB'dagi kabi ayting."
             )

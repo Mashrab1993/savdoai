@@ -15,10 +15,9 @@
 from __future__ import annotations
 
 import logging
-from datetime import date, datetime, timedelta
-from typing import Optional
+from datetime import date
 
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram import Update
 from telegram.constants import ParseMode
 from telegram.ext import ContextTypes
 
@@ -137,7 +136,7 @@ async def cmd_vazifa_stat(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         return
 
     lines = [
-        f"📊 *Vazifa statistika — oxirgi 30 kun*",
+        "📊 *Vazifa statistika — oxirgi 30 kun*",
         "",
         f"📋 Jami: *{s['jami']}*",
         f"  ✅ Bajarildi: {s['bajarildi']} ({s['bajarish_foiz']}%)",

@@ -7,7 +7,6 @@ from __future__ import annotations
 
 import logging
 import re
-from typing import Optional
 
 from telegram import Update
 from telegram.ext import ContextTypes
@@ -54,11 +53,11 @@ async def voice_ekspeditor(update: Update, ctx: ContextTypes.DEFAULT_TYPE,
                 VALUES ($1, $2, $3, TRUE)
                 RETURNING id, ism
             """, uid, ism.title(), telefon)
-        text = f"🚚 <b>Ekspeditor qo'shildi</b>\n\n"
+        text = "🚚 <b>Ekspeditor qo'shildi</b>\n\n"
         text += f"📝 Ism: <b>{row['ism']}</b>\n"
         if telefon:
             text += f"📞 Telefon: {telefon}\n"
-        text += f"\n<i>Web: /ekspeditorlar sahifasida ko'rish mumkin.</i>"
+        text += "\n<i>Web: /ekspeditorlar sahifasida ko'rish mumkin.</i>"
         await update.message.reply_text(text, parse_mode="HTML")
         return True
     except Exception as e:
@@ -169,7 +168,7 @@ async def voice_agent_hisobot(update: Update, ctx: ContextTypes.DEFAULT_TYPE,
         else:
             text += "<i>Shogirdlar yo'q yoki sotuv yo'q.</i>\n"
 
-        text += f"\n<i>To'liq: /reports/agent web sahifasida</i>"
+        text += "\n<i>To'liq: /reports/agent web sahifasida</i>"
         await update.message.reply_text(text, parse_mode="HTML")
         return True
     except Exception as e:

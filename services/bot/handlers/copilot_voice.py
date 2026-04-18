@@ -21,7 +21,7 @@ async def voice_copilot(update: Update, ctx: ContextTypes.DEFAULT_TYPE,
                         matn: str) -> bool:
     """'copilot: ...' yoki 'AI: ...' — biznes savolni Opus 4.7 ga yuboradi."""
     m = matn.strip()
-    ml = m.lower()
+    m.lower()
 
     # Prefix: "copilot:" yoki "ai:" yoki "copilot ..." bilan boshlansa
     mt = re.match(r'^(?:copilot|ai|aida|AI)\s*[:,.]?\s*(.+)', m, re.IGNORECASE)
@@ -85,7 +85,7 @@ JORIY HOLAT (7 kun):
 
         text = f"🧠 <b>AI Copilot javobi:</b>\n\n{javob}\n\n"
         text += f"<i>📊 7 kun tushum: {fmt(float(row['tushum']))} | {row['soni']} zayavka</i>\n"
-        text += f"<i>🌐 Web: /copilot sahifada to'liq chat</i>"
+        text += "<i>🌐 Web: /copilot sahifada to'liq chat</i>"
         await update.message.reply_text(text[:4000], parse_mode="HTML")
         return True
     except Exception as e:
@@ -169,7 +169,7 @@ async def voice_biznes_salomatlik(update: Update, ctx: ContextTypes.DEFAULT_TYPE
         text += f"💰 Shu hafta: {fmt(sotuv_shu)} so'm\n"
         text += f"💰 O'tgan hafta: {fmt(sotuv_otgan)} so'm\n"
         text += f"⚠️ Jami qarz: {fmt(jami_qarz)} so'm\n\n"
-        text += f"<i>🌐 To'liq: web /biznes-salomatlik sahifasida</i>"
+        text += "<i>🌐 To'liq: web /biznes-salomatlik sahifasida</i>"
         await update.message.reply_text(text, parse_mode="HTML")
         return True
     except Exception as e:

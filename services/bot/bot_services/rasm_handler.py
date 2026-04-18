@@ -7,7 +7,9 @@ SAVDOAI v25.3 — Rasm handler PRO (Vision AI → DB → Nakladnoy)
 ✅ Ovozli tasdiqlash (TTS)
 """
 from __future__ import annotations
-import io, logging, time
+import io
+import logging
+import time
 log = logging.getLogger(__name__)
 
 # Ko'p rasm uchun — 15 soniya ichida kelgan rasmlar 1 guruhga

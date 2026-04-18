@@ -22,7 +22,6 @@ import re
 import sys
 import os
 from decimal import Decimal, getcontext, ROUND_HALF_UP
-from typing import Any, Optional
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 
@@ -66,7 +65,7 @@ def tool_narx_hisob(miqdor: float, narx: float,
 
     formula = (
         f"{m} × {n}" +
-        (f" / 1000 (gramm)" if birlik == "gramm" else "") +
+        (" / 1000 (gramm)" if birlik == "gramm" else "") +
         (f" × (1 - {ch}/100)" if ch > ZERO else "") +
         f" = {jami}"
     )
@@ -535,7 +534,7 @@ class CognitiveDvigatel:
 
         # Redis cache — bir xil so'rovni qayta hisoblamas
         try:
-            from shared.cache.redis_cache import kognitiv_cache_ol, kognitiv_cache_yoz
+            from shared.cache.redis_cache import kognitiv_cache_ol
             cached = await kognitiv_cache_ol(matn)
             if cached:
                 log.debug("Kognitiv cache hit")
@@ -664,8 +663,7 @@ class CognitiveDvigatel:
         Asosiy amallarni qoidalar bilan aniqlaydi.
         """
         from shared.utils.uzb_nlp import (
-            matn_normallashtir, miqdor_olish, qarz_bor_mi,
-            raqam_parse
+            matn_normallashtir, miqdor_olish, qarz_bor_mi
         )
         norm = matn_normallashtir(matn)
         miq  = miqdor_olish(norm)

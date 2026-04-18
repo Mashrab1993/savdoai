@@ -13,7 +13,6 @@
 from __future__ import annotations
 import json
 import logging
-from typing import Optional
 
 log = logging.getLogger(__name__)
 

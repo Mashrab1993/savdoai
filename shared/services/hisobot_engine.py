@@ -16,11 +16,9 @@
 """
 from __future__ import annotations
 from shared.utils import like_escape
-import asyncio
 import logging
 from datetime import datetime, timedelta
 from decimal import Decimal
-from typing import Any
 
 import pytz
 
@@ -523,7 +521,7 @@ async def klient_qarz_tarix(conn, uid: int, klient_ism: str) -> dict | None:
     faol_qarzlar = await faol_qarzlar_task
     jami_qarz = await jami_qarz_task
     oxirgi_sotuvlar = await oxirgi_sotuvlar_task
-    oxirgi_tolovlar = await oxirgi_tolovlar_task
+    await oxirgi_tolovlar_task
     statistika = await statistika_task
 
     muddati_otgan = sum(1 for q in faol_qarzlar if q.get("muddati_otgan"))
@@ -594,7 +592,7 @@ def klient_qarz_tarix_matn(d: dict) -> str:
     # Statistika
     st = d["statistika"]
     if st["sotuv_soni"] > 0:
-        t += f"\n📊 STATISTIKA:\n"
+        t += "\n📊 STATISTIKA:\n"
         t += f"  🛒 Jami sotuv: {_pul(st['jami_sotuv'])} ({st['sotuv_soni']} ta)\n"
         t += f"  ✅ To'langan: {_pul(st['jami_tolangan'])}\n"
         if st.get("birinchi_sotuv"):
@@ -619,7 +617,7 @@ def klient_qarz_tarix_matn(d: dict) -> str:
 
     # Oxirgi sotuvlar
     if d["oxirgi_sotuvlar"]:
-        t += f"\n📋 OXIRGI SOTUVLAR:\n"
+        t += "\n📋 OXIRGI SOTUVLAR:\n"
         for s in d["oxirgi_sotuvlar"][:5]:
             qarz_str = f" (qarz: {_pul(s['qarz'])})" if s["qarz"] > 0 else ""
             t += f"  📅 {s['sana']} — {_pul(s['jami'])}{qarz_str}\n"

@@ -20,7 +20,8 @@
 ╚══════════════════════════════════════════════════════════════════╝
 """
 from __future__ import annotations
-import sys as _sys, os as _os
+import sys as _sys
+import os as _os
 _sys.path.insert(0, _os.path.dirname(_os.path.dirname(_os.path.dirname(_os.path.abspath(__file__)))))
 
 
@@ -30,7 +31,7 @@ _sys.path.insert(0, _os.path.dirname(_os.path.dirname(_os.path.dirname(_os.path.
 import logging
 from datetime import date, datetime, timedelta
 from decimal import ROUND_HALF_UP, Decimal
-from typing import Any, Optional
+from typing import Any
 
 import asyncio
 import asyncpg
@@ -870,7 +871,7 @@ async def sotuv_saqlash(uid: int, data: dict) -> dict:
         ogohlar = []
         if klient_id and jami > 0:
             try:
-                loyalty_msg = f"⭐ Klientga bonus ball qo'shildi"
+                loyalty_msg = "⭐ Klientga bonus ball qo'shildi"
                 if 'loyalty' in dir() and loyalty.get("ball", 0) > 0:
                     d = loyalty.get("daraja", {})
                     loyalty_msg = (

@@ -16,7 +16,6 @@ import logging
 import re
 from datetime import date
 from decimal import Decimal, InvalidOperation
-from typing import Optional
 
 from telegram import Update
 from telegram.constants import ParseMode
@@ -123,7 +122,7 @@ async def cmd_plan(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
             return
 
         async with rls_conn(uid) as c:
-            plan_id = await plan_qoy(
+            await plan_qoy(
                 c, uid, bugun.year, bugun.month,
                 sotuv_plan=summa, izoh=matn[:200],
             )

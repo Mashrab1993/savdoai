@@ -133,7 +133,7 @@ def _nakladnoy_savol_javob(h: dict, savol: str) -> str | None:
     
     # Jami
     if any(w in s for w in ["jami", "umumiy", "total", "итого", "summa"]):
-        m = f"📊 *UMUMIY*\n━━━━━━━━━━━━━━━━━━━━━\n"
+        m = "📊 *UMUMIY*\n━━━━━━━━━━━━━━━━━━━━━\n"
         m += f"📋 Nakladnoylar: *{len(naklarlar)}*\n"
         m += f"👥 Klientlar: *{len(kl_data)}*\n"
         m += f"💰 Jami: *{h.get('jami_summa', 0):,.0f}* so'm\n"
@@ -219,7 +219,7 @@ TP REYTING:
     
     kontekst += f"\nTOP 20 TOVARLAR:\n{top_tovar}"
     
-    kontekst += f"\nTOP 20 KLIENTLAR:\n"
+    kontekst += "\nTOP 20 KLIENTLAR:\n"
     for k, d in sorted(kl_data.items(), key=lambda x: -x[1]["jami"])[:20]:
         q = f" (QARZ: {d['balans']:,.0f})" if d["balans"] < 0 else ""
         kontekst += f"  {k}: {d['jami']:,.0f} so'm, TP: {d['tp']}{q}\n"
@@ -659,7 +659,7 @@ async def matn_qabul(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
                     _javob = _oddiy_izlash(_h, matn)
                 except Exception as _e:
                     log.debug("Xato: %s", _e)
-                    _javob = f"❌ Excel tahlilida xato. Qayta urinib ko'ring."
+                    _javob = "❌ Excel tahlilida xato. Qayta urinib ko'ring."
             try:
                 await update.message.reply_text(_javob, parse_mode=ParseMode.MARKDOWN)
             except Exception:
@@ -828,7 +828,7 @@ async def matn_qabul(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
                         _kbody, parse_mode=ParseMode.MARKDOWN,
                         reply_markup=tg(
                             [(f"📄 {kl_ism} PDF hisobi", f"eks:pdf:klient:{kid}")],
-                            [(f"📊 Excel hisobi", f"eks:xls:klient:{kid}")],
+                            [("📊 Excel hisobi", f"eks:xls:klient:{kid}")],
                         )
                     )
                     return
@@ -943,10 +943,10 @@ async def matn_qabul(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
     try:
         from shared.services.advanced_features import (
             advanced_buyruq_aniqla, tabiiy_savol_javob,
-            shablon_bormi, shablon_klient_ajrat, shablon_olish, shablon_matn,
-            qoldiq_tuzatish_bormi, qoldiq_tuzatish_ajrat, qoldiq_tuzatish, qoldiq_tuzatish_matn,
+            shablon_klient_ajrat, shablon_olish, shablon_matn,
+            qoldiq_tuzatish_ajrat, qoldiq_tuzatish, qoldiq_tuzatish_matn,
             tovar_abc, tovar_abc_matn,
-            tezkor_tugmalar, guruhli_bormi, guruhli_ajrat,
+            guruhli_ajrat,
         )
         _adv_cmd = advanced_buyruq_aniqla(matn)
         if _adv_cmd:

@@ -2,8 +2,9 @@
 SAVDOAI v25.4.0 — CHECK-IN/OUT VA BUYURTMA AMALLARI API
 """
 from __future__ import annotations
-import os, sys, logging
-from typing import Optional
+import os
+import sys
+import logging
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 

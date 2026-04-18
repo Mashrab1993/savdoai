@@ -15,8 +15,13 @@
 ╚══════════════════════════════════════════════════════════════════════════╝
 """
 from __future__ import annotations
-import asyncio, io, json, logging, subprocess, tempfile, os, re
-from typing import Optional
+import asyncio
+import io
+import json
+import logging
+import subprocess
+import tempfile
+import os
 log = logging.getLogger(__name__)
 _gemini_client = None
 _VISION_MODEL = os.environ.get("VISION_MODEL", "gemini-2.5-pro")

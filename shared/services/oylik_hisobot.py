@@ -6,10 +6,6 @@
 """
 from __future__ import annotations
 import logging
-from datetime import datetime, date
-from decimal import Decimal
-from typing import Optional
-import io
 
 import pytz
 
@@ -159,5 +155,5 @@ def oylik_matn_hisobot(data: dict) -> str:
         for i, k in enumerate(d["top_klientlar"][:5], 1):
             matn += f"  {i}. {k['klient_ismi']}: {float(k['jami']):,.0f}\n"
 
-    matn += f"\n📊 /kpi — Samaradorlik | /tahlil — AI maslahat"
+    matn += "\n📊 /kpi — Samaradorlik | /tahlil — AI maslahat"
     return matn

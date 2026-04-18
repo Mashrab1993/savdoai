@@ -14,8 +14,7 @@ import time
 import asyncio
 import logging
 from contextlib import asynccontextmanager
-from decimal import Decimal, InvalidOperation
-from typing import Any, Optional
+from decimal import Decimal
 from collections.abc import AsyncGenerator
 
 import asyncpg
@@ -29,7 +28,6 @@ _pool: asyncpg.Pool | None = None
 #  YORDAMCHI — D() shared/utils/hisob.py dan import
 # ════════════════════════════════════════════════════════════
 
-from shared.utils.hisob import D
 
 
 async def _init_conn(conn: asyncpg.Connection) -> None:
@@ -236,7 +234,7 @@ async def rls_conn_notrx(user_id: int) -> AsyncGenerator[asyncpg.Connection, Non
 
 async def schema_init() -> None:
     """SQL schema faylidan jadvallarni yaratish — xatolarga chidamli"""
-    import os, re
+    import os
     schema_file = os.path.join(
         os.path.dirname(__file__), "schema.sql"
     )
@@ -312,7 +310,8 @@ async def schema_init() -> None:
 
 async def _run_migrations() -> None:
     """shared/migrations/versions/ papkasidagi SQL migratsiyalarni tartib bilan bajarish."""
-    import os, glob
+    import os
+    import glob
     migrations_dir = os.path.join(
         os.path.dirname(__file__), "..", "migrations", "versions"
     )
@@ -363,7 +362,6 @@ async def _run_migrations() -> None:
                 current = []
 
         async with get_pool().acquire() as conn:
-            migration_ok = True
             for stmt in statements:
                 try:
                     await conn.execute(stmt)

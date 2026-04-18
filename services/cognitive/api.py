@@ -4,7 +4,10 @@ Dual-Brain MoE Gateway
 Gemini (Ko'z+Quloq) + Claude (Mantiq) → bitta endpoint
 """
 from __future__ import annotations
-import os, sys, logging, base64, json
+import os
+import sys
+import logging
+import base64
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException, Depends
 from pydantic import BaseModel
@@ -33,7 +36,6 @@ async def _verify_api_key(request: Request):
     if key != COGNITIVE_API_KEY:
         from fastapi import HTTPException
         raise HTTPException(401, "Cognitive API: Invalid API key")
-from typing import Optional
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 log = logging.getLogger(__name__)

@@ -22,9 +22,8 @@
 """
 from __future__ import annotations
 import logging
-from datetime import datetime, timedelta, date
+from datetime import datetime, date
 from decimal import Decimal
-from typing import Optional
 
 import pytz
 

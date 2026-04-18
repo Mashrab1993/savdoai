@@ -24,16 +24,16 @@
 ╚══════════════════════════════════════════════════════════════════╝
 """
 from __future__ import annotations
-import io, logging, sys, time
+import logging
+import sys
+import time
 import datetime
 import pytz
 from collections import defaultdict
-from decimal import Decimal
-from typing import Optional
 
 from telegram import (
     Update, BotCommand,
-    InlineKeyboardButton, InlineKeyboardMarkup, InputFile,
+    InlineKeyboardButton, InlineKeyboardMarkup,
 )
 from telegram.ext import (
     Application, CommandHandler, MessageHandler,
@@ -41,7 +41,6 @@ from telegram.ext import (
     filters, ContextTypes,
 )
 from telegram.constants import ParseMode
-from telegram.helpers import escape_markdown as _esc_md
 
 def esc(t: str) -> str:
     """Telegram MarkdownV2 uchun maxsus belgilarni escape qilish"""
@@ -51,31 +50,24 @@ def esc(t: str) -> str:
     for ch in SPECIAL:
         t = t.replace(ch, '\\' + ch)
     return t
-from telegram.error import BadRequest
 
-from config import Config, cfg as _cfg_fn, config_init
-import sys as _sys, os as _os
+from config import Config, config_init
+import sys as _sys
+import os as _os
 _sys.path.insert(0, _os.path.dirname(_os.path.dirname(_os.path.dirname(__file__))))
 
 # Print HMAC — productionda PRINT_SECRET majburiy (bot va API bir xil qiymat).
 import shared.services.print_session  # noqa: F401
 
 import services.bot.db  as db
-from shared.database.pool import rls_conn as _rls_conn, pool_init as _pool_init
-from shared.utils import like_escape
+from shared.database.pool import pool_init as _pool_init
 import services.bot.bot_services.voice      as ovoz_xizmat
 import services.bot.bot_services.analyst    as ai_xizmat
 from services.bot.bot_services.voice_pipeline import process_voice
 from services.bot.handlers.shogird import _shogird_xarajat_qabul
-import services.bot.bot_services.export_pdf   as pdf_xizmat
-import services.bot.bot_services.export_excel as excel_xizmat
-import services.bot.bot_services.nakladnoy    as nakl_xizmat
 import services.bot.bot_services.rasm_handler as rasm_xizmat
 from shared.utils.fmt import (
-    pul, chek_md, SAHIFA,
-    sotuv_cheki, kirim_cheki, qaytarish_cheki,
-    kunlik_matn, oylik_matn, foyda_matn,
-    klient_hisobi_matn,
+    pul,
 )
 
 import os as _os
@@ -133,14 +125,11 @@ SEGMENT_NOMI = {
 log = logging.getLogger("mm")
 
 # ── Turbo kesh (user = 120s, hisobot = 60s) ──────────────────────
-import time as _time
 
 # Umumiy yordamchi funksiyalar — bot_helpers.py dan import
 from services.bot.bot_helpers import (
-    _kesh, _kesh_ol, _kesh_yoz, _kesh_tozala, _kesh_tozala_prefix,
-    _KESH_TTL, _KESH_USER_TTL, _KESH_MAX_SIZE,
-    _user_ol_kesh, faol_tekshir, _yuborish, _safe_reply, xat,
-    _md_safe, _truncate, tg,
+    _kesh, _kesh_tozala, _user_ol_kesh, faol_tekshir, xat,
+    tg,
 )
 
 
@@ -190,7 +179,7 @@ async def xato_handler(update: object,
             for aid in _CFG.admin_ids:
                 await ctx.bot.send_message(
                     aid,
-                    f"⛔ *Bot xatosi*\n\n"
+                    "⛔ *Bot xatosi*\n\n"
                     "Xato yuz berdi",
                     parse_mode=ParseMode.MARKDOWN,
                 )
@@ -426,7 +415,6 @@ async def h_telefon(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
     seed_soni = 0
     try:
         from shared.services.seed_catalog import seed_tovarlar
-        from shared.database.pool import get_pool
         async with db._P().acquire() as c:
             seed_soni = await seed_tovarlar(c, uid, seg)
     except Exception as _seed_e:
@@ -444,8 +432,8 @@ async def h_telefon(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
                 f"🏪 {dokon}\n📦 {SEGMENT_NOMI[seg]}\n📞 {tel}",
                 parse_mode=ParseMode.MARKDOWN,
                 reply_markup=tg(
-                    [(f"✅ Tasdiqlash",f"adm:ok:{uid}")],
-                    [(f"❌ Rad etish", f"adm:no:{uid}")],
+                    [("✅ Tasdiqlash",f"adm:ok:{uid}")],
+                    [("❌ Rad etish", f"adm:no:{uid}")],
                 ))
         except Exception as e: log.warning("Admin %s: %s",aid,e)
     return ConversationHandler.END
@@ -670,7 +658,8 @@ async def cmd_nakladnoy_excel(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     try:
         msg = await update.message.reply_text("📋 Excel nakladnoy tayyorlanmoqda...")
 
-        import tempfile, time as _t
+        import tempfile
+        import time as _t
         import openpyxl
         from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
         from openpyxl.utils import get_column_letter
@@ -843,9 +832,10 @@ async def cmd_reestr_excel(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     try:
         msg = await update.message.reply_text("📋 Reestr tayyorlanmoqda...")
 
-        import tempfile, time as _t
+        import tempfile
+        import time as _t
         import openpyxl
-        from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
+        from openpyxl.styles import Font, Alignment, Border, Side
         from openpyxl.utils import get_column_letter
         from shared.database.pool import rls_conn
 
@@ -977,10 +967,8 @@ from services.bot.handlers.commands import (
     cmd_balans, cmd_jurnal, cmd_chiqim, cmd_tovar, cmd_yangilik,
     cmd_imkoniyatlar, cmd_yordam, cmd_ogoh, cmd_hafta,
     cmd_foydalanuvchilar, cmd_faollashtir, cmd_statistika,
-    cmd_savatlar, cmd_savat, _ovoz_buyruq_bajar,
-    cmd_narx_tavsiya, cmd_dokon,
-    cmd_crm, cmd_chegirma, cmd_prognoz, cmd_raqobat, cmd_rfm,
-    cmd_top_tovar, cmd_top_klient, cmd_kategoriya_stat, cmd_ombor_qiymati,
+    cmd_savatlar, cmd_savat, cmd_narx_tavsiya, cmd_dokon,
+    cmd_crm, cmd_chegirma, cmd_prognoz, cmd_raqobat, cmd_top_tovar, cmd_top_klient, cmd_kategoriya_stat, cmd_ombor_qiymati,
     cmd_sotuv_today, cmd_kirim_today,
     cmd_zayavkalar, cmd_otgruzka, cmd_yetkazildi, cmd_bekor_sotuv,
     cmd_sotuv_detail,
@@ -994,9 +982,7 @@ from services.bot.handlers.callbacks import (
 from services.bot.handlers.hujjat import hujjat_qabul
 from services.bot.handlers.barcode import cmd_barcode, barcode_cb
 from services.bot.handlers.savdo import (
-    tasdiq_cb, _qayta_ishlash, _nakladnoy_yuborish,
-    _chek_thermal_va_pdf_yuborish,
-    _savat_qosh_va_javob, _savat_yop_va_nakladnoy,
+    tasdiq_cb, _qayta_ishlash,
 )
 from services.bot.handlers.matn import matn_qabul
 
@@ -1138,7 +1124,8 @@ async def boshlash(app:Application) -> None:
             try:
                 job_queue._scheduler.configure(misfire_grace_time=60)
             except Exception as _e: log.debug("silent: %s", _e)
-        import pytz,datetime
+        import pytz
+        import datetime
         tz=pytz.timezone(_CFG.timezone)
         _standalone = not _worker_url
         # Kunlik hisobot — 22:00

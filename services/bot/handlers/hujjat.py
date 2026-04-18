@@ -12,7 +12,6 @@ from telegram import Update, InputFile, InlineKeyboardButton, InlineKeyboardMark
 from telegram.constants import ParseMode
 from telegram.ext import ContextTypes
 
-import services.bot.db as db
 from services.bot.bot_helpers import faol_tekshir
 
 log = logging.getLogger("mm")
@@ -174,7 +173,6 @@ def _get_cfg():
 
 async def hujjat_qabul(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
     """PDF, Word, Excel, EPUB, PPTX... — 40 format, 100K+ sahifa"""
-    uid = update.effective_user.id
     if not await faol_tekshir(update): return
     doc = update.message.document
     if not doc: return
@@ -340,7 +338,7 @@ async def hujjat_qabul(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
             
             # ═══ AVTOMATIK AI TAHLIL — CLAUDE SONNET (AUDITOR DARAJASI) ═══
             try:
-                import os, anthropic
+                import os
                 
                 _anth_key = os.environ.get("ANTHROPIC_API_KEY", "")
                 _matn_raw = h.get("umumiy_matn", "")[:30000]

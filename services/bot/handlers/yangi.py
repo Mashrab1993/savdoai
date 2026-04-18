@@ -13,7 +13,7 @@ from telegram.ext import ContextTypes
 
 import services.bot.db as db
 from services.bot.bot_helpers import (
-    _user_ol_kesh, faol_tekshir, _safe_reply, xat, tg, cfg,
+    _user_ol_kesh, faol_tekshir, xat,
 )
 
 log = logging.getLogger("mm")
@@ -30,7 +30,7 @@ async def cmd_eslatma(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     uid = update.effective_user.id
 
     from shared.services.qarz_eslatma import qarz_eslatma_royxati
-    async with db._P().acquire() as c:
+    async with db._P().acquire():
         from shared.database.pool import rls_conn
         async with rls_conn(uid) as rc:
             royxat = await qarz_eslatma_royxati(rc, uid)
@@ -155,7 +155,7 @@ async def eslatma_cb(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
                     r["klient_ismi"], r["jami_qarz"]
                 )
                 await xat(q, f"✅ {r['klient_ismi']} ga eslatma yuborildi!")
-            except Exception as e:
+            except Exception:
                 # Klient Telegram ID bo'lmasa — do'konchiga xabar ko'rsatish
                 await xat(q,
                     f"📋 *{r['klient_ismi']}* ga eslatma:\n\n"

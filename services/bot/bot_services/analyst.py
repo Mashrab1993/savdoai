@@ -1,9 +1,13 @@
 """AI Tahlil — Claude claude-sonnet-4-6 | O'zbek + Rus tili"""
 from __future__ import annotations
-import sys as _sys, os as _os
+import sys as _sys
+import os as _os
 _sys.path.insert(0, _os.path.dirname(_os.path.dirname(_os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))))))
 
-import asyncio, json, re, logging
+import asyncio
+import json
+import re
+import logging
 from typing import Any
 import anthropic
 try:
@@ -288,7 +292,6 @@ async def tahlil_qil(matn: str, urinishlar: int = 3, uid: int = 0) -> dict[str, 
         except Exception as _uc:
             log.debug("User kontekst: %s", _uc)
 
-    oxirgi: Exception | None = None
     for urinish in range(1, urinishlar + 1):
         try:
             xom    = await _claude_chaqir(boyitilgan)
@@ -297,7 +300,6 @@ async def tahlil_qil(matn: str, urinishlar: int = 3, uid: int = 0) -> dict[str, 
                      natija["amal"], natija.get("klient"))
             return natija
         except Exception as xato:
-            oxirgi = xato
             log.warning("🤖 %d-urinish: %s", urinish, xato)
             if urinish < urinishlar:
                 await asyncio.sleep(0.5 * urinish)

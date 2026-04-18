@@ -10,10 +10,9 @@ from __future__ import annotations
 
 import io
 import logging
-from datetime import date, datetime
-from typing import Optional
+from datetime import date
 
-from fastapi import APIRouter, Body, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 from shared.database.pool import rls_conn

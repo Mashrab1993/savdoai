@@ -250,7 +250,7 @@ async def _qarz_eslatma_async():
                 if not qarzlar:
                     continue
 
-                lines = [f"⚠️ *Bugun muddat o'tgan/yaqin qarzlar*"]
+                lines = ["⚠️ *Bugun muddat o'tgan/yaqin qarzlar*"]
                 for q in qarzlar:
                     lines.append(f"• {q['klient_ismi']}: {float(q['jami']):,.0f} so'm")
                 matn = "\n".join(lines)
@@ -329,7 +329,8 @@ def katta_export(user_id: int, export_turi: str,
             _export_async(user_id, export_turi, sana_dan, sana_gacha, format_)
         )
         # Faylni base64 ga o'girib Redis da saqlash (cross-container delivery)
-        import base64, os as _os
+        import base64
+        import os as _os
         MAX_BYTES = 8 * 1024 * 1024  # 8 MB limit
         file_size = _os.path.getsize(natija) if _os.path.exists(natija) else 0
         if file_size > MAX_BYTES:
@@ -541,7 +542,9 @@ def db_backup(self):
     pg_dump → /tmp/backup_YYYYMMDD.sql.gz
     Ishlab chiqarishda: S3/R2 ga yuklash kerak.
     """
-    import subprocess, gzip, datetime as dt
+    import subprocess
+    import gzip
+    import datetime as dt
     try:
         sana    = dt.datetime.now().strftime("%Y%m%d_%H%M")
         out_gz  = f"/tmp/mm_backup_{sana}.sql.gz"
@@ -587,7 +590,8 @@ def nakladnoy_yaratish(user_id: int, sessiya_id: int,
         if bot_token and os.path.exists(fayl):
             asyncio.run(_nakl_yuborish(bot_token, user_id, fayl, sessiya_id))
         # content_b64 saqlash (API delivery uchun)
-        import base64, os as _os2
+        import base64
+        import os as _os2
         content_b64 = ""
         if _os2.path.exists(fayl):
             with open(fayl, "rb") as f:

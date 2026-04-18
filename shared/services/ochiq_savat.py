@@ -33,7 +33,6 @@ from __future__ import annotations
 from shared.utils import like_escape
 import logging
 from decimal import Decimal, ROUND_HALF_UP
-from typing import Optional
 
 log = logging.getLogger(__name__)
 

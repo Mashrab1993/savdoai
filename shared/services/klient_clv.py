@@ -14,7 +14,6 @@
 from __future__ import annotations
 import logging
 from datetime import datetime
-from decimal import Decimal
 
 import pytz
 
@@ -61,7 +60,7 @@ async def klient_clv(conn, uid: int, top: int = 20) -> dict:
         sotuv_soni = int(r["sotuv_soni"])
         jami = float(r["jami_tushum"])
         ortacha_chek = float(r["ortacha_chek"])
-        faol_oylar = max(int(r["faol_oylar"]), 1)
+        max(int(r["faol_oylar"]), 1)
 
         # Oylik chastota
         birinchi = r["birinchi_sotuv"]

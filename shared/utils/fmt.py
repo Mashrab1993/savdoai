@@ -1,7 +1,6 @@
 """Formatlash va ESC/POS printer"""
 from __future__ import annotations
 from datetime import datetime
-from typing import Any
 import pytz
 
 from shared.receipt import format_qaytarish_receipt, receipt_text_80mm
@@ -119,7 +118,7 @@ def klient_hisobi_matn(data: dict) -> str:
     if float(data["faol_qarz"]) > 0:
         t += f"⚠️ Qolgan qarz     : *{pul(data['faol_qarz'])}*\n"
     else:
-        t += f"💚 Qolgan qarz     : yo'q\n"
+        t += "💚 Qolgan qarz     : yo'q\n"
     t += f"🛒 Sotuvlar soni  : {data['sotuv_soni']} ta\n"
     return t.rstrip()
 
@@ -148,7 +147,7 @@ def klient_tarix_matn(data: dict) -> str:
     if float(data['aktiv_qarz']) > 0:
         t += f"⚠️ Qolgan qarz: *{pul(data['aktiv_qarz'])}*\n"
     else:
-        t += f"💚 Qarz: yo'q\n"
+        t += "💚 Qarz: yo'q\n"
     t += f"🛒 Sotuvlar: {data['sotuv_soni']} ta\n\n"
     if data.get('sotuvlar'):
         t += "📋 *Oxirgi sotuvlar:*\n"

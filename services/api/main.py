@@ -12,13 +12,18 @@
 ╚══════════════════════════════════════════════════════════════╝
 """
 from __future__ import annotations
-import os, sys, logging, time, hashlib, hmac, base64, json
+import os
+import sys
+import logging
+import time
+import hashlib
+import hmac
+import base64
+import json
 from contextlib import asynccontextmanager
-from typing import Optional, List
 
-from fastapi import FastAPI, HTTPException, Depends, Request, status
-from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel, Field, validator
+from fastapi import FastAPI, HTTPException, Depends, Request
+from pydantic import BaseModel, Field
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
@@ -63,7 +68,6 @@ if not _JWT_SECRET_RAW:
 JWT_SECRET = _JWT_SECRET_RAW
 
 # Process uptime — restart/crash ajratish (/live, /healthz, print_escpos trace)
-from shared.observability.process_uptime import process_info  # noqa: E402
 
 # ════════════════════════════════════════════════════════════
 #  STARTUP / SHUTDOWN
@@ -607,7 +611,7 @@ except Exception as e:
 #  JWT + AUTH — deps.py dan import (shared bilan kassa/ws)
 # ════════════════════════════════════════════════════════════
 
-from services.api.deps import get_uid, jwt_tekshir
+from services.api.deps import get_uid
 
 
 def jwt_yarat(user_id: int, ttl: int = 86400) -> str:
@@ -1445,7 +1449,8 @@ async def kirim_import_excel(
     - narx
     - manba, izoh
     """
-    import io as _io, base64 as _b64
+    import io as _io
+    import base64 as _b64
     from openpyxl import load_workbook
     try:
         content = _b64.b64decode(file_base64)
@@ -1826,7 +1831,7 @@ async def export_natija(task_id: str, uid: int = Depends(get_uid)):
                 }
         elif result.state == "FAILURE":
             # Celery task xato bilan tugadi
-            err_info = str(result.info) if result.info else "Export bajarilmadi"
+            str(result.info) if result.info else "Export bajarilmadi"
             return {
                 "task_id": task_id,
                 "holat":   "xato",
@@ -2457,7 +2462,8 @@ async def savdolar_royxati(
 @app.get("/api/v1/sklad-qogozi/excel", tags=["Ombor"])
 async def sklad_qogozi_excel(uid: int = Depends(get_uid)):
     """Sklad qog'ozi — ombor inventarizatsiyasi (barcha tovarlar + qoldiq + qiymat)."""
-    import io, base64
+    import io
+    import base64
     from datetime import datetime
     from openpyxl import Workbook
     from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
@@ -2595,7 +2601,8 @@ async def nakladnoy_excel_batch(
     uid: int = Depends(get_uid),
 ):
     """Tanlangan buyurtmalar uchun multi-sheet nakladnoy Excel (SalesDoc 3.1 format)."""
-    import io, base64
+    import io
+    import base64
     from openpyxl import Workbook
     from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 
@@ -2741,7 +2748,8 @@ async def savdolar_excel(
     uid: int = Depends(get_uid),
 ):
     """SalesDoc Реестр 3.0 formatida Excel — sanalar bo'yicha buyurtmalar reestri."""
-    import io, base64
+    import io
+    import base64
     from openpyxl import Workbook
     from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 
@@ -3017,7 +3025,8 @@ async def qr_kod_generatsiya(sessiya_id: int, uid: int = Depends(get_uid)):
     Sotuv sessiyasi uchun QR-kod SVG generatsiya.
     QR ichida chek URL bo'ladi — klient telefonida skanerlasa chek ko'rinadi.
     """
-    import hashlib, io
+    import hashlib
+    import io
 
     async with rls_conn(uid) as c:
         sess = await c.fetchrow(

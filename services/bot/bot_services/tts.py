@@ -11,12 +11,10 @@
 from __future__ import annotations
 import asyncio
 import hashlib
-import io
 import logging
 import os
 import subprocess
 import tempfile
-from typing import Optional
 
 log = logging.getLogger(__name__)
 

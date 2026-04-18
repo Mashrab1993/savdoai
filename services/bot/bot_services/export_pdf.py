@@ -2,7 +2,6 @@
 from __future__ import annotations
 import io
 from datetime import datetime
-from decimal import Decimal
 from typing import Any
 import pytz
 from reportlab.lib.pagesizes import A4
@@ -13,7 +12,7 @@ from reportlab.platypus import (
     Paragraph, Spacer, HRFlowable,
 )
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.lib.enums import TA_CENTER, TA_RIGHT
+from reportlab.lib.enums import TA_CENTER
 
 TZ = pytz.timezone("Asia/Tashkent")
 KOK    = colors.HexColor("#1a56db")

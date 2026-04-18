@@ -24,9 +24,8 @@
 """
 from __future__ import annotations
 import logging
-from datetime import datetime, date
+from datetime import date
 from decimal import Decimal
-from typing import List, Optional
 
 log = logging.getLogger(__name__)
 

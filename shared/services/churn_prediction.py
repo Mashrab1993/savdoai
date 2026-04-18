@@ -28,9 +28,6 @@
 """
 from __future__ import annotations
 import logging
-from datetime import datetime, timedelta
-from decimal import Decimal
-from typing import List
 
 log = logging.getLogger(__name__)
 
@@ -186,7 +183,7 @@ async def churn_tahlil(conn, uid: int) -> list[dict]:
             daraja = "kritik"
             emoji = "🔴"
             harakat = "DARHOL qo'ng'iroq qiling — bu klient ketib qolishi mumkin!"
-            tavsiya = f"Maxsus chegirma taklif qiling yoki shaxsan uchrashing"
+            tavsiya = "Maxsus chegirma taklif qiling yoki shaxsan uchrashing"
         elif risk_skor >= 60:
             daraja = "yuqori"
             emoji = "🟠"

@@ -16,12 +16,10 @@
 """
 from __future__ import annotations
 from shared.utils import like_escape
-import asyncio
 import logging
 import re
 from datetime import datetime, timedelta
 from decimal import Decimal
-from typing import Optional
 
 import pytz
 

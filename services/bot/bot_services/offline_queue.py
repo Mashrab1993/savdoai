@@ -16,7 +16,6 @@ import asyncio
 import logging
 import time
 from collections import deque
-from typing import Any
 from collections.abc import Callable, Coroutine
 
 log = logging.getLogger(__name__)

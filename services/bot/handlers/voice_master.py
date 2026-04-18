@@ -76,7 +76,6 @@ async def route_voice_to_module(update: Update, ctx: ContextTypes.DEFAULT_TYPE,
             # Majbur (qoldiq yetmasa ham) — birinchi ustuvorlik
             if kutilayotgan_majbur:
                 try:
-                    from services.bot.handlers.savdo import _qayta_ishlash_tasdiq
                     # callback emulator — majbur save qilish
                     import services.bot.db as _db
                     from services.bot.bot_helpers import _user_ol_kesh
@@ -84,8 +83,8 @@ async def route_voice_to_module(update: Update, ctx: ContextTypes.DEFAULT_TYPE,
                     user = await _user_ol_kesh(uid)
                     dokon = (user.get("dokon_nomi") or "") if user else ""
                     natija_m = ctx.user_data.pop("kutilayotgan_majbur", None)
-                    sotuv_m = await _db.sotuv_saqlash(uid, natija_m)
-                    from shared.utils.fmt import sotuv_cheki, chek_md
+                    await _db.sotuv_saqlash(uid, natija_m)
+                    from shared.utils.fmt import sotuv_cheki
                     chek_m = sotuv_cheki(natija_m, dokon)
                     await update.message.reply_text(
                         "✅ Sotuv saqlandi (majbur rejim)\n\n" + chek_m,
@@ -110,7 +109,7 @@ async def route_voice_to_module(update: Update, ctx: ContextTypes.DEFAULT_TYPE,
                         await _db.kirim_saqlash(uid, natija)
                         await update.message.reply_text("✅ Kirim saqlandi")
                     else:
-                        sotuv = await _db.sotuv_saqlash(uid, natija)
+                        await _db.sotuv_saqlash(uid, natija)
                         chek = sotuv_cheki(natija, dokon)
                         await update.message.reply_text(
                             f"✅ Sotuv saqlandi\n\n{chek}"
@@ -119,7 +118,7 @@ async def route_voice_to_module(update: Update, ctx: ContextTypes.DEFAULT_TYPE,
                 except Exception as e:
                     log.error("voice tasdiq: %s", e, exc_info=True)
                     await update.message.reply_text(
-                        f"⚠️ Saqlashda xato. Tugmani bosing:\n/menyu"
+                        "⚠️ Saqlashda xato. Tugmani bosing:\n/menyu"
                     )
                     return True
 
@@ -499,7 +498,6 @@ async def route_voice_to_module(update: Update, ctx: ContextTypes.DEFAULT_TYPE,
         vazifa_matn = vazifa_match.group(2).strip(".,! ")
         # Shogird nom'idan ID topish kerak
         try:
-            from services.bot.bot_helpers import cfg
             from shared.database.pool import get_pool
             uid = update.effective_user.id
             async with get_pool().acquire() as c:

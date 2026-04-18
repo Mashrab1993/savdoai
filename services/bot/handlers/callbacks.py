@@ -9,17 +9,16 @@ import io
 import logging
 from decimal import Decimal
 
-from telegram import Update, InputFile, InlineKeyboardButton, InlineKeyboardMarkup, WebAppInfo
+from telegram import Update, InputFile
 from telegram.constants import ParseMode
 from telegram.ext import ContextTypes
 
-import os as _os
 import services.bot.db as db
 import services.bot.bot_services.export_pdf as pdf_xizmat
 import services.bot.bot_services.export_excel as excel_xizmat
 import services.bot.bot_services.nakladnoy as nakl_xizmat
 from services.bot.bot_helpers import (
-    faol_tekshir, _user_ol_kesh, xat, tg, _truncate, cfg,
+    faol_tekshir, _user_ol_kesh, xat, tg, cfg,
     _kesh_tozala,
 )
 
@@ -35,7 +34,6 @@ def _get_cmd_jurnal():
 def _get_cmd_balans():
     from services.bot.handlers.commands import cmd_balans
     return cmd_balans
-from shared.utils import like_escape
 from shared.utils.fmt import (
     pul, SAHIFA, kunlik_matn, oylik_matn, foyda_matn,
     klient_hisobi_matn,
@@ -391,7 +389,6 @@ async def _hujjat_cb(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     """Hujjat tugma callback — huj:bet:5, huj:jadval"""
     q = update.callback_query
     await q.answer()
-    uid = update.effective_user.id
 
     h = ctx.user_data.get("hujjat")
     if not h:
@@ -451,7 +448,6 @@ async def _hisobot_excel_cb(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     tur = q.data.split(":")[1]  # kunlik, haftalik, oylik
     try:
         from shared.services.hisobot_engine import kunlik, haftalik, oylik
-        from shared.database.pool import get_pool
         import services.bot.bot_services.export_excel as _exl
 
         async with db._P().acquire() as _ec:

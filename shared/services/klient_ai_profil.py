@@ -23,7 +23,6 @@ import json
 import logging
 from datetime import date, datetime, timedelta
 from decimal import Decimal
-from typing import Optional
 
 log = logging.getLogger(__name__)
 

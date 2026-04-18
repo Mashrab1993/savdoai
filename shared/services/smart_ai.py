@@ -13,7 +13,6 @@
 from __future__ import annotations
 import logging
 import os
-from typing import Optional
 
 log = logging.getLogger("savdoai.smart_ai")
 
@@ -97,7 +96,7 @@ async def biznes_snapshot(uid: int) -> str:
                 "SELECT COUNT(*) as soni, COALESCE(SUM(jami),0) as jami, "
                 "COALESCE(SUM(qarz),0) as qarz "
                 "FROM sotuv_sessiyalar WHERE user_id=$1 AND sana>=$2", uid, hafta_boshi)
-            lines.append(f"═══ SHU HAFTA ═══")
+            lines.append("═══ SHU HAFTA ═══")
             lines.append(f"  Sotuv: {hafta_sotuv['soni']} ta, jami={float(hafta_sotuv['jami']):,.0f}, qarz={float(hafta_sotuv['qarz']):,.0f}")
             lines.append("")
 
@@ -107,7 +106,7 @@ async def biznes_snapshot(uid: int) -> str:
                 "SELECT COUNT(*) as soni, COALESCE(SUM(jami),0) as jami, "
                 "COALESCE(SUM(qarz),0) as qarz "
                 "FROM sotuv_sessiyalar WHERE user_id=$1 AND sana>=$2", uid, oy_boshi)
-            lines.append(f"═══ SHU OY ═══")
+            lines.append("═══ SHU OY ═══")
             lines.append(f"  Sotuv: {oy_sotuv['soni']} ta, jami={float(oy_sotuv['jami']):,.0f}, qarz={float(oy_sotuv['qarz']):,.0f}")
             lines.append("")
 
@@ -118,7 +117,7 @@ async def biznes_snapshot(uid: int) -> str:
                 "FROM chiqimlar ch JOIN sotuv_sessiyalar ss ON ss.id=ch.sessiya_id "
                 "WHERE ch.user_id=$1 AND ss.sana>=$2 "
                 "GROUP BY ch.tovar_nomi ORDER BY jami_summa DESC LIMIT 15", uid, oy_boshi)
-            lines.append(f"═══ TOP TOVARLAR (shu oy) ═══")
+            lines.append("═══ TOP TOVARLAR (shu oy) ═══")
             for t in top_tovarlar:
                 lines.append(f"  {t['tovar_nomi']}: {float(t['jami_miqdor']):,.0f} dona, {float(t['jami_summa']):,.0f} so'm")
             lines.append("")
@@ -128,7 +127,7 @@ async def biznes_snapshot(uid: int) -> str:
                 "SELECT klient_ismi, COUNT(*) as soni, SUM(jami) as jami "
                 "FROM sotuv_sessiyalar WHERE user_id=$1 AND sana>=$2 AND klient_ismi IS NOT NULL "
                 "GROUP BY klient_ismi ORDER BY jami DESC LIMIT 15", uid, oy_boshi)
-            lines.append(f"═══ TOP KLIENTLAR (shu oy) ═══")
+            lines.append("═══ TOP KLIENTLAR (shu oy) ═══")
             for k in top_klientlar:
                 lines.append(f"  {k['klient_ismi']}: {k['soni']} ta sotuv, {float(k['jami']):,.0f} so'm")
             lines.append("")

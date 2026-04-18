@@ -67,7 +67,7 @@ def tp_reyting_matn(tp_data: dict, manba: str = "reestr") -> str:
     if not tp_data:
         return "👤 TP ma'lumoti topilmadi."
 
-    m = f"👥 *TP SAMARADORLIK REYTINGI*\n━━━━━━━━━━━━━━━━━━━━━\n\n"
+    m = "👥 *TP SAMARADORLIK REYTINGI*\n━━━━━━━━━━━━━━━━━━━━━\n\n"
 
     # Sort by jami_summa
     sorted_tp = sorted(tp_data.items(), key=lambda x: -x[1]["jami_summa"])

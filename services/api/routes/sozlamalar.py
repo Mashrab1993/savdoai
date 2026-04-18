@@ -10,7 +10,6 @@ from __future__ import annotations
 import logging
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
-from typing import Optional
 from shared.database.pool import rls_conn
 from services.api.deps import get_uid
 
@@ -68,7 +67,7 @@ async def sozlama_royxati(jadval: str, uid: int = Depends(get_uid)):
 @router.post("/{jadval}")
 async def sozlama_yaratish(jadval: str, body: SozlamaItem, uid: int = Depends(get_uid)):
     """Yangi sozlama qo'shish."""
-    info = _check_jadval(jadval)
+    _check_jadval(jadval)
 
     async with rls_conn(uid) as c:
         if jadval == "narx_turlar":

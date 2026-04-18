@@ -20,10 +20,8 @@
 """
 from __future__ import annotations
 import logging
-from datetime import datetime, timedelta, date
+from datetime import datetime, date
 from decimal import Decimal
-from typing import Optional
-from collections import defaultdict
 
 import pytz
 
@@ -190,8 +188,8 @@ async def _klient_yoqotish(conn, uid: int) -> list[dict]:
                 f"Oldin jami {float(k['jami_oldin']):,.0f} so'm sotib olgan."
             ),
             "tavsiya": (
-                f"Qo'ng'iroq qiling yoki maxsus taklif yuboring. "
-                f"Bu klient sizning top xaridorlaringizdan biri."
+                "Qo'ng'iroq qiling yoki maxsus taklif yuboring. "
+                "Bu klient sizning top xaridorlaringizdan biri."
             ),
         })
 

@@ -188,7 +188,7 @@ async def cmd_fikr_stat(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("📭 Oxirgi 30 kunda fikr yo'q.")
         return
     lines = [
-        f"💬 *FIKR STATISTIKA — 30 kun*",
+        "💬 *FIKR STATISTIKA — 30 kun*",
         "",
         f"📋 Jami: *{s['jami']}*",
         f"  ⏳ Javobsiz: {s['javobsiz']}",

@@ -11,8 +11,7 @@
 from __future__ import annotations
 
 import logging
-from datetime import date, datetime, timedelta
-from typing import Optional
+from datetime import date, timedelta
 
 from fastapi import APIRouter, Depends, Query
 from shared.database.pool import rls_conn
@@ -52,7 +51,7 @@ async def supervayzer_dashboard(
 
         # ═══ 2. TASHRIF KPI'LARI (storecheck) ═══
         # Plan: outlet_plan'da har klient uchun oylik tashrif plan
-        oy_boshi = target.replace(day=1)
+        target.replace(day=1)
         plan = await c.fetchrow("""
             SELECT COALESCE(SUM(tashrif_plan), 0) AS oylik_plan
             FROM outlet_plan

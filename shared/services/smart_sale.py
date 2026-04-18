@@ -20,7 +20,6 @@
 from __future__ import annotations
 import logging
 from decimal import Decimal
-from typing import Optional
 
 log = logging.getLogger(__name__)
 D = lambda v: Decimal(str(v or 0))
