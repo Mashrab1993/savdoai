@@ -29,15 +29,15 @@ router = APIRouter(prefix="/api/v1", tags=["Ekspeditor/Sklad"])
 
 class EkspeditorIn(BaseModel):
     ism: str = Field(..., min_length=1, max_length=200)
-    telefon: Optional[str] = None
-    mashina_nomi: Optional[str] = None
-    mashina_raqami: Optional[str] = None
+    telefon: str | None = None
+    mashina_nomi: str | None = None
+    mashina_raqami: str | None = None
     faol: bool = True
 
 
 @router.get("/ekspeditorlar")
 async def list_ekspeditorlar(
-    faol: Optional[bool] = None,
+    faol: bool | None = None,
     uid: int = Depends(get_uid),
 ):
     where = ["user_id = $1"]
@@ -109,13 +109,13 @@ async def delete_ekspeditor(eid: int, uid: int = Depends(get_uid)):
 
 class SkladIn(BaseModel):
     nomi: str = Field(..., min_length=1, max_length=200)
-    turi: Optional[str] = Field(None, description="asosiy, brak, aksiya...")
-    kod: Optional[str] = None
+    turi: str | None = Field(None, description="asosiy, brak, aksiya...")
+    kod: str | None = None
     faol: bool = True
 
 
 @router.get("/skladlar")
-async def list_skladlar(faol: Optional[bool] = None, uid: int = Depends(get_uid)):
+async def list_skladlar(faol: bool | None = None, uid: int = Depends(get_uid)):
     where = ["user_id = $1"]
     params: list = [uid]
     if faol is not None:
@@ -182,12 +182,12 @@ async def delete_sklad(sid: int, uid: int = Depends(get_uid)):
 
 class NakladnoyCreate(BaseModel):
     nomi: str = Field(..., min_length=1)
-    sana: Optional[str] = None  # YYYY-MM-DD
-    shogird_id: Optional[int] = None
-    ekspeditor_id: Optional[int] = None
-    sklad_id: Optional[int] = None
+    sana: str | None = None  # YYYY-MM-DD
+    shogird_id: int | None = None
+    ekspeditor_id: int | None = None
+    sklad_id: int | None = None
     sessiya_idlar: list[int] = Field(..., min_items=1)
-    izoh: Optional[str] = None
+    izoh: str | None = None
 
 
 @router.post("/nakladnoy_registr")
@@ -231,8 +231,8 @@ async def create_nakladnoy(body: NakladnoyCreate, uid: int = Depends(get_uid)):
 
 @router.get("/nakladnoy_registrlari")
 async def list_nakladnoy(
-    sana_dan: Optional[str] = None,
-    sana_gacha: Optional[str] = None,
+    sana_dan: str | None = None,
+    sana_gacha: str | None = None,
     uid: int = Depends(get_uid),
 ):
     where = ["n.user_id = $1"]

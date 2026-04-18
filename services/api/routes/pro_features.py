@@ -39,9 +39,9 @@ route_router = APIRouter(prefix="/marshrut", tags=["marshrut"])
 
 
 class RouteRequest(BaseModel):
-    klient_idlar: List[int] = []
-    boshlangich_lat: Optional[float] = None
-    boshlangich_lon: Optional[float] = None
+    klient_idlar: list[int] = []
+    boshlangich_lat: float | None = None
+    boshlangich_lon: float | None = None
 
 
 @route_router.post("/optimallashtir")

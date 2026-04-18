@@ -36,8 +36,8 @@ class KassaOperatsiya(BaseModel):
     tur: str = Field(..., pattern="^(kirim|chiqim)$")
     summa: Decimal = Field(..., gt=0, max_digits=18, decimal_places=2)
     usul: str = Field("naqd", pattern="^(naqd|karta|otkazma)$")
-    tavsif: Optional[str] = Field(None, max_length=500)
-    kategoriya: Optional[str] = Field(None, max_length=100)
+    tavsif: str | None = Field(None, max_length=500)
+    kategoriya: str | None = Field(None, max_length=100)
 
 class KassaStats(BaseModel):
     bugun_kirim: Decimal
@@ -58,8 +58,8 @@ class KassaQator(BaseModel):
     tur: str
     summa: Decimal
     usul: str
-    tavsif: Optional[str]
-    kategoriya: Optional[str]
+    tavsif: str | None
+    kategoriya: str | None
     sana: str
     vaqt: str
 
@@ -144,8 +144,8 @@ async def kassa_tarix(
     uid: int = Depends(get_uid),
     limit: int = Query(50, ge=1, le=200),
     offset: int = Query(0, ge=0),
-    usul: Optional[str] = Query(None, pattern="^(naqd|karta|otkazma)$"),
-    tur: Optional[str] = Query(None, pattern="^(kirim|chiqim)$"),
+    usul: str | None = Query(None, pattern="^(naqd|karta|otkazma)$"),
+    tur: str | None = Query(None, pattern="^(kirim|chiqim)$"),
 ):
     """Kassa operatsiyalari tarixi"""
     async with rls_conn(uid) as c:

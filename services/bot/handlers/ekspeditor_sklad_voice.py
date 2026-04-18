@@ -16,7 +16,7 @@ from shared.database.pool import rls_conn
 log = logging.getLogger(__name__)
 
 
-def _extract_phone(m: str) -> Optional[str]:
+def _extract_phone(m: str) -> str | None:
     """+998 90 123 45 67 yoki 99890... kabi raqamlarni topish."""
     mt = re.search(r'(?:\+?998)?\s*\(?(\d{2})\)?\s*(\d{3})[\s-]*(\d{2})[\s-]*(\d{2})', m)
     if mt:

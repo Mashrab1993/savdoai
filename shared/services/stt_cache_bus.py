@@ -42,7 +42,7 @@ import asyncio
 import json
 import logging
 import os
-from typing import Callable, Awaitable
+from collections.abc import Callable, Awaitable
 
 log = logging.getLogger(__name__)
 

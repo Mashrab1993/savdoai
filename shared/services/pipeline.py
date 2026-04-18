@@ -271,7 +271,7 @@ class TransactionDraft:
     status: TxStatus = TxStatus.DRAFT
     ai_raw: dict = field(default_factory=dict)       # AI ning xom natijasi
     corrected: dict = field(default_factory=dict)     # Python tuzatgandan keyin
-    confidence: Optional[ConfidenceReport] = None     # Ishonch baholash
+    confidence: ConfidenceReport | None = None     # Ishonch baholash
     warnings: list = field(default_factory=list)      # Ogohlantirishlar
     user_id: int = 0
     created_at: float = field(default_factory=time.time)

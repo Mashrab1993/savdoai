@@ -32,7 +32,7 @@ _OY_NOMI = [
 ]
 
 
-def _parse_summa(text: str) -> Optional[Decimal]:
+def _parse_summa(text: str) -> Decimal | None:
     """Matn'dan summa ajratish. '30 mln', '30 million', '500 ming', '30000000'."""
     m = text.lower().replace(",", "").replace(".", "")
     # mln / million

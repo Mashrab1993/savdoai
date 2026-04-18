@@ -215,8 +215,8 @@ class QdrantRAG:
     Aks holda in-memory lug'at ishlatiladi.
     """
 
-    def __init__(self, url: Optional[str] = None,
-                 api_key: Optional[str] = None):
+    def __init__(self, url: str | None = None,
+                 api_key: str | None = None):
         self._client = None
         self._collection = "uzbek_dialects"
 
@@ -266,11 +266,11 @@ class QdrantRAG:
 
 
 # Global instance
-_rag: Optional[QdrantRAG] = None
+_rag: QdrantRAG | None = None
 
 
-def rag_init(qdrant_url: Optional[str] = None,
-             qdrant_key: Optional[str] = None) -> None:
+def rag_init(qdrant_url: str | None = None,
+             qdrant_key: str | None = None) -> None:
     global _rag
     _rag = QdrantRAG(qdrant_url, qdrant_key)
     log.info("✅ RAG tizimi tayyor (%s)",

@@ -15,13 +15,14 @@ import asyncio
 import logging
 from contextlib import asynccontextmanager
 from decimal import Decimal, InvalidOperation
-from typing import Any, AsyncGenerator, Optional
+from typing import Any, Optional
+from collections.abc import AsyncGenerator
 
 import asyncpg
 
 log = logging.getLogger(__name__)
 
-_pool: Optional[asyncpg.Pool] = None
+_pool: asyncpg.Pool | None = None
 
 
 # ════════════════════════════════════════════════════════════

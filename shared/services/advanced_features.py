@@ -116,7 +116,7 @@ SAVOL_PATTERNS = {
 }
 
 
-def savol_turini_aniqla(matn: str) -> Optional[str]:
+def savol_turini_aniqla(matn: str) -> str | None:
     """Matndan savol turini aniqlash."""
     for tur, pattern in SAVOL_PATTERNS.items():
         if pattern.search(matn):
@@ -124,7 +124,7 @@ def savol_turini_aniqla(matn: str) -> Optional[str]:
     return None
 
 
-def savol_tovar_ajrat(matn: str) -> Optional[str]:
+def savol_tovar_ajrat(matn: str) -> str | None:
     """Savoldan tovar nomini ajratish."""
     m = re.search(r'(\S+?)(?:ning|ni|dan)?\s+(?:qoldi|nechta|qancha|narxi)', 
                   matn, re.IGNORECASE)
@@ -133,7 +133,7 @@ def savol_tovar_ajrat(matn: str) -> Optional[str]:
     return None
 
 
-async def tabiiy_savol_javob(conn, uid: int, matn: str) -> Optional[str]:
+async def tabiiy_savol_javob(conn, uid: int, matn: str) -> str | None:
     """
     Tabiiy savolga DB dan javob.
     "Kecha Ariel nechtadan sotdim?" → "Kecha 50 ta Ariel sotildi, 45,000 dan"
@@ -262,7 +262,7 @@ def zarar_ogohlantirish_matn(zararlilar: list[dict]) -> str:
 #  5. SHABLONLAR — "Salimov odatiy"
 # ═══════════════════════════════════════════════════════════════
 
-async def shablon_olish(conn, uid: int, klient_ismi: str) -> Optional[dict]:
+async def shablon_olish(conn, uid: int, klient_ismi: str) -> dict | None:
     """
     Klientning oxirgi sotuvini shablon sifatida olish.
     "Salimov odatiy" → oxirgi 3 sotuvdagi eng ko'p takrorlangan tovarlar.
@@ -330,7 +330,7 @@ def shablon_bormi(matn: str) -> bool:
     return any(s in m for s in SHABLON_SOZLAR)
 
 
-def shablon_klient_ajrat(matn: str) -> Optional[str]:
+def shablon_klient_ajrat(matn: str) -> str | None:
     """Matndan klient + odatiy ajratish. "Salimov odatiy" → "Salimov" """
     for s in SHABLON_SOZLAR:
         if s in matn.lower():
@@ -411,7 +411,7 @@ def qoldiq_tuzatish_bormi(matn: str) -> bool:
     return bool(QOLDIQ_TUZATISH_PATTERN.search(matn))
 
 
-def qoldiq_tuzatish_ajrat(matn: str) -> Optional[dict]:
+def qoldiq_tuzatish_ajrat(matn: str) -> dict | None:
     """
     "Ariel 3 ta yo'qoldi" → {"nomi": "Ariel", "miqdor": 3, "sabab": "yo'qoldi"}
     """
@@ -561,7 +561,7 @@ ABC_SOZLAR = ("abc tahlil", "abc analiz", "pareto", "tovar tahlil",
 SAVOL_SOZLAR = ("kecha", "oxirgi sotuv", "eng ko'p sotilgan", 
                 "qoldiq", "nechta qoldi", "qancha qoldi")
 
-def advanced_buyruq_aniqla(matn: str) -> Optional[str]:
+def advanced_buyruq_aniqla(matn: str) -> str | None:
     """Kengaytirilgan buyruq aniqlash."""
     m = matn.lower().strip()
 

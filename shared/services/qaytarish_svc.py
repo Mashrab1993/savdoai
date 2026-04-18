@@ -24,17 +24,17 @@ log = logging.getLogger(__name__)
 SABAB_TURLARI = ["brak", "muddati", "sifatsiz", "kelishuv", "boshqa"]
 
 
-async def qaytarish_yarat(conn, uid: int, klient_id: Optional[int],
-                           tovar_id: Optional[int], tovar_nomi: str,
+async def qaytarish_yarat(conn, uid: int, klient_id: int | None,
+                           tovar_id: int | None, tovar_nomi: str,
                            miqdor: Decimal, sabab: str = "brak",
                            summa: Decimal = Decimal(0),
                            turi: str = "qaytarish",
-                           almash_tovar_id: Optional[int] = None,
+                           almash_tovar_id: int | None = None,
                            almash_miqdor: Decimal = Decimal(0),
-                           shogird_id: Optional[int] = None,
-                           asl_sotuv_id: Optional[int] = None,
+                           shogird_id: int | None = None,
+                           asl_sotuv_id: int | None = None,
                            izoh: str = "",
-                           rasm_file_id: Optional[str] = None) -> int:
+                           rasm_file_id: str | None = None) -> int:
     if sabab not in SABAB_TURLARI:
         sabab = "boshqa"
     if turi not in ("qaytarish", "almashtirish"):
@@ -94,7 +94,7 @@ async def qaytarish_bekor(conn, uid: int, qid: int) -> bool:
     return "UPDATE 1" in result
 
 
-async def qaytarishlar_royxat(conn, uid: int, holat: Optional[str] = None,
+async def qaytarishlar_royxat(conn, uid: int, holat: str | None = None,
                                 kun: int = 30, limit: int = 30) -> list[dict]:
     chegara = datetime.now() - timedelta(days=kun)
     where = ["q.user_id=$1", "q.yaratilgan >= $2"]

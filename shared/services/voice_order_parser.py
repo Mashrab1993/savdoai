@@ -277,7 +277,7 @@ def parse_order_text(text: str) -> dict:
 #  FUZZY MATCHING — DB'dagi tovarlar bilan moslashtirish
 # ════════════════════════════════════════════════════════════
 
-def fuzzy_match_tovar(nomi: str, db_tovarlar: list[dict]) -> Optional[dict]:
+def fuzzy_match_tovar(nomi: str, db_tovarlar: list[dict]) -> dict | None:
     """
     Agent aytgan tovar nomini DB'dagi eng mos tovar bilan moslashtirish.
 
@@ -325,7 +325,7 @@ def fuzzy_match_tovar(nomi: str, db_tovarlar: list[dict]) -> Optional[dict]:
     return best
 
 
-def fuzzy_match_klient(nomi: str, db_klientlar: list[dict]) -> Optional[dict]:
+def fuzzy_match_klient(nomi: str, db_klientlar: list[dict]) -> dict | None:
     """
     Agent aytgan do'kon nomini DB'dagi klient bilan moslashtirish.
 

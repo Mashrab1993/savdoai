@@ -20,21 +20,21 @@ router = APIRouter(prefix="/api/v1", tags=["Klientlar"])
 
 
 class KlientYangilaSorov(BaseModel):
-    ism:          Optional[str]   = None
-    telefon:      Optional[str]   = None
-    manzil:       Optional[str]   = None
-    kredit_limit: Optional[float] = None
-    eslatma:      Optional[str]   = None
+    ism:          str | None   = None
+    telefon:      str | None   = None
+    manzil:       str | None   = None
+    kredit_limit: float | None = None
+    eslatma:      str | None   = None
 
 
 @router.get("/klientlar")
 async def klientlar(
     limit: int = 20, offset: int = 0,
-    qidiruv: Optional[str] = None,
-    kategoriya: Optional[str] = None,
-    qarzdor: Optional[bool] = None,
-    min_sotib: Optional[float] = None,
-    faol_kun: Optional[int] = None,  # oxirgi N kun ichida sotuv bo'lganlar
+    qidiruv: str | None = None,
+    kategoriya: str | None = None,
+    qarzdor: bool | None = None,
+    min_sotib: float | None = None,
+    faol_kun: int | None = None,  # oxirgi N kun ichida sotuv bo'lganlar
     sort: str = "jami_sotib",
     uid: int = Depends(get_uid)
 ):

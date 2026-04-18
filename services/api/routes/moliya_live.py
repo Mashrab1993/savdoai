@@ -25,7 +25,7 @@ moliya_router = APIRouter(prefix="/moliya", tags=["moliya"])
 
 
 @moliya_router.get("/foyda-zarar")
-async def pl(sana_dan: Optional[str] = None, sana_gacha: Optional[str] = None,
+async def pl(sana_dan: str | None = None, sana_gacha: str | None = None,
              uid: int = Depends(get_uid)):
     """Foyda va Zarar hisoboti (P&L) — QuickBooks analog."""
     async with get_conn(uid) as conn:
@@ -40,7 +40,7 @@ async def bs(uid: int = Depends(get_uid)):
 
 
 @moliya_router.get("/pul-oqimi")
-async def cf(sana_dan: Optional[str] = None, sana_gacha: Optional[str] = None,
+async def cf(sana_dan: str | None = None, sana_gacha: str | None = None,
              uid: int = Depends(get_uid)):
     """Pul oqimi hisoboti (Cash Flow)."""
     async with get_conn(uid) as conn:

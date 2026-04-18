@@ -26,8 +26,8 @@ class AksiyaCreate(BaseModel):
     nomi: str
     turi: str  # foiz_chegirma, summa_chegirma, tovar_hadya, bonus_ball, narx_tushirish, min_summa
     faol: bool = True
-    boshlanish_sanasi: Optional[str] = None
-    tugash_sanasi: Optional[str] = None
+    boshlanish_sanasi: str | None = None
+    tugash_sanasi: str | None = None
     min_summa: float = 0
     min_miqdor: int = 0
     max_qollash_soni: int = 0
@@ -40,13 +40,13 @@ class AksiyaCreate(BaseModel):
     barcha_tovarlar: bool = True
     barcha_klientlar: bool = True
     prioritet: int = 0
-    tovar_idlar: List[int] = []
-    klient_idlar: List[int] = []
+    tovar_idlar: list[int] = []
+    klient_idlar: list[int] = []
 
 
 class AksiyaHisoblash(BaseModel):
     klient_id: int
-    tovarlar: List[dict]  # [{tovar_id, miqdor, narx, summa, kategoriya}]
+    tovarlar: list[dict]  # [{tovar_id, miqdor, narx, summa, kategoriya}]
     jami_summa: float
 
 

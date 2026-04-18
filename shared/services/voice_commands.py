@@ -111,7 +111,7 @@ _PATTERNS: list[tuple[str, str, str]] = [
 ]
 
 
-def detect_voice_command(text: str) -> Optional[dict]:
+def detect_voice_command(text: str) -> dict | None:
     """
     O'zbek ovoz/matn buyrug'ini aniqlash.
     

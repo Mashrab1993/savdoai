@@ -48,7 +48,7 @@ class TrackPoint(BaseModel):
 
 class TracksPayload(BaseModel):
     user_id: int
-    tracks: List[TrackPoint]
+    tracks: list[TrackPoint]
 
 
 @router.post("/tracks")
@@ -68,7 +68,7 @@ async def save_tracks(body: TracksPayload, uid: int = Depends(get_uid)):
 
 
 @router.get("/tracks")
-async def get_tracks(sana: Optional[str] = None, limit: int = 200,
+async def get_tracks(sana: str | None = None, limit: int = 200,
                       uid: int = Depends(get_uid)):
     """GPS tracklar ro'yxatini olish."""
     async with get_conn(uid) as conn:

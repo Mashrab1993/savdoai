@@ -219,7 +219,7 @@ async def webhook_yaratish(conn, uid: int, data: dict) -> int:
     """, uid, data["nomi"], data["url"], secret, data.get("eventlar", []))
 
 
-async def webhook_royxati(conn, uid: int) -> List[dict]:
+async def webhook_royxati(conn, uid: int) -> list[dict]:
     """Webhook'lar ro'yxati."""
     rows = await conn.fetch(
         "SELECT * FROM webhooklar WHERE user_id=$1 ORDER BY id DESC", uid)

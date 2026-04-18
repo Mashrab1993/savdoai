@@ -230,7 +230,7 @@ def _save(s: PrintSession) -> None:
             log.debug("Redis save print session: %s", e)
 
 
-def _load(job_id: str) -> Optional[PrintSession]:
+def _load(job_id: str) -> PrintSession | None:
     if job_id in _mem:
         return _mem[job_id]
     r = _redis()
@@ -266,7 +266,7 @@ def verify(job_id: str, uid: int, token: str) -> bool:
     return _verify_compat(token, job_id, uid, s.created_at)
 
 
-def get(job_id: str) -> Optional[PrintSession]:
+def get(job_id: str) -> PrintSession | None:
     return _load(job_id)
 
 

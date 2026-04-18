@@ -30,20 +30,20 @@ ALLOWED_TURI = {"prodaja", "zakup", "prayslist"}
 
 class NarxTuriIn(BaseModel):
     nomi: str = Field(..., min_length=1, max_length=100)
-    kod: Optional[str] = Field(None, max_length=50)
+    kod: str | None = Field(None, max_length=50)
     turi: str = Field("prodaja")
-    tavsif: Optional[str] = None
-    tolov_usuli: Optional[str] = Field(None, max_length=50)
+    tavsif: str | None = None
+    tolov_usuli: str | None = Field(None, max_length=50)
     foiz_chegirma: float = 0
-    klient_turi_id: Optional[int] = None
+    klient_turi_id: int | None = None
     tartib: int = 0
     faol: bool = True
 
 
 @router.get("/turlari")
 async def list_narx_turlari(
-    turi: Optional[str] = Query(None),
-    faol: Optional[bool] = Query(None),
+    turi: str | None = Query(None),
+    faol: bool | None = Query(None),
     uid: int = Depends(get_uid),
 ):
     """Barcha narx turlari (SalesDoc /settings/priceType).

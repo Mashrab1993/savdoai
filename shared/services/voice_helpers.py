@@ -24,7 +24,7 @@ MIGRATION PLAN:
 from __future__ import annotations
 
 import re
-from typing import Iterable
+from collections.abc import Iterable
 
 
 # Uzbek negation indikatori — `-may`, `-ma`, `emas`, `yo'q`, `kerak emas`

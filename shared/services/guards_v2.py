@@ -169,7 +169,7 @@ async def checkout(conn, uid: int, klient_id: int,
 
 
 async def checkin_tarix(conn, uid: int, klient_id: int = None,
-                         sana: str = None, limit: int = 50) -> List[dict]:
+                         sana: str = None, limit: int = 50) -> list[dict]:
     """Check-in/out tarixini olish."""
     query = "SELECT co.*, k.ism as klient_nomi FROM checkin_out co LEFT JOIN klientlar k ON k.id = co.klient_id WHERE co.user_id = $1"
     params = [uid]
@@ -215,7 +215,7 @@ BUYURTMA_AMALLARI = {
 }
 
 
-def mavjud_amallar(holat: str, config=None) -> List[dict]:
+def mavjud_amallar(holat: str, config=None) -> list[dict]:
     """Buyurtma holati asosida mumkin bo'lgan amallar ro'yxati.
 
     SD Agent DataHolderOrderMenu.getActionMenuItems() analogi.

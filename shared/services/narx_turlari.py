@@ -27,7 +27,7 @@ log = logging.getLogger(__name__)
 
 async def narx_turi_qoshish(conn, uid: int, nomi: str,
                              foiz_chegirma: float = 0,
-                             klient_turi_id: Optional[int] = None) -> int:
+                             klient_turi_id: int | None = None) -> int:
     row = await conn.fetchrow("""
         INSERT INTO narx_turlari(user_id, nomi, foiz_chegirma, klient_turi_id)
         VALUES($1, $2, $3, $4)
@@ -96,7 +96,7 @@ async def tovar_narxlari_ol(conn, uid: int, tovar_id: int) -> list[dict]:
 
 
 async def klient_uchun_narx(conn, uid: int, tovar_id: int,
-                             klient_id: Optional[int] = None) -> Decimal:
+                             klient_id: int | None = None) -> Decimal:
     """Klient uchun mos narxni aniqlash.
 
     Mantiq:

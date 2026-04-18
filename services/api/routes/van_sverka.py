@@ -36,18 +36,18 @@ class KlientItem(BaseModel):
     klient_nomi: str = ""
 
 class MarshrutCreate(BaseModel):
-    sana: Optional[str] = None
+    sana: str | None = None
     mashina_raqami: str = ""
     haydovchi: str = ""
     izoh: str = ""
-    tovarlar: List[TovarItem]
-    klientlar: List[KlientItem]
+    tovarlar: list[TovarItem]
+    klientlar: list[KlientItem]
 
 class YetkazishConfirm(BaseModel):
-    tovarlar: List[TovarItem]
-    latitude: Optional[float] = None
-    longitude: Optional[float] = None
-    foto_url: Optional[str] = None
+    tovarlar: list[TovarItem]
+    latitude: float | None = None
+    longitude: float | None = None
+    foto_url: str | None = None
 
 
 @van_router.post("/marshrut")

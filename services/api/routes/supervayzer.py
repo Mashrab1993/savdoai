@@ -24,7 +24,7 @@ router = APIRouter(prefix="/api/v1", tags=["Supervayzer"])
 
 @router.get("/supervayzer")
 async def supervayzer_dashboard(
-    sana: Optional[str] = Query(None, description="YYYY-MM-DD, default=bugun"),
+    sana: str | None = Query(None, description="YYYY-MM-DD, default=bugun"),
     uid: int = Depends(get_uid),
 ):
     """SalesDoc supervayzer-style dashboard — bitta endpoint.

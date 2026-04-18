@@ -840,8 +840,8 @@ async def agentlar_bugungi_kpi(uid: int = Depends(get_uid)):
 async def audit_log_list(
     limit: int = 100,
     offset: int = 0,
-    jadval: Optional[str] = None,
-    amal: Optional[str] = None,
+    jadval: str | None = None,
+    amal: str | None = None,
     uid: int = Depends(get_uid),
 ):
     """Audit log — foydalanuvchi amallarining tarixi.
@@ -889,10 +889,10 @@ async def audit_log_list(
 
 @router.get("/photo-reports")
 async def photo_reports(
-    sana_dan: Optional[str] = None,
-    sana_gacha: Optional[str] = None,
-    qidiruv: Optional[str] = None,
-    agent_id: Optional[int] = None,
+    sana_dan: str | None = None,
+    sana_gacha: str | None = None,
+    qidiruv: str | None = None,
+    agent_id: int | None = None,
     uid: int = Depends(get_uid),
 ):
     """Agentlar yuklagan rasmlar — checkin_out.foto_url orqali."""
@@ -960,9 +960,9 @@ async def photo_reports(
 
 @router.get("/qaytarishlar")
 async def qaytarishlar_list(
-    sana_dan: Optional[str] = None,
-    sana_gacha: Optional[str] = None,
-    qidiruv: Optional[str] = None,
+    sana_dan: str | None = None,
+    sana_gacha: str | None = None,
+    qidiruv: str | None = None,
     limit: int = 200,
     uid: int = Depends(get_uid),
 ):
@@ -1008,13 +1008,13 @@ async def qaytarishlar_list(
 
 
 class QaytarishYarat(__import__("pydantic").BaseModel):
-    chiqim_id: Optional[int] = None
-    klient_ismi: Optional[str] = ""
+    chiqim_id: int | None = None
+    klient_ismi: str | None = ""
     tovar_nomi: str
     miqdor: float
-    birlik: Optional[str] = "dona"
+    birlik: str | None = "dona"
     narx: float
-    sabab: Optional[str] = ""
+    sabab: str | None = ""
 
 
 @router.post("/qaytarish")
@@ -1124,11 +1124,11 @@ async def report_rfm(uid: int = Depends(get_uid)):
 
 @router.get("/reports/sales-detail")
 async def report_sales_detail(
-    sana_dan: Optional[str] = None,
-    sana_gacha: Optional[str] = None,
-    kategoriya: Optional[str] = None,
-    klient: Optional[str] = None,
-    tovar: Optional[str] = None,
+    sana_dan: str | None = None,
+    sana_gacha: str | None = None,
+    kategoriya: str | None = None,
+    klient: str | None = None,
+    tovar: str | None = None,
     limit: int = 500,
     offset: int = 0,
     uid: int = Depends(get_uid),
@@ -1190,9 +1190,9 @@ async def report_sales_detail(
 
 @router.get("/reports/sales-detail/excel")
 async def report_sales_detail_excel(
-    sana_dan: Optional[str] = None,
-    sana_gacha: Optional[str] = None,
-    kategoriya: Optional[str] = None,
+    sana_dan: str | None = None,
+    sana_gacha: str | None = None,
+    kategoriya: str | None = None,
     uid: int = Depends(get_uid),
 ):
     """Sotuv detail hisobotini Excel faylga export qilish."""
@@ -1402,7 +1402,7 @@ async def tavsiya_qoldiq(
 
 @router.get("/hisobot/van-selling-kunlik")
 async def van_selling_kunlik(
-    sana: Optional[str] = None,  # YYYY-MM-DD, default today
+    sana: str | None = None,  # YYYY-MM-DD, default today
     uid: int = Depends(get_uid),
 ):
     """
@@ -1546,8 +1546,8 @@ async def van_selling_kunlik(
 # ────────────────────────────────────────────────────────────────────
 @router.get("/hisobot/defekt")
 async def defekt_hisoboti(
-    sana_dan: Optional[str] = None,
-    sana_gacha: Optional[str] = None,
+    sana_dan: str | None = None,
+    sana_gacha: str | None = None,
     uid: int = Depends(get_uid),
 ):
     """Defekt/qaytarish hisoboti — qaytarilgan tovarlar, sabablar, statistika."""
@@ -1610,8 +1610,8 @@ async def defekt_hisoboti(
 
 @router.get("/hisobot/ekspeditor")
 async def ekspeditor_hisoboti(
-    sana_dan: Optional[str] = None,
-    sana_gacha: Optional[str] = None,
+    sana_dan: str | None = None,
+    sana_gacha: str | None = None,
     uid: int = Depends(get_uid),
 ):
     """
@@ -1737,8 +1737,8 @@ async def ekspeditor_hisoboti(
 
 @router.get("/hisobot/vizitlar")
 async def vizit_hisoboti(
-    sana_dan: Optional[str] = None,
-    sana_gacha: Optional[str] = None,
+    sana_dan: str | None = None,
+    sana_gacha: str | None = None,
     uid: int = Depends(get_uid),
 ):
     """Agent vizitlari hisoboti — checkin_out yoki sotuv_sessiyalar asosida"""

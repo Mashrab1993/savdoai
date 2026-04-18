@@ -217,7 +217,7 @@ async def _fetch_raw_data(conn, uid: int) -> dict:
     return data
 
 
-async def _ai_briefing(raw_data: dict) -> Optional[str]:
+async def _ai_briefing(raw_data: dict) -> str | None:
     """Opus 4.7 (yoki Sonnet fallback) orqali tabiiy til brifing."""
     try:
         from services.cognitive.ai_extras import claude_opus

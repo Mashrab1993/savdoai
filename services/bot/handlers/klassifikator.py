@@ -33,7 +33,7 @@ TURI_KEYWORDS: dict[str, tuple[str, ...]] = {
 }
 
 
-def _detect_turi(m: str) -> Optional[str]:
+def _detect_turi(m: str) -> str | None:
     """Matn ichidan klassifikator turini aniqlaymiz.
 
     Prioritet: eng uzun so'z birinchi (ishlab chiqaruvchi > brend > kategoriya).
@@ -128,7 +128,7 @@ async def voice_klassifikator(update: Update, ctx: ContextTypes.DEFAULT_TYPE,
         return True
 
 
-def _extract_name(m: str, turi: str) -> Optional[str]:
+def _extract_name(m: str, turi: str) -> str | None:
     """Nomni matn ichidan topish."""
     # Birinchi — "yangi <turi> NOM" shaklini sinab ko'ramiz
     for kw in TURI_KEYWORDS[turi]:
@@ -153,7 +153,7 @@ def _extract_name(m: str, turi: str) -> Optional[str]:
     return None
 
 
-def _extract_country(m: str, nomi: str) -> Optional[str]:
+def _extract_country(m: str, nomi: str) -> str | None:
     """Ishlab chiqaruvchi uchun davlatni aniqlaymiz.
 
     "Procter & Gamble Turkiya" → "Turkiya"

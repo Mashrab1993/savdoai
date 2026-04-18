@@ -18,7 +18,7 @@ from shared.utils import like_escape
 log = logging.getLogger(__name__)
 
 
-async def narx_aniqla(conn, uid: int, klient_id: Optional[int], tovar_id: int) -> dict:
+async def narx_aniqla(conn, uid: int, klient_id: int | None, tovar_id: int) -> dict:
     """
     Klient + tovar uchun narxni 4 qatlamdan aniqlaydi.
     
@@ -74,7 +74,7 @@ async def narx_aniqla(conn, uid: int, klient_id: Optional[int], tovar_id: int) -
     return {"narx": narx, "manba": "default", "guruh_nomi": None}
 
 
-async def narx_aniqla_nomi(conn, uid: int, klient_ismi: Optional[str], tovar_nomi: str) -> dict:
+async def narx_aniqla_nomi(conn, uid: int, klient_ismi: str | None, tovar_nomi: str) -> dict:
     """
     Ism/nom bo'yicha narx aniqlash (AI dan kelgan matn uchun).
     Avval klient va tovar ID topadi, keyin narx_aniqla chaqiradi.

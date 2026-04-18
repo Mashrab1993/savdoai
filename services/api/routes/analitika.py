@@ -63,7 +63,7 @@ class WebhookCreate(BaseModel):
     nomi: str
     url: str
     secret: str = ""
-    eventlar: List[str] = []
+    eventlar: list[str] = []
 
 
 @webhook_router.get("/eventlar")

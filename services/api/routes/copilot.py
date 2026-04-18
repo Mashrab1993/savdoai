@@ -23,7 +23,7 @@ router = APIRouter(prefix="/api/v1/copilot", tags=["AI Copilot"])
 
 class CopilotIn(BaseModel):
     savol: str = Field(..., min_length=3, max_length=1000)
-    kontekst: Optional[str] = Field(None, description="Qo'shimcha kontekst (sahifa)")
+    kontekst: str | None = Field(None, description="Qo'shimcha kontekst (sahifa)")
 
 
 @router.post("/ask")

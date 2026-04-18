@@ -79,9 +79,9 @@ class HealthResponse(BaseModel):
     status: str = "ok"
     version: str
     service: str = "api"
-    db_ping_ms: Optional[float] = None
-    db_pool: Optional[str] = None
-    latency_ms: Optional[float] = None
+    db_ping_ms: float | None = None
+    db_pool: str | None = None
+    latency_ms: float | None = None
 
 
 class DashboardResponse(BaseModel):
@@ -109,8 +109,8 @@ class TovarResponse(BaseModel):
 class KlientResponse(BaseModel):
     id: int
     ism: str
-    telefon: Optional[str] = None
-    manzil: Optional[str] = None
+    telefon: str | None = None
+    manzil: str | None = None
     kredit_limit: float = 0
     jami_sotib: float = 0
     aktiv_qarz: float = 0
@@ -125,15 +125,15 @@ class BildirishnomaTuri(BaseModel):
     tur: str
     darajasi: str
     matn: str
-    klient: Optional[str] = None
-    tovar: Optional[str] = None
-    summa: Optional[float] = None
-    qoldiq: Optional[float] = None
-    soni: Optional[int] = None
+    klient: str | None = None
+    tovar: str | None = None
+    summa: float | None = None
+    qoldiq: float | None = None
+    soni: int | None = None
 
 
 class BildirishnomaResponse(BaseModel):
-    items: List[BildirishnomaTuri] = []
+    items: list[BildirishnomaTuri] = []
     jami: int = 0
 
 
@@ -145,8 +145,8 @@ class FoydaResponse(BaseModel):
     xarajatlar: float
     toza_foyda: float
     margin_foiz: float
-    top_foyda: List[dict] = []
-    top_zarar: List[dict] = []
+    top_foyda: list[dict] = []
+    top_zarar: list[dict] = []
 
 
 class StatistikaResponse(BaseModel):
@@ -173,24 +173,24 @@ class TovarModel(BaseModel):
 
 
 class SotuvSo_rov(BaseModel):
-    klient:         Optional[str] = None
-    tovarlar:       List[TovarModel]
+    klient:         str | None = None
+    tovarlar:       list[TovarModel]
     jami_summa:     float         = Field(0, ge=0)
     tolangan:       float         = Field(0, ge=0)
     qarz:           float         = Field(0, ge=0)
-    izoh:           Optional[str] = None
+    izoh:           str | None = None
 
 
 class KirimSo_rov(BaseModel):
-    tovar_id:       Optional[int] = None
+    tovar_id:       int | None = None
     tovar_nomi:     str   = Field(..., min_length=1)
     miqdor:         float = Field(..., gt=0)
     narx:           float = Field(0, ge=0)
     jami:           float = Field(0, ge=0)
     birlik:         str   = Field("dona")
     kategoriya:     str   = Field("Boshqa")
-    manba:          Optional[str] = None
-    izoh:           Optional[str] = None
+    manba:          str | None = None
+    izoh:           str | None = None
 
 
 class QarzTolashSo_rov(BaseModel):
@@ -200,7 +200,7 @@ class QarzTolashSo_rov(BaseModel):
 
 class TelegramAuthSo_rov(BaseModel):
     user_id:        int
-    ism:            Optional[str] = ""
+    ism:            str | None = ""
     hash:           str
 
 
@@ -838,8 +838,8 @@ def _telefon_tozala(tel: str) -> str:
 
 
 class LoginSorov(BaseModel):
-    login: Optional[str] = None
-    telefon: Optional[str] = None
+    login: str | None = None
+    telefon: str | None = None
     parol: str = Field(..., min_length=1)
 
 
@@ -1537,10 +1537,10 @@ async def kirim_import_excel(
 @app.get("/api/v1/kirimlar", tags=["Sotuv"])
 async def kirimlar_royxati(
     limit: int = 50, offset: int = 0,
-    sana_dan: Optional[str] = None,
-    sana_gacha: Optional[str] = None,
-    qidiruv: Optional[str] = None,
-    kategoriya: Optional[str] = None,
+    sana_dan: str | None = None,
+    sana_gacha: str | None = None,
+    qidiruv: str | None = None,
+    kategoriya: str | None = None,
     uid: int = Depends(get_uid),
 ):
     """Kirimlar ro'yxati — sana/kategoriya/qidiruv filtrlari bilan."""
@@ -2179,23 +2179,23 @@ class TovarYaratSorov(BaseModel):
 
 
 class TovarYangilaSorov(BaseModel):
-    nomi:             Optional[str]   = None
-    kategoriya:       Optional[str]   = None
-    birlik:           Optional[str]   = None
-    olish_narxi:      Optional[float] = None
-    sotish_narxi:     Optional[float] = None
-    min_sotish_narxi: Optional[float] = None
-    qoldiq:           Optional[float] = None
-    min_qoldiq:       Optional[float] = None
+    nomi:             str | None   = None
+    kategoriya:       str | None   = None
+    birlik:           str | None   = None
+    olish_narxi:      float | None = None
+    sotish_narxi:     float | None = None
+    min_sotish_narxi: float | None = None
+    qoldiq:           float | None = None
+    min_qoldiq:       float | None = None
 
 
 class QoldiqYangilaSorov(BaseModel):
     qoldiq: float = Field(..., ge=0)
-    ism:          Optional[str]   = None
-    telefon:      Optional[str]   = None
-    manzil:       Optional[str]   = None
-    kredit_limit: Optional[float] = None
-    eslatma:      Optional[str]   = None
+    ism:          str | None   = None
+    telefon:      str | None   = None
+    manzil:       str | None   = None
+    kredit_limit: float | None = None
+    eslatma:      str | None   = None
 # ════════════════════════════════════════════════════════════════
 
 
@@ -2203,7 +2203,7 @@ class XarajatSorov(BaseModel):
     kategoriya_nomi: str   = Field(..., min_length=1)
     summa:           float = Field(..., gt=0)
     izoh:            str   = Field("")
-    shogird_id:      Optional[int] = None
+    shogird_id:      int | None = None
 
 
 @app.post("/api/v1/xarajat", tags=["Xarajatlar"])
@@ -2329,12 +2329,12 @@ async def bildirishnomalar(uid: int = Depends(get_uid)):
 @app.get("/api/v1/savdolar", tags=["Sotuv"])
 async def savdolar_royxati(
     limit: int = 20, offset: int = 0,
-    klient: Optional[str] = None,
-    sana_dan: Optional[str] = None,
-    sana_gacha: Optional[str] = None,
-    qarzdor: Optional[bool] = None,
-    min_summa: Optional[float] = None,
-    holat: Optional[str] = None,  # yangi/tasdiqlangan/otgruzka/yetkazildi/bekor
+    klient: str | None = None,
+    sana_dan: str | None = None,
+    sana_gacha: str | None = None,
+    qarzdor: bool | None = None,
+    min_summa: float | None = None,
+    holat: str | None = None,  # yangi/tasdiqlangan/otgruzka/yetkazildi/bekor
     sort: str = "sana",
     uid: int = Depends(get_uid),
 ):
@@ -2736,8 +2736,8 @@ async def nakladnoy_excel_batch(
 
 @app.get("/api/v1/savdolar/excel", tags=["Sotuv"])
 async def savdolar_excel(
-    sana_dan: Optional[str] = None,
-    sana_gacha: Optional[str] = None,
+    sana_dan: str | None = None,
+    sana_gacha: str | None = None,
     uid: int = Depends(get_uid),
 ):
     """SalesDoc Реестр 3.0 formatida Excel — sanalar bo'yicha buyurtmalar reestri."""
@@ -2857,7 +2857,7 @@ async def savdo_tafsilot(sessiya_id: int, uid: int = Depends(get_uid)):
 
 class SavdoHolatSorov(BaseModel):
     holat: str  # yangi / tasdiqlangan / otgruzka / yetkazildi / bekor
-    sabab: Optional[str] = None
+    sabab: str | None = None
 
 
 @app.put("/api/v1/savdo/{sessiya_id}/holat", tags=["Sotuv"])
@@ -2999,7 +2999,7 @@ class TovarImportItem(BaseModel):
 
 
 class TovarImportSorov(BaseModel):
-    tovarlar: List[TovarImportItem]
+    tovarlar: list[TovarImportItem]
 # ════════════════════════════════════════════════════════════════
 #  STATISTIKA — Admin panel uchun tizim statistikasi
 # ════════════════════════════════════════════════════════════════
@@ -3081,12 +3081,12 @@ async def qr_kod_generatsiya(sessiya_id: int, uid: int = Depends(get_uid)):
 
 
 class ProfilYangilaSorov(BaseModel):
-    ism:        Optional[str] = None
-    dokon_nomi: Optional[str] = None
-    telefon:    Optional[str] = None
-    manzil:     Optional[str] = None
-    inn:        Optional[str] = None
-    til:        Optional[str] = None
+    ism:        str | None = None
+    dokon_nomi: str | None = None
+    telefon:    str | None = None
+    manzil:     str | None = None
+    inn:        str | None = None
+    til:        str | None = None
 
 
 @app.put("/api/v1/me", tags=["Auth"])
@@ -3154,8 +3154,8 @@ class FakturaYaratSorov(BaseModel):
     klient_ismi: str = Field(..., min_length=1, max_length=200)
     tovarlar: list = Field(default_factory=list)
     jami_summa: float = Field(0, ge=0)
-    bank_rekvizit: Optional[dict] = None
-    izoh: Optional[str] = None
+    bank_rekvizit: dict | None = None
+    izoh: str | None = None
 # ════════════════════════════════════════════════════════════════
 
 @app.get("/api/v1/dokon/{dokon_id}/tovarlar", tags=["Mini-Do'kon"])

@@ -97,7 +97,7 @@ async def savat_och(conn, uid: int, klient_ismi: str) -> dict:
     return dict(new)
 
 
-async def savat_ol(conn, uid: int, klient_ismi: str) -> Optional[dict]:
+async def savat_ol(conn, uid: int, klient_ismi: str) -> dict | None:
     """Klient uchun ochiq savat olish (yaratmasdan). Fuzzy match."""
     klient_ismi = klient_ismi.strip()
 
@@ -293,7 +293,7 @@ async def savatga_qosh(conn, uid: int, klient_ismi: str,
 #  3. SAVAT KO'RISH
 # ═══════════════════════════════════════════════════════════════
 
-async def savat_korish(conn, uid: int, klient_ismi: str) -> Optional[dict]:
+async def savat_korish(conn, uid: int, klient_ismi: str) -> dict | None:
     """Klient savatidagi tovarlar ro'yxati"""
     savat = await savat_ol(conn, uid, klient_ismi)
     if not savat:
@@ -343,7 +343,7 @@ async def ochiq_savatlar_soni(conn, uid: int) -> int:
 # ═══════════════════════════════════════════════════════════════
 
 async def savat_yop(conn, uid: int, klient_ismi: str,
-                     qarz_summa: float = 0) -> Optional[dict]:
+                     qarz_summa: float = 0) -> dict | None:
     """
     Klient savatini yopish — ACID tranzaksiya:
     1. Savat tovarlarini olish
@@ -480,7 +480,7 @@ async def savat_yop(conn, uid: int, klient_ismi: str,
 # ═══════════════════════════════════════════════════════════════
 
 async def savatdan_ochir(conn, uid: int, klient_ismi: str,
-                          tovar_nomi: str) -> Optional[dict]:
+                          tovar_nomi: str) -> dict | None:
     """Savatdan oxirgi qo'shilgan shu tovarni o'chirish"""
     savat = await savat_ol(conn, uid, klient_ismi)
     if not savat:

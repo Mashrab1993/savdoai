@@ -49,7 +49,7 @@ def _cache_key(matn: str) -> str:
     return hashlib.sha256(matn.encode()).hexdigest()[:12]
 
 
-async def matn_ovozga(matn: str) -> Optional[bytes]:
+async def matn_ovozga(matn: str) -> bytes | None:
     """
     Matnni ovozga aylantirish → OGG bytes.
     
@@ -129,7 +129,7 @@ async def matn_ovozga(matn: str) -> Optional[bytes]:
         return None
 
 
-async def _wav_to_ogg(audio_bytes: bytes) -> Optional[bytes]:
+async def _wav_to_ogg(audio_bytes: bytes) -> bytes | None:
     """Audio → OGG (Telegram voice message formati)."""
     try:
         with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as inp:

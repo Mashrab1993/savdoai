@@ -22,31 +22,31 @@ router = APIRouter(prefix="/api/v1", tags=["Suppliers"])
 
 class SupplierYarat(BaseModel):
     nomi:          str       = Field(..., min_length=1, max_length=200)
-    telefon:       Optional[str]       = ""
-    telegram_id:   Optional[int]       = None
-    kategoriyalar: Optional[List[str]] = None
+    telefon:       str | None       = ""
+    telegram_id:   int | None       = None
+    kategoriyalar: list[str] | None = None
 
 
 class SupplierYangila(BaseModel):
-    nomi:          Optional[str]       = None
-    telefon:       Optional[str]       = None
-    telegram_id:   Optional[int]       = None
-    kategoriyalar: Optional[List[str]] = None
-    faol:          Optional[bool]      = None
+    nomi:          str | None       = None
+    telefon:       str | None       = None
+    telegram_id:   int | None       = None
+    kategoriyalar: list[str] | None = None
+    faol:          bool | None      = None
 
 
 class PurchaseTovar(BaseModel):
-    tovar_id:    Optional[int]   = None
+    tovar_id:    int | None   = None
     nomi:        str
     miqdor:      float           = Field(..., gt=0)
     narx:        float           = Field(..., ge=0)
-    birlik:      Optional[str]   = "dona"
+    birlik:      str | None   = "dona"
 
 
 class PurchaseYarat(BaseModel):
     supplier_id: int
-    tovarlar:    List[PurchaseTovar]
-    izoh:        Optional[str] = ""
+    tovarlar:    list[PurchaseTovar]
+    izoh:        str | None = ""
 
 
 class PurchaseHolatYangila(BaseModel):
@@ -57,7 +57,7 @@ class PurchaseHolatYangila(BaseModel):
 
 @router.get("/suppliers")
 async def suppliers_list(
-    qidiruv: Optional[str] = None,
+    qidiruv: str | None = None,
     faol_only: bool = False,
     uid: int = Depends(get_uid),
 ):
@@ -168,10 +168,10 @@ async def supplier_ochir(supplier_id: int, uid: int = Depends(get_uid)):
 
 @router.get("/purchase")
 async def purchase_list(
-    supplier_id: Optional[int] = None,
-    holat: Optional[str] = None,
-    sana_dan: Optional[str] = None,
-    sana_gacha: Optional[str] = None,
+    supplier_id: int | None = None,
+    holat: str | None = None,
+    sana_dan: str | None = None,
+    sana_gacha: str | None = None,
     uid: int = Depends(get_uid),
 ):
     """Xarid buyurtmalar ro'yxati."""

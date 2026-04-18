@@ -97,8 +97,8 @@ async def filial_tovarlar(filial_id: int, uid: int = Depends(get_uid)):
 
 @router.get("/transferlar")
 async def transferlar_list(
-    sana_dan: Optional[str] = None,
-    sana_gacha: Optional[str] = None,
+    sana_dan: str | None = None,
+    sana_gacha: str | None = None,
     uid: int = Depends(get_uid),
 ):
     """Filiallar orasidagi transferlar ro'yxati."""

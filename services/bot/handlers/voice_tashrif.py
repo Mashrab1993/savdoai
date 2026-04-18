@@ -39,7 +39,7 @@ _HISOBOT_KW = ("tashrif hisobot", "tashriflar hisobot", "storecheck hisobot")
 _ROYXAT_KW = ("tashriflar", "tashrif ro'yxat", "tashriflar royxat")
 
 
-def detect_tashrif_intent(matn: str) -> Optional[str]:
+def detect_tashrif_intent(matn: str) -> str | None:
     """Matn ichida storecheck intent aniqlaydi. Qaytaradi:
     'boshla' / 'yop' / 'hisobot' / 'royxat' / 'sku_mark' / None
     """
@@ -58,7 +58,7 @@ def detect_tashrif_intent(matn: str) -> Optional[str]:
     return None
 
 
-def detect_sku_mark(matn: str) -> Optional[dict]:
+def detect_sku_mark(matn: str) -> dict | None:
     """Ovoz matnida SKU belgi aniqlash.
 
     Return:
@@ -73,14 +73,14 @@ def detect_sku_mark(matn: str) -> Optional[dict]:
     if len(words) < 2:
         return None
 
-    mavjud: Optional[bool] = None
+    mavjud: bool | None = None
     if any(kw in m for kw in (" bor", " mavjud", " turibdi", " turgan", "ochiq")):
         mavjud = True
     elif any(kw in m for kw in (" yo'q", " yoq", " yo`q", " yo'qola", " tugagan", " qolmagan", "yoqol")):
         mavjud = False
 
     # Narx aniqlash — so'nggi raqam va "ming" bor bo'lsa
-    narx: Optional[Decimal] = None
+    narx: Decimal | None = None
     narx_match = re.search(r'(\d[\d\s]*)\s*(?:ming|so\'m)?', m.replace(",", ""))
     if narx_match:
         try:
@@ -95,7 +95,7 @@ def detect_sku_mark(matn: str) -> Optional[dict]:
             pass
 
     # Facing (javon yuzi)
-    facing: Optional[int] = None
+    facing: int | None = None
     facing_match = re.search(r'facing\s+(\d+)', m) or re.search(r'(\d+)\s*ta\s*facing', m)
     if facing_match:
         try:

@@ -39,7 +39,7 @@ def _haversine(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
     return R * 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
 
 
-def _distance_matrix(nuqtalar: List[dict]) -> List[List[float]]:
+def _distance_matrix(nuqtalar: list[dict]) -> list[list[float]]:
     """NxN masofa matritsasi."""
     n = len(nuqtalar)
     mat = [[0.0] * n for _ in range(n)]
@@ -53,7 +53,7 @@ def _distance_matrix(nuqtalar: List[dict]) -> List[List[float]]:
     return mat
 
 
-def _nearest_neighbor(dist: List[List[float]], start: int = 0) -> Tuple[List[int], float]:
+def _nearest_neighbor(dist: list[list[float]], start: int = 0) -> tuple[list[int], float]:
     """Nearest Neighbor TSP — eng yaqin nuqtaga borish."""
     n = len(dist)
     visited = [False] * n
@@ -78,7 +78,7 @@ def _nearest_neighbor(dist: List[List[float]], start: int = 0) -> Tuple[List[int
     return tour, total
 
 
-def _two_opt(tour: List[int], dist: List[List[float]]) -> Tuple[List[int], float]:
+def _two_opt(tour: list[int], dist: list[list[float]]) -> tuple[list[int], float]:
     """2-opt improvement — yo'lni yaxshilash."""
     n = len(tour)
     improved = True
@@ -107,7 +107,7 @@ def _two_opt(tour: List[int], dist: List[List[float]]) -> Tuple[List[int], float
 
 
 async def marshrut_optimallashtir(conn, uid: int,
-                                    klient_idlar: List[int] = None,
+                                    klient_idlar: list[int] = None,
                                     boshlangich_lat: float = None,
                                     boshlangich_lon: float = None) -> dict:
     """Klientlar uchun optimal marshrut hisoblash.

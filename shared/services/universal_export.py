@@ -58,8 +58,8 @@ def _border():
 
 def export_excel(
     sarlavha: str,
-    ustunlar: List[str],
-    qatorlar: List[List[Any]],
+    ustunlar: list[str],
+    qatorlar: list[list[Any]],
     fayl_nomi: str = "export.xlsx",
     sheet_nomi: str = "Ma'lumotlar",
     qoshimcha_info: dict = None,
@@ -179,7 +179,7 @@ def export_excel(
 #  CSV EXPORT
 # ════════════════════════════════════════════════════════════
 
-def export_csv(ustunlar: List[str], qatorlar: List[List[Any]]) -> bytes:
+def export_csv(ustunlar: list[str], qatorlar: list[list[Any]]) -> bytes:
     """CSV eksport."""
     import csv
     buf = io.StringIO()

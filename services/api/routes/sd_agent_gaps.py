@@ -47,7 +47,7 @@ async def tara_qoldiq(klient_id: int, uid: int = Depends(get_uid)):
 
 # ═══ Oddment ═══
 class OddmentReq(BaseModel):
-    klient_id: int; tovarlar: List[dict]
+    klient_id: int; tovarlar: list[dict]
 
 @router.post("/oddment")
 async def oddment_post(body: OddmentReq, uid: int = Depends(get_uid)):
@@ -98,7 +98,7 @@ class BilimReq(BaseModel):
     fayl_url: str = ""; video_url: str = ""
 
 @router.get("/bilimlar")
-async def bilimlar_list(kategoriya: Optional[str] = None, uid: int = Depends(get_uid)):
+async def bilimlar_list(kategoriya: str | None = None, uid: int = Depends(get_uid)):
     async with get_conn(uid) as conn:
         return await bilimlar_royxati(conn, uid, kategoriya)
 

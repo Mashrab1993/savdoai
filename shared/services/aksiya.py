@@ -161,8 +161,8 @@ class AksiyaNatija:
 
 async def aksiyalar_hisoblash(
     conn, uid: int, klient_id: int,
-    tovarlar: List[dict], jami_summa: Decimal
-) -> List[dict]:
+    tovarlar: list[dict], jami_summa: Decimal
+) -> list[dict]:
     """Buyurtma uchun barcha mos aksiyalarni hisoblash.
 
     SD Agent calculateDiscount + Smartup mcg_* analogi.
@@ -365,7 +365,7 @@ async def aksiya_yaratish(conn, uid: int, data: dict) -> int:
     return aksiya_id
 
 
-async def aksiyalar_royxati(conn, uid: int, faqat_faol: bool = False) -> List[dict]:
+async def aksiyalar_royxati(conn, uid: int, faqat_faol: bool = False) -> list[dict]:
     """Aksiyalar ro'yxatini olish."""
     query = "SELECT * FROM aksiyalar WHERE user_id = $1"
     if faqat_faol:

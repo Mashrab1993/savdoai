@@ -96,7 +96,7 @@ class GpsConfig:
     min_masofa_metr: int = 50
     ish_vaqti_boshlanishi: str = "09:00"
     ish_vaqti_tugashi: str = "18:00"
-    ish_kunlari: List[int] = field(default_factory=lambda: [1, 2, 3, 4, 5])  # Du-Ju
+    ish_kunlari: list[int] = field(default_factory=lambda: [1, 2, 3, 4, 5])  # Du-Ju
     batareya_holati_yuborish: bool = False
     fon_tracking: bool = False
 
@@ -120,7 +120,7 @@ class FotoConfig:
     foto_hisobot_yoqilgan: bool = False
     max_foto_soni: int = 5
     min_foto_sifati: int = 70  # JPEG quality %
-    kategoriyalar: List[str] = field(default_factory=list)
+    kategoriyalar: list[str] = field(default_factory=list)
     gps_majburiy: bool = False
 
 
@@ -128,7 +128,7 @@ class FotoConfig:
 class OmborConfig:
     """Ombor va qoldiq sozlamalari."""
     multi_ombor: bool = False
-    ombor_royhati: List[dict] = field(default_factory=list)
+    ombor_royhati: list[dict] = field(default_factory=list)
     manfiy_qoldiqqa_ruxsat: bool = False
     qoldiq_ogohlantirish_chegarasi: int = 5
     barcode_scan_yoqilgan: bool = True
@@ -161,7 +161,7 @@ class NotifikatsiyaConfig:
     kunlik_hisobot: bool = True
     kunlik_hisobot_vaqti: str = "20:00"
     qarz_eslatma: bool = True
-    qarz_eslatma_kunlari: List[int] = field(default_factory=lambda: [1, 7, 14, 30])
+    qarz_eslatma_kunlari: list[int] = field(default_factory=lambda: [1, 7, 14, 30])
     kam_qoldiq_ogohlantirish: bool = True
     yangi_buyurtma_bildirishnoma: bool = True
 
@@ -190,7 +190,7 @@ class ServerConfig:
     sync: SyncConfig = field(default_factory=SyncConfig)
     notifikatsiya: NotifikatsiyaConfig = field(default_factory=NotifikatsiyaConfig)
     umumiy: UmumiyConfig = field(default_factory=UmumiyConfig)
-    yangilangan: Optional[str] = None
+    yangilangan: str | None = None
 
     def to_dict(self) -> dict:
         d = asdict(self)
@@ -384,7 +384,7 @@ async def config_saqlash(conn, uid: int, modul: str, sozlamalar: dict,
     return {"muvaffaqiyat": True, "modul": modul}
 
 
-async def config_modullari(conn, uid: int) -> List[dict]:
+async def config_modullari(conn, uid: int) -> list[dict]:
     """Barcha mavjud config modullarini ro'yxatini olish."""
     rows = await conn.fetch(
         "SELECT modul, yangilangan FROM server_config WHERE user_id=$1 ORDER BY modul",
@@ -402,8 +402,8 @@ async def config_modullari(conn, uid: int) -> List[dict]:
     return natija
 
 
-async def config_tarix(conn, uid: int, modul: Optional[str] = None,
-                        limit: int = 20) -> List[dict]:
+async def config_tarix(conn, uid: int, modul: str | None = None,
+                        limit: int = 20) -> list[dict]:
     """Config o'zgarishlar tarixini olish."""
     if modul:
         rows = await conn.fetch(
@@ -464,7 +464,7 @@ async def sync_log_yoz(conn, uid: int, **kwargs) -> int:
     )
 
 
-async def sync_loglar(conn, uid: int, limit: int = 50) -> List[dict]:
+async def sync_loglar(conn, uid: int, limit: int = 50) -> list[dict]:
     """So'nggi sync loglarini olish."""
     rows = await conn.fetch(
         "SELECT * FROM sync_log WHERE user_id=$1 ORDER BY boshlangan DESC LIMIT $2",

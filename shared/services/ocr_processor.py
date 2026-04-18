@@ -76,7 +76,7 @@ _PATTERNS = [
 ]
 
 
-def qator_parse(qator: str) -> Optional[dict]:
+def qator_parse(qator: str) -> dict | None:
     """Bitta qatordan tovar ma'lumotini ajratish."""
     qator = qator.strip()
     if not qator or len(qator) < 3:

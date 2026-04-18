@@ -572,7 +572,7 @@ REYTING_SOZLAR = ("klient reyting", "reyting", "ishonchli klient", "xavfli klien
 TREND_SOZLAR = ("trend", "o'sish", "tushish", "haftalik trend", "qaysi tovar o'sgan")
 
 
-def smart_buyruq_aniqla(matn: str) -> Optional[str]:
+def smart_buyruq_aniqla(matn: str) -> str | None:
     """Matndan smart buyruq turini aniqlash."""
     m = matn.lower().strip()
     for s in NARX_SOZLAR:
@@ -586,7 +586,7 @@ def smart_buyruq_aniqla(matn: str) -> Optional[str]:
     return None
 
 
-def narx_tovar_ajrat(matn: str) -> Optional[str]:
+def narx_tovar_ajrat(matn: str) -> str | None:
     """Matndan tovar nomini ajratish. "Arielni qanchadan sotay" → "Ariel" """
     import re
     patterns = [

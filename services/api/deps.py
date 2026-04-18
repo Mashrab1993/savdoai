@@ -34,7 +34,7 @@ def _get_jwt_secret() -> str:
     return s
 
 
-def jwt_tekshir(token: str) -> Optional[int]:
+def jwt_tekshir(token: str) -> int | None:
     """JWT tokenni tekshirib user_id qaytarish.
 
     Xato sabablari log'ga yozildi — brute-force yoki malformed token
@@ -78,7 +78,7 @@ def jwt_tekshir(token: str) -> Optional[int]:
 
 async def get_uid(
     request: Request,
-    creds: Optional[HTTPAuthorizationCredentials] = Depends(_bearer),
+    creds: HTTPAuthorizationCredentials | None = Depends(_bearer),
 ) -> int:
     """
     Rate limiting + JWT tekshirish → user_id.

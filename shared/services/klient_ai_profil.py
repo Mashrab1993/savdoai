@@ -37,7 +37,7 @@ async def _to_plain(v):
     return v
 
 
-async def _fetch_klient_data(conn, uid: int, klient_id: int) -> Optional[dict]:
+async def _fetch_klient_data(conn, uid: int, klient_id: int) -> dict | None:
     """Barcha modullar'dan klient haqidagi ma'lumotni to'plash."""
     # Asosiy profil (klient_360 bilan birga)
     profil = await conn.fetchrow("""
@@ -212,7 +212,7 @@ async def _fetch_klient_data(conn, uid: int, klient_id: int) -> Optional[dict]:
     }
 
 
-async def klient_ai_strategy(conn, uid: int, klient_id: int) -> Optional[str]:
+async def klient_ai_strategy(conn, uid: int, klient_id: int) -> str | None:
     """Opus 4.7 bilan klient uchun shaxsiy strategiya."""
     data = await _fetch_klient_data(conn, uid, klient_id)
     if not data:

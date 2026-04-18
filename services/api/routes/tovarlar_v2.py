@@ -29,12 +29,12 @@ router = APIRouter(prefix="/tovarlar/v2", tags=["tovarlar-v2"])
 
 class TovarFiltr(BaseModel):
     """SD Agent'dagi 9 ta filtrning analogi."""
-    kategoriya_id: Optional[int] = None
-    sub_kategoriya_id: Optional[int] = None
-    brand_id: Optional[int] = None
-    narx_turi_id: Optional[int] = None
-    ombor_id: Optional[int] = None
-    klient_id: Optional[int] = None
+    kategoriya_id: int | None = None
+    sub_kategoriya_id: int | None = None
+    brand_id: int | None = None
+    narx_turi_id: int | None = None
+    ombor_id: int | None = None
+    klient_id: int | None = None
     faqat_buyurtma_qilingan: bool = False
     faqat_fotoli: bool = False
     narxsizlarni_yashirish: bool = False

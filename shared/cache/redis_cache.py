@@ -83,7 +83,7 @@ def _r():
 #  ASOSIY OPERATSIYALAR
 # ════════════════════════════════════════════════════════════
 
-async def cache_ol(kalit: str) -> Optional[Any]:
+async def cache_ol(kalit: str) -> Any | None:
     """Keshdan qiymat olish"""
     global _cache_miss_due_to_redis_down
     if not _r():
@@ -144,7 +144,7 @@ def k_qarzlar(uid: int) -> str:
     return f"qarzlar:{uid}"
 
 
-async def kognitiv_cache_ol(matn: str) -> Optional[dict]:
+async def kognitiv_cache_ol(matn: str) -> dict | None:
     """Kognitiv natijani keshdan olish"""
     import hashlib
     h = hashlib.sha256(matn.encode()).hexdigest()[:32]

@@ -34,10 +34,10 @@ ALLOWED_TURI = {
 class KlfIn(BaseModel):
     turi: str = Field(..., description="Turi (kategoriya, brend, ...)")
     nomi: str = Field(..., min_length=1, max_length=200)
-    kod: Optional[str] = Field(None, max_length=50)
-    davlat: Optional[str] = Field(None, max_length=100)
-    birlik_id: Optional[int] = None
-    parent_id: Optional[int] = None
+    kod: str | None = Field(None, max_length=50)
+    davlat: str | None = Field(None, max_length=100)
+    birlik_id: int | None = None
+    parent_id: int | None = None
     tartib: int = 0
     faol: bool = True
 
@@ -57,8 +57,8 @@ class KlfIn(BaseModel):
 
 @router.get("")
 async def list_klassifikatorlar(
-    turi: Optional[str] = Query(None, description="Filter: kategoriya/brend/..."),
-    faol: Optional[bool] = Query(None, description="Faqat faol/nofaol"),
+    turi: str | None = Query(None, description="Filter: kategoriya/brend/..."),
+    faol: bool | None = Query(None, description="Faqat faol/nofaol"),
     uid: int = Depends(get_uid),
 ):
     """Barcha klassifikatorlarni ro'yxatlaymiz. turi bermasa — barchasi."""
@@ -232,7 +232,7 @@ TURI_RU = {
 
 @router.get("/export")
 async def export_xlsx(
-    turi: Optional[str] = Query(None),
+    turi: str | None = Query(None),
     uid: int = Depends(get_uid),
 ):
     """SalesDoc formatida Excel eksport qiladi.

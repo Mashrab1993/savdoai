@@ -550,7 +550,7 @@ def matn_normallashtir(matn: str) -> str:
 #  E. RAQAM PARSING (AKADEMIK DARAJADA)
 # ═══════════════════════════════════════════════════════════════════
 
-def raqam_parse(matn: str) -> Optional[Decimal]:
+def raqam_parse(matn: str) -> Decimal | None:
     """
     O'zbek tilidagi raqam ifodalarini Decimal ga o'tkazish.
 
@@ -633,7 +633,7 @@ def raqam_parse(matn: str) -> Optional[Decimal]:
     return _token_parse(tokenlar)
 
 
-def _token_parse(tokenlar: list[str]) -> Optional[Decimal]:
+def _token_parse(tokenlar: list[str]) -> Decimal | None:
     """
     O'zbek raqam tokenlarini ketma-ket tahlil qilish.
 
@@ -794,7 +794,7 @@ def qarz_bor_mi(matn: str) -> bool:
     return any(q in m for q in QARZ_SOZLARI)
 
 
-def qarz_summasi_olish(matn: str) -> Optional[Decimal]:
+def qarz_summasi_olish(matn: str) -> Decimal | None:
     """Matndan qarz summasini olish"""
     m = matn_normallashtir(matn)
 
@@ -1147,7 +1147,7 @@ def savdo_turi_olish(matn: str) -> str:
     return "noma'lum"
 
 
-def emotsional_gap_tekshir(matn: str) -> Optional[str]:
+def emotsional_gap_tekshir(matn: str) -> str | None:
     """Emotsional gap (uzr, xato, qo'shish) ni aniqlash"""
     m = matn.lower().strip()
     for gap, ma_no in sorted(EMOTSIONAL_GAPLAR.items(), key=lambda x: -len(x[0])):

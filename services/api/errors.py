@@ -51,7 +51,7 @@ class ErrorCode:
 
 
 def api_xato(status: int, code: str, detail: str,
-             field: Optional[str] = None) -> JSONResponse:
+             field: str | None = None) -> JSONResponse:
     """Standart xato javobi"""
     body = {
         "error": True,
@@ -69,7 +69,7 @@ def topilmadi(nomi: str = "Ma'lumot") -> HTTPException:
     return HTTPException(status_code=404, detail=f"{nomi} topilmadi")
 
 
-def validatsiya_xato(detail: str, field: Optional[str] = None) -> HTTPException:
+def validatsiya_xato(detail: str, field: str | None = None) -> HTTPException:
     """400 — validatsiya xatosi"""
     return HTTPException(status_code=400, detail=detail)
 

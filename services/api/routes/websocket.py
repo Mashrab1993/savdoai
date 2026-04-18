@@ -79,7 +79,7 @@ def get_manager() -> ConnectionManager:
     return _manager
 
 
-def _jwt_tekshir(token: str, secret: str) -> Optional[int]:
+def _jwt_tekshir(token: str, secret: str) -> int | None:
     """JWT dan user_id ajratish"""
     import base64, hashlib, hmac
     try:

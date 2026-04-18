@@ -107,8 +107,8 @@ class AIRequest:
     """AI ga yuboriladigan so'rov"""
     task: TaskType
     content: str = ""                    # Matn content
-    audio_bytes: Optional[bytes] = None  # Ovoz fayl (STT uchun)
-    image_bytes: Optional[bytes] = None  # Rasm fayl (OCR uchun)
+    audio_bytes: bytes | None = None  # Ovoz fayl (STT uchun)
+    image_bytes: bytes | None = None  # Rasm fayl (OCR uchun)
     mime_type: str = "audio/ogg"         # Audio/image format
     context: dict = field(default_factory=dict)  # Qo'shimcha kontekst
     user_id: int = 0                     # Foydalanuvchi ID
@@ -123,7 +123,7 @@ class AIResponse:
     model: AIModel
     task: TaskType
     result: Any = None                   # Natija (dict, str, etc.)
-    error: Optional[str] = None          # Xato xabari
+    error: str | None = None          # Xato xabari
     latency_ms: float = 0.0             # Javob vaqti (ms)
     tokens_used: int = 0                 # Token sarfi (taxminiy)
     fallback_used: bool = False          # Fallback model ishlatildimi
@@ -436,7 +436,7 @@ class CognitiveRouter:
     # ── CONVENIENCE METHODS ──────────────────────────────────────
 
     async def voice_to_text(self, audio_bytes: bytes,
-                             mime: str = "audio/ogg") -> Optional[str]:
+                             mime: str = "audio/ogg") -> str | None:
         """Ovoz → Matn (Gemini STT)"""
         resp = await self.process(AIRequest(
             task=TaskType.VOICE_STT,
@@ -446,7 +446,7 @@ class CognitiveRouter:
         return resp.result if resp.success else None
 
     async def image_to_data(self, image_bytes: bytes,
-                             mime: str = "image/jpeg") -> Optional[dict]:
+                             mime: str = "image/jpeg") -> dict | None:
         """Rasm → Structured data (Gemini OCR)"""
         resp = await self.process(AIRequest(
             task=TaskType.IMAGE_OCR,
@@ -455,7 +455,7 @@ class CognitiveRouter:
         ))
         return resp.result if resp.success and isinstance(resp.result, dict) else None
 
-    async def parse_intent(self, text: str) -> Optional[dict]:
+    async def parse_intent(self, text: str) -> dict | None:
         """O'zbek matn → biznes intent (Gemini NLP)"""
         resp = await self.process(AIRequest(
             task=TaskType.INTENT_PARSE,
@@ -464,7 +464,7 @@ class CognitiveRouter:
         return resp.result if resp.success and isinstance(resp.result, dict) else None
 
     async def analyze_business(self, query: str,
-                                context: dict = None) -> Optional[dict]:
+                                context: dict = None) -> dict | None:
         """Murakkab biznes tahlil (Claude)"""
         resp = await self.process(AIRequest(
             task=TaskType.BUSINESS_LOGIC,
@@ -473,7 +473,7 @@ class CognitiveRouter:
         ))
         return resp.result if resp.success else None
 
-    async def generate_report(self, data: dict) -> Optional[dict]:
+    async def generate_report(self, data: dict) -> dict | None:
         """Hisobot tuzilmasi yaratish (Claude)"""
         resp = await self.process(AIRequest(
             task=TaskType.REPORT_GEN,
@@ -575,7 +575,7 @@ class CognitiveRouter:
     # ── UTILITIES ────────────────────────────────────────────────
 
     @staticmethod
-    def _try_parse_json(text: str) -> Optional[dict]:
+    def _try_parse_json(text: str) -> dict | None:
         """JSON ajratish (markdown fence bilan ham ishlaydi)"""
         if not text:
             return None
@@ -626,7 +626,7 @@ class CognitiveRouter:
 #  GLOBAL SINGLETON
 # ════════════════════════════════════════════════════════════════════
 
-_router: Optional[CognitiveRouter] = None
+_router: CognitiveRouter | None = None
 
 
 def get_router() -> CognitiveRouter:

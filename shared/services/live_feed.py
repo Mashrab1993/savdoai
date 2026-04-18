@@ -31,7 +31,7 @@ class LiveEvent:
     """Jonli oqim eventi."""
 
     def __init__(self, turi: str, emoji: str, sarlavha: str,
-                 tafsilot: str = "", summa: Optional[str] = None,
+                 tafsilot: str = "", summa: str | None = None,
                  klient: str = "", muhimlik: str = "oddiy"):
         self.turi = turi
         self.emoji = emoji

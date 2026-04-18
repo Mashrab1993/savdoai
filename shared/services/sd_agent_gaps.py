@@ -215,7 +215,7 @@ async def tara_harakat(conn, uid: int, klient_id: int, tara_turi_id: int,
     """, uid, klient_id, tara_turi_id, turi, miqdor, izoh, lat, lon)
 
 
-async def klient_tara_qoldiq(conn, uid: int, klient_id: int) -> List[dict]:
+async def klient_tara_qoldiq(conn, uid: int, klient_id: int) -> list[dict]:
     """Klientdagi tara qoldiqlari."""
     rows = await conn.fetch("""
         SELECT tt.nomi AS tara_nomi, tt.id AS tara_turi_id,
@@ -239,7 +239,7 @@ async def klient_tara_qoldiq(conn, uid: int, klient_id: int) -> List[dict]:
 # ════════════════════════════════════════════════════════════
 
 async def oddment_yaratish(conn, uid: int, klient_id: int,
-                            tovarlar: List[dict]) -> dict:
+                            tovarlar: list[dict]) -> dict:
     """Agent klientda fizik inventarizatsiya o'tkazadi.
 
     Args:
@@ -320,14 +320,14 @@ async def almashtirish_yaratish(conn, uid: int, data: dict) -> int:
 #  5. KLIENT KATEGORIYA CHEKLOVI
 # ════════════════════════════════════════════════════════════
 
-async def klient_ruxsat_kategoriyalar(conn, klient_id: int) -> List[str]:
+async def klient_ruxsat_kategoriyalar(conn, klient_id: int) -> list[str]:
     """Bu klient qaysi kategoriya tovarlarni sotib olishi mumkin."""
     rows = await conn.fetch(
         "SELECT kategoriya FROM klient_kategoriya_ruxsat WHERE klient_id=$1", klient_id)
     return [r["kategoriya"] for r in rows]  # Bo'sh = BARCHASI ruxsat
 
 
-async def klient_uchun_tovarlar(conn, uid: int, klient_id: int) -> List[dict]:
+async def klient_uchun_tovarlar(conn, uid: int, klient_id: int) -> list[dict]:
     """Klientga ruxsat etilgan tovarlar ro'yxati."""
     ruxsat = await klient_ruxsat_kategoriyalar(conn, klient_id)
 
@@ -352,7 +352,7 @@ def hozirgi_hafta_turi() -> str:
     return "juft" if hafta_raqami % 2 == 0 else "toq"
 
 
-async def bugungi_klientlar_juft_toq(conn, uid: int) -> List[dict]:
+async def bugungi_klientlar_juft_toq(conn, uid: int) -> list[dict]:
     """Juft/toq hafta hisobga olib bugungi klientlarni qaytarish."""
     haftakun = date.today().weekday()
     turi = hozirgi_hafta_turi()
@@ -381,7 +381,7 @@ async def klient_qr_yaratish(conn, uid: int, klient_id: int) -> str:
     return qr
 
 
-async def klient_qr_topish(conn, uid: int, qr_kod: str) -> Optional[dict]:
+async def klient_qr_topish(conn, uid: int, qr_kod: str) -> dict | None:
     """QR kod bo'yicha klientni topish."""
     row = await conn.fetchrow(
         "SELECT * FROM klientlar WHERE qr_kod=$1 AND user_id=$2", qr_kod, uid)
@@ -392,7 +392,7 @@ async def klient_qr_topish(conn, uid: int, qr_kod: str) -> Optional[dict]:
 #  8. BILIMLAR BAZASI
 # ════════════════════════════════════════════════════════════
 
-async def bilimlar_royxati(conn, uid: int, kategoriya: str = None) -> List[dict]:
+async def bilimlar_royxati(conn, uid: int, kategoriya: str = None) -> list[dict]:
     query = "SELECT * FROM bilimlar_bazasi WHERE user_id=$1 AND faol=TRUE"
     params = [uid]
     if kategoriya:

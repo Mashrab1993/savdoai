@@ -710,7 +710,7 @@ class CognitiveDvigatel:
 #  5. GLOBAL INSTANCE
 # ════════════════════════════════════════════════════════════════════
 
-_dvigatel: Optional[CognitiveDvigatel] = None
+_dvigatel: CognitiveDvigatel | None = None
 
 
 def dvigatel_init(anthropic_key: str,

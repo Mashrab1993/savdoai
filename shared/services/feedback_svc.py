@@ -44,10 +44,10 @@ def turi_aniqla(matn: str) -> str:
 
 
 async def feedback_qoshish(conn, uid: int, matn: str,
-                            klient_id: Optional[int] = None,
-                            shogird_id: Optional[int] = None,
-                            turi: Optional[str] = None,
-                            baho: Optional[int] = None,
+                            klient_id: int | None = None,
+                            shogird_id: int | None = None,
+                            turi: str | None = None,
+                            baho: int | None = None,
                             manba: str = "telegram") -> int:
     if not turi:
         turi = turi_aniqla(matn)
@@ -68,7 +68,7 @@ async def feedback_javob(conn, uid: int, feedback_id: int, javob: str) -> bool:
 
 
 async def feedback_royxat(conn, uid: int, faqat_javobsiz: bool = True,
-                           turi: Optional[str] = None,
+                           turi: str | None = None,
                            limit: int = 30) -> list[dict]:
     where = ["user_id=$1"]
     params: list = [uid]

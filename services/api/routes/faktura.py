@@ -23,14 +23,14 @@ class FakturaYaratSorov(BaseModel):
     klient_ismi: str = Field(..., min_length=1, max_length=200)
     tovarlar: list = Field(default_factory=list)
     jami_summa: float = Field(0, ge=0)
-    bank_rekvizit: Optional[dict] = None
-    izoh: Optional[str] = None
+    bank_rekvizit: dict | None = None
+    izoh: str | None = None
 
 
 @router.get("/fakturalar")
 async def fakturalar_list(
     limit: int = 20, offset: int = 0,
-    holat: Optional[str] = None,
+    holat: str | None = None,
     uid: int = Depends(get_uid),
 ):
     """Hisob-fakturalar ro'yxati"""

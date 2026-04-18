@@ -138,7 +138,7 @@ def eslatma_matni(
     telefon: str,
     jami_qarz: float,
     qarz_soni: int,
-    muddat: Optional[str],
+    muddat: str | None,
     holat: str = "yumshoq",
 ) -> str:
     """Professional eslatma matni generatsiya."""

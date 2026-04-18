@@ -95,7 +95,7 @@ def create_print_job(user_id: int, doc_type: str, content: str,
     return job
 
 
-def confirm_print(job_id: str) -> Optional[PrintJob]:
+def confirm_print(job_id: str) -> PrintJob | None:
     """Operatorning tasdiqlashi — chop etishga tayyor"""
     job = _jobs.get(job_id)
     if not job:
@@ -109,7 +109,7 @@ def confirm_print(job_id: str) -> Optional[PrintJob]:
     return job
 
 
-def mark_printing(job_id: str) -> Optional[PrintJob]:
+def mark_printing(job_id: str) -> PrintJob | None:
     """Chop etish boshlandi"""
     job = _jobs.get(job_id)
     if not job:
@@ -119,7 +119,7 @@ def mark_printing(job_id: str) -> Optional[PrintJob]:
     return job
 
 
-def mark_printed(job_id: str) -> Optional[PrintJob]:
+def mark_printed(job_id: str) -> PrintJob | None:
     """Muvaffaqiyatli chop etildi"""
     job = _jobs.get(job_id)
     if not job:
@@ -130,7 +130,7 @@ def mark_printed(job_id: str) -> Optional[PrintJob]:
     return job
 
 
-def mark_failed(job_id: str, error: str = "") -> Optional[PrintJob]:
+def mark_failed(job_id: str, error: str = "") -> PrintJob | None:
     """Chop etish xato"""
     job = _jobs.get(job_id)
     if not job:
@@ -143,7 +143,7 @@ def mark_failed(job_id: str, error: str = "") -> Optional[PrintJob]:
     return job
 
 
-def request_reprint(job_id: str) -> Optional[PrintJob]:
+def request_reprint(job_id: str) -> PrintJob | None:
     """Qayta chop so'rash"""
     job = _jobs.get(job_id)
     if not job:
@@ -171,7 +171,7 @@ def request_reprint(job_id: str) -> Optional[PrintJob]:
     return new_job
 
 
-def get_job(job_id: str) -> Optional[PrintJob]:
+def get_job(job_id: str) -> PrintJob | None:
     return _jobs.get(job_id)
 
 

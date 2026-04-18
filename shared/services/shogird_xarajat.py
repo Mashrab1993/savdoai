@@ -85,7 +85,7 @@ async def shogirdlar_royxati(conn, admin_uid: int) -> list:
     """, admin_uid)
 
 
-async def shogird_topish_tg(conn, telegram_uid: int) -> Optional[dict]:
+async def shogird_topish_tg(conn, telegram_uid: int) -> dict | None:
     """Telegram UID bo'yicha shogirdni topish (admin kim ekanligini ham)"""
     row = await conn.fetchrow("""
         SELECT s.*, u.id as admin_user_id 
@@ -279,7 +279,7 @@ async def limit_tekshir(conn, admin_uid: int, shogird_id: int, summa: Decimal) -
 #  HISOBOTLAR
 # ═══════════════════════════════════════
 
-async def kunlik_hisobot(conn, admin_uid: int, sana: Optional[str] = None) -> dict:
+async def kunlik_hisobot(conn, admin_uid: int, sana: str | None = None) -> dict:
     """Kunlik xarajat hisoboti (barcha shogirdlar)"""
     if sana:
         # Parameterized query — SQL injection himoyasi

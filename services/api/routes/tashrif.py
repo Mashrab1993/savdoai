@@ -22,10 +22,10 @@ router = APIRouter(prefix="/tashrif", tags=["tashrif"])
 
 class CheckinBody(BaseModel):
     klient_id: int
-    latitude: Optional[float] = None
-    longitude: Optional[float] = None
-    accuracy: Optional[float] = None
-    izoh: Optional[str] = None
+    latitude: float | None = None
+    longitude: float | None = None
+    accuracy: float | None = None
+    izoh: str | None = None
 
 
 @router.post("/checkin")
@@ -43,7 +43,7 @@ async def checkout_ep(body: CheckinBody, uid: int = Depends(get_uid)):
 
 
 @router.get("/tarix")
-async def tarix(klient_id: Optional[int] = None, sana: Optional[str] = None,
+async def tarix(klient_id: int | None = None, sana: str | None = None,
                  limit: int = 50, uid: int = Depends(get_uid)):
     async with get_conn(uid) as conn:
         return await checkin_tarix(conn, uid, klient_id, sana, limit)

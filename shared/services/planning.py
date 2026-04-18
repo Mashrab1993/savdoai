@@ -28,7 +28,7 @@ async def plan_qoy(conn, uid: int, yil: int, oy: int,
                     sotuv_plan: Decimal = Decimal(0),
                     yangi_klient_plan: int = 0,
                     tashrif_plan: int = 0,
-                    shogird_id: Optional[int] = None,
+                    shogird_id: int | None = None,
                     izoh: str = "") -> int:
     """Oylik plan qo'yish (yoki yangilash). Admin faqat o'ziga yoki shogirdga."""
     row = await conn.fetchrow("""
@@ -47,7 +47,7 @@ async def plan_qoy(conn, uid: int, yil: int, oy: int,
 
 
 async def plan_ol(conn, uid: int, yil: int, oy: int,
-                   shogird_id: Optional[int] = None) -> Optional[dict]:
+                   shogird_id: int | None = None) -> dict | None:
     row = await conn.fetchrow("""
         SELECT id, shogird_id, yil, oy, sotuv_plan, yangi_klient_plan,
                tashrif_plan, izoh, yaratilgan, yangilangan
@@ -59,7 +59,7 @@ async def plan_ol(conn, uid: int, yil: int, oy: int,
 
 
 async def plan_progress(conn, uid: int, yil: int, oy: int,
-                         shogird_id: Optional[int] = None) -> dict:
+                         shogird_id: int | None = None) -> dict:
     """Oylik plan VS haqiqiy natija. Progress foizi bilan.
 
     Hozirgi kun uchun taxminiy progress: har kun uchun tegishli foizda

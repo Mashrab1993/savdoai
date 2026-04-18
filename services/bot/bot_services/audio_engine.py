@@ -44,7 +44,7 @@ VAD_MIN_SPEECH_MS = 250      # Minimal ovoz uzunligi (ms)
 VAD_MIN_SILENCE_MS = 500     # Minimal jimlik (ms)
 
 # Process pool (CPU og'ir ishlar uchun)
-_pool: Optional[ProcessPoolExecutor] = None
+_pool: ProcessPoolExecutor | None = None
 
 
 def _get_pool() -> ProcessPoolExecutor:

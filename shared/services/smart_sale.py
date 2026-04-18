@@ -27,7 +27,7 @@ D = lambda v: Decimal(str(v or 0))
 
 
 async def pre_sale_checks(conn, uid: int, klient_ismi: str,
-                           klient_id: Optional[int],
+                           klient_id: int | None,
                            jami_summa: float,
                            tovarlar: list) -> dict:
     """
@@ -144,7 +144,7 @@ async def pre_sale_checks(conn, uid: int, klient_ismi: str,
 
 
 async def post_sale_alerts(conn, uid: int, sessiya_id: int,
-                            klient_id: Optional[int],
+                            klient_id: int | None,
                             jami_summa: float) -> list[str]:
     """
     Sotuv KEYIN ogohlantirish. Asynchronous — sotuvni to'xtatMAYDI.

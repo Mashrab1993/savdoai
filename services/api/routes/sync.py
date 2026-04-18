@@ -27,7 +27,7 @@ log = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/v1/sync", tags=["Sync"])
 
 
-def _parse_since(raw: Optional[str]) -> datetime:
+def _parse_since(raw: str | None) -> datetime:
     """Parse ISO8601; default to 24h ago if missing/invalid."""
     if raw:
         try:
@@ -53,7 +53,7 @@ def _row_to_dict(row) -> dict:
 
 @router.get("/delta")
 async def sync_delta(
-    since: Optional[str] = Query(None, description="ISO8601 timestamp"),
+    since: str | None = Query(None, description="ISO8601 timestamp"),
     limit: int = Query(1000, ge=1, le=5000),
     uid: int = Depends(get_uid),
 ):

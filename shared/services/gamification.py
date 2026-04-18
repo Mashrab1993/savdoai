@@ -193,7 +193,7 @@ async def gamification_yangilash(conn, uid: int) -> dict:
     }
 
 
-async def leaderboard(conn, davr: str = "hafta", limit: int = 20) -> List[dict]:
+async def leaderboard(conn, davr: str = "hafta", limit: int = 20) -> list[dict]:
     """Global leaderboard — barcha foydalanuvchilar reytingi."""
     if davr == "hafta":
         interval = "7 days"

@@ -63,7 +63,7 @@ def _db_xato_tekshir(exc: Exception) -> None:
 
 log = logging.getLogger(__name__)
 TZ  = pytz.timezone("Asia/Tashkent")
-_pool: Optional[asyncpg.Pool] = None
+_pool: asyncpg.Pool | None = None
 
 
 # ════════════════════════════════════════════════════════════════
@@ -268,7 +268,7 @@ def _oy_boshi() -> date:
 #  § 5. FOYDALANUVCHILAR
 # ════════════════════════════════════════════════════════════════
 
-async def user_ol(uid: int) -> Optional[asyncpg.Record]:
+async def user_ol(uid: int) -> asyncpg.Record | None:
     async with _P().acquire() as c:
         return await c.fetchrow("""
             SELECT id, ism, to_liq_ism, username, telefon, inn, manzil,
@@ -279,7 +279,7 @@ async def user_ol(uid: int) -> Optional[asyncpg.Record]:
 
 
 async def user_yoz(uid: int, to_liq_ism: str,
-                   username: Optional[str] = None) -> None:
+                   username: str | None = None) -> None:
     async with _P().acquire() as c:
         # Schema.sql da 'ism' ustuni bor — uni ishlatamiz
         # to_liq_ism ham ism ga yoziladi (ikkala nom bitta)
@@ -357,7 +357,7 @@ async def obuna_tugayotganlar(kun: int = 3) -> list:
 #  § 6. KLIENTLAR
 # ════════════════════════════════════════════════════════════════
 
-async def klient_topish(uid: int, ism: str) -> Optional[dict]:
+async def klient_topish(uid: int, ism: str) -> dict | None:
     """Klient topish — exact match, keyin fuzzy ILIKE"""
     s = ism.strip()
     if not s: return None
@@ -416,7 +416,7 @@ async def klient_qidirish(uid: int, qidiruv: str) -> list:
         return [dict(r) for r in _rows]
 
 
-async def klient_to_liq_hisobi(uid: int, klient_id: int) -> Optional[dict]:
+async def klient_to_liq_hisobi(uid: int, klient_id: int) -> dict | None:
     async with _P().acquire() as c:
         k = await c.fetchrow(
             "SELECT id, user_id, ism, telefon, manzil, eslatma, kredit_limit, jami_sotib, yaratilgan, narx_guruh_id FROM klientlar WHERE id = $1 AND user_id = $2",
@@ -495,7 +495,7 @@ async def klient_kredit_tekshir(uid: int,
 #  § 7. TOVARLAR
 # ════════════════════════════════════════════════════════════════
 
-async def tovar_topish(uid: int, nomi: str) -> Optional[dict]:
+async def tovar_topish(uid: int, nomi: str) -> dict | None:
     """Tovar topish — exact match, keyin fuzzy ILIKE"""
     s = nomi.strip()
     if not s: return None
@@ -545,7 +545,7 @@ async def tovarlar_soni(uid: int) -> int:
             "SELECT COUNT(*) FROM tovarlar WHERE user_id=$1", uid) or 0
 
 
-async def tovar_qoldiq_ol(uid: int, nomi: str) -> Optional[Decimal]:
+async def tovar_qoldiq_ol(uid: int, nomi: str) -> Decimal | None:
     """Tovar qoldiqini olish — avval exact match, keyin fuzzy"""
     s = nomi.strip()
     if not s:
@@ -908,7 +908,7 @@ async def sotuv_saqlash(uid: int, data: dict) -> dict:
         }
 
 
-async def sessiya_ol(uid: int, sess_id: int) -> Optional[dict]:
+async def sessiya_ol(uid: int, sess_id: int) -> dict | None:
     async with _P().acquire() as c:
         sess = await c.fetchrow("""
             SELECT id, user_id, klient_id, klient_ismi, jami, tolangan, qarz, izoh, sana FROM sotuv_sessiyalar WHERE id=$1 AND user_id=$2
@@ -958,7 +958,7 @@ async def qaytarish_tovarlar_ol(uid: int,
 
 async def qaytarish_saqlash(uid: int,
                               qaytarishlar: list[dict],
-                              sabab: Optional[str] = None) -> list[dict]:
+                              sabab: str | None = None) -> list[dict]:
     """Qaytarishni ACID tranzaksiyada saqlash"""
     from shared.utils.hisob import qaytarish_hisob
     natijalar = []
@@ -1119,8 +1119,8 @@ async def nakladnoy_raqami_ol(uid: int) -> str:
         return f"{datetime.now(TZ).year}-{row['oxirgi_raqam']:04d}"
 
 
-async def nakladnoy_saqlash(uid: int, sessiya_id: Optional[int],
-                              raqam: str, klient_ismi: Optional[str],
+async def nakladnoy_saqlash(uid: int, sessiya_id: int | None,
+                              raqam: str, klient_ismi: str | None,
                               jami_summa: float, qarz: float = 0) -> None:
     async with _P().acquire() as c:
         await c.execute("""
@@ -1145,7 +1145,7 @@ async def menyu_ol(uid: int) -> list:
 
 async def menyu_qoshish(uid: int, nomi: str,
                          narx: float,
-                         kategoriya: str = "Taom") -> Optional[asyncpg.Record]:
+                         kategoriya: str = "Taom") -> asyncpg.Record | None:
     async with _P().acquire() as c:
         return await c.fetchrow("""
             INSERT INTO menyu (user_id, nomi, narx, kategoriya)

@@ -21,13 +21,13 @@ router = APIRouter(prefix="/api/v1/sozlamalar", tags=["Sozlamalar"])
 # ── Pydantic models ──────────────────────────────────────────
 class SozlamaItem(BaseModel):
     nomi: str
-    rang: Optional[str] = None
-    qisqa: Optional[str] = None
-    turi: Optional[str] = None
-    ota_id: Optional[int] = None
+    rang: str | None = None
+    qisqa: str | None = None
+    turi: str | None = None
+    ota_id: int | None = None
     tartib: int = 0
     faol: bool = True
-    foiz: Optional[float] = None  # narx_turlar uchun
+    foiz: float | None = None  # narx_turlar uchun
 
 
 # ── Ruxsat berilgan jadvallar (SQL injection himoyasi) ──────

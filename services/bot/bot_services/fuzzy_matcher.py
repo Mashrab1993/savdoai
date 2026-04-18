@@ -188,7 +188,7 @@ class FuzzyMatcher:
             return [], []
         return snap[0], snap[1]
 
-    def match_product(self, raw_name: str, uid: int, threshold: int = 85) -> Optional[str]:
+    def match_product(self, raw_name: str, uid: int, threshold: int = 85) -> str | None:
         snap = self._snapshot(uid)
         if not snap:
             return None
@@ -249,7 +249,7 @@ class FuzzyMatcher:
 
         return None
 
-    def match_client(self, raw_name: str, uid: int, threshold: int = 60) -> Optional[str]:
+    def match_client(self, raw_name: str, uid: int, threshold: int = 60) -> str | None:
         snap = self._snapshot(uid)
         if not snap:
             return None

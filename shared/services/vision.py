@@ -642,7 +642,7 @@ async def kop_rasm_tahlil(rasmlar: list, mime: str = "image/jpeg") -> dict:
     except Exception as e:
         return {"tur":"xato","ishonch":0.0,"izoh":str(e)[:200]}
 
-def ocr_matn(image_bytes: bytes) -> Optional[str]:
+def ocr_matn(image_bytes: bytes) -> str | None:
     try:
         import pytesseract; from PIL import Image
         return (pytesseract.image_to_string(Image.open(io.BytesIO(image_bytes)), lang="uzb+rus+eng") or "").strip() or None

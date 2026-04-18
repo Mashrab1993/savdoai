@@ -37,3 +37,7 @@ _zip_extract/
 # Local scripts may contain secrets (token, credentials)
 scripts/health_check.sh
 scripts/*_local.sh
+
+# Local .env backups (never commit — may contain secrets)
+.env.backup-*
+scripts/image_analyze.py

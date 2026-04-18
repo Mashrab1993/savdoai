@@ -80,7 +80,7 @@ KUNLAR = ["Dushanba", "Seshanba", "Chorshanba", "Payshanba", "Juma", "Shanba", "
 
 class VisitSchedule(BaseModel):
     klient_id: int
-    hafta_kunlari: List[int]  # [0, 2, 4] = Du, Chor, Juma
+    hafta_kunlari: list[int]  # [0, 2, 4] = Du, Chor, Juma
 
 
 @calendar_router.get("/bugun")

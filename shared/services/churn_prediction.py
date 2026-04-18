@@ -35,7 +35,7 @@ from typing import List
 log = logging.getLogger(__name__)
 
 
-async def churn_tahlil(conn, uid: int) -> List[dict]:
+async def churn_tahlil(conn, uid: int) -> list[dict]:
     """Barcha faol klientlar uchun ketish xavfini hisoblash.
 
     Returns:

@@ -201,7 +201,7 @@ H_SEGMENT, H_DOKON, H_TELEFON = range(3)
 _oxirgi: dict[int,float] = defaultdict(float)
 FLOOD_SON = 1.5
 _FLOOD_MAX_SIZE = 10000
-_CFG: Optional[Config] = None
+_CFG: Config | None = None
 
 
 def cfg() -> Config:

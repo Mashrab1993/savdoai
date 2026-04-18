@@ -28,10 +28,10 @@ log = logging.getLogger(__name__)
 #  SESSIYA (TASHRIF) CRUD
 # ════════════════════════════════════════════════════════════════════
 
-async def session_boshla(conn, uid: int, klient_id: Optional[int] = None,
-                         shogird_id: Optional[int] = None,
-                         gps_lat: Optional[float] = None,
-                         gps_lng: Optional[float] = None) -> int:
+async def session_boshla(conn, uid: int, klient_id: int | None = None,
+                         shogird_id: int | None = None,
+                         gps_lat: float | None = None,
+                         gps_lng: float | None = None) -> int:
     """Yangi storecheck tashrif boshlash."""
     row = await conn.fetchrow("""
         INSERT INTO storecheck_sessions(user_id, shogird_id, klient_id, gps_lat, gps_lng)
@@ -51,7 +51,7 @@ async def session_yop(conn, uid: int, session_id: int, izoh: str = "") -> bool:
     return "UPDATE 1" in result
 
 
-async def session_ochiq(conn, uid: int, shogird_id: Optional[int] = None) -> Optional[dict]:
+async def session_ochiq(conn, uid: int, shogird_id: int | None = None) -> dict | None:
     """Hozir ochiq sessiyani topish (bir vaqtda bitta sessiya)."""
     where_shogird = "shogird_id IS NULL" if shogird_id is None else f"shogird_id = {int(shogird_id)}"
     row = await conn.fetchrow(f"""
@@ -66,7 +66,7 @@ async def session_ochiq(conn, uid: int, shogird_id: Optional[int] = None) -> Opt
 
 
 async def sessiyalar_royxat(conn, uid: int, kun: int = 7,
-                             shogird_id: Optional[int] = None) -> list[dict]:
+                             shogird_id: int | None = None) -> list[dict]:
     """Oxirgi N kun tashriflari."""
     chegara = datetime.now() - timedelta(days=kun)
     if shogird_id is not None:
@@ -100,9 +100,9 @@ async def sessiyalar_royxat(conn, uid: int, kun: int = 7,
 #  SKU (TOVAR TEKSHIRUV) CRUD
 # ════════════════════════════════════════════════════════════════════
 
-async def sku_qoshish(conn, uid: int, session_id: int, tovar_id: Optional[int],
+async def sku_qoshish(conn, uid: int, session_id: int, tovar_id: int | None,
                       tovar_nomi: str, mavjud: bool = False,
-                      narx: Optional[Decimal] = None,
+                      narx: Decimal | None = None,
                       facing: int = 0, izoh: str = "") -> int:
     row = await conn.fetchrow("""
         INSERT INTO storecheck_sku(user_id, session_id, tovar_id, tovar_nomi,
@@ -113,9 +113,9 @@ async def sku_qoshish(conn, uid: int, session_id: int, tovar_id: Optional[int],
     return row["id"]
 
 
-async def sku_yangila(conn, uid: int, sku_id: int, mavjud: Optional[bool] = None,
-                      narx: Optional[Decimal] = None, facing: Optional[int] = None,
-                      izoh: Optional[str] = None) -> bool:
+async def sku_yangila(conn, uid: int, sku_id: int, mavjud: bool | None = None,
+                      narx: Decimal | None = None, facing: int | None = None,
+                      izoh: str | None = None) -> bool:
     """Bitta SKU qatorini yangilash."""
     sets = []
     params: list = []
@@ -174,7 +174,7 @@ async def session_fotolar(conn, uid: int, session_id: int) -> list[dict]:
 # ════════════════════════════════════════════════════════════════════
 
 async def template_yarat(conn, uid: int, nomi: str, tovar_idlari: list[int],
-                          klient_turi_id: Optional[int] = None) -> int:
+                          klient_turi_id: int | None = None) -> int:
     row = await conn.fetchrow("""
         INSERT INTO storecheck_templates(user_id, nomi, klient_turi_id, tovar_idlari)
         VALUES($1, $2, $3, $4)
@@ -183,7 +183,7 @@ async def template_yarat(conn, uid: int, nomi: str, tovar_idlari: list[int],
     return row["id"]
 
 
-async def template_ol(conn, uid: int, klient_turi_id: Optional[int] = None) -> Optional[dict]:
+async def template_ol(conn, uid: int, klient_turi_id: int | None = None) -> dict | None:
     """Klient turiga mos templateni olish (yoki birinchi mavjud)."""
     if klient_turi_id:
         row = await conn.fetchrow("""

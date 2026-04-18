@@ -53,7 +53,7 @@ def ball_hisoblash(summa: float, nisbat: float = None) -> int:
 
 
 async def klient_ball_qoshish(conn, uid: int, klient_id: int,
-                                summa: float, sessiya_id: Optional[int] = None,
+                                summa: float, sessiya_id: int | None = None,
                                 izoh: str = "Sotuv bonusi") -> dict:
     """Klientga ball qo'shish."""
     ball = ball_hisoblash(summa)

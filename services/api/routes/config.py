@@ -50,11 +50,11 @@ class SyncLogCreate(BaseModel):
     yuborilgan_bayt: int = 0
     qabul_qilingan_bayt: int = 0
     status_kod: int = 200
-    tarmoq_turi: Optional[str] = None
-    batareya_foiz: Optional[int] = None
-    xato_xabar: Optional[str] = None
+    tarmoq_turi: str | None = None
+    batareya_foiz: int | None = None
+    xato_xabar: str | None = None
     muvaffaqiyatli: bool = True
-    qurilma_info: Optional[str] = None
+    qurilma_info: str | None = None
 
 
 class KlientValidate(BaseModel):
@@ -74,10 +74,10 @@ class KlientValidate(BaseModel):
 
 class BuyurtmaValidate(BaseModel):
     jami_summa: float = 0
-    foto_id: Optional[str] = None
-    latitude: Optional[float] = None
-    longitude: Optional[float] = None
-    checkin_vaqti: Optional[str] = None
+    foto_id: str | None = None
+    latitude: float | None = None
+    longitude: float | None = None
+    checkin_vaqti: str | None = None
     klient_qarz: float = 0
     zarar_bor: bool = False
     nasiya: bool = False
@@ -105,7 +105,7 @@ async def modullar_olish(uid: int = Depends(get_uid)):
 
 
 @router.get("/tarix")
-async def tarix_olish(modul: Optional[str] = None, limit: int = 20,
+async def tarix_olish(modul: str | None = None, limit: int = 20,
                        uid: int = Depends(get_uid)):
     """Config o'zgarishlar tarixi."""
     async with get_conn(uid) as conn:

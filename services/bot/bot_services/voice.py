@@ -11,7 +11,8 @@ from __future__ import annotations
 import asyncio, logging, os, tempfile
 import time
 from pathlib import Path
-from typing import Optional, Callable
+from typing import Optional
+from collections.abc import Callable
 from tenacity import (
     retry, stop_after_attempt,
     wait_exponential, retry_if_exception,
@@ -269,7 +270,7 @@ async def _gemini_async(
         )
 
 
-async def ovoz_matn(fayl_yoli: str, uid: int = 0) -> Optional[str]:
+async def ovoz_matn(fayl_yoli: str, uid: int = 0) -> str | None:
     """Qisqa ovoz (< 30s) -> matn (+ tuzatish)"""
     if not _client:
         log.error("Gemini ishga tushirilmagan")
@@ -296,7 +297,7 @@ async def ovoz_matn_uzun(
     fayl_yoli: str,
     progress_callback=None,
     uid: int = 0,
-) -> Optional[str]:
+) -> str | None:
     """Uzun audio (1 soatgacha) -> matn. Chunks + Parallel Gemini."""
     if not _client:
         return None

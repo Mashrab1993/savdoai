@@ -33,56 +33,56 @@ class TovarYaratSorov(BaseModel):
     qoldiq:           float = Field(0, ge=0)
     min_qoldiq:       float = Field(0, ge=0)
     # SalesDoc-compatible maydonlar
-    brend:            Optional[str]   = None
-    podkategoriya:    Optional[str]   = None
-    guruh:            Optional[str]   = None
-    ishlab_chiqaruvchi: Optional[str] = None
-    segment:          Optional[str]   = None
-    shtrix_kod:       Optional[str]   = None
-    artikul:          Optional[str]   = None
-    sap_kod:          Optional[str]   = None
-    kod:              Optional[str]   = None
-    ikpu_kod:         Optional[str]   = None
-    gtin:             Optional[str]   = None
-    hajm:             Optional[float] = None
-    ogirlik:          Optional[float] = None
-    blokda_soni:      Optional[int]   = None
-    korobkada_soni:   Optional[int]   = None
-    saralash:         Optional[int]   = None
-    yaroqlilik_muddati: Optional[int] = None
-    tavsif:           Optional[str]   = None
-    savdo_yonalishi:  Optional[str]   = None
+    brend:            str | None   = None
+    podkategoriya:    str | None   = None
+    guruh:            str | None   = None
+    ishlab_chiqaruvchi: str | None = None
+    segment:          str | None   = None
+    shtrix_kod:       str | None   = None
+    artikul:          str | None   = None
+    sap_kod:          str | None   = None
+    kod:              str | None   = None
+    ikpu_kod:         str | None   = None
+    gtin:             str | None   = None
+    hajm:             float | None = None
+    ogirlik:          float | None = None
+    blokda_soni:      int | None   = None
+    korobkada_soni:   int | None   = None
+    saralash:         int | None   = None
+    yaroqlilik_muddati: int | None = None
+    tavsif:           str | None   = None
+    savdo_yonalishi:  str | None   = None
 
 
 class TovarYangilaSorov(BaseModel):
-    nomi:             Optional[str]   = None
-    kategoriya:       Optional[str]   = None
-    birlik:           Optional[str]   = None
-    olish_narxi:      Optional[float] = None
-    sotish_narxi:     Optional[float] = None
-    min_sotish_narxi: Optional[float] = None
-    qoldiq:           Optional[float] = None
-    min_qoldiq:       Optional[float] = None
+    nomi:             str | None   = None
+    kategoriya:       str | None   = None
+    birlik:           str | None   = None
+    olish_narxi:      float | None = None
+    sotish_narxi:     float | None = None
+    min_sotish_narxi: float | None = None
+    qoldiq:           float | None = None
+    min_qoldiq:       float | None = None
     # SalesDoc-compatible maydonlar
-    brend:            Optional[str]   = None
-    podkategoriya:    Optional[str]   = None
-    guruh:            Optional[str]   = None
-    ishlab_chiqaruvchi: Optional[str] = None
-    segment:          Optional[str]   = None
-    shtrix_kod:       Optional[str]   = None
-    artikul:          Optional[str]   = None
-    sap_kod:          Optional[str]   = None
-    kod:              Optional[str]   = None
-    ikpu_kod:         Optional[str]   = None
-    gtin:             Optional[str]   = None
-    hajm:             Optional[float] = None
-    ogirlik:          Optional[float] = None
-    blokda_soni:      Optional[int]   = None
-    korobkada_soni:   Optional[int]   = None
-    saralash:         Optional[int]   = None
-    yaroqlilik_muddati: Optional[int] = None
-    tavsif:           Optional[str]   = None
-    savdo_yonalishi:  Optional[str]   = None
+    brend:            str | None   = None
+    podkategoriya:    str | None   = None
+    guruh:            str | None   = None
+    ishlab_chiqaruvchi: str | None = None
+    segment:          str | None   = None
+    shtrix_kod:       str | None   = None
+    artikul:          str | None   = None
+    sap_kod:          str | None   = None
+    kod:              str | None   = None
+    ikpu_kod:         str | None   = None
+    gtin:             str | None   = None
+    hajm:             float | None = None
+    ogirlik:          float | None = None
+    blokda_soni:      int | None   = None
+    korobkada_soni:   int | None   = None
+    saralash:         int | None   = None
+    yaroqlilik_muddati: int | None = None
+    tavsif:           str | None   = None
+    savdo_yonalishi:  str | None   = None
 
 
 class QoldiqYangilaSorov(BaseModel):
@@ -99,7 +99,7 @@ class TovarImportItem(BaseModel):
 
 
 class TovarImportSorov(BaseModel):
-    tovarlar: List[TovarImportItem]
+    tovarlar: list[TovarImportItem]
 
 
 # ═══ ENDPOINTS ═══
@@ -107,13 +107,13 @@ class TovarImportSorov(BaseModel):
 @router.get("/tovarlar")
 async def tovarlar(
     limit: int = 20, offset: int = 0,
-    kategoriya: Optional[str] = None,
-    brend: Optional[str] = None,
-    segment: Optional[str] = None,
-    ishlab_chiqaruvchi: Optional[str] = None,
-    savdo_yonalishi: Optional[str] = None,
-    qidiruv: Optional[str] = None,
-    kam_qoldiq: Optional[bool] = None,
+    kategoriya: str | None = None,
+    brend: str | None = None,
+    segment: str | None = None,
+    ishlab_chiqaruvchi: str | None = None,
+    savdo_yonalishi: str | None = None,
+    qidiruv: str | None = None,
+    kam_qoldiq: bool | None = None,
     sort: str = "kategoriya",
     uid: int = Depends(get_uid)
 ):
@@ -178,7 +178,7 @@ async def tovarlar(
 async def tovarlar_facets(uid: int = Depends(get_uid)):
     """Filter dropdownlari uchun unikal qiymatlar — SalesDoc-style"""
     async with rls_conn(uid) as c:
-        async def unique(col: str) -> List[str]:
+        async def unique(col: str) -> list[str]:
             rows = await c.fetch(
                 f"SELECT DISTINCT {col} AS v FROM tovarlar "
                 f"WHERE user_id=$1 AND {col} IS NOT NULL AND {col} <> '' "

@@ -24,10 +24,10 @@ async def saqlash(
     file_id: str,
     transkripsiya: str,
     operatsiya: str,
-    parse_natija: Optional[dict] = None,
+    parse_natija: dict | None = None,
     muvaffaqiyat: bool = False,
-    xato: Optional[str] = None,
-) -> Optional[int]:
+    xato: str | None = None,
+) -> int | None:
     """See module docstring."""
     if not conn or not user_id or not file_id:
         return None
@@ -67,7 +67,7 @@ async def yangilash(
     conn,
     arxiv_id: int,
     muvaffaqiyat: bool,
-    xato: Optional[str] = None,
+    xato: str | None = None,
 ) -> None:
     """Arxiv yozuvini yangilash (tasdiqlash yoki bekor qilingandan keyin)."""
     if not conn or not arxiv_id:

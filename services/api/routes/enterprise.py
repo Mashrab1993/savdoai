@@ -32,16 +32,16 @@ class TaskCreate(BaseModel):
     tavsif: str = ""
     turi: str = "umumiy"
     muhimlik: str = "oddiy"
-    klient_id: Optional[int] = None
-    agent_id: Optional[int] = None
-    muddat: Optional[str] = None
+    klient_id: int | None = None
+    agent_id: int | None = None
+    muddat: str | None = None
 
 class TaskUpdate(BaseModel):
     holat: str
     natija: str = ""
 
 @task_router.get("")
-async def task_list(holat: Optional[str] = None, uid: int = Depends(get_uid)):
+async def task_list(holat: str | None = None, uid: int = Depends(get_uid)):
     async with get_conn(uid) as conn:
         return await topshiriqlar_royxati(conn, uid, holat)
 
@@ -62,7 +62,7 @@ async def task_update(tid: int, body: TaskUpdate, uid: int = Depends(get_uid)):
 foto_router = APIRouter(prefix="/foto", tags=["foto"])
 
 @foto_router.get("")
-async def foto_list(turi: Optional[str] = None, bog_id: Optional[int] = None,
+async def foto_list(turi: str | None = None, bog_id: int | None = None,
                      uid: int = Depends(get_uid)):
     async with get_conn(uid) as conn:
         return await foto_royxati(conn, uid, turi, bog_id)
@@ -86,7 +86,7 @@ class UskunaCreate(BaseModel):
     turi: str = "muzlatgich"
     seriya_raqami: str = ""
     inventar_raqami: str = ""
-    olingan_sana: Optional[str] = None
+    olingan_sana: str | None = None
     foto_url: str = ""
     izoh: str = ""
 
@@ -116,8 +116,8 @@ class FilialCreate(BaseModel):
     manzil: str = ""
     telefon: str = ""
     turi: str = "dokon"
-    latitude: Optional[float] = None
-    longitude: Optional[float] = None
+    latitude: float | None = None
+    longitude: float | None = None
     bosh_filial: bool = False
 
 @filial_router.get("")
@@ -143,7 +143,7 @@ kassa_router = APIRouter(prefix="/kassa", tags=["kassa"])
 
 @kassa_router.get("")
 @kassa_router.get("/{sana}")
-async def kassa_get(sana: Optional[str] = None, uid: int = Depends(get_uid)):
+async def kassa_get(sana: str | None = None, uid: int = Depends(get_uid)):
     async with get_conn(uid) as conn:
         return await kunlik_kassa_hisoblash(conn, uid, sana)
 

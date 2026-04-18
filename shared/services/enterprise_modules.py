@@ -170,7 +170,7 @@ async def topshiriq_holat(conn, uid: int, topshiriq_id: int,
 
 
 async def topshiriqlar_royxati(conn, uid: int, holat: str = None,
-                                 agent_id: int = None) -> List[dict]:
+                                 agent_id: int = None) -> list[dict]:
     """Topshiriqlar ro'yxati."""
     query = "SELECT t.*, k.ism as klient_nomi FROM topshiriqlar t LEFT JOIN klientlar k ON k.id=t.klient_id WHERE t.user_id=$1"
     params = [uid]
@@ -203,7 +203,7 @@ async def foto_saqlash(conn, uid: int, turi: str, bog_id: int,
 
 
 async def foto_royxati(conn, uid: int, turi: str = None,
-                        bog_id: int = None) -> List[dict]:
+                        bog_id: int = None) -> list[dict]:
     """Fotolar ro'yxati."""
     query = "SELECT * FROM fotolar WHERE user_id=$1"
     params = [uid]
@@ -237,7 +237,7 @@ async def uskuna_holat(conn, uid: int, uskuna_id: int, holat: str) -> dict:
     return {"muvaffaqiyat": True}
 
 
-async def klient_uskunalari(conn, uid: int, klient_id: int) -> List[dict]:
+async def klient_uskunalari(conn, uid: int, klient_id: int) -> list[dict]:
     rows = await conn.fetch(
         "SELECT * FROM uskunalar WHERE user_id=$1 AND klient_id=$2 ORDER BY yaratilgan DESC",
         uid, klient_id)
@@ -257,7 +257,7 @@ async def filial_yaratish(conn, uid: int, data: dict) -> int:
         data.get("bosh_filial", False))
 
 
-async def filiallar_royxati(conn, uid: int) -> List[dict]:
+async def filiallar_royxati(conn, uid: int) -> list[dict]:
     rows = await conn.fetch(
         "SELECT * FROM filiallar WHERE user_id=$1 ORDER BY bosh_filial DESC, nomi", uid)
     return [dict(r) for r in rows]
@@ -271,7 +271,7 @@ async def filial_qoldiq_yangilash(conn, filial_id: int, tovar_id: int, qoldiq: f
     """, filial_id, tovar_id, Decimal(str(qoldiq)))
 
 
-async def filial_qoldiqlari(conn, filial_id: int) -> List[dict]:
+async def filial_qoldiqlari(conn, filial_id: int) -> list[dict]:
     rows = await conn.fetch("""
         SELECT fq.*, t.nomi as tovar_nomi FROM filial_qoldiq fq
         JOIN tovarlar t ON t.id = fq.tovar_id

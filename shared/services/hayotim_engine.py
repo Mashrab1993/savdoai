@@ -29,8 +29,8 @@ log = logging.getLogger(__name__)
 async def maqsad_qoshish(conn, uid: int, matn: str,
                          kategoriya: str = "umumiy",
                          ustuvorlik: int = 2,
-                         deadline: Optional[date] = None,
-                         shogird_id: Optional[int] = None) -> int:
+                         deadline: date | None = None,
+                         shogird_id: int | None = None) -> int:
     row = await conn.fetchrow("""
         INSERT INTO shaxsiy_maqsadlar(user_id, shogird_id, matn, kategoriya, ustuvorlik, deadline)
         VALUES($1, $2, $3, $4, $5, $6)
@@ -71,7 +71,7 @@ async def maqsadlar_royxat(conn, uid: int, faqat_faol: bool = True,
 async def goya_qoshish(conn, uid: int, matn: str,
                        kategoriya: str = "umumiy",
                        manba: str = "matn",
-                       shogird_id: Optional[int] = None) -> int:
+                       shogird_id: int | None = None) -> int:
     row = await conn.fetchrow("""
         INSERT INTO shaxsiy_goyalar(user_id, shogird_id, matn, kategoriya, manba)
         VALUES($1, $2, $3, $4, $5)
@@ -80,7 +80,7 @@ async def goya_qoshish(conn, uid: int, matn: str,
     return row["id"]
 
 
-async def goyalar_royxat(conn, uid: int, holat: Optional[str] = None,
+async def goyalar_royxat(conn, uid: int, holat: str | None = None,
                          limit: int = 100) -> list[dict]:
     if holat:
         rows = await conn.fetch("""
@@ -119,7 +119,7 @@ async def xarajat_yoz(conn, uid: int, summa: Decimal,
                       kategoriya: str = "boshqa",
                       manba: str = "naqd",
                       izoh: str = "",
-                      sana: Optional[date] = None) -> int:
+                      sana: date | None = None) -> int:
     row = await conn.fetchrow("""
         INSERT INTO shaxsiy_xarajat(user_id, summa, kategoriya, manba, izoh, sana)
         VALUES($1, $2, $3, $4, $5, $6)
@@ -224,7 +224,7 @@ async def dashboard_data(conn, uid: int) -> dict:
 #  OPUS 4.7 TAHLIL — 30 kunlik chuqur xulosa
 # ════════════════════════════════════════════════════════════════════
 
-async def opus_30kun_tahlil(conn, uid: int) -> Optional[str]:
+async def opus_30kun_tahlil(conn, uid: int) -> str | None:
     """Claude Opus 4.7 — 30 kunlik barcha ma'lumot bir kontekstda tahlil.
 
     Opus 4.7 1M context bor — barcha maqsadlar, g'oyalar, xarajat,

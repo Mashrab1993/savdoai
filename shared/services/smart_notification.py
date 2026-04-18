@@ -31,7 +31,7 @@ log = logging.getLogger(__name__)
 TZ = pytz.timezone("Asia/Tashkent")
 
 
-async def ertalabki_xulosa(conn, uid: int) -> Optional[str]:
+async def ertalabki_xulosa(conn, uid: int) -> str | None:
     """
     08:00 ertalabki xulosa.
     Kechagi natija + bugungi vazifalar.
@@ -118,7 +118,7 @@ async def ertalabki_xulosa(conn, uid: int) -> Optional[str]:
     return matn
 
 
-async def kechki_hisobot(conn, uid: int) -> Optional[str]:
+async def kechki_hisobot(conn, uid: int) -> str | None:
     """
     20:00 kechki hisobot.
     Bugungi natija.
@@ -163,7 +163,7 @@ async def kechki_hisobot(conn, uid: int) -> Optional[str]:
     return matn
 
 
-async def haftalik_digest(conn, uid: int) -> Optional[str]:
+async def haftalik_digest(conn, uid: int) -> str | None:
     """Dushanba ertalab 09:00 — haftalik xulosa."""
     hafta = await conn.fetchrow("""
         SELECT COUNT(*) soni, COALESCE(SUM(jami),0) jami,
@@ -236,7 +236,7 @@ async def haftalik_digest(conn, uid: int) -> Optional[str]:
     return matn
 
 
-async def critical_alert(conn, uid: int) -> Optional[str]:
+async def critical_alert(conn, uid: int) -> str | None:
     """
     MUHIM OGOHLANTIRISH — darhol yuboriladi.
     Faqat jiddiy holatlarda:
@@ -286,7 +286,7 @@ async def critical_alert(conn, uid: int) -> Optional[str]:
     )
 
 
-async def notification_dispatch(conn, uid: int, turi: str) -> Optional[str]:
+async def notification_dispatch(conn, uid: int, turi: str) -> str | None:
     """
     Xabar turini tanlash va generatsiya.
     Scheduler yoki API dan chaqiriladi.

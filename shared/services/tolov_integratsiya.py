@@ -250,7 +250,7 @@ _PROVIDERS: dict[str, type[PaymentProvider]] = {
 }
 
 
-def get_provider(nomi: str) -> Optional[PaymentProvider]:
+def get_provider(nomi: str) -> PaymentProvider | None:
     """To'lov providerini olish."""
     cls = _PROVIDERS.get(nomi.lower())
     if cls:

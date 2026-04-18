@@ -197,7 +197,7 @@ async def abc_xyz_tahlil(conn, uid: int, kunlar: int = 90) -> dict:
 #  AVTOMATIK BUYURTMA TAVSIYASI (Reorder Point)
 # ════════════════════════════════════════════════════════════
 
-async def avtobuyurtma_tavsiya(conn, uid: int) -> List[dict]:
+async def avtobuyurtma_tavsiya(conn, uid: int) -> list[dict]:
     """ABC-XYZ matritsa asosida qaysi tovarlarni qayta buyurtma qilish kerak.
 
     Reorder Point = (kunlik_sotuv × yetkazish_kuni) + xavfsizlik_zaxirasi

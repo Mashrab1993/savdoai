@@ -225,9 +225,9 @@ class _V0Client:
         prompt: str,
         *,
         system: str = "",
-        project_id: Optional[str] = None,
+        project_id: str | None = None,
         model: str = "",
-    ) -> Optional[dict]:
+    ) -> dict | None:
         if not V0_KEY:
             return None
         body: dict = {"message": prompt}
@@ -275,7 +275,7 @@ async def opus_pro_audit(
     user: str,
     *,
     max_tokens: int = 4096,
-) -> Optional[str]:
+) -> str | None:
     """
     Claude Opus 4.7 orqali chuqur audit / matematik tekshiruv.
 
@@ -302,7 +302,7 @@ async def second_opinion(
     primary_answer: str,
     *,
     context: str = "",
-) -> Optional[dict]:
+) -> dict | None:
     """
     Claude Opus 4.7 dan birinchi modelning javobini tekshirishni so'raydi.
 
@@ -355,7 +355,7 @@ async def cheap_batch(
     user: str,
     *,
     temperature: float = 0.2,
-) -> Optional[str]:
+) -> str | None:
     """
     DeepSeek V3 — arzon va tez. Ko'p miqdordagi so'rovlar uchun:
     fuzzy tovar nomi to'g'rilash, spam filter, oddiy intent parse.
@@ -372,7 +372,7 @@ async def cheap_batch(
         return None
 
 
-async def generate_ui(prompt: str) -> Optional[str]:
+async def generate_ui(prompt: str) -> str | None:
     """
     v0.dev Platform API — matn → React + Tailwind + shadcn/ui komponent.
 
@@ -409,7 +409,7 @@ async def generate_ui(prompt: str) -> Optional[str]:
         return None
 
 
-async def market_intel(query: str) -> Optional[str]:
+async def market_intel(query: str) -> str | None:
     """
     Grok 4 — real-time bozor ma'lumoti (narxlar, yangiliklar, raqobatchi).
     Grok X/Twitter real-time index'ga ulangan, shuning uchun "hozirgi" holat

@@ -47,7 +47,7 @@ async def gps_saqlash(conn, uid: int, lat: float, lon: float,
             "lat": lat, "lon": lon, "turi": turi}
 
 
-async def kunlik_marshrut(conn, uid: int, sana: Optional[str] = None) -> dict:
+async def kunlik_marshrut(conn, uid: int, sana: str | None = None) -> dict:
     """Kunlik marshrut statistikasi."""
     if sana:
         qidirish = f"(vaqt AT TIME ZONE 'Asia/Tashkent')::date = '{sana}'"

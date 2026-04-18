@@ -470,7 +470,7 @@ def ekspert_sorov_bormi(matn: str) -> bool:
     return any(s in m for s in TAHLIL_SOZLAR)
 
 
-def ekspert_nom_ajrat(matn: str) -> Optional[str]:
+def ekspert_nom_ajrat(matn: str) -> str | None:
     """Matndan tovar yoki klient nomini ajratish."""
     import re
     for s in TAHLIL_SOZLAR:

@@ -21,8 +21,8 @@ log = logging.getLogger(__name__)
 
 async def vazifa_ber(conn, admin_uid: int, shogird_id: int, matn: str,
                       ustuvorlik: int = 2,
-                      deadline: Optional[date] = None,
-                      klient_id: Optional[int] = None,
+                      deadline: date | None = None,
+                      klient_id: int | None = None,
                       admin_izoh: str = "") -> int:
     """Shogirdga yangi vazifa berish."""
     row = await conn.fetchrow("""
@@ -47,7 +47,7 @@ async def vazifa_bajardi(conn, admin_uid: int, vazifa_id: int,
 
 
 async def vazifalar_royxat(conn, admin_uid: int,
-                            shogird_id: Optional[int] = None,
+                            shogird_id: int | None = None,
                             faqat_faol: bool = True,
                             limit: int = 50) -> list[dict]:
     where_parts = ["admin_uid=$1"]

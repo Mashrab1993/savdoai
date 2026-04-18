@@ -143,7 +143,7 @@ async def marshrut_yaratish(conn, uid: int, data: dict) -> int:
 
 
 async def yetkazish_tasdiqlash(conn, uid: int, yetkazish_id: int,
-                                 tovarlar: List[dict],
+                                 tovarlar: list[dict],
                                  lat: float = None, lon: float = None,
                                  foto_url: str = None) -> dict:
     """Klientga yetkazishni tasdiqlash."""
