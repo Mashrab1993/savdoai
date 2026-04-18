@@ -41,13 +41,12 @@ function Row({
 
 const N = (v: unknown): number => Number((v as number) ?? 0)
 
-const todayISO    = () => new Date().toISOString().split("T")[0]
-const monthAgoISO = () => new Date(Date.now() - 30 * 86400000).toISOString().split("T")[0]
-
 export default function MoliyaPage() {
-  const [tab, setTab] = useState<TabId>("pl")
-  const [sanaDan, setSanaDan] = useState(monthAgoISO())
-  const [sanaGacha, setSanaGacha] = useState(todayISO())
+  // Default to 'bs' (balans) because /moliya/foyda-zarar and /moliya/pul-oqimi
+  // currently return 500 on the backend — balans is the only tab that renders.
+  const [tab, setTab] = useState<TabId>("bs")
+  const [sanaDan, setSanaDan] = useState("")
+  const [sanaGacha, setSanaGacha] = useState("")
   const [data, setData] = useState<Record<string, unknown> | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
