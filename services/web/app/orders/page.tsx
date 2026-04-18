@@ -48,15 +48,18 @@ export default function OrdersPage() {
   const [statusFilter, setStatusFilter] = useState<OrderStatus>("all")
   const [selectedOrder, setSelectedOrder] = useState<any>(null)
   const [sheetOpen, setSheetOpen] = useState(false)
-  const today = new Date().toISOString().split("T")[0]
-  const monthAgo = new Date(Date.now() - 30 * 86400000).toISOString().split("T")[0]
-  const [sanaDan, setSanaDan] = useState(monthAgo)
-  const [sanaGacha, setSanaGacha] = useState(today)
+  // Backend /savdolar 500s whenever sana_dan/gacha are supplied — default blank.
+  const [sanaDan, setSanaDan] = useState("")
+  const [sanaGacha, setSanaGacha] = useState("")
   const [onlyDebt, setOnlyDebt] = useState(false)
   const [exporting, setExporting] = useState(false)
 
   const { data: rawOrders, loading, error, refetch } = useApi(
-    () => savdoService.list({ sana_dan: sanaDan, sana_gacha: sanaGacha, limit: 500 }),
+    () => savdoService.list({
+      sana_dan: sanaDan || undefined,
+      sana_gacha: sanaGacha || undefined,
+      limit: 500,
+    }),
     [sanaDan, sanaGacha]
   )
 
@@ -85,8 +88,11 @@ export default function OrdersPage() {
     try {
       const token = typeof window !== "undefined" ? localStorage.getItem("auth_token") : ""
       const base  = process.env.NEXT_PUBLIC_API_URL || ""
-      const qs    = new URLSearchParams({ sana_dan: sanaDan, sana_gacha: sanaGacha })
-      const res   = await fetch(`${base}/api/v1/savdolar/excel?${qs}`, {
+      const qs    = new URLSearchParams()
+      if (sanaDan)   qs.set("sana_dan", sanaDan)
+      if (sanaGacha) qs.set("sana_gacha", sanaGacha)
+      const qsStr = qs.toString()
+      const res   = await fetch(`${base}/api/v1/savdolar/excel${qsStr ? `?${qsStr}` : ""}`, {
         headers: { Authorization: `Bearer ${token}` },
       })
       if (!res.ok) throw new Error("Export xatoligi")
