@@ -143,7 +143,7 @@ export default function DashboardPage() {
                 </h1>
                 <p className="text-sm text-muted-foreground mt-1.5">
                   {locale === "uz"
-                    ? "Bizningingiz bugun shunday ko'rinishda"
+                    ? "Biznesingiz bugun shunday ko'rinishda"
                     : "Вот как выглядит ваш бизнес сегодня"}
                 </p>
               </div>
