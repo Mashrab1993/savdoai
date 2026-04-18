@@ -19,7 +19,10 @@ export default function FilialPage() {
   const h = { "Content-Type": "application/json", Authorization: `Bearer ${typeof window !== "undefined" ? localStorage.getItem("auth_token") : ""}` }
 
   useEffect(() => {
-    fetch(`${API}/api/v1/filial`, { headers: h }).then(r => r.ok ? r.json() : []).then(setFiliallar).finally(() => setLoading(false))
+    fetch(`${API}/api/v1/filial`, { headers: h })
+      .then(r => r.ok ? r.json() : { items: [] })
+      .then(d => setFiliallar(Array.isArray(d) ? d : (d?.items ?? [])))
+      .finally(() => setLoading(false))
   }, [])
 
   const create = async () => {
