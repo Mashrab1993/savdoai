@@ -12,6 +12,10 @@ interface ApiState<T> {
 /**
  * Minimal fetch hook — no heavy dependencies.
  * Accepts any async function and manages loading/error/data state.
+ *
+ * Inline arrow-function fetchers (e.g. `useApi(() => svc.get(id))`) are
+ * stabilised via a ref so the hook does not re-fire on every render.
+ * Refetch happens only when `deps` change.
  */
 export function useApi<T>(
   fetcher: (() => Promise<T>) | null,
@@ -23,12 +27,15 @@ export function useApi<T>(
     error: null,
   })
   const mountedRef = useRef(true)
+  const fetcherRef = useRef(fetcher)
+  useEffect(() => { fetcherRef.current = fetcher }, [fetcher])
 
   const run = useCallback(async () => {
-    if (!fetcher) return
+    const fn = fetcherRef.current
+    if (!fn) return
     setState(s => ({ ...s, loading: true, error: null }))
     try {
-      const data = await fetcher()
+      const data = await fn()
       if (mountedRef.current) setState({ data, loading: false, error: null })
     } catch (err) {
       if (!mountedRef.current) return
@@ -41,7 +48,7 @@ export function useApi<T>(
       setState({ data: null, loading: false, error: msg })
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fetcher, ...deps])
+  }, deps)
 
   useEffect(() => {
     mountedRef.current = true
