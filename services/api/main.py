@@ -1711,18 +1711,19 @@ async def search(
             for t in tovarlar_r:
                 t.pop("relevance", None)
         if tur in ("klient","barchasi"):
+            # user_id'ni $2 ga qo'yib — defense-in-depth (RLS + explicit filter)
             klientlar_r = [dict(r) for r in await c.fetch("""
                 SELECT id, ism, telefon, jami_sotib,
                     CASE
                         WHEN lower(ism) = lower($1) THEN 3
-                        WHEN lower(ism) LIKE lower($3) THEN 2
+                        WHEN lower(ism) LIKE lower($4) THEN 2
                         ELSE 1
                     END AS relevance
                 FROM klientlar
-                WHERE lower(ism) LIKE lower($2)
-                   OR (telefon IS NOT NULL AND telefon LIKE $2)
-                ORDER BY relevance DESC, jami_sotib DESC LIMIT $4
-            """, q.strip(), f"%{like_escape(q)}%",
+                WHERE user_id=$2 AND (lower(ism) LIKE lower($3)
+                   OR (telefon IS NOT NULL AND telefon LIKE $3))
+                ORDER BY relevance DESC, jami_sotib DESC LIMIT $5
+            """, q.strip(), uid, f"%{like_escape(q)}%",
                 f"{like_escape(q)}%", limit)]
             for k in klientlar_r:
                 k.pop("relevance", None)
