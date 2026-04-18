@@ -1,4 +1,99 @@
-# CHANGELOG — SavdoAI v25.4
+# CHANGELOG — SavdoAI v25.7
+
+## v25.7 — Production hardening + voice safety (2026-04-18)
+
+### 🔴 KRITIK TUZATISHLAR (5 ta runtime crash bug)
+
+Ruff static analysis orqali topilgan va production'da aktiv bo'lgan F821/F823
+undefined name buglari — quyidagi code path'larni crashga olib kelardi:
+
+1. `services/bot/main.py:819` (`cmd_nakladnoy_excel`) — `os` undefined
+   Impact: `/nakladnoy_excel` komanda CRASH qilar edi
+2. `services/bot/main.py:926` (`cmd_reestr_excel`) — `os` undefined
+   Impact: `/reestr_excel` komanda CRASH qilar edi
+3. `services/bot/handlers/excel_chat.py:456,465` — `Table`, `Spacer` undefined
+   Impact: Excel → PDF export path'da NameError
+4. `services/worker/tasks.py:413` — `datetime` module undefined
+   Impact: Kunlik/haftalik hisobot Celery task CRASH qilar edi
+
+### 🎯 VOICE INTENT XAVFSIZLIGI (v25.7 asosiy yangilik)
+
+**Muammo:** `voice_master.py`'dagi `_any()` substring matching 163 ta
+keyword uchun FALSE POSITIVE keltirardi:
+- "bekor qilmay" → "bekor qil" intent TRIGGER qilardi
+- "tasdiqlamayman" → "tasdiqla" TRIGGER
+- "shokirim" → "kirim" TRIGGER
+
+**Yechim:** Yangi `shared/services/voice_helpers.py`:
+- `_any_word()` — word-boundary keyword matching
+- `_has_negation_near()` — -may/emas/yo'q negation detection
+- `_safe_intent_match()` — birlashgan xavfsiz matching
+
+`voice_master._any` silent-fallback bilan `_safe_intent_match`'ga
+migratsiya qilindi (production regression xavfsiz).
+
+### 🔌 STT CACHE BUS (cross-service invalidation)
+
+**Muammo:** Web dashboard'dan yangi tovar qo'shilsa, bot'ning in-process
+STT cache'i 60s TTL kutardi — yangi tovar darhol ovozda tanilmasdi.
+
+**Yechim:** `shared/services/stt_cache_bus.py` — Redis Pub/Sub:
+- API: `await publish_invalidate(uid)` — tovar yaratilganda
+- Bot: `start_invalidate_listener` background task — cache tozalash
+
+Natija: cross-service cache invalidation <1s (oldin 60s).
+
+### 🧪 TEST COVERAGE (0 → 86)
+
+Yangi testlar:
+- `tests/test_voice_helpers.py` — 23 test (voice_helpers full)
+- `tests/test_voice_intents.py` — 21 test (positive + false-positive + edge)
+- `/root/savdo-bot/tests/` — 42 test (database + analyzer_v2)
+
+### 📝 DATA INTEGRITY (F601)
+
+7 ta dict duplicate key topildi va tuzatildi:
+- `shared/services/voice_correction.py`: STT correction dict'da takroriy kalitlar
+- `shared/utils/uzb_nlp.py`: O'zbek lugat dict'da duplicate
+
+Bu SILENT DATA LOSS edi — Python dict last-value-wins bilan oldingi
+qiymat yo'qolardi.
+
+### 🧹 RUFF LINT (1040+ tuzatish)
+
+- F401 (391 fix): unused imports
+- UP045 (414 fix): Optional[X] → X | None (PEP 604)
+- UP006 (68 fix): typing.List → list (PEP 585)
+- UP035 (5 fix): typing.Callable → collections.abc.Callable
+- F541 (74 fix): empty f-strings
+- F841 (32 fix): unused variables
+- E401 (51 fix): multiple imports per line
+- F811 (2 fix): redefined unused
+- B033 (2 fix): set duplicate literals
+- E731 (11 fix): lambda → def
+- F601 (7 fix): dict duplicate keys (data integrity)
+- SIM (2 fix): code simplification
+
+### 🔐 SECURITY
+
+- `scripts/health_check.sh` — BOT_TOKEN toza yozilgan edi, env-var'ga ko'chirildi
+- `.env.backup-*` va `scripts/*_local.sh` pattern `.gitignore`'ga qo'shildi
+- GitHub Push Protection bilan `.env.backup` commit blocked (secret scanning)
+
+### 📊 COMMIT LIST (10 deploy)
+
+1. `9c62c0d` fix(runtime): 5 F821/F823 undefined names
+2. `16d4484` feat(voice): helpers + tests + cross-service cache bus
+3. `6c874f5` chore(lint): F811 + B033 fix
+4. `e062563` chore(lint): UP006+UP045+UP035 (487 modernization)
+5. `1cfb3c4` chore(lint): SIM + UP misc
+6. `9fae671` chore(lint): batch auto-fix (548)
+7. `5acbfb2` feat(cache): wire stt_cache_bus — API publish + bot listener
+8. `b914165` chore(lint): E731 lambda (11)
+9. `3d7d313` fix(data): F601 dict duplicate keys (7)
+10. `ee534f5` feat(voice): migrate _any → _safe_intent_match
+
+---
 
 ## v25.4.2 — SalesDoc parity + 4 dunyoda yagona AI (2026-04-17 kechqurun)
 
