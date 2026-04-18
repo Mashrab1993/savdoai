@@ -816,7 +816,7 @@ async def cmd_nakladnoy_excel(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
             ws.cell(row=row_num, column=4, value="Принял: ____________________________").font = small
             row_num += 3
 
-        xlsx_path = os.path.join(tempfile.gettempdir(), f"nakladnoy_{int(_t.time())}.xlsx")
+        xlsx_path = _os.path.join(tempfile.gettempdir(), f"nakladnoy_{int(_t.time())}.xlsx")
         wb.save(xlsx_path)
 
         with open(xlsx_path, "rb") as f:
@@ -828,7 +828,6 @@ async def cmd_nakladnoy_excel(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
                         f"Format: Накладные 3.1\n"
                         f"Buyurtmalar: {len(orders_data)} ta",
             )
-        import os as _os
         try: _os.remove(xlsx_path)
         except Exception: pass
         await msg.delete()
@@ -923,7 +922,7 @@ async def cmd_reestr_excel(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         for col in range(1, 10):
             ws.cell(row=total_row, column=col).border = border
 
-        xlsx_path = os.path.join(tempfile.gettempdir(), f"reestr_{int(_t.time())}.xlsx")
+        xlsx_path = _os.path.join(tempfile.gettempdir(), f"reestr_{int(_t.time())}.xlsx")
         wb.save(xlsx_path)
 
         with open(xlsx_path, "rb") as f:
@@ -935,7 +934,6 @@ async def cmd_reestr_excel(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
                         f"Jami: {total_sum:,.0f} so'm\n"
                         f"Format: Реестр 3.0",
             )
-        import os as _os
         try: _os.remove(xlsx_path)
         except Exception: pass
         await msg.delete()

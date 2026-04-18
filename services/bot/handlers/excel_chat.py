@@ -453,11 +453,11 @@ def _javob_to_pdf(savol: str, javob: str, filename: str = "Excel") -> bytes | No
     return buf.getvalue()
 
 
-def _pro_table(rows: list) -> Table:
-    """Professional jadval"""
+def _pro_table(rows: list):
+    """Professional jadval (return type: reportlab Table yoki Spacer)"""
     import re
     from reportlab.lib import colors
-    from reportlab.platypus import Table, TableStyle, Paragraph
+    from reportlab.platypus import Table, TableStyle, Paragraph, Spacer
     from reportlab.lib.styles import ParagraphStyle
     from reportlab.lib.enums import TA_CENTER, TA_RIGHT
 
