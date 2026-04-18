@@ -28,7 +28,7 @@ async def voice_ekspeditor(update: Update, ctx: ContextTypes.DEFAULT_TYPE,
                            matn: str) -> bool:
     """'yangi ekspeditor Karim aka +99890...' intent."""
     m = matn.strip().lower()
-    if not (("yangi ekspeditor" in m or "ekspeditor qo'sh" in m or "ekspeditor qosh" in m)):
+    if not ("yangi ekspeditor" in m or "ekspeditor qo'sh" in m or "ekspeditor qosh" in m):
         return False
 
     # Ismni olish — ekspeditor so'zidan keyin
@@ -70,7 +70,7 @@ async def voice_ekspeditor(update: Update, ctx: ContextTypes.DEFAULT_TYPE,
 async def voice_sklad(update: Update, ctx: ContextTypes.DEFAULT_TYPE, matn: str) -> bool:
     """'sklad Asosiy qo'shish', 'yangi sklad aksiya'."""
     m = matn.strip().lower()
-    if not (("yangi sklad" in m or "sklad qo'sh" in m or "sklad qosh" in m)):
+    if not ("yangi sklad" in m or "sklad qo'sh" in m or "sklad qosh" in m):
         return False
 
     nomi_match = re.search(
