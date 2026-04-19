@@ -525,7 +525,19 @@ export default function PriceTypesPage() {
         </Card>
 
         {loading && <PageLoading />}
-        {error && !loading && <PageError message={error} onRetry={refetch} />}
+        {error && !loading && (
+          <div className="flex flex-col items-center justify-center py-16 gap-3 text-center">
+            <div className="p-3 rounded-full bg-primary/10">
+              <Tag className="w-6 h-6 text-primary" />
+            </div>
+            <div>
+              <p className="font-semibold text-foreground">Narx turlari tez orada</p>
+              <p className="text-sm text-muted-foreground mt-1 max-w-md">
+                Bu modul hozir tayyorlanmoqda. Tovarlaringiz uchun Prodaja / Zakup / Prayslist tiplarini sozlash imkoniyati qo&apos;shiladi.
+              </p>
+            </div>
+          </div>
+        )}
 
         {!loading && !error && data && (
           <>

@@ -391,7 +391,19 @@ export default function CategoriesPage() {
         </Card>
 
         {loading && <PageLoading />}
-        {error && !loading && <PageError message={error} onRetry={refetch} />}
+        {error && !loading && (
+          <div className="flex flex-col items-center justify-center py-16 gap-3 text-center">
+            <div className="p-3 rounded-full bg-primary/10">
+              <Layers className="w-6 h-6 text-primary" />
+            </div>
+            <div>
+              <p className="font-semibold text-foreground">Klassifikator tez orada</p>
+              <p className="text-sm text-muted-foreground mt-1 max-w-md">
+                7 turdagi tovar tasnifi (kategoriya, subkategoriya, gruppa, brend, ishlab chiqaruvchi, segment va gruppa kategoriya) moduli hozir tayyorlanmoqda.
+              </p>
+            </div>
+          </div>
+        )}
 
         {!loading && !error && data && (
           <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as KlassifikatorTuri)}>

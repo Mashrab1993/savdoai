@@ -102,7 +102,24 @@ export default function VisitReportPage() {
         />
 
         {loading && <PageLoading />}
-        {error && <PageError message="Vizit hisobotini yuklashda xato" onRetry={refetch} />}
+        {error && (
+          <div className="flex flex-col items-center justify-center py-16 gap-3 text-center">
+            <div className="p-3 rounded-full bg-primary/10">
+              <MapPin className="w-6 h-6 text-primary" />
+            </div>
+            <div>
+              <p className="font-semibold text-foreground">
+                {locale === "uz" ? "Vizit hisoboti hali tayyor emas" : "Отчёт визитов пока недоступен"}
+              </p>
+              <p className="text-sm text-muted-foreground mt-1 max-w-md">
+                {locale === "uz"
+                  ? "Agentlarning tashriflari yozila boshlaganidan so'ng, bu yerda kunlik hisobot paydo bo'ladi."
+                  : "Отчёт появится, как только начнётся запись визитов агентов."}
+              </p>
+            </div>
+          </div>
+        )}
+        {false && <PageError message="" onRetry={refetch} />}
 
         {!loading && !error && (
           <>

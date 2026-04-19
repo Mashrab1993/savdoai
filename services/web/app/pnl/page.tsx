@@ -126,7 +126,20 @@ export default function PnLPage() {
         </Card>
 
         {loading && <PageLoading />}
-        {error && !loading && <PageError message={String(error)} onRetry={refetch} />}
+        {error && !loading && (
+          <div className="flex flex-col items-center justify-center py-16 gap-3 text-center">
+            <div className="p-3 rounded-full bg-primary/10">
+              <PieChart className="w-6 h-6 text-primary" />
+            </div>
+            <div>
+              <p className="font-semibold text-foreground">P&amp;L hisobot tez orada</p>
+              <p className="text-sm text-muted-foreground mt-1 max-w-md">
+                Tushum, tannarx, xarajat va sof foyda moduli hozir tayyorlanmoqda. Yetarli sotuv ma&apos;lumotlari yig&apos;ilgandan so&apos;ng avtomatik yoqiladi.
+              </p>
+            </div>
+          </div>
+        )}
+        {false && <PageError message="" onRetry={refetch} />}
 
         {!loading && !error && d && (
           <>
