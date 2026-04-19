@@ -69,7 +69,21 @@ export default function Klient360Page() {
 
   useEffect(() => {
     const id = searchParams?.get("id")
-    if (id) { setKlientId(id); yukla(id) }
+    if (id) { setKlientId(id); yukla(id); return }
+    // No id in URL — auto-load the first client so the landing view isn't empty.
+    (async () => {
+      try {
+        const token = typeof window !== "undefined" ? localStorage.getItem("auth_token") : ""
+        const base  = process.env.NEXT_PUBLIC_API_URL || ""
+        const res = await fetch(`${base}/api/v1/klientlar?limit=1`, {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        if (!res.ok) return
+        const body = await res.json()
+        const first = body?.items?.[0]
+        if (first?.id) { setKlientId(String(first.id)); yukla(String(first.id)) }
+      } catch {}
+    })()
   }, [searchParams, yukla])
 
   const k = data?.klient
