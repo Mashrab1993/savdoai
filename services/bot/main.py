@@ -1650,9 +1650,45 @@ def _start_polling_lock_heartbeat(lock_client, lock_meta):
     return stop_event
 
 
+def _start_health_server() -> None:
+    """Railway healthCheckPath=/healthz uchun yengil HTTP server.
+
+    Polling bot HTTP xizmat qilmaydi, lekin Railway /healthz 200 kutadi.
+    Bu funksiya daemon thread'da ishlaydi — bot to'xtasa o'zi o'ladi.
+    """
+    import os, threading
+    from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+
+    class H(BaseHTTPRequestHandler):
+        def do_GET(self):
+            if self.path in ("/healthz", "/health", "/"):
+                self.send_response(200)
+                self.send_header("Content-Type", "text/plain; charset=utf-8")
+                self.end_headers()
+                self.wfile.write(b"ok")
+            else:
+                self.send_response(404)
+                self.end_headers()
+
+        def log_message(self, format, *args):  # noqa: A002
+            # Railway health probe log'ni to'ldirmasin
+            return
+
+    port = int(os.getenv("PORT", "8080"))
+    try:
+        srv = ThreadingHTTPServer(("0.0.0.0", port), H)
+        t = threading.Thread(target=srv.serve_forever, name="healthz", daemon=True)
+        t.start()
+        log.info("🩺 Health server: http://0.0.0.0:%d/healthz", port)
+    except Exception as e:
+        log.warning("Health server boshlanmadi: %s", e)
+
+
 def main() -> None:
     # Lock avval — takroriy instance tez chiqadi; ilovani_qur og'ir (handlerlar).
     conf = config_init()
+    # Health endpoint tezda ishga tushsin — Railway health probe kutmasin
+    _start_health_server()
     lock_client = None
     lock_meta = None
     lock_heartbeat_stop = None
