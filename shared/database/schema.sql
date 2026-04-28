@@ -611,7 +611,7 @@ CREATE POLICY xarajat_kat_iso ON xarajat_kategoriyalar
 CREATE TABLE IF NOT EXISTS xarajatlar (
     id              BIGSERIAL   PRIMARY KEY,
     admin_uid       BIGINT      NOT NULL REFERENCES users(id),
-    shogird_id      BIGINT      NOT NULL REFERENCES shogirdlar(id),
+    shogird_id      BIGINT      REFERENCES shogirdlar(id),
     kategoriya_id   BIGINT      REFERENCES xarajat_kategoriyalar(id),
     kategoriya_nomi TEXT        NOT NULL DEFAULT 'boshqa',
     summa           DECIMAL(18,2) NOT NULL,

@@ -1337,8 +1337,9 @@ def parse_xarajat_text(text: str, shogirdlar: list[dict] = None) -> dict:
                   "shirinlik", "qandolat", "go'sht", "tovuq", "baliq"],
         "bozorlik": ["bozorlik", "bozor", "oziq-ovqat xaridi", "sabzavot",
                      "meva", "kartoshka", "piyoz", "sabzi", "pomidor", "bodring"],
-        "transport": ["benzin", "yonilg'i", "taksi", "yo'l kira", "parkovka",
-                      "marshrut", "avtobus", "metro", "dizel", "avtomashina", "texkor"],
+        "transport": ["transport", "benzin", "yonilg'i", "taksi", "yo'l kira",
+                      "parkovka", "marshrut", "avtobus", "metro", "dizel",
+                      "avtomashina", "texkor", "yo'lkira", "yo'l haqi"],
         "aloqa": ["telefon", "aloqa", "internet", "wifi", "mobil to'lov", "tarif"],
         "oylik": ["oylik", "maosh", "ish haqi", "avans", "bonus", "haq"],
         "kommunal": ["elektr", "svet", "gaz to'lovi", "kommunal",
@@ -1370,20 +1371,24 @@ def parse_xarajat_text(text: str, shogirdlar: list[dict] = None) -> dict:
 
     text_lower = text.lower()
 
-    # Shogird topish (agar ro'yxat berilgan bo'lsa)
+    def _has_word(word: str, src: str) -> bool:
+        return re.search(rf"\b{re.escape(word)}\b", src) is not None
+
+    # Shogird topish (agar ro'yxat berilgan bo'lsa) — word boundary kerak
+    # aks holda "Ali" ⊂ "kalit" — false positive
     shogird_ismi = ""
     shogird_id = None
     if shogirdlar:
         for s in shogirdlar:
             ism = (s.get("ism") or "").lower().strip()
-            if ism and ism in text_lower:
+            if ism and _has_word(ism, text_lower):
                 shogird_ismi = s.get("ism", "")
                 shogird_id = s.get("id")
                 break
 
-    # "Oila" yoki "Shaxsiy" xarajat
-    is_oila = any(kw in text_lower for kw in ("oila", "oilaviy", "uy"))
-    is_shaxsiy = any(kw in text_lower for kw in ("shaxsiy", "o'zim", "men"))
+    # "Oila" yoki "Shaxsiy" — word boundary, aks holda "men"⊂"menyu" false positive
+    is_oila = any(_has_word(kw, text_lower) for kw in ("oila", "oilaviy", "uyga", "uydan"))
+    is_shaxsiy = any(_has_word(kw, text_lower) for kw in ("shaxsiy", "o'zim", "o'ziga", "menga"))
 
     # Kategoriyani aniqlash
     kategoriya = "boshqa"

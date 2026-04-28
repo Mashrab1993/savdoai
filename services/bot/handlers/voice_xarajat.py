@@ -55,8 +55,9 @@ async def handle_voice_xarajat(update: Update, context: ContextTypes.DEFAULT_TYP
 
     # Detect xarajat keywords
     text_lower = text.lower()
-    xarajat_kw = ("xarajat", "obed", "benzin", "non", "oylik", "bozor",
-                  "bozorlik", "taksi", "telefon", "gaz", "elektr", "dori",
+    xarajat_kw = ("xarajat", "rasxod", "rasxot", "sarfla", "to'lov",
+                  "obed", "benzin", "non", "oylik", "bozor", "bozorlik",
+                  "transport", "taksi", "telefon", "gaz", "elektr", "dori",
                   "kiyim", "yog'", "go'sht", "meva")
     has_xarajat = any(kw in text_lower for kw in xarajat_kw)
 
@@ -176,16 +177,15 @@ async def handle_voice_xarajat_callback(update: Update, context: ContextTypes.DE
 
             shogird_id = p.get("shogird_id")
             kategoriya = p.get("kategoriya", "boshqa")
-            tavsif = p.get("tavsif", "") or f"Ovoz orqali: {pending['text'][:100]}"
+            izoh = p.get("tavsif", "") or f"Ovoz orqali: {pending['text'][:100]}"
             summa = Decimal(str(p.get("summa", 0)))
 
-            # Save to xarajatlar table
             xarajat_id = await conn.fetchval("""
                 INSERT INTO xarajatlar
-                    (admin_uid, shogird_id, kategoriya, tavsif, summa, sana)
+                    (admin_uid, shogird_id, kategoriya_nomi, izoh, summa, sana)
                 VALUES ($1, $2, $3, $4, $5, NOW())
                 RETURNING id
-            """, user_id, shogird_id, kategoriya, tavsif, summa)
+            """, user_id, shogird_id, kategoriya, izoh, summa)
 
         # Build success message
         tag = "💰 SHAXSIY"
