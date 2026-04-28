@@ -119,17 +119,19 @@ async def kategoriyalar_ol(conn, admin_uid: int) -> list:
 
 
 def kategoriya_aniqla(matn: str) -> tuple[str, str]:
-    """Matndan kategoriya aniqlash"""
+    """Matndan kategoriya aniqlash — word boundary bilan, false positive yo'q"""
+    import re
     matn_l = matn.lower()
     mapping = {
         "benzin": ("⛽ Benzin", "⛽"),
         "yoqilgi": ("⛽ Benzin", "⛽"),
-        "toplash": ("⛽ Benzin", "⛽"),
+        "yoqilg'i": ("⛽ Benzin", "⛽"),
         "zapravka": ("⛽ Benzin", "⛽"),
         "gaz": ("🔥 Gaz", "🔥"),
         "metan": ("🔥 Gaz", "🔥"),
         "propan": ("🔥 Gaz", "🔥"),
         "abed": ("🍽 Abed", "🍽"),
+        "obed": ("🍽 Abed", "🍽"),
         "tushlik": ("🍽 Abed", "🍽"),
         "ovqat": ("🍽 Abed", "🍽"),
         "nonushta": ("🍽 Abed", "🍽"),
@@ -149,7 +151,7 @@ def kategoriya_aniqla(matn: str) -> tuple[str, str]:
         "internet": ("📞 Aloqa", "📞"),
     }
     for kalit, (nomi, emoji) in mapping.items():
-        if kalit in matn_l:
+        if re.search(rf"\b{re.escape(kalit)}\b", matn_l):
             return nomi, emoji
     return "📦 Boshqa", "📦"
 

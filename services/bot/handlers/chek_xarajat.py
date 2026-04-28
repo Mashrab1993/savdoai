@@ -202,18 +202,18 @@ async def handle_chek_callback(update: Update, context: ContextTypes.DEFAULT_TYP
         async with pool.acquire() as conn:
             await conn.execute("SELECT set_config('app.uid', $1::text, true)", str(user_id))
 
-            tavsif = f"Chek: {r['sotuvchi']}"
+            izoh = f"Chek: {r['sotuvchi']}"
             if r.get("tovarlar"):
                 items = ", ".join(t["nomi"] for t in r["tovarlar"][:3])
-                tavsif = f"{r['sotuvchi']} — {items}"
-            tavsif = tavsif[:200]
+                izoh = f"{r['sotuvchi']} — {items}"
+            izoh = izoh[:200]
 
             xarajat_id = await conn.fetchval("""
                 INSERT INTO xarajatlar
-                    (admin_uid, kategoriya, tavsif, summa, sana)
+                    (admin_uid, kategoriya_nomi, izoh, summa, sana)
                 VALUES ($1, $2, $3, $4, NOW())
                 RETURNING id
-            """, user_id, r["kategoriya"], tavsif, Decimal(str(r["jami"])))
+            """, user_id, r["kategoriya"], izoh, Decimal(str(r["jami"])))
 
         await query.edit_message_text(
             f"✅ **Chek saqlandi!**\n\n"
