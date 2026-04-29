@@ -651,11 +651,14 @@ async def ovoz_qabul(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
         await _qayta_ishlash(update,ctx,matn)
     except Exception as xato:
         log.error("ovoz_qabul: %s",xato,exc_info=True)
+        # Diagnostika uchun xato turi va qisqa matnni qo'shamiz —
+        # foydalanuvchi screenshot yuborsa, sabab tezda topiladi.
+        err_label = f"{type(xato).__name__}: {str(xato)[:120]}"
         try:
-            await holat.edit_text("❌ Xato yuz berdi")
+            await holat.edit_text(f"❌ Xato yuz berdi\n\n<code>{err_label}</code>", parse_mode="HTML")
         except Exception as _e:
             log.debug("Xato: %s", _e)
-            try: await update.message.reply_text("❌ Xato yuz berdi")
+            try: await update.message.reply_text(f"❌ Xato yuz berdi\n\n{err_label}")
             except Exception as _e: log.debug("silent: %s", _e)
     finally:
         if tmp_path:
