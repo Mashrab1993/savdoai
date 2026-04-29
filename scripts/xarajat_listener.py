@@ -149,11 +149,17 @@ class XarajatListener:
         # Photo: receipt OCR
         if msg.photo:
             try:
-                photo_path = f"/tmp/listener_{msg.id}.jpg"
-                await msg.download_media(file=photo_path)
+                # Rasmni doimiy katalogga saqlaymiz — DB rasm yo'lini eslab qoladi.
+                # /tmp emas, chunki /tmp restartda tozalanadi. xarajat_data/photos
+                # allaqachon mavjud (eski importdan qolgan).
+                photos_dir = "/root/savdoai/scripts/xarajat_data/photos"
+                os.makedirs(photos_dir, exist_ok=True)
+                photo_path = f"{photos_dir}/{msg.id}.jpg"
+                if not os.path.exists(photo_path):
+                    await msg.download_media(file=photo_path)
                 result = self.call_gemini(EXPENSE_RECEIPT_PROMPT + (msg.text or ""),
                                           image_path=photo_path)
-                os.unlink(photo_path)
+                # Rasmni o'chirmaymiz — DB'da yo'l saqlanadi
                 if result.get("is_receipt") and result.get("total_amount"):
                     await self._save_expense(
                         sender_id=msg.sender_id,
@@ -162,8 +168,15 @@ class XarajatListener:
                         category=result.get("category", "boshqa"),
                         description=f"[CHEK] {result.get('merchant') or ''}: {result.get('items_summary', '')[:100]}",
                         sana=msg.date,
+                        rasm_file_id=photo_path,
                     )
-                    log.info(f"  Saved receipt: {result['total_amount']:,.0f} so'm ({result.get('category')})")
+                    log.info(f"  Saved receipt: {result['total_amount']:,.0f} so'm ({result.get('category')}) — {photo_path}")
+                else:
+                    # Chek emasligi tasdiqlangan bo'lsa rasmni o'chirib yuborish (disk ortiqchaligi)
+                    try:
+                        os.unlink(photo_path)
+                    except Exception:
+                        pass
             except Exception as e:
                 log.error(f"  receipt fail: {e}")
             return
@@ -191,7 +204,7 @@ class XarajatListener:
         except Exception as e:
             log.error(f"  text fail: {e}")
 
-    async def _save_expense(self, sender_id, sender_name, amount, category, description, sana):
+    async def _save_expense(self, sender_id, sender_name, amount, category, description, sana, rasm_file_id=None):
         shogird_id = await self.ensure_shogird(sender_id, sender_name)
         cat = self.cat_cache.get(category) or self.cat_cache.get("boshqa") or {"id": None, "nomi": "📦 Boshqa"}
         kat_id = cat["id"]
@@ -199,10 +212,11 @@ class XarajatListener:
         async with self.db_pool.acquire() as conn:
             await conn.execute(
                 """INSERT INTO xarajatlar (admin_uid, shogird_id, kategoriya_id, kategoriya_nomi,
-                                            summa, izoh, sana, tasdiqlangan, tasdiq_vaqti)
-                   VALUES ($1, $2, $3, $4, $5, $6, $7, TRUE, NOW())""",
+                                            summa, izoh, sana, rasm_file_id,
+                                            tasdiqlangan, tasdiq_vaqti)
+                   VALUES ($1, $2, $3, $4, $5, $6, $7, $8, TRUE, NOW())""",
                 ADMIN_UID, shogird_id, kat_id, kat_nomi,
-                Decimal(str(amount)), description[:500], sana,
+                Decimal(str(amount)), description[:500], sana, rasm_file_id,
             )
 
     async def answer_question(self, text: str) -> str:
