@@ -45,6 +45,42 @@ def _fmt(n: float) -> str:
     return f"{n:,.0f}"
 
 
+_KAT_EMOJI = {
+    "ovqat": "🍽", "bozorlik": "🛒", "transport": "🚗",
+    "aloqa": "📞", "oylik": "💵", "kommunal": "💡",
+    "dori": "💊", "kiyim": "👕", "boshqa": "📦",
+}
+
+
+def _xarajat_preview(parsed: dict, raw_text: str) -> str:
+    """Tasdiqlash uchun preview matnini qaytaradi.
+
+    raw_text — foydalanuvchi yuborgan original (matn yoki transkripsiya).
+    Saqlashda izoh sifatida xuddi shu raw_text ishlatiladi.
+    """
+    tag = "💰 SHAXSIY"
+    if parsed.get("shogird_ismi"):
+        tag = f"👤 {parsed['shogird_ismi']}"
+    elif parsed.get("is_oila"):
+        tag = "🏠 OILA"
+
+    emoji = _KAT_EMOJI.get(parsed.get("kategoriya", "boshqa"), "📦")
+
+    lines = [
+        "💸 **YANGI XARAJAT**",
+        "",
+        tag,
+        f"{emoji} Kategoriya: {parsed.get('kategoriya', 'boshqa').title()}",
+    ]
+    izoh_full = (raw_text or "").strip()
+    if izoh_full:
+        lines.append(f"📝 Izoh: {izoh_full[:200]}")
+    lines.append(f"💰 Summa: **{_fmt(parsed.get('summa', 0))} so'm**")
+    lines.append("")
+    lines.append("Tasdiqlaysizmi?")
+    return "\n".join(lines)
+
+
 async def handle_voice_xarajat(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Ovoz orqali xarajat qo'shish."""
     msg = update.effective_message
@@ -92,31 +128,6 @@ async def handle_voice_xarajat(update: Update, context: ContextTypes.DEFAULT_TYP
             return
 
         # Build confirmation message
-        tag = "💰 SHAXSIY"
-        if parsed.get("shogird_ismi"):
-            tag = f"👤 {parsed['shogird_ismi']}"
-        elif parsed.get("is_oila"):
-            tag = "🏠 OILA"
-
-        kategoriya_emoji = {
-            "ovqat": "🍽", "bozorlik": "🛒", "transport": "🚗",
-            "aloqa": "📞", "oylik": "💵", "kommunal": "💡",
-            "dori": "💊", "kiyim": "👕", "boshqa": "📦",
-        }
-        emoji = kategoriya_emoji.get(parsed["kategoriya"], "📦")
-
-        lines = [
-            "💸 **YANGI XARAJAT**",
-            "",
-            f"{tag}",
-            f"{emoji} Kategoriya: {parsed['kategoriya'].title()}",
-        ]
-        if parsed.get("tavsif"):
-            lines.append(f"📝 Tavsif: {parsed['tavsif']}")
-        lines.append(f"💰 Summa: **{_fmt(parsed['summa'])} so'm**")
-        lines.append("")
-        lines.append("Tasdiqlaysizmi?")
-
         token = uuid.uuid4().hex[:12]
         _pending_xarajatlar[token] = {
             "user_id": user_id,
@@ -133,7 +144,11 @@ async def handle_voice_xarajat(update: Update, context: ContextTypes.DEFAULT_TYP
             ]
         ])
 
-        await msg.reply_text("\n".join(lines), parse_mode="Markdown", reply_markup=keyboard)
+        await msg.reply_text(
+            _xarajat_preview(parsed, text),
+            parse_mode="Markdown",
+            reply_markup=keyboard,
+        )
         context.user_data["_voice_order_handled"] = True
 
     except Exception as e:
@@ -183,31 +198,6 @@ async def handle_text_xarajat(update: Update, context: ContextTypes.DEFAULT_TYPE
             )
             return True
 
-        tag = "💰 SHAXSIY"
-        if parsed.get("shogird_ismi"):
-            tag = f"👤 {parsed['shogird_ismi']}"
-        elif parsed.get("is_oila"):
-            tag = "🏠 OILA"
-
-        kategoriya_emoji = {
-            "ovqat": "🍽", "bozorlik": "🛒", "transport": "🚗",
-            "aloqa": "📞", "oylik": "💵", "kommunal": "💡",
-            "dori": "💊", "kiyim": "👕", "boshqa": "📦",
-        }
-        emoji = kategoriya_emoji.get(parsed["kategoriya"], "📦")
-
-        lines = [
-            "💸 **YANGI XARAJAT**",
-            "",
-            f"{tag}",
-            f"{emoji} Kategoriya: {parsed['kategoriya'].title()}",
-        ]
-        if parsed.get("tavsif"):
-            lines.append(f"📝 Tavsif: {parsed['tavsif']}")
-        lines.append(f"💰 Summa: **{_fmt(parsed['summa'])} so'm**")
-        lines.append("")
-        lines.append("Tasdiqlaysizmi?")
-
         token = uuid.uuid4().hex[:12]
         _pending_xarajatlar[token] = {
             "user_id": user_id,
@@ -224,7 +214,11 @@ async def handle_text_xarajat(update: Update, context: ContextTypes.DEFAULT_TYPE
             ]
         ])
 
-        await msg.reply_text("\n".join(lines), parse_mode="Markdown", reply_markup=keyboard)
+        await msg.reply_text(
+            _xarajat_preview(parsed, matn),
+            parse_mode="Markdown",
+            reply_markup=keyboard,
+        )
         return True
 
     except Exception as e:
@@ -270,7 +264,13 @@ async def handle_voice_xarajat_callback(update: Update, context: ContextTypes.DE
 
             shogird_id = p.get("shogird_id")
             kategoriya = p.get("kategoriya", "boshqa")
-            izoh = p.get("tavsif", "") or f"Ovoz orqali: {pending['text'][:100]}"
+            # To'liq matnni izohga saqlaymiz — qayerda/nima bo'lgani keyinchalik bilinsin.
+            # tavsif faqat kategoriya aniqlash uchun ishlatildi (matched keyword), izoh emas.
+            raw_text = (pending.get("text") or "").strip()
+            if raw_text:
+                izoh = raw_text[:500]
+            else:
+                izoh = p.get("tavsif", "") or "Xarajat"
             summa = Decimal(str(p.get("summa", 0)))
 
             xarajat_id = await conn.fetchval("""
@@ -287,11 +287,14 @@ async def handle_voice_xarajat_callback(update: Update, context: ContextTypes.DE
         elif p.get("is_oila"):
             tag = "🏠 OILA"
 
+        izoh_short = izoh[:140] + "…" if len(izoh) > 140 else izoh
+
         await query.edit_message_text(
             f"✅ **Xarajat qo'shildi!**\n\n"
             f"{tag}\n"
             f"📁 {kategoriya.title()}\n"
             f"💰 {_fmt(float(summa))} so'm\n"
+            f"📝 {izoh_short}\n"
             f"🆔 ID: {xarajat_id}",
             parse_mode="Markdown",
         )
