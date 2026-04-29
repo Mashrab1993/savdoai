@@ -1339,7 +1339,8 @@ def parse_xarajat_text(text: str, shogirdlar: list[dict] = None) -> dict:
                      "meva", "kartoshka", "piyoz", "sabzi", "pomidor", "bodring"],
         "transport": ["transport", "benzin", "yonilg'i", "taksi", "yo'l kira",
                       "parkovka", "marshrut", "avtobus", "metro", "dizel",
-                      "avtomashina", "texkor", "yo'lkira", "yo'l haqi"],
+                      "avtomashina", "texkor", "yo'lkira", "yo'l haqi",
+                      "yo'l-kira", "yolkira", "gazel", "gazelda"],
         "aloqa": ["telefon", "aloqa", "internet", "wifi", "mobil to'lov", "tarif"],
         "oylik": ["oylik", "maosh", "ish haqi", "avans", "bonus", "haq"],
         "kommunal": ["elektr", "svet", "gaz to'lovi", "kommunal",
@@ -1351,9 +1352,11 @@ def parse_xarajat_text(text: str, shogirdlar: list[dict] = None) -> dict:
     }
 
     def _parse_summa(s: str) -> int:
-        """50 ming → 50000, 1.5 mln → 1500000"""
+        """50 ming → 50000, 1.5 mln → 1500000, 'o'n ming' → 10000"""
         s = s.strip().lower()
         s = re.sub(r"\s*so'm\s*$", "", s)
+
+        # Avval raqamli pattern (50 ming / 1.5 mln) — eng tez yo'l
         m = re.search(r'([\d]+(?:[.,]\d+)?)\s*mln', s)
         if m:
             return int(float(m.group(1).replace(",", ".")) * 1_000_000)
@@ -1363,6 +1366,25 @@ def parse_xarajat_text(text: str, shogirdlar: list[dict] = None) -> dict:
         m = re.search(r'([\d]+(?:[.,]\d+)?)\s*ming', s)
         if m:
             return int(float(m.group(1).replace(",", ".")) * 1_000)
+
+        # O'zbek so'z bilan yozilgan raqam: "o'n ming", "yuz ellik ming", "bir million"
+        # raqam_parse uzb_nlp dan keladi — 'ming', 'million', 'yarim' va h.k. ni tushunadi
+        try:
+            from shared.utils.uzb_nlp import raqam_parse
+            # Matn ichidan raqam-ifoda parchasini izlaymiz: oxirgi "ming/million/mlrd" ga qadar
+            m_word = re.search(
+                r'([\w\'’\s]+?\s+(?:ming|million|mln|mlrd|milliard))',
+                s
+            )
+            if m_word:
+                kandidat = m_word.group(1).strip()
+                r = raqam_parse(kandidat)
+                if r is not None and r > 0:
+                    return int(r)
+        except Exception:
+            pass
+
+        # Oxirgi resort: matn ichidagi raqam
         digits = re.sub(r'\s+', '', s)
         nums = re.findall(r'\d+', digits)
         if nums:
@@ -1390,17 +1412,22 @@ def parse_xarajat_text(text: str, shogirdlar: list[dict] = None) -> dict:
     is_oila = any(_has_word(kw, text_lower) for kw in ("oila", "oilaviy", "uyga", "uydan"))
     is_shaxsiy = any(_has_word(kw, text_lower) for kw in ("shaxsiy", "o'zim", "o'ziga", "menga"))
 
-    # Kategoriyani aniqlash
-    kategoriya = "boshqa"
-    tavsif_raw = []
+    # Kategoriyani aniqlash — eng ko'p moslik bergan kategoriyani tanlaymiz.
+    # Sabab: "yo'lkira ... bozorga ... gazelda" — bozor ham, transport ham bor;
+    # transport 3 marta moslashadi (yo'lkira, gazel, gazelda) — bozor 1 marta.
+    # Eski kod birinchi mos kelganni tanlardi (dict order'iga bog'liq) → noto'g'ri
+    # kategoriya olardi.
+    best_cat = "boshqa"
+    best_score = 0
+    best_kws: list[str] = []
     for cat, keywords in KATEGORIYALAR.items():
-        for kw in keywords:
-            if kw in text_lower:
-                kategoriya = cat
-                tavsif_raw.append(kw)
-                break
-        if kategoriya != "boshqa":
-            break
+        matched = [kw for kw in keywords if kw in text_lower]
+        if matched and len(matched) > best_score:
+            best_cat = cat
+            best_score = len(matched)
+            best_kws = matched
+    kategoriya = best_cat
+    tavsif_raw = best_kws
 
     # Summa topish
     summa = _parse_summa(text)

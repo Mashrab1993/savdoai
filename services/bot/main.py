@@ -556,19 +556,37 @@ async def ovoz_qabul(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
                          "yangi mijoz", "yangi do'kon", "do'kon qo'sh")
             is_klient = any(kw in matn_lower for kw in klient_kw)
 
-            # 4. Detect KIRIM (requires keyword + qty/price) — AVVAL tekshiramiz
-            # Sabab: "olish narx" ikki joyda edi (NARX va KIRIM). Agar "keldi/kirim/zavoddan"
-            # bilan birga bo'lsa — aniq KIRIM, NARX emas.
-            # Eslatma: #1 kritik tuzatish (v25.4.0) — keyword tartibi o'zgartirildi.
-            kirim_kw = ("keldi", "kelgan", "tushdi", "kirim", "kirimi",
-                        "zavoddan", "fabrika", "kompaniyasidan", "yetkazib",
-                        "olib keldi", "qabul qil")
-            has_kirim_kw = any(kw in matn_lower for kw in kirim_kw)
+            import re as _re_intent
+
+            def _has_word(s: str, w: str) -> bool:
+                return _re_intent.search(rf"\b{_re_intent.escape(w)}\b", s) is not None
+
             has_qty_or_price = (
                 any(w.isdigit() for w in matn_words)
                 or any(kw in matn_lower for kw in ("narx", "ming", "mln", "ta ", "dona"))
             )
-            is_kirim = has_kirim_kw and has_qty_or_price and not is_klient
+
+            # 0. Aniq XARAJAT signali — eng yuqori prioritet (KIRIM'dan ham oldinroq)
+            # Sabab: "rasxod"/"xarajat" so'zi bo'lsa, "gazelda keldim" kabi tasodifiy
+            # KIRIM keyword'larga aldanib qolmaslik kerak.
+            explicit_xarajat_kw = ("rasxod", "rasxot", "xarajat", "sarfla")
+            has_explicit_xarajat = any(_has_word(matn_lower, kw) for kw in explicit_xarajat_kw)
+
+            # 4. Detect KIRIM (requires keyword + qty/price) — AVVAL tekshiramiz
+            # Sabab: "olish narx" ikki joyda edi (NARX va KIRIM). Agar "keldi/kirim/zavoddan"
+            # bilan birga bo'lsa — aniq KIRIM, NARX emas.
+            # Word boundary kerak: "keldim" (men keldim) ≠ "keldi" (tovar keldi).
+            kirim_kw_word = ("keldi", "kelgan", "tushdi", "kirim", "kirimi",
+                             "zavoddan", "fabrika", "kompaniyasidan", "yetkazib",
+                             "qabul")
+            has_kirim_kw = (
+                any(_has_word(matn_lower, kw) for kw in kirim_kw_word)
+                or "olib keldi" in matn_lower
+            )
+            is_kirim = (
+                has_kirim_kw and has_qty_or_price
+                and not is_klient and not has_explicit_xarajat
+            )
 
             # 2. Detect NARX update — KIRIM bilan chegara bor
             # "olish narx" alohida so'z bo'lsa ham, agar KIRIM keyword bo'lmasa → NARX
@@ -582,7 +600,10 @@ async def ovoz_qabul(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
 
             # 3. Detect XARAJAT (personal/shogird/oila expenses)
             # #8 tuzatish: faqat kontekst raqami bo'lsa (xarajat raqamsiz bo'lmaydi)
-            xarajat_kw = ("obed", "bozorlik", "benzin", "taksi", "yo'l kira",
+            # "yo'lkira" / "yo'l kira" / "yo'l-kira" — bir xil ma'no, hammasini ushlaymiz
+            xarajat_kw = ("obed", "bozorlik", "benzin", "taksi",
+                          "yo'l kira", "yo'lkira", "yo'l-kira",
+                          "yo'l haqi", "yo'lkir",
                           "telefon to'lov", "gaz to'lov", "elektr", "svet",
                           "dori", "dorixona", "avans",
                           "oila xarajat", "shaxsiy xarajat")
@@ -591,7 +612,14 @@ async def ovoz_qabul(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
                 has_xarajat_kw = True
             else:
                 has_xarajat_kw = any(kw in matn_lower for kw in xarajat_kw) and has_qty_or_price
-            is_xarajat = has_xarajat_kw and not is_klient and not is_narx and not is_kirim
+
+            # Explicit "rasxod"/"xarajat" so'zi → albatta XARAJAT (boshqa intent'larni bekor qiladi)
+            if has_explicit_xarajat and has_qty_or_price:
+                is_xarajat = True
+                is_kirim = False
+                is_narx = False
+            else:
+                is_xarajat = has_xarajat_kw and not is_klient and not is_narx and not is_kirim
 
             if is_klient:
                 from services.bot.handlers.voice_klient import handle_voice_klient
