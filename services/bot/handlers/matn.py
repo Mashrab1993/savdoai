@@ -1025,6 +1025,17 @@ async def matn_qabul(update:Update, ctx:ContextTypes.DEFAULT_TYPE):
         await _get_ovoz_buyruq_bajar()(update, ctx, cmd)
         return
 
+    # ═══ SHAXSIY XARAJAT (matn) — "10 000 rasxod yo'l kira" ═══
+    # Voice xarajat handler bilan bir xil parser, preview va callback'ni ishlatadi.
+    # Faqat "rasxod"/"xarajat" kalit so'zi mavjud bo'lsa fire qiladi —
+    # AI hallucination'sidan saqlanish uchun (Claude o'zicha "qayd etildi" deb yolg'on tasdiqlay olmaydi).
+    try:
+        from services.bot.handlers.voice_xarajat import handle_text_xarajat
+        if await handle_text_xarajat(update, ctx, matn):
+            return
+    except Exception as _xe:
+        log.warning("Text xarajat handler xato: %s", _xe)
+
     # ═══ SMART AI — biznes savollari ═══
     try:
         if _is_biznes_savol(matn):

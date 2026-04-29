@@ -14,6 +14,7 @@
 """
 from __future__ import annotations
 import logging
+import re
 import time
 import uuid
 from decimal import Decimal
@@ -138,6 +139,98 @@ async def handle_voice_xarajat(update: Update, context: ContextTypes.DEFAULT_TYP
     except Exception as e:
         log.error("voice_xarajat: %s", e, exc_info=True)
         await msg.reply_text(f"⚠️ Xatolik: {str(e)[:200]}")
+
+
+async def handle_text_xarajat(update: Update, context: ContextTypes.DEFAULT_TYPE, matn: str) -> bool:
+    """Matn orqali xarajat qo'shish. True qaytarsa — handler matnni iste'mol qildi.
+
+    Matn handlerdan chaqiriladi (matn.py). Voice handler bilan bir xil
+    parser, preview va callback'ni ishlatadi — kod takrorlamaslik uchun.
+    """
+    msg = update.effective_message
+    user_id = update.effective_user.id
+
+    text_lower = (matn or "").lower()
+    if not text_lower:
+        return False
+
+    # Faqat aniq xarajat niyatida fire qil — false positive'dan saqlanish uchun
+    # voice'dan ko'ra qattiqroq filter (matnda kontekst kamroq, xato qimmat)
+    aniq_kw = ("rasxod", "rasxot", "xarajat", "sarfla")
+    has_aniq = any(re.search(rf"\b{kw}\b", text_lower) for kw in aniq_kw)
+    if not has_aniq:
+        return False
+
+    try:
+        pool = db._P()
+        async with pool.acquire() as conn:
+            await conn.execute("SELECT set_config('app.uid', $1::text, true)", str(user_id))
+            try:
+                shogird_rows = await conn.fetch(
+                    "SELECT id, telegram_uid, ism FROM shogirdlar "
+                    "WHERE admin_uid = $1 AND faol = TRUE", user_id,
+                )
+                shogirdlar = [dict(r) for r in shogird_rows]
+            except Exception:
+                shogirdlar = []
+
+        parsed = parse_xarajat_text(matn, shogirdlar)
+
+        if parsed.get("xato") or not parsed.get("summa"):
+            await msg.reply_text(
+                "⚠️ Xarajat summasini topa olmadim.\n"
+                "Format: «10 000 rasxod yo'l kira» yoki «Rasxod 50 ming non»"
+            )
+            return True
+
+        tag = "💰 SHAXSIY"
+        if parsed.get("shogird_ismi"):
+            tag = f"👤 {parsed['shogird_ismi']}"
+        elif parsed.get("is_oila"):
+            tag = "🏠 OILA"
+
+        kategoriya_emoji = {
+            "ovqat": "🍽", "bozorlik": "🛒", "transport": "🚗",
+            "aloqa": "📞", "oylik": "💵", "kommunal": "💡",
+            "dori": "💊", "kiyim": "👕", "boshqa": "📦",
+        }
+        emoji = kategoriya_emoji.get(parsed["kategoriya"], "📦")
+
+        lines = [
+            "💸 **YANGI XARAJAT**",
+            "",
+            f"{tag}",
+            f"{emoji} Kategoriya: {parsed['kategoriya'].title()}",
+        ]
+        if parsed.get("tavsif"):
+            lines.append(f"📝 Tavsif: {parsed['tavsif']}")
+        lines.append(f"💰 Summa: **{_fmt(parsed['summa'])} so'm**")
+        lines.append("")
+        lines.append("Tasdiqlaysizmi?")
+
+        token = uuid.uuid4().hex[:12]
+        _pending_xarajatlar[token] = {
+            "user_id": user_id,
+            "parsed": parsed,
+            "text": matn,
+            "ts": time.time(),
+        }
+        _cleanup_expired()
+
+        keyboard = InlineKeyboardMarkup([
+            [
+                InlineKeyboardButton("✅ Qo'shish", callback_data=f"voice_xarajat_confirm_{token}"),
+                InlineKeyboardButton("❌ Bekor", callback_data=f"voice_xarajat_cancel_{token}"),
+            ]
+        ])
+
+        await msg.reply_text("\n".join(lines), parse_mode="Markdown", reply_markup=keyboard)
+        return True
+
+    except Exception as e:
+        log.error("text_xarajat: %s", e, exc_info=True)
+        await msg.reply_text(f"⚠️ Xarajat saqlashda xato: {str(e)[:200]}")
+        return True
 
 
 async def handle_voice_xarajat_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
