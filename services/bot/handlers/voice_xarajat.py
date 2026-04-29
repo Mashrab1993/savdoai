@@ -144,16 +144,25 @@ async def handle_voice_xarajat(update: Update, context: ContextTypes.DEFAULT_TYP
             ]
         ])
 
-        await msg.reply_text(
-            _xarajat_preview(parsed, text),
-            parse_mode="Markdown",
-            reply_markup=keyboard,
-        )
+        preview_text = _xarajat_preview(parsed, text)
+        try:
+            await msg.reply_text(preview_text, parse_mode="Markdown", reply_markup=keyboard)
+        except Exception as _md_err:
+            # Markdown parse xato (apostrof/maxsus belgilar) — plain text bilan qaytaramiz
+            log.warning("voice_xarajat preview Markdown xato, plain'ga o'tdim: %s", _md_err)
+            plain = preview_text.replace("**", "").replace("*", "")
+            await msg.reply_text(plain, reply_markup=keyboard)
         context.user_data["_voice_order_handled"] = True
 
     except Exception as e:
         log.error("voice_xarajat: %s", e, exc_info=True)
-        await msg.reply_text(f"⚠️ Xatolik: {str(e)[:200]}")
+        try:
+            await msg.reply_text(f"⚠️ Xarajat saqlashda xato: {str(e)[:200]}")
+        except Exception:
+            pass
+        # Outer router shu flag'ga qarab _qayta_ishlash'ni o'tkazib yuboradi —
+        # foydalanuvchi 2 marta xato xabar olmasligi uchun.
+        context.user_data["_voice_order_handled"] = True
 
 
 async def handle_text_xarajat(update: Update, context: ContextTypes.DEFAULT_TYPE, matn: str) -> bool:
@@ -214,16 +223,21 @@ async def handle_text_xarajat(update: Update, context: ContextTypes.DEFAULT_TYPE
             ]
         ])
 
-        await msg.reply_text(
-            _xarajat_preview(parsed, matn),
-            parse_mode="Markdown",
-            reply_markup=keyboard,
-        )
+        preview_text = _xarajat_preview(parsed, matn)
+        try:
+            await msg.reply_text(preview_text, parse_mode="Markdown", reply_markup=keyboard)
+        except Exception as _md_err:
+            log.warning("text_xarajat preview Markdown xato, plain'ga o'tdim: %s", _md_err)
+            plain = preview_text.replace("**", "").replace("*", "")
+            await msg.reply_text(plain, reply_markup=keyboard)
         return True
 
     except Exception as e:
         log.error("text_xarajat: %s", e, exc_info=True)
-        await msg.reply_text(f"⚠️ Xarajat saqlashda xato: {str(e)[:200]}")
+        try:
+            await msg.reply_text(f"⚠️ Xarajat saqlashda xato: {str(e)[:200]}")
+        except Exception:
+            pass
         return True
 
 
