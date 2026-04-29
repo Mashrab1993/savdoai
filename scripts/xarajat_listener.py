@@ -144,7 +144,56 @@ class XarajatListener:
         sender_name = (sender.first_name if sender else "") + " " + (getattr(sender, "last_name", None) or "")
         sender_name = sender_name.strip() or f"User {msg.sender_id}"
 
-        log.info(f"NEW MSG from {sender_name}: text={msg.text!r}, photo={bool(msg.photo)}")
+        is_voice = bool(getattr(msg, "voice", None))
+        log.info(f"NEW MSG from {sender_name}: text={msg.text!r}, photo={bool(msg.photo)}, voice={is_voice}")
+
+        # Voice: transcribe + parse + save (ovoz fayli ham saqlanadi — dalil sifatida)
+        if is_voice:
+            try:
+                voices_dir = "/root/savdoai/scripts/xarajat_data/voices"
+                os.makedirs(voices_dir, exist_ok=True)
+                voice_path = f"{voices_dir}/{msg.id}.oga"
+                if not os.path.exists(voice_path):
+                    await msg.download_media(file=voice_path)
+
+                # Transkripsiya — Gemini'ga ovoz fayli yuboriladi
+                uploaded = self.gm.files.upload(file=voice_path)
+                tr_resp = self.gm.models.generate_content(
+                    model=GEMINI_MODEL,
+                    contents=[
+                        "Transcribe this voice message exactly as spoken (Uzbek/Russian). "
+                        "Return only the transcribed text.",
+                        uploaded,
+                    ],
+                )
+                transcript = (tr_resp.text or "").strip()
+                if not transcript:
+                    log.warning("  voice: transkripsiya bo'sh")
+                    return
+
+                log.info(f"  voice transcript: {transcript[:80]!r}")
+
+                # Endi transkripsiyani xarajat sifatida tahlil qilamiz
+                result = self.call_gemini(EXPENSE_TEXT_PROMPT + transcript)
+                if result.get("type") == "expense" and result.get("amount"):
+                    desc_short = result.get("description", "") or transcript[:200]
+                    await self._save_expense(
+                        sender_id=msg.sender_id,
+                        sender_name=sender_name,
+                        amount=result["amount"],
+                        category=result.get("category", "boshqa"),
+                        description=f"[OVOZ] {desc_short[:200]} | TR: {transcript[:200]}",
+                        sana=msg.date,
+                        ovoz_file_id=voice_path,
+                    )
+                    log.info(f"  Saved voice expense: {result['amount']:,.0f} so'm ({result.get('category')}) — {voice_path}")
+                else:
+                    # Xarajat emas (savol/oddiy gap) — ovoz faylini o'chirmaymiz, AI nostandart
+                    # tushunmagan bo'lishi mumkin. /tmp emas, doimiy katalogda turadi.
+                    log.info(f"  voice: xarajat emas (type={result.get('type')}), fayl saqlandi: {voice_path}")
+            except Exception as e:
+                log.error(f"  voice fail: {e}", exc_info=True)
+            return
 
         # Photo: receipt OCR
         if msg.photo:
@@ -204,7 +253,8 @@ class XarajatListener:
         except Exception as e:
             log.error(f"  text fail: {e}")
 
-    async def _save_expense(self, sender_id, sender_name, amount, category, description, sana, rasm_file_id=None):
+    async def _save_expense(self, sender_id, sender_name, amount, category, description, sana,
+                             rasm_file_id=None, ovoz_file_id=None):
         shogird_id = await self.ensure_shogird(sender_id, sender_name)
         cat = self.cat_cache.get(category) or self.cat_cache.get("boshqa") or {"id": None, "nomi": "📦 Boshqa"}
         kat_id = cat["id"]
@@ -212,11 +262,11 @@ class XarajatListener:
         async with self.db_pool.acquire() as conn:
             await conn.execute(
                 """INSERT INTO xarajatlar (admin_uid, shogird_id, kategoriya_id, kategoriya_nomi,
-                                            summa, izoh, sana, rasm_file_id,
+                                            summa, izoh, sana, rasm_file_id, ovoz_file_id,
                                             tasdiqlangan, tasdiq_vaqti)
-                   VALUES ($1, $2, $3, $4, $5, $6, $7, $8, TRUE, NOW())""",
+                   VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, TRUE, NOW())""",
                 ADMIN_UID, shogird_id, kat_id, kat_nomi,
-                Decimal(str(amount)), description[:500], sana, rasm_file_id,
+                Decimal(str(amount)), description[:500], sana, rasm_file_id, ovoz_file_id,
             )
 
     async def answer_question(self, text: str) -> str:
