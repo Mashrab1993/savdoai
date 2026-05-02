@@ -16,130 +16,149 @@ const COHORTS = [
 const PERIOD_LABELS = ["M0", "M1", "M2", "M3", "M4"]
 
 function colorForRetention(value: number | null) {
-  if (value === null) return "bg-slate-100"
-  if (value >= 90) return "bg-emerald-700 text-white"
-  if (value >= 75) return "bg-emerald-500 text-white"
-  if (value >= 60) return "bg-emerald-300"
-  if (value >= 45) return "bg-amber-300"
-  if (value >= 30) return "bg-amber-400"
-  return "bg-rose-400 text-white"
+  if (value === null) return "bg-[#FAF7F2] text-[#9C8A6E]"
+  if (value >= 90) return "text-white"
+  if (value >= 75) return "text-white"
+  if (value >= 60) return "text-emerald-900"
+  if (value >= 45) return "text-[#7A4316]"
+  if (value >= 30) return "text-[#7A4316]"
+  return "text-white"
+}
+function bgForRetention(value: number | null): string {
+  if (value === null) return "transparent"
+  if (value >= 90) return "#10B981"
+  if (value >= 75) return "#34D399"
+  if (value >= 60) return "#A7F3D0"
+  if (value >= 45) return "#FCD9B6"
+  if (value >= 30) return "#F5C9B0"
+  return "#C75D3C"
 }
 
 export default function CohortPage() {
   const totalUsers = COHORTS.reduce((s, c) => s + c.size, 0)
-  const m1Avg = Math.round(COHORTS.filter(c => c.retention[1] !== null).reduce((s, c) => s + (c.retention[1] ?? 0), 0) / COHORTS.filter(c => c.retention[1] !== null).length)
+  const m1Cohorts = COHORTS.filter(c => c.retention[1] !== null)
+  const m1Avg = m1Cohorts.length ? Math.round(m1Cohorts.reduce((s, c) => s + (c.retention[1] ?? 0), 0) / m1Cohorts.length) : 0
   const m4Cohort = COHORTS.find(c => c.retention[4] !== null)
   const longTermRetention = m4Cohort ? m4Cohort.retention[4] : 0
 
   return (
     <AdminLayout>
-      <div className="max-w-[1700px] mx-auto space-y-4">
-        <div className="flex items-center gap-3">
-          <Link href="/hisobot" className="p-2 hover:bg-slate-100 rounded-lg"><ArrowLeft className="w-5 h-5" /></Link>
-          <div className="flex-1">
-            <h1 className="text-2xl font-bold tracking-tight">Cohort retention tahlili</h1>
-            <p className="text-sm text-slate-500">Klient saqlash dinamikasi (oyma-oy)</p>
+      <div className="-mx-4 -my-4 px-4 py-6 min-h-full" style={{ background: "linear-gradient(180deg, #F5F1EB 0%, #FAF7F2 100%)" }}>
+        <div className="max-w-[1700px] mx-auto space-y-5">
+          <div className="flex items-end gap-3 border-b border-[#E8E0D3] pb-6">
+            <Link href="/hisobot" className="p-2 hover:bg-[#F0EAE0] rounded-lg"><ArrowLeft className="w-5 h-5 text-[#6B5B4D]" /></Link>
+            <div className="flex-1">
+              <div className="text-xs uppercase tracking-[0.2em] text-[#9C8A6E] font-medium mb-2">SAVDOAI · HISOBOT</div>
+              <h1 className="text-4xl font-light tracking-tight text-[#1A1A1A]" style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>
+                Cohort <span className="italic text-[#C75D3C]">retention</span>
+              </h1>
+              <p className="text-sm text-[#6B5B4D] mt-2">Klient saqlash dinamikasi (oyma-oy)</p>
+            </div>
+            <Button variant="outline" className="gap-2 border-[#E8E0D3] text-[#6B5B4D]"><Calendar className="w-4 h-4" /> 5-oy</Button>
+            <Button variant="outline" className="gap-2 border-[#E8E0D3] text-[#6B5B4D]"><Download className="w-4 h-4" /> Excel</Button>
           </div>
-          <Button variant="outline" className="gap-2"><Calendar className="w-4 h-4" /> 5-oy</Button>
-          <Button variant="outline" className="gap-2"><Download className="w-4 h-4" /> Excel</Button>
-        </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-          <Card className="p-4 bg-emerald-50 border-emerald-200">
-            <Users className="w-5 h-5 text-emerald-600 mb-2" />
-            <div className="text-xs font-bold text-emerald-700">Jami klientlar</div>
-            <div className="text-2xl font-bold mt-1">{totalUsers}</div>
-          </Card>
-          <Card className="p-4 bg-blue-50 border-blue-200">
-            <TrendingDown className="w-5 h-5 text-blue-600 mb-2" />
-            <div className="text-xs font-bold text-blue-700">M1 retention (avg)</div>
-            <div className="text-2xl font-bold mt-1">{m1Avg}%</div>
-          </Card>
-          <Card className="p-4 bg-violet-50 border-violet-200">
-            <TrendingDown className="w-5 h-5 text-violet-600 mb-2" />
-            <div className="text-xs font-bold text-violet-700">Long-term (M4)</div>
-            <div className="text-2xl font-bold mt-1">{longTermRetention ?? "—"}%</div>
-          </Card>
-        </div>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+            <KpiCard icon={Users} accent="#10B981" label="Jami klientlar" value={totalUsers.toString()} />
+            <KpiCard icon={TrendingDown} accent="#3B82F6" label="M1 retention (avg)" value={`${m1Avg}%`} />
+            <KpiCard icon={TrendingDown} accent="#C75D3C" label="Long-term (M4)" value={`${longTermRetention ?? "—"}%`} />
+          </div>
 
-        <Card className="p-5">
-          <h2 className="text-lg font-bold mb-4">Cohort retention matrix (% klient saqlanish)</h2>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm border-collapse">
-              <thead>
-                <tr>
-                  <th className="border border-slate-300 py-2 px-2 text-left bg-slate-100">Cohort (oy)</th>
-                  <th className="border border-slate-300 py-2 px-2 text-right bg-slate-100">Boshlang'ich klient</th>
-                  {PERIOD_LABELS.map(l => (
-                    <th key={l} className="border border-slate-300 py-2 px-3 text-center bg-slate-100 w-20">{l}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {COHORTS.map(c => (
-                  <tr key={c.month}>
-                    <td className="border border-slate-300 py-2 px-2 font-semibold">{c.month}</td>
-                    <td className="border border-slate-300 py-2 px-2 text-right font-mono font-bold">{c.size}</td>
-                    {c.retention.map((v, i) => (
-                      <td key={i} className={`border border-slate-300 py-2 px-2 text-center font-mono font-bold transition-all ${colorForRetention(v)}`}>
-                        {v === null ? "—" : `${v}%`}
-                      </td>
+          <Card className="p-6 bg-white border border-[#E8E0D3] shadow-sm rounded-2xl">
+            <h2 className="text-xl font-light mb-5 text-[#1A1A1A]" style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>Cohort retention matrix</h2>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm border-collapse">
+                <thead>
+                  <tr>
+                    <th className="border border-[#E8E0D3] py-2.5 px-2 text-left bg-[#FAF7F2] text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Cohort (oy)</th>
+                    <th className="border border-[#E8E0D3] py-2.5 px-2 text-right bg-[#FAF7F2] text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Klientlar</th>
+                    {PERIOD_LABELS.map(l => (
+                      <th key={l} className="border border-[#E8E0D3] py-2.5 px-3 text-center bg-[#FAF7F2] text-xs uppercase tracking-wider font-medium text-[#9C8A6E] w-20">{l}</th>
                     ))}
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {COHORTS.map(c => (
+                    <tr key={c.month}>
+                      <td className="border border-[#E8E0D3] py-2.5 px-2 font-medium text-[#1A1A1A]">{c.month}</td>
+                      <td className="border border-[#E8E0D3] py-2.5 px-2 text-right font-mono font-medium text-[#1A1A1A]">{c.size}</td>
+                      {c.retention.map((v, i) => (
+                        <td key={i} className={`border border-[#E8E0D3] py-2.5 px-2 text-center font-mono font-medium ${colorForRetention(v)}`} style={{ background: bgForRetention(v) }}>
+                          {v === null ? "—" : `${v}%`}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
 
-          <div className="mt-4 flex items-center gap-4 text-xs">
-            <span className="text-slate-500">Rang shkalasi:</span>
-            <div className="flex items-center gap-1">
-              <span className="w-4 h-4 bg-rose-400 rounded inline-block"></span><span>0-30%</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <span className="w-4 h-4 bg-amber-300 rounded inline-block"></span><span>30-60%</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <span className="w-4 h-4 bg-emerald-300 rounded inline-block"></span><span>60-75%</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <span className="w-4 h-4 bg-emerald-500 rounded inline-block"></span><span>75-90%</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <span className="w-4 h-4 bg-emerald-700 rounded inline-block"></span><span>90%+</span>
-            </div>
-          </div>
-        </Card>
-
-        <Card className="p-5">
-          <h2 className="text-lg font-bold mb-4">Retention curve (chart)</h2>
-          <div className="h-64 flex items-end gap-3">
-            {PERIOD_LABELS.map((label, i) => {
-              const cohortsAtPeriod = COHORTS.filter(c => c.retention[i] !== null)
-              if (cohortsAtPeriod.length === 0) return null
-              const avg = Math.round(cohortsAtPeriod.reduce((s, c) => s + (c.retention[i] ?? 0), 0) / cohortsAtPeriod.length)
-              return (
-                <div key={label} className="flex-1 flex flex-col items-center gap-2">
-                  <div className="w-full flex flex-col items-center justify-end h-full">
-                    <span className="text-xs font-mono font-bold mb-1">{avg}%</span>
-                    <div className="w-full bg-gradient-to-t from-emerald-400 to-emerald-600 rounded-t" style={{ height: `${avg}%` }} />
-                  </div>
-                  <span className="text-xs font-bold">{label}</span>
+            <div className="mt-4 flex items-center gap-4 text-xs flex-wrap">
+              <span className="text-[#9C8A6E] uppercase tracking-wider font-medium">Shkala:</span>
+              {[
+                { color: "#C75D3C", label: "0-30%" },
+                { color: "#F5C9B0", label: "30-45%" },
+                { color: "#FCD9B6", label: "45-60%" },
+                { color: "#A7F3D0", label: "60-75%" },
+                { color: "#34D399", label: "75-90%" },
+                { color: "#10B981", label: "90%+" },
+              ].map(({ color, label }) => (
+                <div key={label} className="flex items-center gap-1.5">
+                  <span className="w-4 h-4 rounded-sm inline-block" style={{ background: color }} />
+                  <span className="text-[#1A1A1A]">{label}</span>
                 </div>
-              )
-            })}
-          </div>
-          <div className="mt-3 text-xs text-slate-500 text-center">O'rtacha retention curve (barcha cohortlar)</div>
-        </Card>
+              ))}
+            </div>
+          </Card>
 
-        <Card className="p-5 bg-blue-50 border-blue-200">
-          <h3 className="font-bold text-blue-800 mb-2">💡 Insight</h3>
-          <p className="text-sm text-slate-700">
-            <span className="font-bold">M1 retention {m1Avg}%</span> ko'rsatadi, ya'ni har 100 yangi klientdan {m1Avg} ta keyingi oyda yana sotib oladi.
-            {m1Avg < 70 ? " Bu retention kuchsizroq — onboarding va birinchi-oy follow-up'ni yaxshilash kerak." : " Bu yaxshi ko'rsatkich, davom ettiring."}
-          </p>
-        </Card>
+          <Card className="p-6 bg-white border border-[#E8E0D3] shadow-sm rounded-2xl">
+            <h2 className="text-xl font-light mb-5 text-[#1A1A1A]" style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>Retention curve</h2>
+            <div className="h-64 flex items-end gap-3">
+              {PERIOD_LABELS.map((label, i) => {
+                const cohortsAtPeriod = COHORTS.filter(c => c.retention[i] !== null)
+                if (cohortsAtPeriod.length === 0) return null
+                const avg = Math.round(cohortsAtPeriod.reduce((s, c) => s + (c.retention[i] ?? 0), 0) / cohortsAtPeriod.length)
+                return (
+                  <div key={label} className="flex-1 flex flex-col items-center gap-2">
+                    <div className="w-full flex flex-col items-center justify-end h-full">
+                      <span className="text-xs font-mono font-medium mb-1 text-[#1A1A1A]">{avg}%</span>
+                      <div className="w-full rounded-t" style={{ height: `${avg}%`, background: "linear-gradient(180deg, #C75D3C 0%, #E27B5C 100%)" }} />
+                    </div>
+                    <span className="text-xs font-medium text-[#6B5B4D]">{label}</span>
+                  </div>
+                )
+              })}
+            </div>
+            <div className="mt-3 text-xs text-[#9C8A6E] text-center">O'rtacha retention curve (barcha cohortlar)</div>
+          </Card>
+
+          <Card className="p-5 bg-white border border-[#C75D3C]/30 shadow-sm rounded-2xl">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-[#FCE9DD] flex items-center justify-center flex-shrink-0">
+                <span className="text-xl">💡</span>
+              </div>
+              <div>
+                <div className="text-xs uppercase tracking-[0.15em] font-medium text-[#C75D3C]">INSIGHT</div>
+                <p className="text-sm text-[#1A1A1A] mt-1">
+                  <span className="font-medium">M1 retention {m1Avg}%</span> ko'rsatadi, ya'ni har 100 yangi klientdan {m1Avg} ta keyingi oyda yana sotib oladi.
+                  {m1Avg < 70 ? " Bu retention kuchsizroq — onboarding va birinchi-oy follow-up'ni yaxshilash kerak." : " Bu yaxshi ko'rsatkich, davom ettiring."}
+                </p>
+              </div>
+            </div>
+          </Card>
+        </div>
       </div>
     </AdminLayout>
+  )
+}
+
+function KpiCard({ icon: Icon, accent, label, value }: { icon: React.ElementType; accent: string; label: string; value: string }) {
+  return (
+    <Card className="p-5 bg-white border border-[#E8E0D3] shadow-sm rounded-2xl relative overflow-hidden">
+      <Icon className="w-5 h-5 mb-2" style={{ color: accent }} />
+      <div className="text-xs uppercase tracking-[0.15em] font-medium" style={{ color: accent }}>{label}</div>
+      <div className="text-2xl font-medium tabular-nums mt-1 text-[#1A1A1A]" style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>{value}</div>
+      <div className="absolute bottom-0 left-0 right-0 h-1" style={{ background: accent }} />
+    </Card>
   )
 }

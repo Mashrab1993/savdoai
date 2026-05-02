@@ -27,6 +27,9 @@ const ITEMS: Item[] = [
 
 function fmt(n: number) { return n.toLocaleString("ru-RU") }
 
+const ABC_ACCENT = { A: "#10B981", B: "#D97706", C: "#9C8A6E" }
+const ABC_BG = { A: "bg-emerald-500", B: "bg-[#D97706]", C: "bg-[#9C8A6E]" }
+
 export default function AbcAnalysisPage() {
   const sorted = [...ITEMS].sort((a, b) => b.revenue - a.revenue)
   const totalRevenue = sorted.reduce((s, i) => s + i.revenue, 0)
@@ -52,149 +55,135 @@ export default function AbcAnalysisPage() {
 
   return (
     <AdminLayout>
-      <div className="max-w-[1700px] mx-auto space-y-4">
-        <div className="flex items-center gap-3">
-          <Link href="/hisobot" className="p-2 hover:bg-slate-100 rounded-lg"><ArrowLeft className="w-5 h-5" /></Link>
-          <div className="flex-1">
-            <h1 className="text-2xl font-bold tracking-tight">ABC tahlili (Pareto)</h1>
-            <p className="text-sm text-slate-500">{ITEMS.length} ta SKU · 80/15/5 qoidasiga ko'ra klassifikatsiya</p>
+      <div className="-mx-4 -my-4 px-4 py-6 min-h-full" style={{ background: "linear-gradient(180deg, #F5F1EB 0%, #FAF7F2 100%)" }}>
+        <div className="max-w-[1700px] mx-auto space-y-5">
+          <div className="flex items-end gap-3 border-b border-[#E8E0D3] pb-6">
+            <Link href="/hisobot" className="p-2 hover:bg-[#F0EAE0] rounded-lg"><ArrowLeft className="w-5 h-5 text-[#6B5B4D]" /></Link>
+            <div className="flex-1">
+              <div className="text-xs uppercase tracking-[0.2em] text-[#9C8A6E] font-medium mb-2">SAVDOAI · HISOBOT</div>
+              <h1 className="text-4xl font-light tracking-tight text-[#1A1A1A]" style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>
+                ABC <span className="italic text-[#C75D3C]">tahlili (Pareto)</span>
+              </h1>
+              <p className="text-sm text-[#6B5B4D] mt-2">{ITEMS.length} ta SKU · 80/15/5 qoidasiga ko'ra klassifikatsiya</p>
+            </div>
+            <Button variant="outline" className="gap-2 border-[#E8E0D3] text-[#6B5B4D]"><Calendar className="w-4 h-4" /> 1-oy</Button>
+            <Button variant="outline" className="gap-2 border-[#E8E0D3] text-[#6B5B4D]"><Download className="w-4 h-4" /> Excel</Button>
           </div>
-          <Button variant="outline" className="gap-2"><Calendar className="w-4 h-4" /> 1-oy</Button>
-          <Button variant="outline" className="gap-2"><Download className="w-4 h-4" /> Excel</Button>
-        </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          <Card className="p-5 bg-emerald-50 border-emerald-300 border-2">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-3xl font-bold text-emerald-700">A</span>
-              <span className="text-xs font-bold text-emerald-700">VIP</span>
-            </div>
-            <div className="text-base font-bold mb-1">Yulduz tovarlar</div>
-            <div className="text-2xl font-bold font-mono text-emerald-700">{aClass.length} SKU</div>
-            <div className="text-xs text-slate-600 mt-1">{aShare}% tushum · {Math.round((aClass.length / ITEMS.length) * 100)}% tovardan</div>
-            <div className="mt-3 text-xs text-slate-700">
-              💡 Asosiy diqqat. Doim mavjud bo'lsin, premium polkada, marketing prioritet.
-            </div>
-          </Card>
-          <Card className="p-5 bg-amber-50 border-amber-300 border-2">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-3xl font-bold text-amber-700">B</span>
-              <span className="text-xs font-bold text-amber-700">O'RTA</span>
-            </div>
-            <div className="text-base font-bold mb-1">O'rta sotiluvchilar</div>
-            <div className="text-2xl font-bold font-mono text-amber-700">{bClass.length} SKU</div>
-            <div className="text-xs text-slate-600 mt-1">{bShare}% tushum · {Math.round((bClass.length / ITEMS.length) * 100)}% tovardan</div>
-            <div className="mt-3 text-xs text-slate-700">
-              💡 Kuzatish davom etsin, A ga ko'tarish strategiyalari.
-            </div>
-          </Card>
-          <Card className="p-5 bg-slate-100 border-slate-300 border-2">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-3xl font-bold text-slate-700">C</span>
-              <span className="text-xs font-bold text-slate-700">PAST</span>
-            </div>
-            <div className="text-base font-bold mb-1">Past sotiluvchilar</div>
-            <div className="text-2xl font-bold font-mono text-slate-700">{cClass.length} SKU</div>
-            <div className="text-xs text-slate-600 mt-1">{cShare}% tushum · {Math.round((cClass.length / ITEMS.length) * 100)}% tovardan</div>
-            <div className="mt-3 text-xs text-slate-700">
-              💡 Tahlil qiling — kerakmi? Aralashga, yo'naltirishga, yoki olib tashlashga.
-            </div>
-          </Card>
-        </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <ClassCard letter="A" label="VIP — Yulduz tovarlar" count={aClass.length} share={aShare} totalCount={ITEMS.length} accent={ABC_ACCENT.A} hint="💡 Asosiy diqqat. Doim mavjud bo'lsin, premium polkada, marketing prioritet." />
+            <ClassCard letter="B" label="O'rta sotiluvchilar" count={bClass.length} share={bShare} totalCount={ITEMS.length} accent={ABC_ACCENT.B} hint="💡 Kuzatish davom etsin, A ga ko'tarish strategiyalari." />
+            <ClassCard letter="C" label="Past sotiluvchilar" count={cClass.length} share={cShare} totalCount={ITEMS.length} accent={ABC_ACCENT.C} hint="💡 Tahlil qiling — kerakmi? Aralashga, yo'naltirishga, yoki olib tashlashga." />
+          </div>
 
-        <Card className="p-5">
-          <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
-            <TrendingUp className="w-5 h-5 text-emerald-600" /> Pareto egri chizig'i
-          </h2>
-          <div className="relative h-64">
-            <div className="absolute inset-0 flex items-end gap-1">
-              {enriched.map((e, i) => {
-                const heightPct = (e.revenue / sorted[0].revenue) * 100
-                return (
-                  <div
-                    key={e.sku}
-                    className={`flex-1 transition-all hover:opacity-80 ${
-                      e.abc === "A" ? "bg-emerald-500" : e.abc === "B" ? "bg-amber-500" : "bg-slate-400"
-                    }`}
-                    style={{ height: `${heightPct}%` }}
-                    title={`${e.product}: ${fmt(e.revenue)}`}
-                  />
-                )
-              })}
-            </div>
-            <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox={`0 0 ${enriched.length} 100`} preserveAspectRatio="none">
-              <polyline
-                fill="none"
-                stroke="rgb(225 29 72)"
-                strokeWidth="0.4"
-                points={enriched.map((e, i) => `${i + 0.5},${100 - e.cumPct}`).join(" ")}
-              />
-            </svg>
-            <div className="absolute right-0 top-0 text-xs">
-              <div className="flex items-center gap-1 text-rose-600 font-bold">
-                <span className="w-3 h-0.5 bg-rose-600 inline-block" /> Cumulative %
+          <Card className="p-6 bg-white border border-[#E8E0D3] shadow-sm rounded-2xl">
+            <h2 className="text-xl font-light mb-5 flex items-center gap-2 text-[#1A1A1A]" style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>
+              <TrendingUp className="w-5 h-5 text-[#C75D3C]" /> Pareto egri chizig'i
+            </h2>
+            <div className="relative h-64">
+              <div className="absolute inset-0 flex items-end gap-1">
+                {enriched.map(e => {
+                  const heightPct = (e.revenue / sorted[0].revenue) * 100
+                  return (
+                    <div
+                      key={e.sku}
+                      className={`flex-1 transition-all hover:opacity-80 ${ABC_BG[e.abc]}`}
+                      style={{ height: `${heightPct}%` }}
+                      title={`${e.product}: ${fmt(e.revenue)}`}
+                    />
+                  )
+                })}
+              </div>
+              <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox={`0 0 ${enriched.length} 100`} preserveAspectRatio="none">
+                <polyline
+                  fill="none"
+                  stroke="#C75D3C"
+                  strokeWidth="0.4"
+                  points={enriched.map((e, i) => `${i + 0.5},${100 - e.cumPct}`).join(" ")}
+                />
+              </svg>
+              <div className="absolute right-0 top-0 text-xs">
+                <div className="flex items-center gap-1 text-[#C75D3C] font-medium">
+                  <span className="w-3 h-0.5 bg-[#C75D3C] inline-block" /> Cumulative %
+                </div>
               </div>
             </div>
-          </div>
-          <div className="mt-2 text-xs text-slate-500 text-center">
-            Bar = SKU tushum · Chiziq = Cumulative % (Pareto curve)
-          </div>
-        </Card>
-
-        <Card className="p-5">
-          <h2 className="text-lg font-bold mb-4">SKU tasnifi</h2>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b-2 border-slate-200 text-left bg-slate-50">
-                  <th className="py-3 px-2">Rank</th>
-                  <th className="py-3 px-2">SKU</th>
-                  <th className="py-3 px-2">Tovar</th>
-                  <th className="py-3 px-2 text-right">Miqdor</th>
-                  <th className="py-3 px-2 text-right">Tushum</th>
-                  <th className="py-3 px-2 text-right">Ulush %</th>
-                  <th className="py-3 px-2 text-right">Cumulative %</th>
-                  <th className="py-3 px-2 text-center">Sinf</th>
-                </tr>
-              </thead>
-              <tbody>
-                {enriched.map(e => (
-                  <tr key={e.sku} className={`border-b border-slate-100 hover:bg-slate-50 ${e.abc === "A" ? "bg-emerald-50/30" : e.abc === "B" ? "bg-amber-50/30" : ""}`}>
-                    <td className="py-2 px-2 font-bold text-slate-400">{e.rank}</td>
-                    <td className="py-2 px-2 font-mono text-xs">{e.sku}</td>
-                    <td className="py-2 px-2 font-semibold">{e.product}</td>
-                    <td className="py-2 px-2 text-right font-mono">{fmt(e.qty)}</td>
-                    <td className="py-2 px-2 text-right font-mono font-bold text-emerald-700">{fmt(e.revenue)}</td>
-                    <td className="py-2 px-2 text-right font-mono">{e.sharePct}%</td>
-                    <td className="py-2 px-2 text-right font-mono">{e.cumPct}%</td>
-                    <td className="py-2 px-2 text-center">
-                      <span className={`inline-block w-7 h-7 rounded font-bold text-base flex items-center justify-center text-white ${
-                        e.abc === "A" ? "bg-emerald-500" : e.abc === "B" ? "bg-amber-500" : "bg-slate-400"
-                      }`} style={{ display: "inline-flex" }}>
-                        {e.abc}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </Card>
-
-        <Card className="p-5 bg-blue-50 border-blue-200">
-          <div className="flex items-start gap-3">
-            <AlertCircle className="w-6 h-6 text-blue-600 flex-shrink-0 mt-1" />
-            <div>
-              <h3 className="font-bold text-blue-800">📊 Pareto qoidasi (80/20)</h3>
-              <p className="text-sm text-slate-700 mt-1">
-                Sizning ushbu davrdagi natijangiz: <span className="font-bold">{aClass.length} ta SKU</span> ({Math.round((aClass.length / ITEMS.length) * 100)}%)
-                {" "}tushumning <span className="font-bold">{aShare}%</span>ini olib kelmoqda.
-                {aShare >= 75 ? " Pareto qoidasiga mos keladi — A-sinf prioritet." : " A-sinfga e'tibor qaratish kerak."}
-              </p>
+            <div className="mt-2 text-xs text-[#9C8A6E] text-center">
+              Bar = SKU tushum · Chiziq = Cumulative % (Pareto curve)
             </div>
-          </div>
-        </Card>
+          </Card>
+
+          <Card className="p-6 bg-white border border-[#E8E0D3] shadow-sm rounded-2xl">
+            <h2 className="text-xl font-light mb-5 text-[#1A1A1A]" style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>SKU tasnifi</h2>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-[#E8E0D3] bg-[#FAF7F2]">
+                    <th className="py-3 px-2 text-left text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Rank</th>
+                    <th className="py-3 px-2 text-left text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">SKU</th>
+                    <th className="py-3 px-2 text-left text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Tovar</th>
+                    <th className="py-3 px-2 text-right text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Miqdor</th>
+                    <th className="py-3 px-2 text-right text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Tushum</th>
+                    <th className="py-3 px-2 text-right text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Ulush %</th>
+                    <th className="py-3 px-2 text-right text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Cum %</th>
+                    <th className="py-3 px-2 text-center text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Sinf</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {enriched.map(e => (
+                    <tr key={e.sku} className={`border-b border-[#F0EAE0] hover:bg-[#FAF7F2] ${e.abc === "A" ? "bg-emerald-50/40" : e.abc === "B" ? "bg-[#FCE9DD]/30" : ""}`}>
+                      <td className="py-2 px-2 font-medium text-[#9C8A6E]">{e.rank}</td>
+                      <td className="py-2 px-2 font-mono text-xs text-[#1A1A1A]">{e.sku}</td>
+                      <td className="py-2 px-2 font-medium text-[#1A1A1A]">{e.product}</td>
+                      <td className="py-2 px-2 text-right font-mono text-[#6B5B4D]">{fmt(e.qty)}</td>
+                      <td className="py-2 px-2 text-right font-mono font-medium text-emerald-700" style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>{fmt(e.revenue)}</td>
+                      <td className="py-2 px-2 text-right font-mono text-[#1A1A1A]">{e.sharePct}%</td>
+                      <td className="py-2 px-2 text-right font-mono text-[#6B5B4D]">{e.cumPct}%</td>
+                      <td className="py-2 px-2 text-center">
+                        <span className="inline-flex w-7 h-7 rounded font-medium text-base items-center justify-center text-white" style={{ background: ABC_ACCENT[e.abc], fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>
+                          {e.abc}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </Card>
+
+          <Card className="p-5 bg-white border border-[#C75D3C]/30 shadow-sm rounded-2xl">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-[#FCE9DD] flex items-center justify-center flex-shrink-0">
+                <AlertCircle className="w-5 h-5 text-[#C75D3C]" />
+              </div>
+              <div>
+                <div className="text-xs uppercase tracking-[0.15em] font-medium text-[#C75D3C]">PARETO QOIDASI (80/20)</div>
+                <p className="text-sm text-[#1A1A1A] mt-1">
+                  Sizning ushbu davrdagi natijangiz: <span className="font-medium">{aClass.length} ta SKU</span> ({Math.round((aClass.length / ITEMS.length) * 100)}%)
+                  {" "}tushumning <span className="font-medium">{aShare}%</span>ini olib kelmoqda.
+                  {aShare >= 75 ? " Pareto qoidasiga mos keladi — A-sinf prioritet." : " A-sinfga e'tibor qaratish kerak."}
+                </p>
+              </div>
+            </div>
+          </Card>
+        </div>
       </div>
     </AdminLayout>
+  )
+}
+
+function ClassCard({ letter, label, count, share, totalCount, accent, hint }: { letter: string; label: string; count: number; share: number; totalCount: number; accent: string; hint: string }) {
+  return (
+    <Card className="p-5 bg-white border-2 shadow-sm rounded-2xl relative overflow-hidden" style={{ borderColor: `${accent}55` }}>
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-4xl font-medium" style={{ color: accent, fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>{letter}</span>
+        <span className="text-xs uppercase tracking-[0.15em] font-medium" style={{ color: accent }}>{label.split(" — ")[0]}</span>
+      </div>
+      <div className="text-base font-medium text-[#1A1A1A] mb-1">{label.split(" — ")[1] || label}</div>
+      <div className="text-2xl font-medium font-mono tabular-nums" style={{ color: accent, fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>{count} SKU</div>
+      <div className="text-xs text-[#9C8A6E] mt-1">{share}% tushum · {Math.round((count / totalCount) * 100)}% tovardan</div>
+      <div className="mt-3 text-xs text-[#6B5B4D]">{hint}</div>
+      <div className="absolute bottom-0 left-0 right-0 h-1" style={{ background: accent }} />
+    </Card>
   )
 }
