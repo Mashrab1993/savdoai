@@ -27,16 +27,16 @@ const FORECASTS: ForecastRow[] = [
 function fmt(n: number) { return n.toLocaleString("ru-RU") }
 
 const STATUS_LABEL: Record<string, string> = {
-  critical: "🔴 Kritik (1 hafta)",
-  warning: "🟡 Ogohlantirish (2 hafta)",
-  ok: "🟢 OK (kerak emas)",
-  overstock: "🔵 Ortiqcha zaxira",
+  critical: "🔴 Kritik",
+  warning: "🟡 Ogohlantirish",
+  ok: "🟢 OK",
+  overstock: "🔵 Ortiqcha",
 }
 const STATUS_COLOR: Record<string, string> = {
-  critical: "bg-rose-100 text-rose-700 border-rose-300",
-  warning: "bg-amber-100 text-amber-700 border-amber-300",
-  ok: "bg-emerald-100 text-emerald-700 border-emerald-300",
-  overstock: "bg-blue-100 text-blue-700 border-blue-300",
+  critical: "bg-[#F5E5D6] text-[#C75D3C] border-[#C75D3C]/30",
+  warning: "bg-[#FCE9DD] text-[#D97706] border-[#D97706]/30",
+  ok: "bg-emerald-50 text-emerald-700 border-emerald-200",
+  overstock: "bg-blue-50 text-blue-700 border-blue-200",
 }
 
 export default function StockForecastPage() {
@@ -46,111 +46,114 @@ export default function StockForecastPage() {
 
   return (
     <AdminLayout>
-      <div className="max-w-[1700px] mx-auto space-y-4">
-        <div className="flex items-center gap-3">
-          <Link href="/sklad" className="p-2 hover:bg-slate-100 rounded-lg"><ArrowLeft className="w-5 h-5" /></Link>
-          <div className="flex-1">
-            <h1 className="text-2xl font-bold tracking-tight">Sklad bashorati (forecast)</h1>
-            <p className="text-sm text-slate-500">Sotuv velosipedi asosida zaxira tahlili va buyurtma tavsiyalari</p>
-          </div>
-          <Button variant="outline" className="gap-2"><Calendar className="w-4 h-4" /> 7-kunlik avg</Button>
-          <Button variant="outline" className="gap-2"><Download className="w-4 h-4" /> Excel</Button>
-        </div>
-
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <Card className="p-4 bg-rose-50 border-rose-200">
-            <AlertTriangle className="w-5 h-5 text-rose-600 mb-2" />
-            <div className="text-xs font-bold text-rose-700">Kritik (zaxira ≤ 7 kun)</div>
-            <div className="text-2xl font-bold mt-1">{criticalCount}</div>
-          </Card>
-          <Card className="p-4 bg-amber-50 border-amber-200">
-            <AlertTriangle className="w-5 h-5 text-amber-600 mb-2" />
-            <div className="text-xs font-bold text-amber-700">Ogohlantirish (≤ 14 kun)</div>
-            <div className="text-2xl font-bold mt-1">{FORECASTS.filter(f => f.status === "warning").length}</div>
-          </Card>
-          <Card className="p-4 bg-blue-50 border-blue-200">
-            <Package className="w-5 h-5 text-blue-600 mb-2" />
-            <div className="text-xs font-bold text-blue-700">Ortiqcha zaxira</div>
-            <div className="text-2xl font-bold mt-1">{FORECASTS.filter(f => f.status === "overstock").length}</div>
-          </Card>
-          <Card className="p-4 bg-emerald-50 border-emerald-200">
-            <ShoppingCart className="w-5 h-5 text-emerald-600 mb-2" />
-            <div className="text-xs font-bold text-emerald-700">Tavsiya buyurtma</div>
-            <div className="text-2xl font-bold mt-1 font-mono">{fmt(totalRecOrder)}</div>
-          </Card>
-        </div>
-
-        <Card className="p-5 bg-rose-50 border-rose-300 border-2">
-          <div className="flex items-start gap-3">
-            <AlertTriangle className="w-7 h-7 text-rose-600 flex-shrink-0" />
+      <div className="-mx-4 -my-4 px-4 py-6 min-h-full" style={{ background: "linear-gradient(180deg, #F5F1EB 0%, #FAF7F2 100%)" }}>
+        <div className="max-w-[1700px] mx-auto space-y-5">
+          <div className="flex items-end gap-3 border-b border-[#E8E0D3] pb-6">
+            <Link href="/sklad" className="p-2 hover:bg-[#F0EAE0] rounded-lg"><ArrowLeft className="w-5 h-5 text-[#6B5B4D]" /></Link>
             <div className="flex-1">
-              <h3 className="font-bold text-rose-800 text-lg">Diqqat: 1-haftada zaxiradan tugab qoladi</h3>
-              <div className="mt-3 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
-                {FORECASTS.filter(f => f.status === "critical").map(f => (
-                  <div key={f.id} className="bg-white p-3 rounded-lg flex items-center gap-3">
-                    <Package className="w-5 h-5 text-rose-500" />
-                    <div className="flex-1">
-                      <div className="text-sm font-bold">{f.product}</div>
-                      <div className="text-xs text-slate-500">{f.daysOfStock.toFixed(1)} kun · tugash: {f.stockoutDate}</div>
+              <div className="text-xs uppercase tracking-[0.2em] text-[#9C8A6E] font-medium mb-2">SAVDOAI · SKLAD</div>
+              <h1 className="text-4xl font-light tracking-tight text-[#1A1A1A]" style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>
+                Sklad <span className="italic text-[#C75D3C]">bashorati</span>
+              </h1>
+              <p className="text-sm text-[#6B5B4D] mt-2">Sotuv velosipedi asosida zaxira tahlili va buyurtma tavsiyalari</p>
+            </div>
+            <Button variant="outline" className="gap-2 border-[#E8E0D3] text-[#6B5B4D]"><Calendar className="w-4 h-4" /> 7-kunlik avg</Button>
+            <Button variant="outline" className="gap-2 border-[#E8E0D3] text-[#6B5B4D]"><Download className="w-4 h-4" /> Excel</Button>
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <KpiCard icon={AlertTriangle} accent="#C75D3C" label="Kritik (≤ 7 kun)" value={criticalCount.toString()} />
+            <KpiCard icon={AlertTriangle} accent="#D97706" label="Ogohlantirish (≤ 14 kun)" value={FORECASTS.filter(f => f.status === "warning").length.toString()} />
+            <KpiCard icon={Package} accent="#3B82F6" label="Ortiqcha zaxira" value={FORECASTS.filter(f => f.status === "overstock").length.toString()} />
+            <KpiCard icon={ShoppingCart} accent="#10B981" label="Tavsiya buyurtma" value={fmt(totalRecOrder)} />
+          </div>
+
+          <Card className="p-6 bg-white border-2 border-[#C75D3C]/40 shadow-sm rounded-2xl">
+            <div className="flex items-start gap-3">
+              <div className="w-12 h-12 rounded-2xl bg-[#FCE9DD] flex items-center justify-center flex-shrink-0">
+                <AlertTriangle className="w-6 h-6 text-[#C75D3C]" />
+              </div>
+              <div className="flex-1">
+                <div className="text-xs uppercase tracking-[0.2em] text-[#C75D3C] font-medium">DIQQAT</div>
+                <h3 className="text-xl font-light text-[#1A1A1A] mt-1" style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>1-haftada zaxiradan tugab qoladi</h3>
+                <div className="mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+                  {FORECASTS.filter(f => f.status === "critical").map(f => (
+                    <div key={f.id} className="bg-[#FAF7F2] border border-[#E8E0D3] p-3 rounded-2xl flex items-center gap-3">
+                      <Package className="w-5 h-5 text-[#C75D3C]" />
+                      <div className="flex-1">
+                        <div className="text-sm font-medium text-[#1A1A1A]">{f.product}</div>
+                        <div className="text-xs text-[#9C8A6E]">{f.daysOfStock.toFixed(1)} kun · tugash: {f.stockoutDate}</div>
+                      </div>
+                      <Button size="sm" className="h-8 text-xs" style={{ background: "#C75D3C" }}>+{f.recommendedOrder}</Button>
                     </div>
-                    <Button size="sm" className="h-8 text-xs">Buyurtma +{f.recommendedOrder}</Button>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
             </div>
-          </div>
-        </Card>
+          </Card>
 
-        <Card className="p-5">
-          <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
-            <TrendingUp className="w-5 h-5 text-blue-600" /> Forecast jadvali
-          </h2>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm border-collapse">
-              <thead>
-                <tr className="bg-slate-100">
-                  <th className="border border-slate-300 py-2 px-2 text-left">SKU</th>
-                  <th className="border border-slate-300 py-2 px-2 text-left">Tovar</th>
-                  <th className="border border-slate-300 py-2 px-2 text-right">Zaxira</th>
-                  <th className="border border-slate-300 py-2 px-2 text-right">O'rta/kun</th>
-                  <th className="border border-slate-300 py-2 px-2 text-right">Kun qoldi</th>
-                  <th className="border border-slate-300 py-2 px-2 text-center">Tugash sanasi</th>
-                  <th className="border border-slate-300 py-2 px-2 text-right">Reorder point</th>
-                  <th className="border border-slate-300 py-2 px-2 text-right">Tavsiya buyurtma</th>
-                  <th className="border border-slate-300 py-2 px-2 text-center">Holat</th>
-                  <th className="border border-slate-300 py-2 px-2 text-center w-24"></th>
-                </tr>
-              </thead>
-              <tbody>
-                {sorted.map(f => (
-                  <tr key={f.id} className="hover:bg-slate-50">
-                    <td className="border border-slate-300 py-2 px-2 font-mono">{f.sku}</td>
-                    <td className="border border-slate-300 py-2 px-2 font-semibold">{f.product}</td>
-                    <td className="border border-slate-300 py-2 px-2 text-right font-mono">{fmt(f.currentStock)}</td>
-                    <td className="border border-slate-300 py-2 px-2 text-right font-mono">{f.avgDailyUsage}</td>
-                    <td className={`border border-slate-300 py-2 px-2 text-right font-mono font-bold ${f.daysOfStock <= 5 ? "text-rose-700" : f.daysOfStock <= 14 ? "text-amber-700" : "text-emerald-700"}`}>
-                      {f.daysOfStock.toFixed(1)}
-                    </td>
-                    <td className="border border-slate-300 py-2 px-2 text-center font-mono text-xs">{f.stockoutDate}</td>
-                    <td className="border border-slate-300 py-2 px-2 text-right font-mono text-slate-500">{fmt(f.reorderPoint)}</td>
-                    <td className={`border border-slate-300 py-2 px-2 text-right font-mono font-bold ${f.recommendedOrder > 0 ? "text-emerald-700" : "text-slate-300"}`}>
-                      {f.recommendedOrder > 0 ? `+${fmt(f.recommendedOrder)}` : "—"}
-                    </td>
-                    <td className="border border-slate-300 py-2 px-2 text-center">
-                      <span className={`text-xs px-2 py-0.5 rounded border ${STATUS_COLOR[f.status]}`}>{STATUS_LABEL[f.status]}</span>
-                    </td>
-                    <td className="border border-slate-300 py-2 px-2 text-center">
-                      {f.recommendedOrder > 0 && (
-                        <Button size="sm" className="h-7 text-xs">Buyurtma</Button>
-                      )}
-                    </td>
+          <Card className="p-6 bg-white border border-[#E8E0D3] shadow-sm rounded-2xl">
+            <h2 className="text-xl font-light mb-5 flex items-center gap-2 text-[#1A1A1A]" style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>
+              <TrendingUp className="w-5 h-5 text-[#3B82F6]" /> Forecast jadvali
+            </h2>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-[#FAF7F2] border-b border-[#E8E0D3]">
+                    <th className="py-3 px-2 text-left text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">SKU</th>
+                    <th className="py-3 px-2 text-left text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Tovar</th>
+                    <th className="py-3 px-2 text-right text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Zaxira</th>
+                    <th className="py-3 px-2 text-right text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">O'rta/kun</th>
+                    <th className="py-3 px-2 text-right text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Kun qoldi</th>
+                    <th className="py-3 px-2 text-center text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Tugash sanasi</th>
+                    <th className="py-3 px-2 text-right text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Reorder</th>
+                    <th className="py-3 px-2 text-right text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Tavsiya</th>
+                    <th className="py-3 px-2 text-center text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Holat</th>
+                    <th className="py-3 px-2 text-center w-24 text-xs uppercase tracking-wider font-medium text-[#9C8A6E]"></th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </Card>
+                </thead>
+                <tbody>
+                  {sorted.map(f => (
+                    <tr key={f.id} className="border-b border-[#F0EAE0] hover:bg-[#FAF7F2]">
+                      <td className="py-3 px-2 font-mono text-xs text-[#1A1A1A]">{f.sku}</td>
+                      <td className="py-3 px-2 font-medium text-[#1A1A1A]">{f.product}</td>
+                      <td className="py-3 px-2 text-right font-mono text-[#1A1A1A]">{fmt(f.currentStock)}</td>
+                      <td className="py-3 px-2 text-right font-mono text-[#6B5B4D]">{f.avgDailyUsage}</td>
+                      <td className={`py-3 px-2 text-right font-mono font-medium ${f.daysOfStock <= 5 ? "text-[#C75D3C]" : f.daysOfStock <= 14 ? "text-[#D97706]" : "text-emerald-700"}`} style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>
+                        {f.daysOfStock.toFixed(1)}
+                      </td>
+                      <td className="py-3 px-2 text-center font-mono text-xs text-[#6B5B4D]">{f.stockoutDate}</td>
+                      <td className="py-3 px-2 text-right font-mono text-[#9C8A6E]">{fmt(f.reorderPoint)}</td>
+                      <td className={`py-3 px-2 text-right font-mono font-medium ${f.recommendedOrder > 0 ? "text-emerald-700" : "text-[#9C8A6E]"}`} style={f.recommendedOrder > 0 ? { fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' } : {}}>
+                        {f.recommendedOrder > 0 ? `+${fmt(f.recommendedOrder)}` : "—"}
+                      </td>
+                      <td className="py-3 px-2 text-center">
+                        <span className={`text-xs px-2 py-0.5 rounded border font-medium ${STATUS_COLOR[f.status]}`}>{STATUS_LABEL[f.status]}</span>
+                      </td>
+                      <td className="py-3 px-2 text-center">
+                        {f.recommendedOrder > 0 && (
+                          <Button size="sm" className="h-7 text-xs" style={{ background: "#C75D3C" }}>Buyurtma</Button>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </Card>
+        </div>
       </div>
     </AdminLayout>
+  )
+}
+
+function KpiCard({ icon: Icon, accent, label, value }: { icon: React.ElementType; accent: string; label: string; value: string }) {
+  return (
+    <Card className="p-5 bg-white border border-[#E8E0D3] shadow-sm rounded-2xl relative overflow-hidden">
+      <Icon className="w-5 h-5 mb-2" style={{ color: accent }} />
+      <div className="text-xs uppercase tracking-[0.15em] font-medium" style={{ color: accent }}>{label}</div>
+      <div className="text-2xl font-medium font-mono tabular-nums mt-1 text-[#1A1A1A]" style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>{value}</div>
+      <div className="absolute bottom-0 left-0 right-0 h-1" style={{ background: accent }} />
+    </Card>
   )
 }
