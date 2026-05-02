@@ -34,7 +34,6 @@ export default function ClientsPage() {
   const [search, setSearch] = useState("")
   const [filter, setFilter] = useState<"all" | "active" | "debt">("all")
 
-  // Fetch real klientlar from API if logged in, else use mock
   const { data, loading, error } = useApi<Klient[]>(isAuthenticated ? "/api/v1/klientlar" : null)
   const klientlar: Klient[] = data ?? MOCK_FALLBACK
 
@@ -48,151 +47,146 @@ export default function ClientsPage() {
 
   return (
     <AdminLayout>
-      <div className="max-w-[1700px] mx-auto space-y-5">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Klientlar</h1>
-            <p className="text-base text-slate-500 mt-1">
-              Jami {filtered.length} klient · Balans: <span className={totalDebt < 0 ? "text-rose-600 font-semibold" : "text-emerald-600 font-semibold"}>{totalDebt.toLocaleString('uz-UZ')} so'm</span>
-              {!isAuthenticated && <span className="ml-2 text-xs text-amber-600">⚠ Demo data — login kerak</span>}
-            </p>
-          </div>
-          <Button size="lg">
-            <Plus className="w-5 h-5" /> Yangi klient
-          </Button>
-        </div>
-
-        <Card className="p-4">
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="flex-1 min-w-[280px] relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-              <Input
-                placeholder="Nom yoki ID bo'yicha qidirish..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="pl-11"
-              />
+      <div className="-mx-4 -my-4 px-4 py-6 min-h-full" style={{ background: "linear-gradient(180deg, #F5F1EB 0%, #FAF7F2 100%)" }}>
+        <div className="max-w-[1700px] mx-auto space-y-6">
+          {/* Hero */}
+          <div className="flex items-end justify-between border-b border-[#E8E0D3] pb-6">
+            <div>
+              <div className="text-xs uppercase tracking-[0.2em] text-[#9C8A6E] font-medium mb-2">SAVDOAI</div>
+              <h1 className="text-5xl font-light tracking-tight text-[#1A1A1A]" style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>
+                Klientlar <span className="italic text-[#C75D3C]">jurnali</span>
+              </h1>
+              <p className="text-base text-[#6B5B4D] mt-3 max-w-xl">
+                Jami {filtered.length} klient · Balans:{" "}
+                <span className={totalDebt < 0 ? "text-[#C75D3C] font-medium" : "text-emerald-700 font-medium"}>
+                  {totalDebt.toLocaleString('uz-UZ')} so'm
+                </span>
+                {!isAuthenticated && <span className="ml-2 text-xs text-[#D97706]">⚠ Demo data — login kerak</span>}
+              </p>
             </div>
-
             <div className="flex gap-2">
-              <FilterButton active={filter === "all"} onClick={() => setFilter("all")}>
-                Barchasi ({klientlar.length})
-              </FilterButton>
-              <FilterButton active={filter === "active"} onClick={() => setFilter("active")}>
-                Faol
-              </FilterButton>
-              <FilterButton active={filter === "debt"} onClick={() => setFilter("debt")}>
-                Qarzdor
-              </FilterButton>
-            </div>
-
-            <div className="flex gap-2 ml-auto">
-              <Button variant="outline">
-                <Filter className="w-4 h-4" /> Qo'shimcha filter
-              </Button>
-              <Button variant="outline">
-                <Download className="w-4 h-4" /> Excel
-              </Button>
+              <Link href="/klientlar/segments">
+                <button className="px-3 py-2 rounded-md border border-[#E8E0D3] bg-white text-sm flex items-center gap-1.5 hover:border-[#C75D3C]">
+                  RFM Segmentlar
+                </button>
+              </Link>
+              <Link href="/klientlar/yangi">
+                <Button size="lg" style={{ background: "#C75D3C" }}>
+                  <Plus className="w-5 h-5" /> Yangi klient
+                </Button>
+              </Link>
             </div>
           </div>
-        </Card>
 
-        <Card>
-          {loading && <div className="p-6"><LoadingSkeleton rows={6} /></div>}
-          {error && <ErrorState message={error} />}
-          {!loading && !error && filtered.length === 0 && (
-            <EmptyState title="Klient topilmadi" desc="Filter yoki qidiruvni o'zgartiring" icon={<Users className="w-8 h-8 text-slate-400" />} />
-          )}
-          {!loading && !error && filtered.length > 0 && (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="border-b-2 border-slate-200 bg-slate-50">
-                  <tr>
-                    <th className="text-left px-4 py-3 text-sm font-semibold text-slate-700">ID</th>
-                    <th className="text-left px-4 py-3 text-sm font-semibold text-slate-700">Nom</th>
-                    <th className="text-left px-4 py-3 text-sm font-semibold text-slate-700">Telefon</th>
-                    <th className="text-left px-4 py-3 text-sm font-semibold text-slate-700">Kategoriya</th>
-                    <th className="text-left px-4 py-3 text-sm font-semibold text-slate-700">Hudud</th>
-                    <th className="text-right px-4 py-3 text-sm font-semibold text-slate-700">Qarz</th>
-                    <th className="px-4 py-3"></th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {filtered.map((c) => (
-                    <tr key={c.id} className="hover:bg-slate-50 transition-colors">
-                      <td className="px-4 py-3 text-sm font-mono text-slate-500">{c.id}</td>
-                      <td className="px-4 py-3 text-base font-medium text-slate-900">
-                        <Link href={`/klientlar/${c.id}`} className="hover:text-emerald-600">
-                          {c.nomi}
-                        </Link>
-                      </td>
-                      <td className="px-4 py-3 text-sm text-slate-600">
-                        {c.telefon && (
-                          <span className="flex items-center gap-1.5">
-                            <Phone className="w-3.5 h-3.5" />
-                            {c.telefon}
-                          </span>
-                        )}
-                      </td>
-                      <td className="px-4 py-3">
-                        {c.kategoriya && (
-                          <span className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                            c.kategoriya === "Опт" ? "bg-blue-100 text-blue-700" : "bg-emerald-100 text-emerald-700"
-                          }`}>
-                            {c.kategoriya}
-                          </span>
-                        )}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-slate-600">
-                        {c.hudud && (
-                          <span className="flex items-center gap-1.5">
-                            <MapPin className="w-3.5 h-3.5" />
-                            {c.hudud}
-                          </span>
-                        )}
-                      </td>
-                      <td className={`px-4 py-3 text-base text-right tabular-nums font-semibold ${
-                        (c.qarz ?? 0) < 0 ? "text-rose-600" : (c.qarz ?? 0) > 0 ? "text-emerald-600" : "text-slate-400"
-                      }`}>
-                        {(c.qarz ?? 0).toLocaleString('uz-UZ')}
-                      </td>
-                      <td className="px-4 py-3">
-                        <button className="p-1 hover:bg-slate-200 rounded">
-                          <MoreVertical className="w-4 h-4 text-slate-400" />
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-                <tfoot className="border-t-2 border-slate-200 bg-slate-50">
-                  <tr>
-                    <td colSpan={5} className="px-4 py-3 text-sm font-semibold text-right">Jami:</td>
-                    <td className={`px-4 py-3 text-right tabular-nums font-bold text-lg ${
-                      totalDebt < 0 ? "text-rose-600" : "text-emerald-600"
-                    }`}>
-                      {totalDebt.toLocaleString('uz-UZ')} so'm
-                    </td>
-                    <td></td>
-                  </tr>
-                </tfoot>
-              </table>
+          {/* Filters */}
+          <Card className="p-5 bg-white border border-[#E8E0D3] shadow-sm rounded-2xl">
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="flex-1 min-w-[280px] relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9C8A6E]" />
+                <Input
+                  placeholder="Nom yoki ID bo'yicha qidirish..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="pl-10 border-[#E8E0D3] bg-[#FAF7F2]"
+                />
+              </div>
+
+              <div className="flex gap-1">
+                {(["all", "active", "debt"] as const).map(f => (
+                  <button
+                    key={f}
+                    onClick={() => setFilter(f)}
+                    className={`px-3 py-2 text-xs font-medium rounded-md ${filter === f ? "bg-[#C75D3C] text-white" : "bg-[#FAF7F2] border border-[#E8E0D3] text-[#6B5B4D] hover:border-[#C75D3C]"}`}
+                  >
+                    {f === "all" ? `Hammasi (${klientlar.length})` : f === "active" ? "Faol" : "Qarzdor"}
+                  </button>
+                ))}
+              </div>
+
+              <div className="flex gap-2 ml-auto">
+                <button className="px-3 py-2 rounded-md border border-[#E8E0D3] bg-white text-sm flex items-center gap-1.5 hover:border-[#C75D3C]">
+                  <Filter className="w-3.5 h-3.5" /> Filter
+                </button>
+                <button className="px-3 py-2 rounded-md border border-[#E8E0D3] bg-white text-sm flex items-center gap-1.5 hover:border-[#C75D3C]">
+                  <Download className="w-3.5 h-3.5" /> Excel
+                </button>
+              </div>
             </div>
-          )}
-        </Card>
+          </Card>
+
+          <Card className="bg-white border border-[#E8E0D3] shadow-sm rounded-2xl overflow-hidden">
+            {loading && <div className="p-6"><LoadingSkeleton rows={6} /></div>}
+            {error && <ErrorState message={error} />}
+            {!loading && !error && filtered.length === 0 && (
+              <EmptyState title="Klient topilmadi" desc="Filter yoki qidiruvni o'zgartiring" icon={<Users className="w-8 h-8 text-[#9C8A6E]" />} />
+            )}
+            {!loading && !error && filtered.length > 0 && (
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-[#FAF7F2] border-b border-[#E8E0D3]">
+                    <tr>
+                      <th className="text-left px-4 py-3 text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">ID</th>
+                      <th className="text-left px-4 py-3 text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Nom</th>
+                      <th className="text-left px-4 py-3 text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Telefon</th>
+                      <th className="text-left px-4 py-3 text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Kategoriya</th>
+                      <th className="text-left px-4 py-3 text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Hudud</th>
+                      <th className="text-right px-4 py-3 text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Qarz</th>
+                      <th className="px-4 py-3"></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filtered.map((c) => (
+                      <tr key={c.id} className="border-b border-[#F0EAE0] hover:bg-[#FAF7F2]">
+                        <td className="px-4 py-3 text-sm font-mono text-[#9C8A6E]">{c.id}</td>
+                        <td className="px-4 py-3">
+                          <Link href={`/klientlar/${c.id}`} className="font-medium text-[#1A1A1A] hover:text-[#C75D3C]">
+                            {c.nomi}
+                          </Link>
+                        </td>
+                        <td className="px-4 py-3 text-sm text-[#6B5B4D]">
+                          {c.telefon && (
+                            <span className="flex items-center gap-1.5">
+                              <Phone className="w-3.5 h-3.5 text-[#9C8A6E]" />
+                              {c.telefon}
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3">
+                          {c.kategoriya && (
+                            <span className={`inline-block px-2.5 py-0.5 rounded text-xs font-medium ${
+                              c.kategoriya === "Опт" ? "bg-blue-50 text-blue-700" : "bg-emerald-50 text-emerald-700"
+                            }`}>
+                              {c.kategoriya}
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-[#6B5B4D]">
+                          {c.hudud && (
+                            <span className="flex items-center gap-1.5">
+                              <MapPin className="w-3.5 h-3.5 text-[#9C8A6E]" />
+                              {c.hudud}
+                            </span>
+                          )}
+                        </td>
+                        <td className={`px-4 py-3 text-base text-right tabular-nums font-medium ${
+                          (c.qarz ?? 0) < 0 ? "text-[#C75D3C]" : (c.qarz ?? 0) > 0 ? "text-emerald-700" : "text-[#9C8A6E]"
+                        }`} style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>
+                          {(c.qarz ?? 0).toLocaleString('uz-UZ')}
+                        </td>
+                        <td className="px-4 py-3">
+                          <button className="p-1 hover:bg-[#E8E0D3] rounded">
+                            <MoreVertical className="w-4 h-4 text-[#9C8A6E]" />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </Card>
+        </div>
       </div>
     </AdminLayout>
-  )
-}
-
-function FilterButton({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
-  return (
-    <button
-      onClick={onClick}
-      className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-        active ? "bg-emerald-600 text-white" : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-      }`}
-    >
-      {children}
-    </button>
   )
 }
