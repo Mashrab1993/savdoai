@@ -2,7 +2,7 @@
 import { AdminLayout } from "@/components/layout/admin-layout"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { TrendingUp, TrendingDown, Wallet, ArrowUpRight, ArrowDownRight, AlertCircle } from "lucide-react"
+import { TrendingUp, TrendingDown, Wallet, ArrowUpRight, AlertCircle } from "lucide-react"
 import { useApi, useAuth } from "@/hooks/use-api"
 
 type KassaStats = {
@@ -47,145 +47,162 @@ export default function MoliyaPage() {
 
   return (
     <AdminLayout>
-      <div className="max-w-[1600px] mx-auto space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Moliya</h1>
-            <p className="text-base text-slate-500 mt-1">Joriy oy: 155,170,315 so'm sotuv</p>
-          </div>
-          <div className="flex items-center gap-2">
-            {loading && <span className="px-3 py-1.5 rounded-full bg-blue-100 text-blue-700 text-sm font-medium animate-pulse">Yuklanmoqda...</span>}
-            {!loading && apiKassa && <span className="px-3 py-1.5 rounded-full bg-emerald-100 text-emerald-700 text-sm font-medium">● Real-time API</span>}
-            {!loading && usingMock && <span className="px-3 py-1.5 rounded-full bg-amber-100 text-amber-700 text-sm font-medium flex items-center gap-1"><AlertCircle className="w-3.5 h-3.5" /> Demo data — login kerak</span>}
-            <Button variant="outline">Davr: May 2026 ▼</Button>
-          </div>
-        </div>
-
-        {/* Balance row */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <BalanceCard label="Naqd pul" value={balance.cash_total} icon={Wallet} negative />
-          <BalanceCard label="Безналик (Bank)" value={balance.bank_total} icon={Wallet} positive />
-          <BalanceCard label="USD" value={balance.usd_total} icon={Wallet} dollar />
-          <BalanceCard label="Перечисления" value={balance.transfers} icon={ArrowUpRight} positive />
-        </div>
-
-        {/* Critical balance alert */}
-        <Card className="border-2 border-rose-300 bg-rose-50 p-6">
-          <div className="flex items-start gap-4">
-            <div className="flex-shrink-0 w-12 h-12 rounded-full bg-rose-200 flex items-center justify-center">
-              <AlertCircle className="w-6 h-6 text-rose-700" />
+      <div className="-mx-4 -my-4 px-4 py-6 min-h-full" style={{ background: "linear-gradient(180deg, #F5F1EB 0%, #FAF7F2 100%)" }}>
+        <div className="max-w-[1700px] mx-auto space-y-6">
+          {/* Hero */}
+          <div className="flex items-end justify-between border-b border-[#E8E0D3] pb-6">
+            <div>
+              <div className="text-xs uppercase tracking-[0.2em] text-[#9C8A6E] font-medium mb-2">SAVDOAI</div>
+              <h1 className="text-5xl font-light tracking-tight text-[#1A1A1A]" style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>
+                Moliya <span className="italic text-[#C75D3C]">jurnali</span>
+              </h1>
+              <p className="text-base text-[#6B5B4D] mt-3 max-w-xl">
+                Joriy oy: <span className="font-medium text-[#1A1A1A] tabular-nums">155,170,315</span> so'm sotuv
+              </p>
             </div>
-            <div className="flex-1">
-              <h3 className="text-lg font-semibold text-rose-900">Umumiy balans (сум)</h3>
-              <p className="text-sm text-rose-700 mt-0.5">Postavshiklarga umumiy qarz holati</p>
-              <div className="grid grid-cols-3 gap-4 mt-4">
-                <div>
-                  <div className="text-sm text-rose-600">Joriy balans</div>
-                  <div className="text-3xl font-bold text-rose-900 tabular-nums">
-                    {balance.overall.toLocaleString()} so'm
+            <div className="flex items-center gap-2">
+              {loading && <span className="px-3 py-1.5 rounded-full bg-[#E8E0D3] text-[#6B5B4D] text-sm animate-pulse">Yuklanmoqda...</span>}
+              {!loading && apiKassa && <span className="px-3 py-1.5 rounded-full bg-emerald-50 text-emerald-700 text-sm flex items-center gap-1.5"><span className="w-1.5 h-1.5 bg-emerald-600 rounded-full" /> Real-time</span>}
+              {!loading && usingMock && <span className="px-3 py-1.5 rounded-full bg-[#F5E5D6] text-[#C75D3C] text-sm flex items-center gap-1"><AlertCircle className="w-3.5 h-3.5" /> Demo</span>}
+              <Button variant="outline" className="border-[#E8E0D3] text-[#6B5B4D]">May 2026 ▼</Button>
+            </div>
+          </div>
+
+          {/* Balance row */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <BalanceCard label="Naqd pul" value={balance.cash_total} icon={Wallet} accent={balance.cash_total < 0 ? "#C75D3C" : "#10B981"} />
+            <BalanceCard label="Безналик (Bank)" value={balance.bank_total} icon={Wallet} accent="#10B981" />
+            <BalanceCard label="USD" value={balance.usd_total} icon={Wallet} accent="#9C8A6E" dollar />
+            <BalanceCard label="Перечисления" value={balance.transfers} icon={ArrowUpRight} accent="#3B82F6" />
+          </div>
+
+          {/* Critical balance alert */}
+          <Card className="bg-white border-2 border-[#C75D3C]/30 rounded-2xl p-6 shadow-sm">
+            <div className="flex items-start gap-4">
+              <div className="flex-shrink-0 w-12 h-12 rounded-2xl bg-[#FCE9DD] flex items-center justify-center">
+                <AlertCircle className="w-6 h-6 text-[#C75D3C]" />
+              </div>
+              <div className="flex-1">
+                <div className="text-xs uppercase tracking-[0.15em] text-[#9C8A6E] font-medium mb-1">Umumiy balans</div>
+                <h3 className="text-xl font-light text-[#1A1A1A]" style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>Postavshiklarga umumiy qarz holati</h3>
+                <div className="grid grid-cols-3 gap-6 mt-5">
+                  <div>
+                    <div className="text-xs uppercase tracking-wider text-[#9C8A6E] font-medium">Joriy balans</div>
+                    <div className="text-3xl font-medium tabular-nums mt-1" style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif', color: balance.overall < 0 ? "#C75D3C" : "#10B981" }}>
+                      {balance.overall.toLocaleString()}
+                    </div>
+                    <div className="text-xs text-[#9C8A6E] mt-1">so'm</div>
                   </div>
-                </div>
-                <div>
-                  <div className="text-sm text-rose-600">Predoplata bilan</div>
-                  <div className="text-2xl font-bold text-rose-800 tabular-nums">
-                    {balance.overall_with_prepay.toLocaleString()} so'm
+                  <div>
+                    <div className="text-xs uppercase tracking-wider text-[#9C8A6E] font-medium">Predoplata bilan</div>
+                    <div className="text-2xl font-medium tabular-nums mt-1" style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif', color: balance.overall_with_prepay < 0 ? "#C75D3C" : "#10B981" }}>
+                      {balance.overall_with_prepay.toLocaleString()}
+                    </div>
+                    <div className="text-xs text-[#9C8A6E] mt-1">so'm</div>
                   </div>
-                </div>
-                <div>
-                  <div className="text-sm text-rose-600">To'liq balans</div>
-                  <div className="text-2xl font-bold text-rose-800 tabular-nums">
-                    {balance.overall_full.toLocaleString()} so'm
+                  <div>
+                    <div className="text-xs uppercase tracking-wider text-[#9C8A6E] font-medium">To'liq balans</div>
+                    <div className="text-2xl font-medium tabular-nums mt-1" style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif', color: balance.overall_full < 0 ? "#C75D3C" : "#10B981" }}>
+                      {balance.overall_full.toLocaleString()}
+                    </div>
+                    <div className="text-xs text-[#9C8A6E] mt-1">so'm</div>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
-        </Card>
-
-        {/* Two columns */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Categories */}
-          <Card className="lg:col-span-2 p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold">Kategoriya bo'yicha sotuv</h3>
-              <span className="text-sm text-slate-500">Joriy oy</span>
-            </div>
-            <div className="space-y-4">
-              {topCategories.map(c => (
-                <div key={c.name} className="space-y-1.5">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <span className="font-semibold text-slate-800">{c.name}</span>
-                      <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
-                        c.growth > 0 ? "bg-emerald-100 text-emerald-700" : "bg-rose-100 text-rose-700"
-                      }`}>
-                        {c.growth > 0 ? "↑" : "↓"} {Math.abs(c.growth)}%
-                      </span>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-base font-bold tabular-nums">{c.sum.toLocaleString()}</div>
-                      <div className="text-xs text-slate-500">{c.pct}%</div>
-                    </div>
-                  </div>
-                  <div className="h-2 rounded-full bg-slate-100 overflow-hidden">
-                    <div
-                      className="h-full bg-gradient-to-r from-emerald-500 to-teal-600 rounded-full"
-                      style={{ width: `${c.pct * 2}%` }}
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
           </Card>
 
-          {/* Quick metrics */}
-          <Card className="p-6">
-            <h3 className="text-lg font-semibold mb-4">Joriy oy</h3>
-            <div className="space-y-4">
-              <Metric label="Bugungi sotuv" value="22,068,830" unit="so'm" trend="+12.3%" up />
-              <Metric label="Haftalik" value="156.5M" unit="so'm" trend="+5.4%" up />
-              <Metric label="Oy boshidan" value="155.1M" unit="so'm" trend="+18.2%" up />
-              <Metric label="Yillik prognoz" value="1.8B" unit="so'm" trend="+22.5%" up />
-              <div className="pt-4 border-t border-slate-200">
-                <Metric label="Tushum" value="2.05B" unit="so'm" trend="↗" up />
-                <Metric label="Xarajat" value="-895M" unit="so'm" trend="↘" />
-                <div className="mt-3 pt-3 border-t border-slate-200">
-                  <div className="text-sm text-slate-500">Sof foyda</div>
-                  <div className="text-2xl font-bold text-emerald-700 tabular-nums">+1.16B so'm</div>
+          {/* Two columns */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+            {/* Categories */}
+            <Card className="lg:col-span-2 p-6 bg-white border border-[#E8E0D3] shadow-sm rounded-2xl">
+              <div className="flex items-center justify-between mb-5">
+                <div>
+                  <div className="text-xs uppercase tracking-[0.2em] text-[#9C8A6E] font-medium">JORIY OY</div>
+                  <h3 className="text-xl font-light text-[#1A1A1A]" style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>Kategoriya bo'yicha sotuv</h3>
                 </div>
               </div>
-            </div>
-          </Card>
+              <div className="space-y-4">
+                {topCategories.map(c => (
+                  <div key={c.name} className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-[#1A1A1A]">{c.name}</span>
+                        <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
+                          c.growth > 0 ? "bg-emerald-50 text-emerald-700" : "bg-[#F5E5D6] text-[#C75D3C]"
+                        }`}>
+                          {c.growth > 0 ? "↑" : "↓"} {Math.abs(c.growth)}%
+                        </span>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-base font-medium tabular-nums text-[#1A1A1A]" style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>{c.sum.toLocaleString()}</div>
+                        <div className="text-xs text-[#9C8A6E]">{c.pct}%</div>
+                      </div>
+                    </div>
+                    <div className="h-2 rounded-full bg-[#F0EAE0] overflow-hidden">
+                      <div
+                        className="h-full rounded-full"
+                        style={{ width: `${c.pct * 2}%`, background: "linear-gradient(90deg, #C75D3C 0%, #E27B5C 100%)" }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </Card>
+
+            {/* Quick metrics */}
+            <Card className="p-6 bg-white border border-[#E8E0D3] shadow-sm rounded-2xl">
+              <div className="text-xs uppercase tracking-[0.2em] text-[#9C8A6E] font-medium mb-1">PROGNOZ</div>
+              <h3 className="text-xl font-light text-[#1A1A1A] mb-5" style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>Joriy oy</h3>
+              <div className="space-y-3">
+                <Metric label="Bugungi sotuv" value="22,068,830" unit="so'm" trend="+12.3%" up />
+                <Metric label="Haftalik" value="156.5M" unit="so'm" trend="+5.4%" up />
+                <Metric label="Oy boshidan" value="155.1M" unit="so'm" trend="+18.2%" up />
+                <Metric label="Yillik prognoz" value="1.8B" unit="so'm" trend="+22.5%" up />
+                <div className="pt-3 border-t border-[#F0EAE0]">
+                  <Metric label="Tushum" value="2.05B" unit="so'm" trend="↗" up />
+                  <Metric label="Xarajat" value="-895M" unit="so'm" trend="↘" />
+                  <div className="mt-3 pt-3 border-t border-[#F0EAE0]">
+                    <div className="text-xs uppercase tracking-wider text-[#9C8A6E] font-medium">Sof foyda</div>
+                    <div className="text-3xl font-medium text-emerald-700 tabular-nums" style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>+1.16B</div>
+                    <div className="text-xs text-[#9C8A6E]">so'm</div>
+                  </div>
+                </div>
+              </div>
+            </Card>
+          </div>
         </div>
       </div>
     </AdminLayout>
   )
 }
 
-function BalanceCard({ label, value, icon: Icon, negative, positive, dollar }: {
-  label: string; value: number; icon: React.ElementType; negative?: boolean; positive?: boolean; dollar?: boolean
+function BalanceCard({ label, value, icon: Icon, accent, dollar }: {
+  label: string; value: number; icon: React.ElementType; accent: string; dollar?: boolean
 }) {
-  const color = negative ? "from-rose-500 to-rose-700" : positive ? "from-emerald-500 to-teal-600" : "from-slate-500 to-slate-700"
   return (
-    <Card className={`bg-gradient-to-br ${color} text-white border-0 p-5`}>
-      <Icon className="w-6 h-6 opacity-80 mb-3" />
-      <div className="text-2xl font-bold tabular-nums leading-tight">
+    <Card className="bg-white border border-[#E8E0D3] shadow-sm rounded-2xl p-5 relative overflow-hidden">
+      <Icon className="w-6 h-6 mb-3" style={{ color: accent }} />
+      <div className="text-2xl font-medium tabular-nums leading-tight text-[#1A1A1A]" style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>
         {dollar ? "$" : ""}{value.toLocaleString()}
       </div>
-      <div className="text-sm opacity-90 mt-1">{label}</div>
+      <div className="text-sm text-[#6B5B4D] mt-1">{label}</div>
+      <div className="absolute bottom-0 left-0 right-0 h-1" style={{ background: accent }} />
     </Card>
   )
 }
 
 function Metric({ label, value, unit, trend, up }: { label: string; value: string; unit: string; trend: string; up?: boolean }) {
   return (
-    <div className="flex items-center justify-between py-2">
+    <div className="flex items-center justify-between py-1.5">
       <div>
-        <div className="text-sm text-slate-500">{label}</div>
-        <div className="text-lg font-bold tabular-nums">{value} <span className="text-sm font-normal text-slate-500">{unit}</span></div>
+        <div className="text-xs text-[#9C8A6E]">{label}</div>
+        <div className="text-base font-medium tabular-nums text-[#1A1A1A]" style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>
+          {value} <span className="text-xs font-normal text-[#9C8A6E]">{unit}</span>
+        </div>
       </div>
-      <div className={`text-sm font-medium ${up ? "text-emerald-600" : "text-rose-600"}`}>
-        {up ? <TrendingUp className="w-4 h-4 inline" /> : <TrendingDown className="w-4 h-4 inline" />}
+      <div className={`text-sm font-medium flex items-center gap-1 ${up ? "text-emerald-600" : "text-[#C75D3C]"}`}>
+        {up ? <TrendingUp className="w-3.5 h-3.5" /> : <TrendingDown className="w-3.5 h-3.5" />}
         {trend}
       </div>
     </div>

@@ -1,75 +1,18 @@
 "use client"
 import { AdminLayout } from "@/components/layout/admin-layout"
 import { Card } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
 import { Eye, EyeOff, Camera, ClipboardCheck, BarChart3, DollarSign, Layers, MapPin } from "lucide-react"
 import Link from "next/link"
 
 const AUDIT_MODULES = [
-  {
-    href: "/audit/dashboard",
-    icon: BarChart3,
-    title: "Kunlik dashboard",
-    desc: "Mercendaiizer holati real-time",
-    color: "from-emerald-500 to-teal-600",
-    stats: { primary: "1042 reja", secondary: "0 bajarildi" },
-  },
-  {
-    href: "/audit/audits",
-    icon: ClipboardCheck,
-    title: "Tekshirishlar",
-    desc: "Audit yozuvlari (14 ta)",
-    color: "from-blue-500 to-indigo-600",
-    stats: { primary: "14 audit", secondary: "Bugun" },
-  },
-  {
-    href: "/audit/facing",
-    icon: Layers,
-    title: "Doля polki",
-    desc: "Shelf share % vs raqobatchilar",
-    color: "from-amber-500 to-orange-600",
-    stats: { primary: "—", secondary: "Filter kerak" },
-  },
-  {
-    href: "/audit/sku",
-    icon: Eye,
-    title: "SKU присутствие",
-    desc: "Out-of-stock detection",
-    color: "from-purple-500 to-pink-600",
-    stats: { primary: "—", secondary: "Foto kutilmoqda" },
-  },
-  {
-    href: "/audit/price",
-    icon: DollarSign,
-    title: "Анализ цен",
-    desc: "Raqobatchilar narxi tahlili",
-    color: "from-rose-500 to-red-600",
-    stats: { primary: "—", secondary: "Foto kerak" },
-  },
-  {
-    href: "/audit/merchandising",
-    icon: ClipboardCheck,
-    title: "Merchandising",
-    desc: "Display compliance opros",
-    color: "from-cyan-500 to-blue-600",
-    stats: { primary: "—", secondary: "Bugun" },
-  },
-  {
-    href: "/audit/storecheck",
-    icon: MapPin,
-    title: "Storecheck",
-    desc: "Magazinni to'liq tekshirish protokoli",
-    color: "from-violet-500 to-purple-600",
-    stats: { primary: "—", secondary: "Bugun" },
-  },
-  {
-    href: "/audit/photo",
-    icon: Camera,
-    title: "Foto reyting",
-    desc: "Foto reportlar baholash",
-    color: "from-pink-500 to-rose-600",
-    stats: { primary: "0%", secondary: "Bugun" },
-  },
+  { href: "/audit/dashboard", icon: BarChart3, title: "Kunlik dashboard", desc: "Mercendaiizer holati real-time", accent: "#10B981", primary: "1042 reja", secondary: "0 bajarildi" },
+  { href: "/audit/audits", icon: ClipboardCheck, title: "Tekshirishlar", desc: "Audit yozuvlari (14 ta)", accent: "#3B82F6", primary: "14 audit", secondary: "Bugun" },
+  { href: "/audit/facing", icon: Layers, title: "Polki ulushi", desc: "Shelf share % vs raqobatchilar", accent: "#D97706", primary: "—", secondary: "Filter kerak" },
+  { href: "/audit/sku", icon: Eye, title: "SKU mavjudligi", desc: "Out-of-stock detection", accent: "#8B5CF6", primary: "—", secondary: "Foto kutilmoqda" },
+  { href: "/audit/price", icon: DollarSign, title: "Narx tahlili", desc: "Raqobatchilar narxi", accent: "#C75D3C", primary: "—", secondary: "Foto kerak" },
+  { href: "/audit/merchandising", icon: ClipboardCheck, title: "Merchandising", desc: "Display compliance opros", accent: "#06B6D4", primary: "—", secondary: "Bugun" },
+  { href: "/audit/storecheck", icon: MapPin, title: "Storecheck", desc: "Magazinni to'liq tekshirish", accent: "#7C3AED", primary: "—", secondary: "Bugun" },
+  { href: "/audit/photo", icon: Camera, title: "Foto reyting", desc: "Foto reportlar baholash", accent: "#EC4899", primary: "0%", secondary: "Bugun" },
 ]
 
 const AGENT_KPIS = [
@@ -89,110 +32,115 @@ export default function AuditPage() {
 
   return (
     <AdminLayout>
-      <div className="max-w-[1600px] mx-auto space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Audit / Merchandising</h1>
-          <p className="text-base text-slate-500 mt-1">Магазин va polka tekshiruvi · Field marketing analytics</p>
-        </div>
-
-        {/* 6 KPI summary */}
-        <div className="grid grid-cols-2 lg:grid-cols-6 gap-3">
-          <KpiSquare label="Visit" value="0%" subtext={`0/${totalVisits}`} color="emerald" />
-          <KpiSquare label="Не посещ." value="96%" subtext={`${totalNoShow}/${totalVisits}`} color="rose" />
-          <KpiSquare label="SKU" value="0%" color="amber" />
-          <KpiSquare label="Facing" value="0%" color="blue" />
-          <KpiSquare label="Mercendaizing" value="0%" color="purple" />
-          <KpiSquare label="Foto" value="0%" color="pink" />
-        </div>
-
-        {/* 8 module cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          {AUDIT_MODULES.map(m => {
-            const Icon = m.icon
-            return (
-              <Link key={m.href} href={m.href}>
-                <Card className={`relative overflow-hidden bg-gradient-to-br ${m.color} text-white border-0 p-5 hover:shadow-xl transition-all hover:-translate-y-0.5 cursor-pointer h-full`}>
-                  <Icon className="w-8 h-8 opacity-80 mb-3" />
-                  <div className="text-base font-bold mb-1">{m.title}</div>
-                  <div className="text-xs opacity-90 mb-3">{m.desc}</div>
-                  <div className="border-t border-white/20 pt-2 mt-2">
-                    <div className="text-xl font-bold tabular-nums">{m.stats.primary}</div>
-                    <div className="text-xs opacity-75">{m.stats.secondary}</div>
-                  </div>
-                </Card>
-              </Link>
-            )
-          })}
-        </div>
-
-        {/* Merchandiser KPI table */}
-        <Card>
-          <div className="p-4 border-b border-slate-200 bg-amber-50">
-            <h3 className="text-lg font-semibold flex items-center gap-2">
-              <EyeOff className="w-5 h-5 text-amber-600" /> Mercendaiizerlar — Bugungi holat
-            </h3>
-            <p className="text-sm text-slate-600 mt-0.5">Plan vs Fact — har agent kunlik visit</p>
+      <div className="-mx-4 -my-4 px-4 py-6 min-h-full" style={{ background: "linear-gradient(180deg, #F5F1EB 0%, #FAF7F2 100%)" }}>
+        <div className="max-w-[1700px] mx-auto space-y-6">
+          {/* Hero */}
+          <div className="border-b border-[#E8E0D3] pb-6">
+            <div className="text-xs uppercase tracking-[0.2em] text-[#9C8A6E] font-medium mb-2">SAVDOAI</div>
+            <h1 className="text-5xl font-light tracking-tight text-[#1A1A1A]" style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>
+              Audit & <span className="italic text-[#C75D3C]">merchandising</span>
+            </h1>
+            <p className="text-base text-[#6B5B4D] mt-3 max-w-xl">
+              Magazin va polka tekshiruvi · Field marketing analytics
+            </p>
           </div>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-slate-50 border-b border-slate-200">
-                <tr>
-                  <th className="text-left px-4 py-3 text-sm font-semibold text-slate-700">Agent</th>
-                  <th className="text-right px-4 py-3 text-sm font-semibold text-slate-700">Reja</th>
-                  <th className="text-right px-4 py-3 text-sm font-semibold text-slate-700">Bajardi</th>
-                  <th className="text-right px-4 py-3 text-sm font-semibold text-slate-700">Otkaz</th>
-                  <th className="text-right px-4 py-3 text-sm font-semibold text-slate-700">Bormagan</th>
-                  <th className="text-right px-4 py-3 text-sm font-semibold text-slate-700">SKU</th>
-                  <th className="text-right px-4 py-3 text-sm font-semibold text-slate-700">Facing</th>
-                  <th className="text-right px-4 py-3 text-sm font-semibold text-slate-700">Foto</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {AGENT_KPIS.map(a => (
-                  <tr key={a.name} className="hover:bg-slate-50">
-                    <td className="px-4 py-3 text-base font-medium text-slate-900">{a.name}</td>
-                    <td className="px-4 py-3 text-right tabular-nums">{a.visits}</td>
-                    <td className="px-4 py-3 text-right tabular-nums text-rose-600 font-semibold">{a.done}</td>
-                    <td className="px-4 py-3 text-right tabular-nums text-amber-600">{a.refusal}</td>
-                    <td className="px-4 py-3 text-right tabular-nums text-slate-600">{a.no_show}</td>
-                    <td className="px-4 py-3 text-right tabular-nums">{a.sku}</td>
-                    <td className="px-4 py-3 text-right tabular-nums">{a.facing}</td>
-                    <td className="px-4 py-3 text-right tabular-nums">{a.photo}</td>
+
+          {/* 6 KPI summary */}
+          <div className="grid grid-cols-2 lg:grid-cols-6 gap-3">
+            <KpiSquare label="Visit" value="0%" subtext={`0/${totalVisits}`} accent="#10B981" />
+            <KpiSquare label="Не посещ." value="96%" subtext={`${totalNoShow}/${totalVisits}`} accent="#C75D3C" />
+            <KpiSquare label="SKU" value="0%" accent="#D97706" />
+            <KpiSquare label="Facing" value="0%" accent="#3B82F6" />
+            <KpiSquare label="Mercend." value="0%" accent="#8B5CF6" />
+            <KpiSquare label="Foto" value="0%" accent="#EC4899" />
+          </div>
+
+          {/* 8 module cards */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            {AUDIT_MODULES.map(m => {
+              const Icon = m.icon
+              return (
+                <Link key={m.href} href={m.href}>
+                  <Card className="relative overflow-hidden bg-white border border-[#E8E0D3] shadow-sm rounded-2xl p-5 hover:shadow-md transition-all cursor-pointer h-full group">
+                    <Icon className="w-9 h-9 mb-3 group-hover:scale-110 transition-transform" style={{ color: m.accent }} />
+                    <h3 className="text-lg font-medium mb-1 text-[#1A1A1A]" style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>{m.title}</h3>
+                    <p className="text-xs text-[#6B5B4D] mb-3 line-clamp-2">{m.desc}</p>
+                    <div className="border-t border-[#F0EAE0] pt-2 mt-auto">
+                      <div className="text-xl font-medium tabular-nums text-[#1A1A1A]" style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>{m.primary}</div>
+                      <div className="text-xs text-[#9C8A6E]">{m.secondary}</div>
+                    </div>
+                    <div className="absolute bottom-0 left-0 right-0 h-1" style={{ background: m.accent }} />
+                  </Card>
+                </Link>
+              )
+            })}
+          </div>
+
+          {/* Merchandiser KPI table */}
+          <Card className="bg-white border border-[#E8E0D3] shadow-sm rounded-2xl overflow-hidden">
+            <div className="p-5 border-b border-[#E8E0D3] bg-[#FAF7F2]">
+              <div className="flex items-center gap-2">
+                <EyeOff className="w-5 h-5 text-[#C75D3C]" />
+                <h3 className="text-xl font-light text-[#1A1A1A]" style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>
+                  Merchandaiizerlar — bugungi holat
+                </h3>
+              </div>
+              <p className="text-sm text-[#6B5B4D] mt-1">Plan vs Fact — har agent kunlik visit</p>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-[#FAF7F2] border-b border-[#E8E0D3]">
+                  <tr>
+                    <th className="text-left px-4 py-3 text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Agent</th>
+                    <th className="text-right px-4 py-3 text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Reja</th>
+                    <th className="text-right px-4 py-3 text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Bajardi</th>
+                    <th className="text-right px-4 py-3 text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Otkaz</th>
+                    <th className="text-right px-4 py-3 text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Bormagan</th>
+                    <th className="text-right px-4 py-3 text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">SKU</th>
+                    <th className="text-right px-4 py-3 text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Facing</th>
+                    <th className="text-right px-4 py-3 text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Foto</th>
                   </tr>
-                ))}
-                <tr className="bg-slate-100 font-bold">
-                  <td className="px-4 py-3">Jami</td>
-                  <td className="px-4 py-3 text-right tabular-nums">{totalVisits}</td>
-                  <td className="px-4 py-3 text-right tabular-nums">{totalDone}</td>
-                  <td className="px-4 py-3 text-right tabular-nums">{totalRefusal}</td>
-                  <td className="px-4 py-3 text-right tabular-nums">{totalNoShow}</td>
-                  <td className="px-4 py-3 text-right tabular-nums">0</td>
-                  <td className="px-4 py-3 text-right tabular-nums">0</td>
-                  <td className="px-4 py-3 text-right tabular-nums">0</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </Card>
+                </thead>
+                <tbody>
+                  {AGENT_KPIS.map(a => (
+                    <tr key={a.name} className="border-b border-[#F0EAE0] hover:bg-[#FAF7F2]">
+                      <td className="px-4 py-3 font-medium text-[#1A1A1A]">{a.name}</td>
+                      <td className="px-4 py-3 text-right tabular-nums text-[#6B5B4D]">{a.visits}</td>
+                      <td className="px-4 py-3 text-right tabular-nums text-[#C75D3C] font-medium">{a.done}</td>
+                      <td className="px-4 py-3 text-right tabular-nums text-[#D97706]">{a.refusal}</td>
+                      <td className="px-4 py-3 text-right tabular-nums text-[#9C8A6E]">{a.no_show}</td>
+                      <td className="px-4 py-3 text-right tabular-nums text-[#1A1A1A]">{a.sku}</td>
+                      <td className="px-4 py-3 text-right tabular-nums text-[#1A1A1A]">{a.facing}</td>
+                      <td className="px-4 py-3 text-right tabular-nums text-[#1A1A1A]">{a.photo}</td>
+                    </tr>
+                  ))}
+                  <tr className="bg-[#FAF7F2] font-medium">
+                    <td className="px-4 py-3 text-xs uppercase tracking-wider text-[#9C8A6E]">Jami</td>
+                    <td className="px-4 py-3 text-right tabular-nums text-[#1A1A1A]">{totalVisits}</td>
+                    <td className="px-4 py-3 text-right tabular-nums text-[#C75D3C]">{totalDone}</td>
+                    <td className="px-4 py-3 text-right tabular-nums text-[#D97706]">{totalRefusal}</td>
+                    <td className="px-4 py-3 text-right tabular-nums text-[#1A1A1A]">{totalNoShow}</td>
+                    <td className="px-4 py-3 text-right tabular-nums text-[#1A1A1A]">0</td>
+                    <td className="px-4 py-3 text-right tabular-nums text-[#1A1A1A]">0</td>
+                    <td className="px-4 py-3 text-right tabular-nums text-[#1A1A1A]">0</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </Card>
+        </div>
       </div>
     </AdminLayout>
   )
 }
 
-function KpiSquare({ label, value, subtext, color }: { label: string; value: string; subtext?: string; color: 'emerald'|'rose'|'amber'|'blue'|'purple'|'pink' }) {
-  const colors = {
-    emerald: "from-emerald-500 to-teal-600",
-    rose: "from-rose-500 to-pink-600",
-    amber: "from-amber-500 to-orange-600",
-    blue: "from-blue-500 to-indigo-600",
-    purple: "from-purple-500 to-violet-600",
-    pink: "from-pink-500 to-rose-600",
-  }
+function KpiSquare({ label, value, subtext, accent }: { label: string; value: string; subtext?: string; accent: string }) {
   return (
-    <Card className={`bg-gradient-to-br ${colors[color]} text-white border-0 p-4 text-center`}>
-      <div className="text-xs opacity-90 mb-1">{label}</div>
-      <div className="text-3xl font-bold tabular-nums">{value}</div>
-      {subtext && <div className="text-xs opacity-75 mt-1">{subtext}</div>}
+    <Card className="bg-white border border-[#E8E0D3] shadow-sm rounded-2xl p-4 text-center relative overflow-hidden">
+      <div className="text-xs uppercase tracking-[0.15em] font-medium" style={{ color: accent }}>{label}</div>
+      <div className="text-3xl font-medium tabular-nums mt-2 text-[#1A1A1A]" style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>{value}</div>
+      {subtext && <div className="text-xs text-[#9C8A6E] mt-1">{subtext}</div>}
+      <div className="absolute bottom-0 left-0 right-0 h-1" style={{ background: accent }} />
     </Card>
   )
 }
