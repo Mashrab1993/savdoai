@@ -3,14 +3,13 @@ import { useState } from "react"
 import { AdminLayout } from "@/components/layout/admin-layout"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { ArrowLeft, Award, Users, Truck, Save, Plus } from "lucide-react"
 import Link from "next/link"
 
 const ROLES = [
-  { key: 'agent', label: 'Agentlar', icon: Users, count: 6, color: 'emerald' },
-  { key: 'supervisor', label: 'Supervайzerlar', icon: Award, count: 2, color: 'blue' },
-  { key: 'expeditor', label: 'Ekspeditorlar', icon: Truck, count: 5, color: 'amber' },
+  { key: 'agent', label: 'Agentlar', icon: Users, count: 6 },
+  { key: 'supervisor', label: 'Supervайzerlar', icon: Award, count: 2 },
+  { key: 'expeditor', label: 'Ekspeditorlar', icon: Truck, count: 5 },
 ]
 
 const AGENT_KPIS = [
@@ -31,123 +30,129 @@ export default function KPIPage() {
 
   return (
     <AdminLayout>
-      <div className="max-w-[1700px] mx-auto space-y-5">
-        <Link href="/komanda" className="flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900">
-          <ArrowLeft className="w-4 h-4" /> Komanda
-        </Link>
-
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">🎯 KPI boshqaruv</h1>
-            <p className="text-base text-slate-500 mt-1">Plan vs Fact · Har 3 role uchun alohida</p>
+      <div className="-mx-4 -my-4 px-4 py-6 min-h-full" style={{ background: "linear-gradient(180deg, #F5F1EB 0%, #FAF7F2 100%)" }}>
+        <div className="max-w-[1700px] mx-auto space-y-6">
+          {/* Hero */}
+          <div className="flex items-end justify-between border-b border-[#E8E0D3] pb-6">
+            <div>
+              <Link href="/komanda" className="text-xs uppercase tracking-[0.2em] text-[#9C8A6E] font-medium hover:text-[#C75D3C] flex items-center gap-2 mb-3">
+                <ArrowLeft className="w-3.5 h-3.5" /> KOMANDA
+              </Link>
+              <h1 className="text-5xl font-light tracking-tight text-[#1A1A1A]" style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>
+                KPI <span className="italic text-[#C75D3C]">boshqaruv</span>
+              </h1>
+              <p className="text-base text-[#6B5B4D] mt-3 max-w-xl">
+                Plan vs Fact · Har 3 role uchun alohida
+              </p>
+            </div>
+            <Button size="lg" style={{ background: "#C75D3C" }}>
+              <Plus className="w-5 h-5" /> Yangi plan
+            </Button>
           </div>
-          <Button size="lg">
-            <Plus className="w-5 h-5" /> Yangi plan
-          </Button>
+
+          {/* Role tabs */}
+          <Card className="bg-white border border-[#E8E0D3] shadow-sm rounded-2xl overflow-x-auto">
+            <div className="flex border-b border-[#E8E0D3]">
+              {ROLES.map(r => {
+                const Icon = r.icon
+                const active = activeRole === r.key
+                return (
+                  <button
+                    key={r.key}
+                    onClick={() => setActiveRole(r.key as any)}
+                    className={`flex items-center gap-2 px-6 py-4 border-b-2 transition-colors font-medium ${
+                      active ? 'border-[#C75D3C] text-[#C75D3C] bg-[#FCE9DD]/30' : 'border-transparent text-[#6B5B4D] hover:bg-[#FAF7F2]'
+                    }`}
+                  >
+                    <Icon className="w-5 h-5" />
+                    {r.label}
+                    <span className={`ml-1.5 px-2 py-0.5 rounded-full text-xs font-medium ${
+                      active ? 'bg-[#C75D3C] text-white' : 'bg-[#E8E0D3] text-[#6B5B4D]'
+                    }`}>{r.count}</span>
+                  </button>
+                )
+              })}
+            </div>
+          </Card>
+
+          {/* KPI summary cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <SummaryCard label="Visit reja" value={totalVisit.toLocaleString()} sub="Bajarildi: 0 / 0%" accent="#10B981" />
+            <SummaryCard label="Sotuv reja" value={`${(totalSum / 1_000_000).toFixed(0)}M`} sub="Bajarildi: 0 so'm / 0%" accent="#3B82F6" />
+            <SummaryCard label="SKU reja" value={totalSKU.toLocaleString()} sub="Bajarildi: 0 / 0%" accent="#C75D3C" />
+          </div>
+
+          {/* KPI per agent */}
+          <Card className="bg-white border border-[#E8E0D3] shadow-sm rounded-2xl overflow-hidden">
+            <div className="p-5 border-b border-[#E8E0D3] bg-[#FAF7F2] flex items-center justify-between">
+              <h3 className="text-xl font-light text-[#1A1A1A]" style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>{ROLES.find(r => r.key === activeRole)?.label} KPI</h3>
+              <Button variant="outline" className="border-[#E8E0D3] text-[#6B5B4D]"><Save className="w-4 h-4" /> Saqlash</Button>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-[#FAF7F2] border-b border-[#E8E0D3]">
+                  <tr>
+                    <th className="text-left px-4 py-3 text-xs uppercase tracking-wider font-medium text-[#9C8A6E]" rowSpan={2}>Agent</th>
+                    <th className="text-center px-3 py-3 text-xs uppercase tracking-wider font-medium text-[#9C8A6E] border-x border-[#E8E0D3]" colSpan={3}>Visit</th>
+                    <th className="text-center px-3 py-3 text-xs uppercase tracking-wider font-medium text-[#9C8A6E] border-r border-[#E8E0D3]" colSpan={3}>Sotuv</th>
+                    <th className="text-center px-3 py-3 text-xs uppercase tracking-wider font-medium text-[#9C8A6E]" colSpan={3}>SKU</th>
+                  </tr>
+                  <tr>
+                    <th className="text-right px-3 py-2 text-xs text-[#9C8A6E] border-l border-[#E8E0D3]">Reja</th>
+                    <th className="text-right px-3 py-2 text-xs text-[#9C8A6E]">Fakt</th>
+                    <th className="text-right px-3 py-2 text-xs text-[#9C8A6E] border-r border-[#E8E0D3]">%</th>
+                    <th className="text-right px-3 py-2 text-xs text-[#9C8A6E]">Reja</th>
+                    <th className="text-right px-3 py-2 text-xs text-[#9C8A6E]">Fakt</th>
+                    <th className="text-right px-3 py-2 text-xs text-[#9C8A6E] border-r border-[#E8E0D3]">%</th>
+                    <th className="text-right px-3 py-2 text-xs text-[#9C8A6E]">Reja</th>
+                    <th className="text-right px-3 py-2 text-xs text-[#9C8A6E]">Fakt</th>
+                    <th className="text-right px-3 py-2 text-xs text-[#9C8A6E]">%</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {AGENT_KPIS.map(a => {
+                    const visitPct = a.visit_plan > 0 ? (a.visit_fact / a.visit_plan) * 100 : 0
+                    const sumPct = a.sum_plan > 0 ? (a.sum_fact / a.sum_plan) * 100 : 0
+                    const skuPct = a.sku_plan > 0 ? (a.sku_fact / a.sku_plan) * 100 : 0
+                    const pctClass = (p: number) => p < 50 ? 'text-[#C75D3C]' : p < 80 ? 'text-[#D97706]' : 'text-emerald-700'
+                    return (
+                      <tr key={a.name} className="border-b border-[#F0EAE0] hover:bg-[#FAF7F2]">
+                        <td className="px-4 py-3 font-medium text-[#1A1A1A]">{a.name}</td>
+                        <td className="px-3 py-3 text-right tabular-nums border-l border-[#E8E0D3]">
+                          <input type="number" defaultValue={a.visit_plan} className="w-20 text-right h-8 px-2 border border-[#E8E0D3] bg-[#FAF7F2] rounded text-[#1A1A1A]" />
+                        </td>
+                        <td className="px-3 py-3 text-right tabular-nums text-[#1A1A1A]">{a.visit_fact}</td>
+                        <td className={`px-3 py-3 text-right tabular-nums font-medium border-r border-[#E8E0D3] ${pctClass(visitPct)}`}>{visitPct.toFixed(0)}%</td>
+                        <td className="px-3 py-3 text-right tabular-nums">
+                          <input type="number" defaultValue={a.sum_plan} className="w-28 text-right h-8 px-2 border border-[#E8E0D3] bg-[#FAF7F2] rounded text-[#1A1A1A]" />
+                        </td>
+                        <td className="px-3 py-3 text-right tabular-nums text-[#1A1A1A]">{a.sum_fact.toLocaleString()}</td>
+                        <td className={`px-3 py-3 text-right tabular-nums font-medium border-r border-[#E8E0D3] ${pctClass(sumPct)}`}>{sumPct.toFixed(0)}%</td>
+                        <td className="px-3 py-3 text-right tabular-nums">
+                          <input type="number" defaultValue={a.sku_plan} className="w-20 text-right h-8 px-2 border border-[#E8E0D3] bg-[#FAF7F2] rounded text-[#1A1A1A]" />
+                        </td>
+                        <td className="px-3 py-3 text-right tabular-nums text-[#1A1A1A]">{a.sku_fact}</td>
+                        <td className={`px-3 py-3 text-right tabular-nums font-medium ${pctClass(skuPct)}`}>{skuPct.toFixed(0)}%</td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </Card>
         </div>
-
-        {/* Role tabs */}
-        <Card className="overflow-x-auto">
-          <div className="flex border-b border-slate-200">
-            {ROLES.map(r => {
-              const Icon = r.icon
-              const active = activeRole === r.key
-              return (
-                <button
-                  key={r.key}
-                  onClick={() => setActiveRole(r.key as any)}
-                  className={`flex items-center gap-2 px-6 py-4 border-b-2 transition-colors ${
-                    active ? 'border-emerald-600 text-emerald-700 font-semibold bg-emerald-50/50' : 'border-transparent text-slate-600 hover:text-slate-900'
-                  }`}
-                >
-                  <Icon className="w-5 h-5" />
-                  {r.label}
-                  <span className={`ml-1.5 px-2 py-0.5 rounded-full text-xs font-semibold ${
-                    active ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600'
-                  }`}>{r.count}</span>
-                </button>
-              )
-            })}
-          </div>
-        </Card>
-
-        {/* KPI summary cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card className="bg-gradient-to-br from-emerald-500 to-teal-600 text-white border-0 p-5">
-            <div className="text-sm opacity-90 mb-2">Visit reja</div>
-            <div className="text-4xl font-bold tabular-nums">{totalVisit.toLocaleString()}</div>
-            <div className="text-sm opacity-80 mt-2">Bajarildi: 0 / 0%</div>
-          </Card>
-          <Card className="bg-gradient-to-br from-blue-500 to-indigo-600 text-white border-0 p-5">
-            <div className="text-sm opacity-90 mb-2">Sotuv reja</div>
-            <div className="text-4xl font-bold tabular-nums">{(totalSum / 1_000_000).toFixed(0)}M</div>
-            <div className="text-sm opacity-80 mt-2">Bajarildi: 0 so'm / 0%</div>
-          </Card>
-          <Card className="bg-gradient-to-br from-amber-500 to-orange-600 text-white border-0 p-5">
-            <div className="text-sm opacity-90 mb-2">SKU reja</div>
-            <div className="text-4xl font-bold tabular-nums">{totalSKU.toLocaleString()}</div>
-            <div className="text-sm opacity-80 mt-2">Bajarildi: 0 / 0%</div>
-          </Card>
-        </div>
-
-        {/* KPI per agent */}
-        <Card>
-          <div className="p-4 border-b border-slate-200 flex items-center justify-between">
-            <h3 className="text-lg font-semibold">{ROLES.find(r => r.key === activeRole)?.label} KPI</h3>
-            <Button variant="outline"><Save className="w-4 h-4" /> Saqlash</Button>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-slate-50 border-b border-slate-200">
-                <tr>
-                  <th className="text-left px-4 py-3 text-sm font-semibold" rowSpan={2}>Agent</th>
-                  <th className="text-center px-3 py-3 text-sm font-semibold border-x border-slate-200" colSpan={3}>Visit</th>
-                  <th className="text-center px-3 py-3 text-sm font-semibold border-r border-slate-200" colSpan={3}>Sotuv</th>
-                  <th className="text-center px-3 py-3 text-sm font-semibold" colSpan={3}>SKU</th>
-                </tr>
-                <tr>
-                  <th className="text-right px-3 py-2 text-xs text-slate-500 border-l border-slate-200">Reja</th>
-                  <th className="text-right px-3 py-2 text-xs text-slate-500">Fakt</th>
-                  <th className="text-right px-3 py-2 text-xs text-slate-500 border-r border-slate-200">%</th>
-                  <th className="text-right px-3 py-2 text-xs text-slate-500">Reja</th>
-                  <th className="text-right px-3 py-2 text-xs text-slate-500">Fakt</th>
-                  <th className="text-right px-3 py-2 text-xs text-slate-500 border-r border-slate-200">%</th>
-                  <th className="text-right px-3 py-2 text-xs text-slate-500">Reja</th>
-                  <th className="text-right px-3 py-2 text-xs text-slate-500">Fakt</th>
-                  <th className="text-right px-3 py-2 text-xs text-slate-500">%</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {AGENT_KPIS.map(a => {
-                  const visitPct = a.visit_plan > 0 ? (a.visit_fact / a.visit_plan) * 100 : 0
-                  const sumPct = a.sum_plan > 0 ? (a.sum_fact / a.sum_plan) * 100 : 0
-                  const skuPct = a.sku_plan > 0 ? (a.sku_fact / a.sku_plan) * 100 : 0
-                  return (
-                    <tr key={a.name} className="hover:bg-slate-50">
-                      <td className="px-4 py-3 font-medium">{a.name}</td>
-                      <td className="px-3 py-3 text-right tabular-nums border-l border-slate-200">
-                        <input type="number" defaultValue={a.visit_plan} className="w-20 text-right h-8 px-2 border rounded" />
-                      </td>
-                      <td className="px-3 py-3 text-right tabular-nums">{a.visit_fact}</td>
-                      <td className={`px-3 py-3 text-right tabular-nums font-semibold border-r border-slate-200 ${visitPct < 50 ? 'text-rose-600' : visitPct < 80 ? 'text-amber-600' : 'text-emerald-600'}`}>{visitPct.toFixed(0)}%</td>
-                      <td className="px-3 py-3 text-right tabular-nums">
-                        <input type="number" defaultValue={a.sum_plan} className="w-28 text-right h-8 px-2 border rounded" />
-                      </td>
-                      <td className="px-3 py-3 text-right tabular-nums">{a.sum_fact.toLocaleString()}</td>
-                      <td className={`px-3 py-3 text-right tabular-nums font-semibold border-r border-slate-200 ${sumPct < 50 ? 'text-rose-600' : sumPct < 80 ? 'text-amber-600' : 'text-emerald-600'}`}>{sumPct.toFixed(0)}%</td>
-                      <td className="px-3 py-3 text-right tabular-nums">
-                        <input type="number" defaultValue={a.sku_plan} className="w-20 text-right h-8 px-2 border rounded" />
-                      </td>
-                      <td className="px-3 py-3 text-right tabular-nums">{a.sku_fact}</td>
-                      <td className={`px-3 py-3 text-right tabular-nums font-semibold ${skuPct < 50 ? 'text-rose-600' : 'text-emerald-600'}`}>{skuPct.toFixed(0)}%</td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
-        </Card>
       </div>
     </AdminLayout>
+  )
+}
+
+function SummaryCard({ label, value, sub, accent }: { label: string; value: string; sub: string; accent: string }) {
+  return (
+    <Card className="bg-white border border-[#E8E0D3] shadow-sm rounded-2xl p-5 relative overflow-hidden">
+      <div className="text-xs uppercase tracking-[0.15em] font-medium" style={{ color: accent }}>{label}</div>
+      <div className="text-4xl font-medium tabular-nums mt-2 text-[#1A1A1A]" style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>{value}</div>
+      <div className="text-sm text-[#9C8A6E] mt-2">{sub}</div>
+      <div className="absolute bottom-0 left-0 right-0 h-1" style={{ background: accent }} />
+    </Card>
   )
 }

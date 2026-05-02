@@ -1,8 +1,7 @@
 "use client"
 import { AdminLayout } from "@/components/layout/admin-layout"
 import { Card } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { ArrowLeft, Trophy, Star, Zap, Target, Award, Medal, TrendingUp } from "lucide-react"
+import { ArrowLeft, Trophy, Zap, Award } from "lucide-react"
 import Link from "next/link"
 
 type Player = {
@@ -39,144 +38,150 @@ function fmt(n: number) { return n.toLocaleString("ru-RU") }
 export default function LeaderboardPage() {
   const sorted = [...PLAYERS].sort((a, b) => b.xp - a.xp)
   const top3 = sorted.slice(0, 3)
-  const rest = sorted.slice(3)
+  const RANK_ACCENT = ["#D97706", "#9C8A6E", "#C75D3C"]
 
   return (
     <AdminLayout>
-      <div className="max-w-[1700px] mx-auto space-y-4">
-        <div className="flex items-center gap-3">
-          <Link href="/komanda" className="p-2 hover:bg-slate-100 rounded-lg"><ArrowLeft className="w-5 h-5" /></Link>
-          <div className="flex-1">
-            <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
-              <Trophy className="w-7 h-7 text-amber-500" />
-              Liderlik dashboardi
-            </h1>
-            <p className="text-sm text-slate-500">{PLAYERS.length} ishtirokchi · gamification rejimi · oy yopilishigacha 28 kun</p>
+      <div className="-mx-4 -my-4 px-4 py-6 min-h-full" style={{ background: "linear-gradient(180deg, #F5F1EB 0%, #FAF7F2 100%)" }}>
+        <div className="max-w-[1700px] mx-auto space-y-6">
+          {/* Hero */}
+          <div className="flex items-end gap-3 border-b border-[#E8E0D3] pb-6">
+            <Link href="/komanda" className="p-2 hover:bg-[#F0EAE0] rounded-lg"><ArrowLeft className="w-5 h-5 text-[#6B5B4D]" /></Link>
+            <div className="flex-1">
+              <div className="text-xs uppercase tracking-[0.2em] text-[#9C8A6E] font-medium mb-2">SAVDOAI · KOMANDA</div>
+              <h1 className="text-4xl font-light tracking-tight text-[#1A1A1A] flex items-center gap-3" style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>
+                <Trophy className="w-8 h-8 text-[#D97706]" />
+                Liderlik <span className="italic text-[#C75D3C]">dashboardi</span>
+              </h1>
+              <p className="text-sm text-[#6B5B4D] mt-2">{PLAYERS.length} ishtirokchi · gamification rejimi · oy yopilishigacha 28 kun</p>
+            </div>
           </div>
-        </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          {top3.map((p, i) => {
-            const xpPct = Math.round((p.xp / p.xpToNext) * 100)
-            return (
-              <Card key={p.id} className={`p-5 border-2 ${
-                i === 0 ? "bg-gradient-to-br from-amber-50 to-amber-100 border-amber-400" :
-                i === 1 ? "bg-gradient-to-br from-slate-50 to-slate-100 border-slate-400" :
-                "bg-gradient-to-br from-orange-50 to-orange-100 border-orange-400"
-              }`}>
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="text-5xl">{["🥇", "🥈", "🥉"][i]}</div>
-                  <div className="flex-1">
-                    <div className="text-xs font-bold opacity-70">RANK {i + 1}</div>
-                    <div className="text-base font-bold">{p.name}</div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {top3.map((p, i) => {
+              const xpPct = Math.round((p.xp / p.xpToNext) * 100)
+              const accent = RANK_ACCENT[i]
+              return (
+                <Card key={p.id} className="p-6 bg-white border-2 shadow-sm rounded-2xl relative overflow-hidden" style={{ borderColor: `${accent}55` }}>
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="text-5xl">{["🥇", "🥈", "🥉"][i]}</div>
+                    <div className="flex-1">
+                      <div className="text-xs uppercase tracking-[0.2em] font-medium" style={{ color: accent }}>RANK {i + 1}</div>
+                      <div className="text-xl font-light text-[#1A1A1A]" style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>{p.name}</div>
+                    </div>
                   </div>
-                </div>
 
-                <div className="flex items-center gap-2 mb-3">
-                  <div className="px-2 py-1 bg-violet-500 text-white rounded text-xs font-bold">LVL {p.level}</div>
-                  <div className="flex items-center gap-1">
-                    <Zap className="w-3 h-3 text-amber-500" />
-                    <span className="text-sm font-mono font-bold">{fmt(p.xp)} XP</span>
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="px-2.5 py-1 rounded text-xs font-medium text-white" style={{ background: accent }}>LVL {p.level}</div>
+                    <div className="flex items-center gap-1">
+                      <Zap className="w-3.5 h-3.5" style={{ color: accent }} />
+                      <span className="text-sm font-mono font-medium text-[#1A1A1A]">{fmt(p.xp)} XP</span>
+                    </div>
                   </div>
-                </div>
 
-                <div className="mb-3">
-                  <div className="flex items-center justify-between text-xs mb-1">
-                    <span>Keyingi level</span>
-                    <span className="font-mono">{p.xp} / {p.xpToNext}</span>
+                  <div className="mb-3">
+                    <div className="flex items-center justify-between text-xs mb-1 text-[#6B5B4D]">
+                      <span>Keyingi level</span>
+                      <span className="font-mono">{p.xp} / {p.xpToNext}</span>
+                    </div>
+                    <div className="h-2 bg-[#F0EAE0] rounded-full overflow-hidden">
+                      <div className="h-full rounded-full" style={{ width: `${xpPct}%`, background: accent }} />
+                    </div>
                   </div>
-                  <div className="h-2 bg-white/60 rounded-full overflow-hidden">
-                    <div className={`h-full ${i === 0 ? "bg-amber-500" : i === 1 ? "bg-slate-500" : "bg-orange-500"}`} style={{ width: `${xpPct}%` }} />
-                  </div>
-                </div>
 
-                <div className="flex items-center gap-1 mb-2">
-                  {p.badges.map((b, j) => (
-                    <span key={j} className="text-xl" title={`Badge`}>{b}</span>
-                  ))}
-                </div>
+                  <div className="flex items-center gap-1 mb-2">
+                    {p.badges.map((b, j) => (
+                      <span key={j} className="text-2xl" title={`Badge`}>{b}</span>
+                    ))}
+                  </div>
 
-                <div className="grid grid-cols-3 gap-2 mt-3 text-xs">
-                  <div>
-                    <div className="opacity-60">Tushum</div>
-                    <div className="font-bold font-mono">{fmt(p.revenue / 1_000_000)} M</div>
+                  <div className="grid grid-cols-3 gap-2 mt-4 pt-3 border-t border-[#F0EAE0] text-xs">
+                    <div>
+                      <div className="text-[#9C8A6E]">Tushum</div>
+                      <div className="font-medium font-mono text-[#1A1A1A]" style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>{fmt(p.revenue / 1_000_000)} M</div>
+                    </div>
+                    <div>
+                      <div className="text-[#9C8A6E]">Streak</div>
+                      <div className="font-medium font-mono text-[#1A1A1A] flex items-center gap-1">🔥 {p.streak} k</div>
+                    </div>
+                    <div>
+                      <div className="text-[#9C8A6E]">Reyting</div>
+                      <div className="font-medium font-mono text-[#1A1A1A] flex items-center gap-1">⭐ {p.rating}</div>
+                    </div>
                   </div>
-                  <div>
-                    <div className="opacity-60">Streak</div>
-                    <div className="font-bold font-mono flex items-center gap-1">🔥 {p.streak} kun</div>
-                  </div>
-                  <div>
-                    <div className="opacity-60">Reyting</div>
-                    <div className="font-bold font-mono flex items-center gap-1">⭐ {p.rating}</div>
-                  </div>
-                </div>
-              </Card>
-            )
-          })}
-        </div>
+                  <div className="absolute bottom-0 left-0 right-0 h-1" style={{ background: accent }} />
+                </Card>
+              )
+            })}
+          </div>
 
-        <Card className="p-5">
-          <h2 className="text-lg font-bold mb-4 flex items-center gap-2"><Trophy className="w-5 h-5 text-amber-500" /> To'liq jadval</h2>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b-2 border-slate-200 text-left bg-slate-50">
-                  <th className="py-3 px-2">#</th>
-                  <th className="py-3 px-2">O'yinchi</th>
-                  <th className="py-3 px-2 text-center">Level</th>
-                  <th className="py-3 px-2 text-right">XP</th>
-                  <th className="py-3 px-2 text-center">Streak 🔥</th>
-                  <th className="py-3 px-2 text-center">Badge</th>
-                  <th className="py-3 px-2 text-right">Tushum</th>
-                  <th className="py-3 px-2 text-center">⭐</th>
-                </tr>
-              </thead>
-              <tbody>
-                {sorted.map((p, i) => (
-                  <tr key={p.id} className="border-b border-slate-100 hover:bg-slate-50">
-                    <td className="py-3 px-2 font-bold">
-                      {i < 3 ? <span className="text-2xl">{["🥇", "🥈", "🥉"][i]}</span> : <span className="text-slate-400 text-lg">{i + 1}</span>}
-                    </td>
-                    <td className="py-3 px-2 font-semibold">{p.name}</td>
-                    <td className="py-3 px-2 text-center">
-                      <span className="px-2 py-1 bg-violet-500 text-white rounded text-xs font-bold">{p.level}</span>
-                    </td>
-                    <td className="py-3 px-2 text-right font-mono font-bold text-amber-700 flex items-center justify-end gap-1">
-                      <Zap className="w-3 h-3" /> {fmt(p.xp)}
-                    </td>
-                    <td className="py-3 px-2 text-center font-mono">{p.streak}</td>
-                    <td className="py-3 px-2 text-center">
-                      <div className="flex items-center justify-center gap-0.5 text-base">
-                        {p.badges.slice(0, 5).map((b, j) => <span key={j}>{b}</span>)}
-                        <span className="text-xs text-slate-500 ml-1">{p.badgesUnlocked}/{p.totalBadges}</span>
-                      </div>
-                    </td>
-                    <td className="py-3 px-2 text-right font-mono font-bold text-emerald-700">{fmt(p.revenue)}</td>
-                    <td className="py-3 px-2 text-center font-mono">{p.rating}</td>
+          <Card className="p-6 bg-white border border-[#E8E0D3] shadow-sm rounded-2xl">
+            <h2 className="text-xl font-light mb-5 flex items-center gap-2 text-[#1A1A1A]" style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>
+              <Trophy className="w-5 h-5 text-[#D97706]" /> To'liq jadval
+            </h2>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-[#E8E0D3] bg-[#FAF7F2]">
+                    <th className="py-3 px-2 text-left text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">#</th>
+                    <th className="py-3 px-2 text-left text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">O'yinchi</th>
+                    <th className="py-3 px-2 text-center text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Level</th>
+                    <th className="py-3 px-2 text-right text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">XP</th>
+                    <th className="py-3 px-2 text-center text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Streak</th>
+                    <th className="py-3 px-2 text-center text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Badge</th>
+                    <th className="py-3 px-2 text-right text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Tushum</th>
+                    <th className="py-3 px-2 text-center text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">⭐</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </Card>
+                </thead>
+                <tbody>
+                  {sorted.map((p, i) => (
+                    <tr key={p.id} className="border-b border-[#F0EAE0] hover:bg-[#FAF7F2]">
+                      <td className="py-3 px-2">
+                        {i < 3 ? <span className="text-2xl">{["🥇", "🥈", "🥉"][i]}</span> : <span className="text-[#9C8A6E] text-lg">{i + 1}</span>}
+                      </td>
+                      <td className="py-3 px-2 font-medium text-[#1A1A1A]">{p.name}</td>
+                      <td className="py-3 px-2 text-center">
+                        <span className="px-2 py-1 rounded text-xs font-medium text-white" style={{ background: i < 3 ? RANK_ACCENT[i] : "#9C8A6E" }}>{p.level}</span>
+                      </td>
+                      <td className="py-3 px-2 text-right font-mono font-medium text-[#D97706] flex items-center justify-end gap-1">
+                        <Zap className="w-3 h-3" /> {fmt(p.xp)}
+                      </td>
+                      <td className="py-3 px-2 text-center font-mono text-[#1A1A1A]">{p.streak}</td>
+                      <td className="py-3 px-2 text-center">
+                        <div className="flex items-center justify-center gap-0.5 text-base">
+                          {p.badges.slice(0, 5).map((b, j) => <span key={j}>{b}</span>)}
+                          <span className="text-xs text-[#9C8A6E] ml-1">{p.badgesUnlocked}/{p.totalBadges}</span>
+                        </div>
+                      </td>
+                      <td className="py-3 px-2 text-right font-mono font-medium text-emerald-700" style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>{fmt(p.revenue)}</td>
+                      <td className="py-3 px-2 text-center font-mono text-[#1A1A1A]">{p.rating}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </Card>
 
-        <Card className="p-5">
-          <h2 className="text-lg font-bold mb-4 flex items-center gap-2"><Award className="w-5 h-5 text-violet-600" /> Mavjud nishonlar</h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            {BADGES_LIST.map(b => (
-              <Card key={b.name} className="p-3 hover:shadow-md transition-shadow">
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="text-3xl">{b.emoji}</span>
-                  <div className="flex-1">
-                    <div className="font-bold text-sm">{b.name}</div>
+          <Card className="p-6 bg-white border border-[#E8E0D3] shadow-sm rounded-2xl">
+            <h2 className="text-xl font-light mb-5 flex items-center gap-2 text-[#1A1A1A]" style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>
+              <Award className="w-5 h-5 text-[#C75D3C]" /> Mavjud nishonlar
+            </h2>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {BADGES_LIST.map(b => (
+                <Card key={b.name} className="p-4 bg-[#FAF7F2] border border-[#E8E0D3] rounded-2xl hover:shadow-md transition-shadow">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-3xl">{b.emoji}</span>
+                    <div className="flex-1">
+                      <div className="font-medium text-sm text-[#1A1A1A]" style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>{b.name}</div>
+                    </div>
                   </div>
-                </div>
-                <div className="text-xs text-slate-600">{b.description}</div>
-                <div className="text-xs text-emerald-700 font-mono mt-1">📌 {b.condition}</div>
-              </Card>
-            ))}
-          </div>
-        </Card>
+                  <div className="text-xs text-[#6B5B4D]">{b.description}</div>
+                  <div className="text-xs text-[#C75D3C] font-mono mt-2">📌 {b.condition}</div>
+                </Card>
+              ))}
+            </div>
+          </Card>
+        </div>
       </div>
     </AdminLayout>
   )
