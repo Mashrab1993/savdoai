@@ -4,7 +4,7 @@ import { AdminLayout } from "@/components/layout/admin-layout"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { ArrowLeft, Save, Download, Eye, Calendar, GripVertical, Plus } from "lucide-react"
+import { ArrowLeft, Save, Download, Eye, Calendar, GripVertical } from "lucide-react"
 import Link from "next/link"
 
 const FIELDS = [
@@ -67,188 +67,187 @@ export default function KonstruktorPage() {
 
   return (
     <AdminLayout>
-      <div className="max-w-[1700px] mx-auto space-y-5">
-        <div className="flex items-center justify-between">
-          <Link href="/hisobot" className="flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900">
-            <ArrowLeft className="w-4 h-4" /> Hisobotlar
-          </Link>
-          <div className="flex items-center gap-2">
-            <Button variant="outline">
-              <Eye className="w-4 h-4" /> Oldindan ko'rish
-            </Button>
-            <Button variant="outline">
-              <Download className="w-4 h-4" /> Excel
-            </Button>
-            <Button>
-              <Save className="w-4 h-4" /> Saqlash
-            </Button>
-          </div>
-        </div>
-
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">🏗️ Konstruktor отчётов</h1>
-          <p className="text-base text-slate-500 mt-1">Drag-drop pivot table builder · 24 maydon</p>
-        </div>
-
-        {/* Settings */}
-        <Card className="p-5">
-          <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-500 mb-3">Sozlamalar</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="-mx-4 -my-4 px-4 py-6 min-h-full" style={{ background: "linear-gradient(180deg, #F5F1EB 0%, #FAF7F2 100%)" }}>
+        <div className="max-w-[1700px] mx-auto space-y-6">
+          {/* Hero */}
+          <div className="flex items-end justify-between border-b border-[#E8E0D3] pb-6">
             <div>
-              <label className="text-sm font-medium text-slate-700 mb-1 block flex items-center gap-1">
-                <Calendar className="w-4 h-4" /> Davr
-              </label>
-              <div className="flex items-center gap-2">
-                <Input type="date" defaultValue="2026-04-01" />
-                <span className="text-slate-400">—</span>
-                <Input type="date" defaultValue="2026-05-02" />
+              <Link href="/hisobot" className="text-xs uppercase tracking-[0.2em] text-[#9C8A6E] font-medium hover:text-[#C75D3C] flex items-center gap-2 mb-3">
+                <ArrowLeft className="w-3.5 h-3.5" /> HISOBOTLAR
+              </Link>
+              <h1 className="text-5xl font-light tracking-tight text-[#1A1A1A]" style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>
+                Konstruktor <span className="italic text-[#C75D3C]">отчётов</span>
+              </h1>
+              <p className="text-base text-[#6B5B4D] mt-3 max-w-xl">
+                Drag-drop pivot table builder · 24 maydon · 6 ko'rsatkich
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" className="border-[#E8E0D3] text-[#6B5B4D]"><Eye className="w-4 h-4" /> Oldindan</Button>
+              <Button variant="outline" className="border-[#E8E0D3] text-[#6B5B4D]"><Download className="w-4 h-4" /> Excel</Button>
+              <Button style={{ background: "#C75D3C" }}><Save className="w-4 h-4" /> Saqlash</Button>
+            </div>
+          </div>
+
+          {/* Settings */}
+          <Card className="p-6 bg-white border border-[#E8E0D3] shadow-sm rounded-2xl">
+            <h3 className="text-xs uppercase tracking-[0.2em] text-[#9C8A6E] font-medium mb-4">SOZLAMALAR</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="text-sm font-medium text-[#6B5B4D] mb-1 flex items-center gap-1">
+                  <Calendar className="w-4 h-4 text-[#9C8A6E]" /> Davr
+                </label>
+                <div className="flex items-center gap-2">
+                  <Input type="date" defaultValue="2026-04-01" className="border-[#E8E0D3] bg-[#FAF7F2]" />
+                  <span className="text-[#9C8A6E]">—</span>
+                  <Input type="date" defaultValue="2026-05-02" className="border-[#E8E0D3] bg-[#FAF7F2]" />
+                </div>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-[#6B5B4D] mb-1 block">Status</label>
+                <select className="w-full h-11 rounded-lg border border-[#E8E0D3] bg-[#FAF7F2] px-4 focus:border-[#C75D3C] focus:outline-none">
+                  <option>Yetkazildi, Otgruzka</option>
+                  <option>Faqat Yetkazildi</option>
+                  <option>Hammasi</option>
+                </select>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-[#6B5B4D] mb-1 block">Tip</label>
+                <select className="w-full h-11 rounded-lg border border-[#E8E0D3] bg-[#FAF7F2] px-4 focus:border-[#C75D3C] focus:outline-none">
+                  <option>Zakaz</option>
+                  <option>Otkaz</option>
+                  <option>Qaytarish</option>
+                </select>
               </div>
             </div>
-            <div>
-              <label className="text-sm font-medium text-slate-700 mb-1 block">Status</label>
-              <select className="w-full h-11 rounded-lg border-2 border-slate-300 px-4">
-                <option>Yetkazildi, Otgruzka</option>
-                <option>Faqat Yetkazildi</option>
-                <option>Hammasi</option>
-              </select>
-            </div>
-            <div>
-              <label className="text-sm font-medium text-slate-700 mb-1 block">Tip</label>
-              <select className="w-full h-11 rounded-lg border-2 border-slate-300 px-4">
-                <option>Zakaz</option>
-                <option>Otkaz</option>
-                <option>Qaytarish</option>
-              </select>
-            </div>
-          </div>
 
-          {/* Metrics */}
-          <div className="mt-5">
-            <label className="text-sm font-medium text-slate-700 mb-2 block">Ko'rsatkichlar (qiymat ustun)</label>
-            <div className="flex flex-wrap gap-3">
-              {metrics.map((m, i) => (
-                <label key={m.id} className="flex items-center gap-2 cursor-pointer px-3 py-2 border-2 border-slate-200 rounded-lg hover:border-emerald-300">
-                  <input
-                    type="checkbox"
-                    checked={m.checked}
-                    onChange={() => {
-                      const updated = [...metrics]
-                      updated[i].checked = !updated[i].checked
-                      setMetrics(updated)
-                    }}
-                    className="w-4 h-4"
-                  />
-                  <span className="text-sm font-medium">{m.label}</span>
-                </label>
+            <div className="mt-5">
+              <label className="text-sm font-medium text-[#6B5B4D] mb-2 block">Ko'rsatkichlar (qiymat ustun)</label>
+              <div className="flex flex-wrap gap-2">
+                {metrics.map((m, i) => (
+                  <label key={m.id} className={`flex items-center gap-2 cursor-pointer px-3 py-2 border rounded-lg transition-colors ${m.checked ? "border-[#C75D3C] bg-[#FCE9DD]/40" : "border-[#E8E0D3] bg-white hover:border-[#C75D3C]/50"}`}>
+                    <input
+                      type="checkbox"
+                      checked={m.checked}
+                      onChange={() => {
+                        const updated = [...metrics]
+                        updated[i].checked = !updated[i].checked
+                        setMetrics(updated)
+                      }}
+                      className="w-4 h-4 accent-[#C75D3C]"
+                    />
+                    <span className="text-sm font-medium text-[#1A1A1A]">{m.label}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          </Card>
+
+          {/* Available Fields */}
+          <Card className="p-6 bg-white border border-[#E8E0D3] shadow-sm rounded-2xl">
+            <h3 className="text-xs uppercase tracking-[0.2em] text-[#9C8A6E] font-medium mb-3">MAVJUD MAYDONLAR ({availableFields.length})</h3>
+            <div className="flex flex-wrap gap-2">
+              {availableFields.map(f => (
+                <button
+                  key={f.id}
+                  draggable
+                  onDragStart={() => setDraggedField(f.id)}
+                  onClick={() => handleDrop('rows', f.id)}
+                  className="flex items-center gap-2 px-3 py-2 bg-[#FCE9DD] hover:bg-[#F5C9B0] text-[#C75D3C] rounded-lg cursor-grab active:cursor-grabbing text-sm font-medium transition-colors border border-[#C75D3C]/20"
+                >
+                  <GripVertical className="w-3 h-3 opacity-50" />
+                  <span>{f.icon}</span>
+                  {f.label}
+                </button>
               ))}
+              {availableFields.length === 0 && (
+                <p className="text-sm text-[#9C8A6E]">Hammasi ishlatilgan!</p>
+              )}
             </div>
-          </div>
-        </Card>
+          </Card>
 
-        {/* Available Fields */}
-        <Card className="p-5">
-          <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-500 mb-3">Mavjud maydonlar (24)</h3>
-          <div className="flex flex-wrap gap-2">
-            {availableFields.map(f => (
-              <button
-                key={f.id}
-                draggable
-                onDragStart={() => setDraggedField(f.id)}
-                onClick={() => handleDrop('rows', f.id)}
-                className="flex items-center gap-2 px-3 py-2 bg-emerald-100 hover:bg-emerald-200 text-emerald-800 rounded-lg cursor-grab active:cursor-grabbing text-sm font-medium transition-colors"
-              >
-                <GripVertical className="w-3 h-3 opacity-50" />
-                <span>{f.icon}</span>
-                {f.label}
-              </button>
-            ))}
-            {availableFields.length === 0 && (
-              <p className="text-sm text-slate-500">Hammasi ishlatilgan!</p>
+          {/* Drop zones */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+            <DropZone
+              title="Ustun"
+              description="Bu yerga maydonlarni torting (Pivot column)"
+              fields={columns}
+              onDrop={(id: string) => handleDrop('columns', id)}
+              onRemove={(id: string) => removeField('columns', id)}
+              accent="#3B82F6"
+              draggedField={draggedField}
+              getField={(id: string) => FIELDS.find(f => f.id === id)}
+            />
+            <DropZone
+              title="Satr"
+              description="Bu yerga maydonlarni torting (Pivot row)"
+              fields={rows}
+              onDrop={(id: string) => handleDrop('rows', id)}
+              onRemove={(id: string) => removeField('rows', id)}
+              accent="#C75D3C"
+              draggedField={draggedField}
+              getField={(id: string) => FIELDS.find(f => f.id === id)}
+            />
+          </div>
+
+          {/* Preview */}
+          <Card className="p-6 bg-white border border-[#E8E0D3] shadow-sm rounded-2xl">
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <div className="text-xs uppercase tracking-[0.2em] text-[#9C8A6E] font-medium">PIVOT</div>
+                <h3 className="text-2xl font-light text-[#1A1A1A]" style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>Oldindan ko'rish</h3>
+              </div>
+              <span className="text-sm text-[#9C8A6E]">
+                {columns.length} ustun · {rows.length} satr · {metrics.filter(m => m.checked).length} ko'rsatkich
+              </span>
+            </div>
+
+            {columns.length === 0 && rows.length === 0 ? (
+              <div className="text-center py-14 text-[#9C8A6E] bg-[#FAF7F2] rounded-2xl border-2 border-dashed border-[#E8E0D3]">
+                <p className="text-base">Maydonlarni "Ustun" yoki "Satr" zonasiga torting</p>
+                <p className="text-sm mt-1">Yoki maydon ustiga bosing — avtomatik "Satr"ga qo'shiladi</p>
+              </div>
+            ) : (
+              <div className="bg-[#FAF7F2] rounded-2xl p-5 overflow-x-auto border border-[#E8E0D3]">
+                <p className="text-sm text-[#1A1A1A]">
+                  Pivot konfiguratsiya tayyor: <strong className="text-[#C75D3C]">{rows.map(r => FIELDS.find(f => f.id === r)?.label).join(' × ')}</strong>
+                  {columns.length > 0 && <> × <strong className="text-blue-700">{columns.map(c => FIELDS.find(f => f.id === c)?.label).join(', ')}</strong></>}
+                </p>
+                <p className="text-xs text-[#9C8A6E] mt-2">"Oldindan" tugmasini bosing — real ma'lumot bilan jadval chiqadi.</p>
+              </div>
             )}
-          </div>
-        </Card>
-
-        {/* Drop zones */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <DropZone
-            title="Ustun"
-            description="Bu yerga maydonlarni torting (Pivot column)"
-            fields={columns}
-            onDrop={(id: string) => handleDrop('columns', id)}
-            onRemove={(id: string) => removeField('columns', id)}
-            color="blue"
-            draggedField={draggedField}
-            getField={(id: string) => FIELDS.find(f => f.id === id)}
-          />
-          <DropZone
-            title="Satr"
-            description="Bu yerga maydonlarni torting (Pivot row)"
-            fields={rows}
-            onDrop={(id: string) => handleDrop('rows', id)}
-            onRemove={(id: string) => removeField('rows', id)}
-            color="purple"
-            draggedField={draggedField}
-            getField={(id: string) => FIELDS.find(f => f.id === id)}
-          />
+          </Card>
         </div>
-
-        {/* Preview */}
-        <Card className="p-6 bg-gradient-to-br from-purple-50 to-pink-50 border-purple-200">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="text-lg font-semibold">📊 Pivot oldindan ko'rish</h3>
-            <span className="text-sm text-slate-500">
-              {columns.length} ustun · {rows.length} satr · {metrics.filter(m => m.checked).length} ko'rsatkich
-            </span>
-          </div>
-
-          {columns.length === 0 && rows.length === 0 ? (
-            <div className="text-center py-12 text-slate-500">
-              <p className="text-base">Maydonlarni "Ustun" yoki "Satr" zonasiga torting</p>
-              <p className="text-sm mt-1">Yoki maydon ustiga bosing — avtomatik "Satr"ga qo'shiladi</p>
-            </div>
-          ) : (
-            <div className="bg-white rounded-xl p-4 overflow-x-auto">
-              <p className="text-sm text-slate-600">
-                Pivot konfiguratsiya tayyor: <strong>{rows.map(r => FIELDS.find(f => f.id === r)?.label).join(' × ')}</strong>
-                {columns.length > 0 && <> × <strong>{columns.map(c => FIELDS.find(f => f.id === c)?.label).join(', ')}</strong></>}
-              </p>
-              <p className="text-xs text-slate-500 mt-1">"Oldindan ko'rish" tugmasini bosing — real ma'lumot bilan jadval chiqadi.</p>
-            </div>
-          )}
-        </Card>
       </div>
     </AdminLayout>
   )
 }
 
-function DropZone({ title, description, fields, onDrop, onRemove, color, draggedField, getField }: any) {
-  const colors = {
-    blue: { bg: 'bg-blue-50', border: 'border-blue-300', tag: 'bg-blue-100 text-blue-800' },
-    purple: { bg: 'bg-purple-50', border: 'border-purple-300', tag: 'bg-purple-100 text-purple-800' },
-  }[color as 'blue' | 'purple'] || { bg: 'bg-slate-50', border: 'border-slate-300', tag: 'bg-slate-100' }
-
+function DropZone({ title, description, fields, onDrop, onRemove, accent, draggedField, getField }: any) {
   return (
     <Card
-      className={`${colors.bg} border-2 border-dashed ${colors.border} p-5 min-h-[160px]`}
+      className="border-2 border-dashed p-6 min-h-[180px] rounded-2xl transition-colors"
+      style={{ borderColor: `${accent}55`, background: `${accent}08` }}
       onDragOver={e => e.preventDefault()}
       onDrop={() => { if (draggedField) onDrop(draggedField) }}
     >
-      <h3 className="text-base font-semibold mb-1">{title}</h3>
-      <p className="text-xs text-slate-500 mb-3">{description}</p>
+      <div className="flex items-center gap-2 mb-1">
+        <div className="w-1 h-6 rounded-full" style={{ background: accent }} />
+        <h3 className="text-lg font-light text-[#1A1A1A]" style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>{title}</h3>
+      </div>
+      <p className="text-xs text-[#6B5B4D] mb-4">{description}</p>
       <div className="flex flex-wrap gap-2">
         {fields.length === 0 && (
-          <p className="text-sm text-slate-400 italic">Bo'sh — maydonlar shu yerga keladi</p>
+          <p className="text-sm italic" style={{ color: `${accent}99` }}>Bo'sh — maydonlar shu yerga keladi</p>
         )}
         {fields.map((id: string) => {
           const f = getField(id)
           if (!f) return null
           return (
-            <span key={id} className={`inline-flex items-center gap-2 px-3 py-1.5 ${colors.tag} rounded-lg text-sm font-medium`}>
+            <span key={id} className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium text-white" style={{ background: accent }}>
               <span>{f.icon}</span>
               {f.label}
-              <button onClick={() => onRemove(id)} className="ml-1 hover:bg-white/30 rounded">
-                ×
-              </button>
+              <button onClick={() => onRemove(id)} className="ml-1 hover:bg-white/20 rounded px-1">×</button>
             </span>
           )
         })}
