@@ -2,7 +2,8 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu"
-import { ChevronDown, Bell, HelpCircle, User, Wallet, Mic } from "lucide-react"
+import { ChevronDown, Bell, HelpCircle, User, Wallet } from "lucide-react"
+import { VoiceButton } from "@/components/voice-button"
 import { cn } from "@/lib/utils"
 
 interface TopNavItem {
@@ -138,12 +139,7 @@ export function TopNav() {
 
       {/* Right: Voice + Balance + Bell + Help + Avatar */}
       <div className="flex items-center gap-2">
-        <button
-          className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 transition-colors shadow-sm"
-          title="Ovozli komanda"
-        >
-          <Mic className="w-5 h-5" />
-        </button>
+        <VoiceButton />
 
         <Link
           href="/billing"
