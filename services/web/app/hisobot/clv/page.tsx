@@ -27,12 +27,12 @@ const CLIENTS: ClientCLV[] = [
 function fmt(n: number) { return n.toLocaleString("ru-RU") }
 
 const SEGMENT_COLOR: Record<string, string> = {
-  Champions: "bg-amber-100 text-amber-800",
-  Loyal: "bg-emerald-100 text-emerald-700",
-  Potential: "bg-blue-100 text-blue-700",
-  New: "bg-violet-100 text-violet-700",
-  "At Risk": "bg-rose-100 text-rose-700",
-  Hibernating: "bg-slate-100 text-slate-700",
+  Champions: "bg-[#FCE9DD] text-[#D97706]",
+  Loyal: "bg-emerald-50 text-emerald-700",
+  Potential: "bg-blue-50 text-blue-700",
+  New: "bg-purple-50 text-purple-700",
+  "At Risk": "bg-[#F5E5D6] text-[#C75D3C]",
+  Hibernating: "bg-[#F0EAE0] text-[#6B5B4D]",
 }
 
 export default function ClvPage() {
@@ -43,103 +43,110 @@ export default function ClvPage() {
 
   return (
     <AdminLayout>
-      <div className="max-w-[1700px] mx-auto space-y-4">
-        <div className="flex items-center gap-3">
-          <Link href="/hisobot" className="p-2 hover:bg-slate-100 rounded-lg"><ArrowLeft className="w-5 h-5" /></Link>
-          <div className="flex-1">
-            <h1 className="text-2xl font-bold tracking-tight">Klient hayot qiymati (CLV)</h1>
-            <p className="text-sm text-slate-500">Customer Lifetime Value bashorati · {CLIENTS.length} ta klient</p>
+      <div className="-mx-4 -my-4 px-4 py-6 min-h-full" style={{ background: "linear-gradient(180deg, #F5F1EB 0%, #FAF7F2 100%)" }}>
+        <div className="max-w-[1700px] mx-auto space-y-5">
+          <div className="flex items-end gap-3 border-b border-[#E8E0D3] pb-6">
+            <Link href="/hisobot" className="p-2 hover:bg-[#F0EAE0] rounded-lg"><ArrowLeft className="w-5 h-5 text-[#6B5B4D]" /></Link>
+            <div className="flex-1">
+              <div className="text-xs uppercase tracking-[0.2em] text-[#9C8A6E] font-medium mb-2">SAVDOAI · HISOBOT</div>
+              <h1 className="text-4xl font-light tracking-tight text-[#1A1A1A]" style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>
+                Klient hayot <span className="italic text-[#C75D3C]">qiymati (CLV)</span>
+              </h1>
+              <p className="text-sm text-[#6B5B4D] mt-2">Customer Lifetime Value bashorati · {CLIENTS.length} ta klient</p>
+            </div>
+            <Button variant="outline" className="gap-2 border-[#E8E0D3] text-[#6B5B4D]"><Calendar className="w-4 h-4" /> 12-oy</Button>
+            <Button variant="outline" className="gap-2 border-[#E8E0D3] text-[#6B5B4D]"><Download className="w-4 h-4" /> Excel</Button>
           </div>
-          <Button variant="outline" className="gap-2"><Calendar className="w-4 h-4" /> 12-oy</Button>
-          <Button variant="outline" className="gap-2"><Download className="w-4 h-4" /> Excel</Button>
-        </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <Card className="p-4 bg-emerald-50 border-emerald-200">
-            <Crown className="w-5 h-5 text-emerald-600 mb-2" />
-            <div className="text-xs font-bold text-emerald-700">Hozirgi tushum</div>
-            <div className="text-2xl font-bold mt-1 font-mono">{fmt(totalCurrent / 1_000_000)} M</div>
-          </Card>
-          <Card className="p-4 bg-blue-50 border-blue-200">
-            <TrendingUp className="w-5 h-5 text-blue-600 mb-2" />
-            <div className="text-xs font-bold text-blue-700">Bashorat CLV (jami)</div>
-            <div className="text-2xl font-bold mt-1 font-mono">{fmt(totalClv / 1_000_000)} M</div>
-          </Card>
-          <Card className="p-4 bg-violet-50 border-violet-200">
-            <Users className="w-5 h-5 text-violet-600 mb-2" />
-            <div className="text-xs font-bold text-violet-700">O'rtacha CLV</div>
-            <div className="text-2xl font-bold mt-1 font-mono">{fmt(avgClv / 1_000_000)} M</div>
-          </Card>
-          <Card className="p-4 bg-amber-50 border-amber-200">
-            <Crown className="w-5 h-5 text-amber-600 mb-2" />
-            <div className="text-xs font-bold text-amber-700">Top-1 klient CLV</div>
-            <div className="text-2xl font-bold mt-1 font-mono">{fmt(sorted[0].predictedClv / 1_000_000)} M</div>
-          </Card>
-        </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <KpiCard icon={Crown} accent="#10B981" label="Hozirgi tushum" value={`${fmt(totalCurrent / 1_000_000)} M`} />
+            <KpiCard icon={TrendingUp} accent="#3B82F6" label="Bashorat CLV (jami)" value={`${fmt(totalClv / 1_000_000)} M`} />
+            <KpiCard icon={Users} accent="#C75D3C" label="O'rtacha CLV" value={`${fmt(avgClv / 1_000_000)} M`} />
+            <KpiCard icon={Crown} accent="#D97706" label="Top-1 klient CLV" value={`${fmt(sorted[0].predictedClv / 1_000_000)} M`} />
+          </div>
 
-        <Card className="p-5">
-          <h2 className="text-lg font-bold mb-4">CLV jadvali (bashorat asosida)</h2>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b-2 border-slate-200 text-left bg-slate-50">
-                  <th className="py-3 px-2">#</th>
-                  <th className="py-3 px-2">Klient</th>
-                  <th className="py-3 px-2 text-center">Segment</th>
-                  <th className="py-3 px-2 text-right">Birinchi xarid</th>
-                  <th className="py-3 px-2 text-right">Aktivlik (oy)</th>
-                  <th className="py-3 px-2 text-right">Hozirgi tushum</th>
-                  <th className="py-3 px-2 text-right">O'rta zakaz</th>
-                  <th className="py-3 px-2 text-right">Zakaz/oy</th>
-                  <th className="py-3 px-2 text-right">Retention %</th>
-                  <th className="py-3 px-2 text-right">Bashorat CLV</th>
-                </tr>
-              </thead>
-              <tbody>
-                {sorted.map((c, i) => (
-                  <tr key={c.id} className="border-b border-slate-100 hover:bg-slate-50">
-                    <td className="py-3 px-2 font-bold text-slate-400">{i + 1}</td>
-                    <td className="py-3 px-2">
-                      <div className="font-semibold">
-                        {i < 3 && <span className="mr-1">{["🥇", "🥈", "🥉"][i]}</span>}
-                        {c.name}
-                      </div>
-                      <div className="text-xs text-slate-500 font-mono">#{c.id}</div>
-                    </td>
-                    <td className="py-3 px-2 text-center">
-                      <span className={`text-xs px-2 py-0.5 rounded ${SEGMENT_COLOR[c.segment] ?? "bg-slate-100 text-slate-700"}`}>{c.segment}</span>
-                    </td>
-                    <td className="py-3 px-2 text-right font-mono text-xs">{c.firstOrder}</td>
-                    <td className="py-3 px-2 text-right font-mono">{c.monthsActive}</td>
-                    <td className="py-3 px-2 text-right font-mono text-emerald-700 font-bold">{fmt(c.totalSpent / 1_000_000)} M</td>
-                    <td className="py-3 px-2 text-right font-mono">{fmt(c.avgOrderValue)}</td>
-                    <td className="py-3 px-2 text-right font-mono">{c.orderFrequency.toFixed(1)}</td>
-                    <td className="py-3 px-2 text-right">
-                      <span className={`px-2 py-0.5 rounded font-mono font-bold text-xs ${c.retention >= 80 ? "bg-emerald-100 text-emerald-700" : c.retention >= 60 ? "bg-amber-100 text-amber-700" : "bg-rose-100 text-rose-700"}`}>
-                        {c.retention}%
-                      </span>
-                    </td>
-                    <td className="py-3 px-2 text-right font-mono font-bold text-blue-700">{fmt(c.predictedClv / 1_000_000)} M</td>
+          <Card className="p-6 bg-white border border-[#E8E0D3] shadow-sm rounded-2xl">
+            <h2 className="text-xl font-light mb-5 text-[#1A1A1A]" style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>CLV jadvali (bashorat asosida)</h2>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-[#E8E0D3] bg-[#FAF7F2]">
+                    <th className="py-3 px-2 text-left text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">#</th>
+                    <th className="py-3 px-2 text-left text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Klient</th>
+                    <th className="py-3 px-2 text-center text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Segment</th>
+                    <th className="py-3 px-2 text-right text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">1-xarid</th>
+                    <th className="py-3 px-2 text-right text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Aktivlik</th>
+                    <th className="py-3 px-2 text-right text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Hozirgi</th>
+                    <th className="py-3 px-2 text-right text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">O'rta zakaz</th>
+                    <th className="py-3 px-2 text-right text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Zakaz/oy</th>
+                    <th className="py-3 px-2 text-right text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Retention</th>
+                    <th className="py-3 px-2 text-right text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Bashorat CLV</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {sorted.map((c, i) => (
+                    <tr key={c.id} className="border-b border-[#F0EAE0] hover:bg-[#FAF7F2]">
+                      <td className="py-3 px-2 font-medium text-[#9C8A6E]">{i + 1}</td>
+                      <td className="py-3 px-2">
+                        <div className="font-medium text-[#1A1A1A]">
+                          {i < 3 && <span className="mr-1">{["🥇", "🥈", "🥉"][i]}</span>}
+                          {c.name}
+                        </div>
+                        <div className="text-xs text-[#9C8A6E] font-mono">#{c.id}</div>
+                      </td>
+                      <td className="py-3 px-2 text-center">
+                        <span className={`text-xs px-2 py-0.5 rounded font-medium ${SEGMENT_COLOR[c.segment] ?? "bg-[#F0EAE0] text-[#6B5B4D]"}`}>{c.segment}</span>
+                      </td>
+                      <td className="py-3 px-2 text-right font-mono text-xs text-[#9C8A6E]">{c.firstOrder}</td>
+                      <td className="py-3 px-2 text-right font-mono text-[#1A1A1A]">{c.monthsActive}</td>
+                      <td className="py-3 px-2 text-right font-mono text-emerald-700 font-medium" style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>{fmt(c.totalSpent / 1_000_000)} M</td>
+                      <td className="py-3 px-2 text-right font-mono text-[#1A1A1A]">{fmt(c.avgOrderValue)}</td>
+                      <td className="py-3 px-2 text-right font-mono text-[#6B5B4D]">{c.orderFrequency.toFixed(1)}</td>
+                      <td className="py-3 px-2 text-right">
+                        <span className={`px-2 py-0.5 rounded font-mono font-medium text-xs ${c.retention >= 80 ? "bg-emerald-50 text-emerald-700" : c.retention >= 60 ? "bg-[#FCE9DD] text-[#D97706]" : "bg-[#F5E5D6] text-[#C75D3C]"}`}>
+                          {c.retention}%
+                        </span>
+                      </td>
+                      <td className="py-3 px-2 text-right font-mono font-medium text-[#C75D3C]" style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>{fmt(c.predictedClv / 1_000_000)} M</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
 
-          <div className="mt-4 pt-4 border-t border-slate-200 text-xs text-slate-500">
-            💡 CLV formula: <span className="font-mono">avgOrderValue × orderFrequency × predictedMonths × retention%</span>
-          </div>
-        </Card>
+            <div className="mt-4 pt-4 border-t border-[#E8E0D3] text-xs text-[#9C8A6E]">
+              💡 CLV formula: <span className="font-mono text-[#1A1A1A]">avgOrderValue × orderFrequency × predictedMonths × retention%</span>
+            </div>
+          </Card>
 
-        <Card className="p-5 bg-blue-50 border-blue-200">
-          <h3 className="font-bold text-blue-800 mb-2">📈 Strategiya tavsiyalari</h3>
-          <ul className="text-sm text-slate-700 space-y-1">
-            <li>• <span className="font-bold">Champions/Loyal</span> ({CLIENTS.filter(c => c.segment === "Champions" || c.segment === "Loyal").length} klient) — VIP xizmat, premium tovar, alohida menejer</li>
-            <li>• <span className="font-bold">Potential/New</span> ({CLIENTS.filter(c => c.segment === "Potential" || c.segment === "New").length} klient) — onboarding, chegirma, pastdan-yuqoriga ko'tarilish strategiyasi</li>
-            <li>• <span className="font-bold">At Risk/Hibernating</span> ({CLIENTS.filter(c => c.segment === "At Risk" || c.segment === "Hibernating").length} klient) — reaktivatsiya kampaniya, agressiv promo, qo'ng'iroq</li>
-          </ul>
-        </Card>
+          <Card className="p-5 bg-white border border-[#C75D3C]/30 shadow-sm rounded-2xl">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-[#FCE9DD] flex items-center justify-center flex-shrink-0">
+                <span className="text-xl">📈</span>
+              </div>
+              <div>
+                <div className="text-xs uppercase tracking-[0.15em] font-medium text-[#C75D3C]">STRATEGIYA TAVSIYALARI</div>
+                <ul className="text-sm text-[#1A1A1A] mt-2 space-y-1.5">
+                  <li>• <span className="font-medium">Champions/Loyal</span> ({CLIENTS.filter(c => c.segment === "Champions" || c.segment === "Loyal").length}) — VIP xizmat, premium tovar, alohida menejer</li>
+                  <li>• <span className="font-medium">Potential/New</span> ({CLIENTS.filter(c => c.segment === "Potential" || c.segment === "New").length}) — onboarding, chegirma, pastdan-yuqoriga strategiya</li>
+                  <li>• <span className="font-medium">At Risk/Hibernating</span> ({CLIENTS.filter(c => c.segment === "At Risk" || c.segment === "Hibernating").length}) — reaktivatsiya kampaniya, agressiv promo, qo'ng'iroq</li>
+                </ul>
+              </div>
+            </div>
+          </Card>
+        </div>
       </div>
     </AdminLayout>
+  )
+}
+
+function KpiCard({ icon: Icon, accent, label, value }: { icon: React.ElementType; accent: string; label: string; value: string }) {
+  return (
+    <Card className="p-5 bg-white border border-[#E8E0D3] shadow-sm rounded-2xl relative overflow-hidden">
+      <Icon className="w-5 h-5 mb-2" style={{ color: accent }} />
+      <div className="text-xs uppercase tracking-[0.15em] font-medium" style={{ color: accent }}>{label}</div>
+      <div className="text-2xl font-medium font-mono tabular-nums mt-1 text-[#1A1A1A]" style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>{value}</div>
+      <div className="absolute bottom-0 left-0 right-0 h-1" style={{ background: accent }} />
+    </Card>
   )
 }
