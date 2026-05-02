@@ -31,100 +31,100 @@ export default function TerritoryCoveragePage() {
 
   return (
     <AdminLayout>
-      <div className="max-w-[1700px] mx-auto space-y-4">
-        <div className="flex items-center gap-3">
-          <Link href="/komanda" className="p-2 hover:bg-slate-100 rounded-lg"><ArrowLeft className="w-5 h-5" /></Link>
-          <div className="flex-1">
-            <h1 className="text-2xl font-bold tracking-tight">Hudud qoplash (Territory coverage)</h1>
-            <p className="text-sm text-slate-500">Hududlar bo'yicha klient qoplash va savdo ko'rsatkichlari</p>
+      <div className="-mx-4 -my-4 px-4 py-6 min-h-full" style={{ background: "linear-gradient(180deg, #F5F1EB 0%, #FAF7F2 100%)" }}>
+        <div className="max-w-[1700px] mx-auto space-y-5">
+          <div className="flex items-end gap-3 border-b border-[#E8E0D3] pb-6">
+            <Link href="/komanda" className="p-2 hover:bg-[#F0EAE0] rounded-lg"><ArrowLeft className="w-5 h-5 text-[#6B5B4D]" /></Link>
+            <div className="flex-1">
+              <div className="text-xs uppercase tracking-[0.2em] text-[#9C8A6E] font-medium mb-2">SAVDOAI · KOMANDA</div>
+              <h1 className="text-4xl font-light tracking-tight text-[#1A1A1A]" style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>
+                Hudud <span className="italic text-[#C75D3C]">qoplash</span>
+              </h1>
+              <p className="text-sm text-[#6B5B4D] mt-2">Hududlar bo'yicha klient qoplash va savdo ko'rsatkichlari</p>
+            </div>
+            <Button variant="outline" className="gap-2 border-[#E8E0D3] text-[#6B5B4D]"><Calendar className="w-4 h-4" /> апр 1 — май 2</Button>
+            <Button variant="outline" className="gap-2 border-[#E8E0D3] text-[#6B5B4D]"><Download className="w-4 h-4" /> Excel</Button>
           </div>
-          <Button variant="outline" className="gap-2"><Calendar className="w-4 h-4" /> апр 1 — май 2</Button>
-          <Button variant="outline" className="gap-2"><Download className="w-4 h-4" /> Excel</Button>
-        </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <Card className="p-4 bg-emerald-50 border-emerald-200">
-            <MapPin className="w-5 h-5 text-emerald-600 mb-2" />
-            <div className="text-xs font-bold text-emerald-700">Hududlar</div>
-            <div className="text-2xl font-bold mt-1">{TERRITORIES.length}</div>
-          </Card>
-          <Card className="p-4 bg-blue-50 border-blue-200">
-            <Users className="w-5 h-5 text-blue-600 mb-2" />
-            <div className="text-xs font-bold text-blue-700">Klientlar</div>
-            <div className="text-2xl font-bold mt-1">{fmt(activeClients)}<span className="text-base text-slate-500">/{fmt(totalClients)}</span></div>
-          </Card>
-          <Card className="p-4 bg-violet-50 border-violet-200">
-            <Package className="w-5 h-5 text-violet-600 mb-2" />
-            <div className="text-xs font-bold text-violet-700">Tushum</div>
-            <div className="text-2xl font-bold mt-1">{fmt(totalRevenue / 1_000_000)} M</div>
-          </Card>
-          <Card className="p-4 bg-amber-50 border-amber-200">
-            <MapPin className="w-5 h-5 text-amber-600 mb-2" />
-            <div className="text-xs font-bold text-amber-700">O'rtacha qoplash</div>
-            <div className="text-2xl font-bold mt-1">{avgCoverage}%</div>
-          </Card>
-        </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <KpiCard icon={MapPin} accent="#10B981" label="Hududlar" value={TERRITORIES.length.toString()} />
+            <KpiCard icon={Users} accent="#3B82F6" label="Klientlar" value={`${fmt(activeClients)}/${fmt(totalClients)}`} />
+            <KpiCard icon={Package} accent="#7C3AED" label="Tushum" value={`${fmt(totalRevenue / 1_000_000)} M`} />
+            <KpiCard icon={MapPin} accent="#D97706" label="O'rtacha qoplash" value={`${avgCoverage}%`} />
+          </div>
 
-        <Card className="p-5">
-          <h2 className="text-lg font-bold mb-4">Hududlar bo'yicha taqsimot</h2>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b-2 border-slate-200 text-left bg-slate-50">
-                  <th className="py-3 px-2">Hudud</th>
-                  <th className="py-3 px-2">Agent</th>
-                  <th className="py-3 px-2 text-right">Klientlar</th>
-                  <th className="py-3 px-2 text-right">Aktiv</th>
-                  <th className="py-3 px-2 text-right">Vizit (reja/fakt)</th>
-                  <th className="py-3 px-2 text-right">Tushum</th>
-                  <th className="py-3 px-2">Qoplash</th>
-                </tr>
-              </thead>
-              <tbody>
-                {TERRITORIES.sort((a, b) => b.coverage - a.coverage).map(t => (
-                  <tr key={t.id} className="border-b border-slate-100 hover:bg-slate-50">
-                    <td className="py-3 px-2 font-semibold flex items-center gap-2">
-                      <MapPin className="w-4 h-4 text-blue-500" />
-                      {t.name}
-                    </td>
-                    <td className="py-3 px-2">{t.agent}</td>
-                    <td className="py-3 px-2 text-right font-mono">{t.clientsTotal}</td>
-                    <td className="py-3 px-2 text-right font-mono text-emerald-700 font-bold">{t.clientsActive}</td>
-                    <td className="py-3 px-2 text-right font-mono text-xs">{t.visitsPlanned} / <span className="font-bold">{t.visitsActual}</span></td>
-                    <td className="py-3 px-2 text-right font-mono font-bold text-violet-700">{fmt(t.revenue)}</td>
-                    <td className="py-3 px-2">
-                      <div className="flex items-center gap-2">
-                        <div className="flex-1 h-2 bg-slate-200 rounded-full overflow-hidden min-w-[80px]">
-                          <div className={`h-full ${t.coverage >= 80 ? "bg-emerald-500" : t.coverage >= 65 ? "bg-amber-500" : "bg-rose-500"}`} style={{ width: `${t.coverage}%` }} />
-                        </div>
-                        <span className={`text-xs font-bold font-mono w-10 text-right ${t.coverage >= 80 ? "text-emerald-700" : t.coverage >= 65 ? "text-amber-700" : "text-rose-700"}`}>{t.coverage}%</span>
-                      </div>
-                    </td>
+          <Card className="p-6 bg-white border border-[#E8E0D3] shadow-sm rounded-2xl">
+            <h2 className="text-xl font-light mb-5 text-[#1A1A1A]" style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>Hududlar bo'yicha taqsimot</h2>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-[#E8E0D3] bg-[#FAF7F2]">
+                    <th className="py-3 px-2 text-left text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Hudud</th>
+                    <th className="py-3 px-2 text-left text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Agent</th>
+                    <th className="py-3 px-2 text-right text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Klientlar</th>
+                    <th className="py-3 px-2 text-right text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Aktiv</th>
+                    <th className="py-3 px-2 text-right text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Vizit (reja/fakt)</th>
+                    <th className="py-3 px-2 text-right text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Tushum</th>
+                    <th className="py-3 px-2 text-left text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Qoplash</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </Card>
+                </thead>
+                <tbody>
+                  {TERRITORIES.sort((a, b) => b.coverage - a.coverage).map(t => (
+                    <tr key={t.id} className="border-b border-[#F0EAE0] hover:bg-[#FAF7F2]">
+                      <td className="py-3 px-2 font-medium text-[#1A1A1A] flex items-center gap-2">
+                        <MapPin className="w-4 h-4 text-[#C75D3C]" />
+                        {t.name}
+                      </td>
+                      <td className="py-3 px-2 text-[#6B5B4D]">{t.agent}</td>
+                      <td className="py-3 px-2 text-right font-mono text-[#1A1A1A]">{t.clientsTotal}</td>
+                      <td className="py-3 px-2 text-right font-mono text-emerald-700 font-medium">{t.clientsActive}</td>
+                      <td className="py-3 px-2 text-right font-mono text-xs text-[#6B5B4D]">{t.visitsPlanned} / <span className="font-medium text-[#1A1A1A]">{t.visitsActual}</span></td>
+                      <td className="py-3 px-2 text-right font-mono font-medium text-[#C75D3C]" style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>{fmt(t.revenue)}</td>
+                      <td className="py-3 px-2">
+                        <div className="flex items-center gap-2">
+                          <div className="flex-1 h-2 bg-[#F0EAE0] rounded-full overflow-hidden min-w-[80px]">
+                            <div className="h-full rounded-full" style={{ width: `${t.coverage}%`, background: t.coverage >= 80 ? "#10B981" : t.coverage >= 65 ? "#D97706" : "#C75D3C" }} />
+                          </div>
+                          <span className={`text-xs font-medium font-mono w-10 text-right ${t.coverage >= 80 ? "text-emerald-700" : t.coverage >= 65 ? "text-[#D97706]" : "text-[#C75D3C]"}`}>{t.coverage}%</span>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </Card>
 
-        <Card className="p-5">
-          <h2 className="text-lg font-bold mb-4">Coverage heatmap (bar chart)</h2>
-          <div className="space-y-2">
-            {TERRITORIES.sort((a, b) => b.revenue - a.revenue).map(t => (
-              <div key={t.id} className="flex items-center gap-3">
-                <span className="w-48 text-sm text-slate-600 truncate">{t.name}</span>
-                <div className="flex-1 h-7 bg-slate-100 rounded relative">
-                  <div className="absolute inset-y-0 left-0 bg-gradient-to-r from-emerald-400 to-emerald-600 rounded flex items-center justify-end pr-2"
-                    style={{ width: `${(t.revenue / 36_400_000) * 100}%` }}>
-                    <span className="text-xs text-white font-bold">{fmt(t.revenue / 1_000_000)} M</span>
+          <Card className="p-6 bg-white border border-[#E8E0D3] shadow-sm rounded-2xl">
+            <h2 className="text-xl font-light mb-5 text-[#1A1A1A]" style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>Coverage heatmap</h2>
+            <div className="space-y-2">
+              {TERRITORIES.sort((a, b) => b.revenue - a.revenue).map(t => (
+                <div key={t.id} className="flex items-center gap-3">
+                  <span className="w-48 text-sm text-[#6B5B4D] truncate">{t.name}</span>
+                  <div className="flex-1 h-7 bg-[#F0EAE0] rounded-md relative overflow-hidden">
+                    <div className="absolute inset-y-0 left-0 rounded-md flex items-center justify-end pr-2 transition-all"
+                      style={{ width: `${(t.revenue / 36_400_000) * 100}%`, background: "linear-gradient(90deg, #C75D3C 0%, #E27B5C 100%)" }}>
+                      <span className="text-xs text-white font-medium tabular-nums">{fmt(t.revenue / 1_000_000)} M</span>
+                    </div>
                   </div>
+                  <span className="text-xs text-[#9C8A6E] w-16 text-right">{t.clientsActive} klient</span>
                 </div>
-                <span className="text-xs text-slate-500 w-16 text-right">{t.clientsActive} klient</span>
-              </div>
-            ))}
-          </div>
-        </Card>
+              ))}
+            </div>
+          </Card>
+        </div>
       </div>
     </AdminLayout>
+  )
+}
+
+function KpiCard({ icon: Icon, accent, label, value }: { icon: React.ElementType; accent: string; label: string; value: string }) {
+  return (
+    <Card className="p-5 bg-white border border-[#E8E0D3] shadow-sm rounded-2xl relative overflow-hidden">
+      <Icon className="w-5 h-5 mb-2" style={{ color: accent }} />
+      <div className="text-xs uppercase tracking-[0.15em] font-medium" style={{ color: accent }}>{label}</div>
+      <div className="text-2xl font-medium tabular-nums mt-1 text-[#1A1A1A]" style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>{value}</div>
+      <div className="absolute bottom-0 left-0 right-0 h-1" style={{ background: accent }} />
+    </Card>
   )
 }
