@@ -30,10 +30,10 @@ const REC_LABEL: Record<string, string> = {
   ok: "✓ OK",
 }
 const REC_COLOR: Record<string, string> = {
-  lower: "bg-rose-100 text-rose-700",
-  raise: "bg-emerald-100 text-emerald-700",
-  match: "bg-amber-100 text-amber-700",
-  ok: "bg-blue-100 text-blue-700",
+  lower: "bg-[#F5E5D6] text-[#C75D3C]",
+  raise: "bg-emerald-50 text-emerald-700",
+  match: "bg-[#FCE9DD] text-[#D97706]",
+  ok: "bg-blue-50 text-blue-700",
 }
 
 export default function CompetitorAuditPage() {
@@ -46,120 +46,120 @@ export default function CompetitorAuditPage() {
 
   return (
     <AdminLayout>
-      <div className="max-w-[1700px] mx-auto space-y-4">
-        <div className="flex items-center gap-3">
-          <Link href="/audit" className="p-2 hover:bg-slate-100 rounded-lg"><ArrowLeft className="w-5 h-5" /></Link>
-          <div className="flex-1">
-            <h1 className="text-2xl font-bold tracking-tight">Raqobatchilar tahlili</h1>
-            <p className="text-sm text-slate-500">{COMPETITORS.length} ta tovar po'rsi · narx va facing taqqoslash</p>
+      <div className="-mx-4 -my-4 px-4 py-6 min-h-full" style={{ background: "linear-gradient(180deg, #F5F1EB 0%, #FAF7F2 100%)" }}>
+        <div className="max-w-[1700px] mx-auto space-y-5">
+          <div className="flex items-end gap-3 border-b border-[#E8E0D3] pb-6">
+            <Link href="/audit" className="p-2 hover:bg-[#F0EAE0] rounded-lg"><ArrowLeft className="w-5 h-5 text-[#6B5B4D]" /></Link>
+            <div className="flex-1">
+              <div className="text-xs uppercase tracking-[0.2em] text-[#9C8A6E] font-medium mb-2">SAVDOAI · AUDIT</div>
+              <h1 className="text-4xl font-light tracking-tight text-[#1A1A1A]" style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>
+                Raqobatchilar <span className="italic text-[#C75D3C]">tahlili</span>
+              </h1>
+              <p className="text-sm text-[#6B5B4D] mt-2">{COMPETITORS.length} ta tovar po'rsi · narx va facing taqqoslash</p>
+            </div>
+            <Button variant="outline" className="gap-2 border-[#E8E0D3] text-[#6B5B4D]"><Calendar className="w-4 h-4" /> Hafta</Button>
+            <Button variant="outline" className="gap-2 border-[#E8E0D3] text-[#6B5B4D]"><Download className="w-4 h-4" /> Excel</Button>
           </div>
-          <Button variant="outline" className="gap-2"><Calendar className="w-4 h-4" /> Hafta</Button>
-          <Button variant="outline" className="gap-2"><Download className="w-4 h-4" /> Excel</Button>
-        </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <Card className="p-4 bg-emerald-50 border-emerald-200">
-            <BarChart3 className="w-5 h-5 text-emerald-600 mb-2" />
-            <div className="text-xs font-bold text-emerald-700">Bizning facing</div>
-            <div className="text-2xl font-bold mt-1">{ourTotalFacing}</div>
-          </Card>
-          <Card className="p-4 bg-rose-50 border-rose-200">
-            <BarChart3 className="w-5 h-5 text-rose-600 mb-2" />
-            <div className="text-xs font-bold text-rose-700">Raqobat facing</div>
-            <div className="text-2xl font-bold mt-1">{compTotalFacing}</div>
-          </Card>
-          <Card className="p-4 bg-blue-50 border-blue-200">
-            <Eye className="w-5 h-5 text-blue-600 mb-2" />
-            <div className="text-xs font-bold text-blue-700">Bizning ulush</div>
-            <div className="text-2xl font-bold mt-1">{ourFacingShare}%</div>
-          </Card>
-          <Card className="p-4 bg-amber-50 border-amber-200">
-            <Tag className="w-5 h-5 text-amber-600 mb-2" />
-            <div className="text-xs font-bold text-amber-700">Narx tuzatishlar</div>
-            <div className="text-2xl font-bold mt-1">↓{lowerCount} ↑{raiseCount}</div>
-          </Card>
-        </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <KpiCard icon={BarChart3} accent="#10B981" label="Bizning facing" value={ourTotalFacing.toString()} />
+            <KpiCard icon={BarChart3} accent="#C75D3C" label="Raqobat facing" value={compTotalFacing.toString()} />
+            <KpiCard icon={Eye} accent="#3B82F6" label="Bizning ulush" value={`${ourFacingShare}%`} />
+            <KpiCard icon={Tag} accent="#D97706" label="Narx tuzatishlar" value={`↓${lowerCount} ↑${raiseCount}`} />
+          </div>
 
-        <Card className="p-5">
-          <h2 className="text-lg font-bold mb-4">Po'rsalar (head-to-head taqqoslash)</h2>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm border-collapse">
-              <thead>
-                <tr className="bg-slate-100">
-                  <th className="border border-slate-300 py-2 px-2 text-left">Bizning tovar</th>
-                  <th className="border border-slate-300 py-2 px-2 text-right">Bizning narx</th>
-                  <th className="border border-slate-300 py-2 px-2 text-center">Bizning facing</th>
-                  <th className="border border-slate-300 py-2 px-2 text-center">VS</th>
-                  <th className="border border-slate-300 py-2 px-2 text-left">Raqobat tovar</th>
-                  <th className="border border-slate-300 py-2 px-2 text-right">Raqobat narxi</th>
-                  <th className="border border-slate-300 py-2 px-2 text-center">Raqobat facing</th>
-                  <th className="border border-slate-300 py-2 px-2 text-right">Δ narx</th>
-                  <th className="border border-slate-300 py-2 px-2 text-center">Tavsiya</th>
-                </tr>
-              </thead>
-              <tbody>
-                {COMPETITORS.map(c => (
-                  <tr key={c.id} className="hover:bg-slate-50">
-                    <td className="border border-slate-300 py-3 px-2">
-                      <div className="font-semibold">{c.product}</div>
-                      <div className="text-xs text-slate-500 font-mono">{c.ourSku}</div>
-                    </td>
-                    <td className="border border-slate-300 py-3 px-2 text-right font-mono font-bold text-emerald-700">{fmt(c.ourPrice)}</td>
-                    <td className="border border-slate-300 py-3 px-2 text-center">
-                      <div className="flex flex-col items-center gap-1">
-                        <span className="font-mono font-bold">{c.ourFacing}</span>
-                        <div className="flex gap-0.5">
-                          {Array.from({ length: c.ourFacing }).slice(0, 8).map((_, i) => (
-                            <div key={i} className="w-1.5 h-3 bg-emerald-500 rounded-sm" />
-                          ))}
-                        </div>
-                      </div>
-                    </td>
-                    <td className="border border-slate-300 py-3 px-2 text-center text-slate-400 font-bold">VS</td>
-                    <td className="border border-slate-300 py-3 px-2">
-                      <div className="font-semibold">{c.competitor}</div>
-                    </td>
-                    <td className="border border-slate-300 py-3 px-2 text-right font-mono font-bold text-rose-700">{fmt(c.compPrice)}</td>
-                    <td className="border border-slate-300 py-3 px-2 text-center">
-                      <div className="flex flex-col items-center gap-1">
-                        <span className="font-mono font-bold">{c.compFacing}</span>
-                        <div className="flex gap-0.5">
-                          {Array.from({ length: c.compFacing }).slice(0, 8).map((_, i) => (
-                            <div key={i} className="w-1.5 h-3 bg-rose-500 rounded-sm" />
-                          ))}
-                        </div>
-                      </div>
-                    </td>
-                    <td className={`border border-slate-300 py-3 px-2 text-right font-mono font-bold ${c.difference > 0 ? "text-rose-700" : c.difference < 0 ? "text-emerald-700" : "text-slate-500"}`}>
-                      {c.difference > 0 ? "+" : ""}{fmt(c.difference)}
-                    </td>
-                    <td className="border border-slate-300 py-3 px-2 text-center">
-                      <span className={`text-xs px-2 py-0.5 rounded font-semibold ${REC_COLOR[c.recommendation]}`}>
-                        {REC_LABEL[c.recommendation]}
-                      </span>
-                    </td>
+          <Card className="p-6 bg-white border border-[#E8E0D3] shadow-sm rounded-2xl">
+            <h2 className="text-xl font-light mb-5 text-[#1A1A1A]" style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>Po'rsalar (head-to-head)</h2>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-[#FAF7F2] border-b border-[#E8E0D3]">
+                    <th className="py-2.5 px-2 text-left text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Bizning tovar</th>
+                    <th className="py-2.5 px-2 text-right text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Narx</th>
+                    <th className="py-2.5 px-2 text-center text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Facing</th>
+                    <th className="py-2.5 px-2 text-center text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">VS</th>
+                    <th className="py-2.5 px-2 text-left text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Raqobat</th>
+                    <th className="py-2.5 px-2 text-right text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Narxi</th>
+                    <th className="py-2.5 px-2 text-center text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Facing</th>
+                    <th className="py-2.5 px-2 text-right text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Δ narx</th>
+                    <th className="py-2.5 px-2 text-center text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Tavsiya</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </Card>
+                </thead>
+                <tbody>
+                  {COMPETITORS.map(c => (
+                    <tr key={c.id} className="border-b border-[#F0EAE0] hover:bg-[#FAF7F2]">
+                      <td className="py-3 px-2">
+                        <div className="font-medium text-[#1A1A1A]">{c.product}</div>
+                        <div className="text-xs text-[#9C8A6E] font-mono">{c.ourSku}</div>
+                      </td>
+                      <td className="py-3 px-2 text-right font-mono font-medium text-emerald-700">{fmt(c.ourPrice)}</td>
+                      <td className="py-3 px-2 text-center">
+                        <div className="flex flex-col items-center gap-1">
+                          <span className="font-mono font-medium text-[#1A1A1A]">{c.ourFacing}</span>
+                          <div className="flex gap-0.5">
+                            {Array.from({ length: c.ourFacing }).slice(0, 8).map((_, i) => (
+                              <div key={i} className="w-1.5 h-3 bg-emerald-500 rounded-sm" />
+                            ))}
+                          </div>
+                        </div>
+                      </td>
+                      <td className="py-3 px-2 text-center text-[#9C8A6E] font-medium">VS</td>
+                      <td className="py-3 px-2">
+                        <div className="font-medium text-[#1A1A1A]">{c.competitor}</div>
+                      </td>
+                      <td className="py-3 px-2 text-right font-mono font-medium text-[#C75D3C]">{fmt(c.compPrice)}</td>
+                      <td className="py-3 px-2 text-center">
+                        <div className="flex flex-col items-center gap-1">
+                          <span className="font-mono font-medium text-[#1A1A1A]">{c.compFacing}</span>
+                          <div className="flex gap-0.5">
+                            {Array.from({ length: c.compFacing }).slice(0, 8).map((_, i) => (
+                              <div key={i} className="w-1.5 h-3 bg-[#C75D3C] rounded-sm" />
+                            ))}
+                          </div>
+                        </div>
+                      </td>
+                      <td className={`py-3 px-2 text-right font-mono font-medium ${c.difference > 0 ? "text-[#C75D3C]" : c.difference < 0 ? "text-emerald-700" : "text-[#9C8A6E]"}`}>
+                        {c.difference > 0 ? "+" : ""}{fmt(c.difference)}
+                      </td>
+                      <td className="py-3 px-2 text-center">
+                        <span className={`text-xs px-2 py-0.5 rounded font-medium ${REC_COLOR[c.recommendation]}`}>
+                          {REC_LABEL[c.recommendation]}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </Card>
 
-        <Card className="p-5">
-          <h2 className="text-lg font-bold mb-4 flex items-center gap-2"><Camera className="w-5 h-5 text-blue-600" /> Foto-dalillar</h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
-            {COMPETITORS.slice(0, 6).map((c, i) => (
-              <div key={i} className="aspect-square bg-gradient-to-br from-slate-200 to-slate-300 rounded-lg flex flex-col items-center justify-center text-slate-500 relative overflow-hidden group">
-                <Camera className="w-12 h-12 opacity-30" />
-                <div className="absolute inset-x-0 bottom-0 bg-black/70 text-white p-2 text-xs">
-                  <div className="font-semibold truncate">{c.product}</div>
-                  <div className="opacity-70">vs {c.competitor}</div>
+          <Card className="p-6 bg-white border border-[#E8E0D3] shadow-sm rounded-2xl">
+            <h2 className="text-xl font-light mb-5 flex items-center gap-2 text-[#1A1A1A]" style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}><Camera className="w-5 h-5 text-[#C75D3C]" /> Foto-dalillar</h2>
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
+              {COMPETITORS.slice(0, 6).map((c, i) => (
+                <div key={i} className="aspect-square rounded-2xl flex flex-col items-center justify-center text-[#9C8A6E] relative overflow-hidden group border border-[#E8E0D3]" style={{ background: "linear-gradient(135deg, #F0EAE0 0%, #FAF7F2 100%)" }}>
+                  <Camera className="w-12 h-12 opacity-30" />
+                  <div className="absolute inset-x-0 bottom-0 bg-black/70 text-white p-2 text-xs">
+                    <div className="font-medium truncate">{c.product}</div>
+                    <div className="opacity-70">vs {c.competitor}</div>
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        </Card>
+              ))}
+            </div>
+          </Card>
+        </div>
       </div>
     </AdminLayout>
+  )
+}
+
+function KpiCard({ icon: Icon, accent, label, value }: { icon: React.ElementType; accent: string; label: string; value: string }) {
+  return (
+    <Card className="p-5 bg-white border border-[#E8E0D3] shadow-sm rounded-2xl relative overflow-hidden">
+      <Icon className="w-5 h-5 mb-2" style={{ color: accent }} />
+      <div className="text-xs uppercase tracking-[0.15em] font-medium" style={{ color: accent }}>{label}</div>
+      <div className="text-2xl font-medium tabular-nums mt-1 text-[#1A1A1A]" style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>{value}</div>
+      <div className="absolute bottom-0 left-0 right-0 h-1" style={{ background: accent }} />
+    </Card>
   )
 }
