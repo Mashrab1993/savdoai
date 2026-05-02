@@ -2,7 +2,7 @@
 import { AdminLayout } from "@/components/layout/admin-layout"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { ArrowLeft, Heart, TrendingUp, TrendingDown, AlertCircle, Activity, Calendar, Sparkles } from "lucide-react"
+import { ArrowLeft, Heart, TrendingUp, TrendingDown, Activity, Calendar, Sparkles } from "lucide-react"
 import Link from "next/link"
 
 type HealthMetric = {
@@ -33,156 +33,146 @@ function getScore(metrics: HealthMetric[]) {
   return Math.round((weightedScore / totalWeight) * 100)
 }
 
+const STATUS_COLOR: Record<string, string> = {
+  excellent: "bg-emerald-50 text-emerald-700 border-emerald-200",
+  good: "bg-blue-50 text-blue-700 border-blue-200",
+  warning: "bg-[#FCE9DD] text-[#D97706] border-[#D97706]/30",
+  critical: "bg-[#F5E5D6] text-[#C75D3C] border-[#C75D3C]/30",
+}
+
+const SCORE_ACCENT = (s: number) => s >= 90 ? "#10B981" : s >= 75 ? "#3B82F6" : s >= 60 ? "#D97706" : "#C75D3C"
+
 export default function BusinessHealthPage() {
   const overallScore = getScore(METRICS)
   const categories = Array.from(new Set(METRICS.map(m => m.category)))
-
-  const STATUS_COLOR: Record<string, string> = {
-    excellent: "bg-emerald-100 text-emerald-700 border-emerald-300",
-    good: "bg-blue-100 text-blue-700 border-blue-300",
-    warning: "bg-amber-100 text-amber-700 border-amber-300",
-    critical: "bg-rose-100 text-rose-700 border-rose-300",
-  }
+  const overallAccent = SCORE_ACCENT(overallScore)
 
   return (
     <AdminLayout>
-      <div className="max-w-[1700px] mx-auto space-y-4">
-        <div className="flex items-center gap-3">
-          <Link href="/dashboard" className="p-2 hover:bg-slate-100 rounded-lg"><ArrowLeft className="w-5 h-5" /></Link>
-          <div className="flex-1">
-            <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
-              <Heart className="w-7 h-7 text-rose-500" />
-              AI Biznes Salomatligi
-            </h1>
-            <p className="text-sm text-slate-500">Dunyoda yagona AI · 10 metrik bo'yicha biznesingiz salomatligi</p>
-          </div>
-          <Button variant="outline" className="gap-2"><Calendar className="w-4 h-4" /> Bugun</Button>
-        </div>
-
-        <Card className={`p-8 border-4 text-center ${
-          overallScore >= 90 ? "bg-emerald-50 border-emerald-400" :
-          overallScore >= 75 ? "bg-blue-50 border-blue-400" :
-          overallScore >= 60 ? "bg-amber-50 border-amber-400" :
-          "bg-rose-50 border-rose-400"
-        }`}>
-          <div className="flex items-center justify-center gap-6">
-            <div className="relative">
-              <div className={`text-7xl font-bold font-mono ${
-                overallScore >= 90 ? "text-emerald-700" :
-                overallScore >= 75 ? "text-blue-700" :
-                overallScore >= 60 ? "text-amber-700" :
-                "text-rose-700"
-              }`}>
-                {overallScore}
-              </div>
-              <div className="text-sm text-slate-500 -mt-2">/100</div>
+      <div className="-mx-4 -my-4 px-4 py-6 min-h-full" style={{ background: "linear-gradient(180deg, #F5F1EB 0%, #FAF7F2 100%)" }}>
+        <div className="max-w-[1700px] mx-auto space-y-5">
+          <div className="flex items-end gap-3 border-b border-[#E8E0D3] pb-6">
+            <Link href="/dashboard" className="p-2 hover:bg-[#F0EAE0] rounded-lg"><ArrowLeft className="w-5 h-5 text-[#6B5B4D]" /></Link>
+            <div className="flex-1">
+              <div className="text-xs uppercase tracking-[0.2em] text-[#9C8A6E] font-medium mb-2">SAVDOAI · AI</div>
+              <h1 className="text-4xl font-light tracking-tight text-[#1A1A1A] flex items-center gap-3" style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>
+                <Heart className="w-8 h-8 text-[#C75D3C]" />
+                AI Biznes <span className="italic text-[#C75D3C]">Salomatligi</span>
+              </h1>
+              <p className="text-sm text-[#6B5B4D] mt-2">Dunyoda yagona AI · 10 metrika · 5 kategoriya</p>
             </div>
-            <div className="text-left">
-              <div className="text-xs text-slate-500 mb-1">UMUMIY HOLAT</div>
-              <div className="text-3xl font-bold mb-1">
-                {overallScore >= 90 ? "🌟 Mukammal" :
-                 overallScore >= 75 ? "✅ Yaxshi" :
-                 overallScore >= 60 ? "⚠️ E'tibor kerak" :
-                 "🚨 Kritik"}
-              </div>
-              <div className="text-sm text-slate-600 max-w-md">
-                {overallScore >= 90 ? "Biznesingiz ajoyib holatda — optimallashtirishda davom eting" :
-                 overallScore >= 75 ? "Sog'lom biznes — ba'zi metriklarni yaxshilash mumkin" :
-                 overallScore >= 60 ? "Bir nechta sohada chuqurroq tahlil va harakat kerak" :
-                 "Tezkor harakat zarur — eng muhim ko'rsatkichlarda kasallik belgilari"}
-              </div>
-            </div>
+            <Button variant="outline" className="gap-2 border-[#E8E0D3] text-[#6B5B4D]"><Calendar className="w-4 h-4" /> Bugun</Button>
           </div>
-        </Card>
 
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-          {categories.map(cat => {
-            const catMetrics = METRICS.filter(m => m.category === cat)
-            const catScore = getScore(catMetrics)
-            return (
-              <Card key={cat} className="p-4">
-                <div className="text-xs font-bold text-slate-500 mb-2">{cat}</div>
-                <div className={`text-3xl font-bold font-mono ${
-                  catScore >= 90 ? "text-emerald-700" :
-                  catScore >= 75 ? "text-blue-700" :
-                  catScore >= 60 ? "text-amber-700" :
-                  "text-rose-700"
-                }`}>{catScore}</div>
-                <div className="text-xs text-slate-500 mt-1">/{100}</div>
-                <div className="mt-2 h-2 bg-slate-200 rounded-full overflow-hidden">
-                  <div className={`h-full ${
-                    catScore >= 90 ? "bg-emerald-500" :
-                    catScore >= 75 ? "bg-blue-500" :
-                    catScore >= 60 ? "bg-amber-500" :
-                    "bg-rose-500"
-                  }`} style={{ width: `${catScore}%` }} />
+          <Card className="p-8 bg-white border-2 shadow-sm rounded-2xl text-center" style={{ borderColor: `${overallAccent}55` }}>
+            <div className="flex items-center justify-center gap-6">
+              <div className="relative">
+                <div className="text-7xl font-medium font-mono tabular-nums" style={{ color: overallAccent, fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>
+                  {overallScore}
                 </div>
-              </Card>
-            )
-          })}
-        </div>
+                <div className="text-sm text-[#9C8A6E] -mt-2">/100</div>
+              </div>
+              <div className="text-left">
+                <div className="text-xs uppercase tracking-[0.2em] text-[#9C8A6E] font-medium mb-1">UMUMIY HOLAT</div>
+                <div className="text-3xl font-light text-[#1A1A1A] mb-1" style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>
+                  {overallScore >= 90 ? "🌟 Mukammal" :
+                   overallScore >= 75 ? "✅ Yaxshi" :
+                   overallScore >= 60 ? "⚠️ E'tibor kerak" :
+                   "🚨 Kritik"}
+                </div>
+                <div className="text-sm text-[#6B5B4D] max-w-md">
+                  {overallScore >= 90 ? "Biznesingiz ajoyib holatda — optimallashtirishda davom eting" :
+                   overallScore >= 75 ? "Sog'lom biznes — ba'zi metriklarni yaxshilash mumkin" :
+                   overallScore >= 60 ? "Bir nechta sohada chuqurroq tahlil va harakat kerak" :
+                   "Tezkor harakat zarur — eng muhim ko'rsatkichlarda kasallik belgilari"}
+                </div>
+              </div>
+            </div>
+          </Card>
 
-        <Card className="p-5">
-          <h2 className="text-lg font-bold mb-4 flex items-center gap-2"><Activity className="w-5 h-5 text-emerald-600" /> Metriklar tafsiloti</h2>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b-2 border-slate-200 text-left bg-slate-50">
-                  <th className="py-3 px-2">Kategoriya</th>
-                  <th className="py-3 px-2">Metrika</th>
-                  <th className="py-3 px-2 text-right">Fakt</th>
-                  <th className="py-3 px-2 text-right">Target</th>
-                  <th className="py-3 px-2 text-center">Trend</th>
-                  <th className="py-3 px-2 text-center">Holat</th>
-                  <th className="py-3 px-2">AI insight</th>
-                </tr>
-              </thead>
-              <tbody>
-                {METRICS.map((m, i) => {
-                  const ratio = Math.round((m.value / m.target) * 100)
-                  return (
-                    <tr key={i} className="border-b border-slate-100 hover:bg-slate-50">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+            {categories.map(cat => {
+              const catMetrics = METRICS.filter(m => m.category === cat)
+              const catScore = getScore(catMetrics)
+              const accent = SCORE_ACCENT(catScore)
+              return (
+                <Card key={cat} className="p-5 bg-white border border-[#E8E0D3] shadow-sm rounded-2xl relative overflow-hidden">
+                  <div className="text-xs uppercase tracking-[0.15em] font-medium" style={{ color: accent }}>{cat}</div>
+                  <div className="text-3xl font-medium font-mono tabular-nums mt-2" style={{ color: accent, fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>{catScore}</div>
+                  <div className="text-xs text-[#9C8A6E] mt-1">/100</div>
+                  <div className="mt-3 h-2 bg-[#F0EAE0] rounded-full overflow-hidden">
+                    <div className="h-full rounded-full" style={{ width: `${catScore}%`, background: accent }} />
+                  </div>
+                  <div className="absolute bottom-0 left-0 right-0 h-1" style={{ background: accent }} />
+                </Card>
+              )
+            })}
+          </div>
+
+          <Card className="p-6 bg-white border border-[#E8E0D3] shadow-sm rounded-2xl">
+            <h2 className="text-xl font-light mb-5 flex items-center gap-2 text-[#1A1A1A]" style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>
+              <Activity className="w-5 h-5 text-[#C75D3C]" /> Metriklar tafsiloti
+            </h2>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-[#E8E0D3] bg-[#FAF7F2]">
+                    <th className="py-3 px-2 text-left text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Kategoriya</th>
+                    <th className="py-3 px-2 text-left text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Metrika</th>
+                    <th className="py-3 px-2 text-right text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Fakt</th>
+                    <th className="py-3 px-2 text-right text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Target</th>
+                    <th className="py-3 px-2 text-center text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Trend</th>
+                    <th className="py-3 px-2 text-center text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Holat</th>
+                    <th className="py-3 px-2 text-left text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">AI insight</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {METRICS.map((m, i) => (
+                    <tr key={i} className="border-b border-[#F0EAE0] hover:bg-[#FAF7F2]">
                       <td className="py-3 px-2">
-                        <span className="text-xs px-2 py-0.5 rounded bg-violet-100 text-violet-700">{m.category}</span>
+                        <span className="text-xs px-2 py-0.5 rounded bg-[#FCE9DD] text-[#C75D3C] font-medium">{m.category}</span>
                       </td>
-                      <td className="py-3 px-2 font-semibold">{m.metric}</td>
-                      <td className="py-3 px-2 text-right font-mono font-bold">{m.value}</td>
-                      <td className="py-3 px-2 text-right font-mono text-slate-500">{m.target}</td>
+                      <td className="py-3 px-2 font-medium text-[#1A1A1A]">{m.metric}</td>
+                      <td className="py-3 px-2 text-right font-mono font-medium text-[#1A1A1A]" style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>{m.value}</td>
+                      <td className="py-3 px-2 text-right font-mono text-[#9C8A6E]">{m.target}</td>
                       <td className="py-3 px-2 text-center">
                         {m.trend === "up" && <TrendingUp className="w-4 h-4 text-emerald-600 mx-auto" />}
-                        {m.trend === "down" && <TrendingDown className="w-4 h-4 text-rose-600 mx-auto" />}
-                        {m.trend === "stable" && <span className="text-slate-400 mx-auto">—</span>}
+                        {m.trend === "down" && <TrendingDown className="w-4 h-4 text-[#C75D3C] mx-auto" />}
+                        {m.trend === "stable" && <span className="text-[#9C8A6E] mx-auto">—</span>}
                       </td>
                       <td className="py-3 px-2 text-center">
-                        <span className={`text-xs px-2 py-0.5 rounded border ${STATUS_COLOR[m.status]}`}>
+                        <span className={`text-xs px-2 py-0.5 rounded border font-medium ${STATUS_COLOR[m.status]}`}>
                           {m.status === "excellent" ? "🌟 Mukammal" :
                            m.status === "good" ? "✅ Yaxshi" :
                            m.status === "warning" ? "⚠️ Ogohlantir" :
                            "🚨 Kritik"}
                         </span>
                       </td>
-                      <td className="py-3 px-2 text-xs italic text-slate-600">"{m.insight}"</td>
+                      <td className="py-3 px-2 text-xs italic text-[#6B5B4D]">"{m.insight}"</td>
                     </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
-        </Card>
-
-        <Card className="p-5 bg-gradient-to-br from-rose-50 to-violet-50 border-2 border-rose-300">
-          <div className="flex items-start gap-3">
-            <Sparkles className="w-7 h-7 text-rose-600 flex-shrink-0" />
-            <div>
-              <h3 className="font-bold text-rose-800">AI Biznes Salomatligi nima?</h3>
-              <p className="text-sm text-slate-700 mt-1">
-                Sizning biznesingiz "tibbiy ko'rik"i. 10 ta asosiy metrika 5 ta kategoriya bo'yicha o'lchanadi.
-                Har bir ko'rsatkich uchun AI tahlil va insight beriladi. <span className="font-bold">SalesDoc va boshqa CRM'larda bunday yagona analitik yo'q</span> —
-                bu SavdoAI'ning dunyoda yagona ficha.
-              </p>
+                  ))}
+                </tbody>
+              </table>
             </div>
-          </div>
-        </Card>
+          </Card>
+
+          <Card className="p-6 bg-white border-2 border-[#C75D3C]/30 shadow-sm rounded-2xl">
+            <div className="flex items-start gap-3">
+              <div className="w-12 h-12 rounded-2xl bg-[#FCE9DD] flex items-center justify-center flex-shrink-0">
+                <Sparkles className="w-6 h-6 text-[#C75D3C]" />
+              </div>
+              <div>
+                <div className="text-xs uppercase tracking-[0.2em] text-[#C75D3C] font-medium">QANDAY ISHLAYDI</div>
+                <h3 className="text-xl font-light text-[#1A1A1A] mt-1" style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>AI Biznes Salomatligi</h3>
+                <p className="text-sm text-[#6B5B4D] mt-2 leading-relaxed">
+                  Sizning biznesingiz "tibbiy ko'rik"i. 10 ta asosiy metrika 5 ta kategoriya bo'yicha o'lchanadi.
+                  Har bir ko'rsatkich uchun AI tahlil va insight beriladi. <span className="font-medium text-[#C75D3C]">SalesDoc va boshqa CRM'larda bunday yagona analitik yo'q</span> —
+                  bu SavdoAI'ning dunyoda yagona ficha.
+                </p>
+              </div>
+            </div>
+          </Card>
+        </div>
       </div>
     </AdminLayout>
   )
