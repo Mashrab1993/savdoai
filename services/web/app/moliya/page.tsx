@@ -3,10 +3,30 @@ import { AdminLayout } from "@/components/layout/admin-layout"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { TrendingUp, TrendingDown, Wallet, ArrowUpRight, ArrowDownRight, AlertCircle } from "lucide-react"
+import { useApi, useAuth } from "@/hooks/use-api"
+
+type KassaStats = {
+  naqd_balans?: number
+  bank_balans?: number
+  jami_balans?: number
+}
 
 export default function MoliyaPage() {
-  // Real-style data inspired from samsladus actual figures
-  const balance = {
+  const { isAuthenticated } = useAuth()
+  const { data: apiKassa, loading } = useApi<KassaStats>(
+    isAuthenticated ? "/api/v1/kassa/stats" : null
+  )
+  const usingMock = !apiKassa
+
+  const balance = apiKassa ? {
+    cash_total: apiKassa.naqd_balans ?? 0,
+    bank_total: apiKassa.bank_balans ?? 0,
+    usd_total: 0,
+    transfers: 0,
+    overall: apiKassa.jami_balans ?? 0,
+    overall_with_prepay: apiKassa.jami_balans ?? 0,
+    overall_full: apiKassa.jami_balans ?? 0,
+  } : {
     cash_total: -4_806_407_358,
     bank_total: 2_883_346_590,
     usd_total: 0,
@@ -34,6 +54,9 @@ export default function MoliyaPage() {
             <p className="text-base text-slate-500 mt-1">Joriy oy: 155,170,315 so'm sotuv</p>
           </div>
           <div className="flex items-center gap-2">
+            {loading && <span className="px-3 py-1.5 rounded-full bg-blue-100 text-blue-700 text-sm font-medium animate-pulse">Yuklanmoqda...</span>}
+            {!loading && apiKassa && <span className="px-3 py-1.5 rounded-full bg-emerald-100 text-emerald-700 text-sm font-medium">● Real-time API</span>}
+            {!loading && usingMock && <span className="px-3 py-1.5 rounded-full bg-amber-100 text-amber-700 text-sm font-medium flex items-center gap-1"><AlertCircle className="w-3.5 h-3.5" /> Demo data — login kerak</span>}
             <Button variant="outline">Davr: May 2026 ▼</Button>
           </div>
         </div>

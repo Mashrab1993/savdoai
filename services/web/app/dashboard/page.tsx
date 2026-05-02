@@ -1,12 +1,28 @@
 "use client"
 import { AdminLayout } from "@/components/layout/admin-layout"
 import { Card } from "@/components/ui/card"
-import { TrendingUp, Users, Package, AlertTriangle, ShoppingBag, FileText, DollarSign, Eye } from "lucide-react"
+import { TrendingUp, Users, Package, AlertTriangle, ShoppingBag, FileText, DollarSign, Eye, AlertCircle } from "lucide-react"
 import { formatNumber, formatCurrency } from "@/lib/utils"
+import { useApi, useAuth } from "@/hooks/use-api"
+
+type DashboardStats = {
+  today_sum?: number
+  today_count?: number
+  overdue_amount?: number
+  overdue_count?: number
+  visits_total?: number
+  visits_done?: number
+  visits_refused?: number
+  photo_pct?: number
+}
 
 export default function DashboardPage() {
-  // Mock data — backend ulagandan keyin real bo'ladi
-  const stats = {
+  const { isAuthenticated } = useAuth()
+  const { data: apiStats, loading, error } = useApi<DashboardStats>(
+    isAuthenticated ? "/api/v1/dashboard/summary" : null
+  )
+
+  const mockStats = {
     today_sum: 22068830,
     today_count: 51,
     overdue_amount: -758248486,
@@ -14,10 +30,11 @@ export default function DashboardPage() {
     visits_total: 1042,
     visits_done: 0,
     visits_refused: 38,
-    sku_presence: 0,
-    facing_pct: 0,
     photo_pct: 0,
   }
+
+  const stats = apiStats || mockStats
+  const usingMock = !apiStats
 
   const topProducts = [
     { name: "PRIMA GREEN", pct: 32.52, color: "bg-emerald-500" },
@@ -51,11 +68,30 @@ export default function DashboardPage() {
             <p className="text-base text-slate-500 mt-1">Bugungi holat — 2 may, 2026</p>
           </div>
           <div className="flex items-center gap-2 text-sm">
-            <div className="px-3 py-1.5 rounded-full bg-emerald-100 text-emerald-700 font-medium">
-              ● Real-time
-            </div>
+            {loading && (
+              <div className="px-3 py-1.5 rounded-full bg-blue-100 text-blue-700 font-medium animate-pulse">
+                Yuklanmoqda...
+              </div>
+            )}
+            {!loading && apiStats && (
+              <div className="px-3 py-1.5 rounded-full bg-emerald-100 text-emerald-700 font-medium">
+                ● Real-time API
+              </div>
+            )}
+            {!loading && usingMock && (
+              <div className="px-3 py-1.5 rounded-full bg-amber-100 text-amber-700 font-medium flex items-center gap-1">
+                <AlertCircle className="w-3.5 h-3.5" /> Demo data — login kerak
+              </div>
+            )}
           </div>
         </div>
+
+        {error && (
+          <div className="p-3 bg-rose-50 border border-rose-200 rounded-lg text-sm text-rose-700 flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 flex-shrink-0" />
+            <span>API xato: {error}. Demo ma'lumotlar ko'rsatilmoqda.</span>
+          </div>
+        )}
 
         {/* KPI cards row 1 — Sotuv */}
         <div>
@@ -63,30 +99,30 @@ export default function DashboardPage() {
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             <KpiCard
               label="Bugungi sotuv"
-              value={formatCurrency(stats.today_sum)}
-              subtext={`${stats.today_count} ta zakaz`}
+              value={formatCurrency(stats.today_sum ?? 0)}
+              subtext={`${stats.today_count ?? 0} ta zakaz`}
               icon={ShoppingBag}
               color="emerald"
               trend="+12.3%"
             />
             <KpiCard
               label="Muddati o'tgan qarz"
-              value={formatNumber(stats.overdue_amount) + " so'm"}
-              subtext={`${stats.overdue_count} ta klient`}
+              value={formatNumber(stats.overdue_amount ?? 0) + " so'm"}
+              subtext={`${stats.overdue_count ?? 0} ta klient`}
               icon={AlertTriangle}
               color="rose"
               alert
             />
             <KpiCard
               label="Bugungi visit"
-              value={`${stats.visits_done}/${stats.visits_total}`}
-              subtext={`${stats.visits_refused} otkazilgan`}
+              value={`${stats.visits_done ?? 0}/${stats.visits_total ?? 0}`}
+              subtext={`${stats.visits_refused ?? 0} otkazilgan`}
               icon={Eye}
               color="amber"
             />
             <KpiCard
               label="Foto hisobotlar"
-              value={`${stats.photo_pct}%`}
+              value={`${stats.photo_pct ?? 0}%`}
               subtext="Bugun yuborilgan"
               icon={FileText}
               color="blue"
@@ -124,7 +160,7 @@ export default function DashboardPage() {
           <Card className="p-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold">Agentlar — Visit holati</h3>
-              <span className="text-sm text-slate-500">{stats.visits_total} reja / {stats.visits_done} bajarildi</span>
+              <span className="text-sm text-slate-500">{stats.visits_total ?? 0} reja / {stats.visits_done ?? 0} bajarildi</span>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">

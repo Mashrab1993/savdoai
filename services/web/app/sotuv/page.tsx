@@ -1,7 +1,17 @@
 "use client"
 import { AdminLayout } from "@/components/layout/admin-layout"
 import { Card } from "@/components/ui/card"
-import { ShoppingBag, TrendingUp, Eye, Camera } from "lucide-react"
+import { ShoppingBag, TrendingUp, Eye, Camera, AlertCircle } from "lucide-react"
+import { useApi, useAuth } from "@/hooks/use-api"
+
+type SotuvStats = {
+  today_sum?: number
+  today_count?: number
+  visits_total?: number
+  visits_done?: number
+  brands?: { name: string; pct: number }[]
+  agents?: { name: string; visits_plan: number; visits: number; refused: number; sum: number; orders: number }[]
+}
 
 const BRAND_DATA = [
   { name: "PRIMA GREEN", pct: 32.52, color: "from-emerald-400 to-emerald-600" },
@@ -24,12 +34,29 @@ const AGENT_KPI = [
 ]
 
 export default function SotuvPage() {
+  const { isAuthenticated } = useAuth()
+  const { data: apiStats, loading } = useApi<SotuvStats>(
+    isAuthenticated ? "/api/v1/dashboard/summary" : null
+  )
+  const usingMock = !apiStats
+  const brands = apiStats?.brands?.length ? apiStats.brands.map((b, i) => ({ ...b, color: BRAND_DATA[i % BRAND_DATA.length].color })) : BRAND_DATA
+  const agents = apiStats?.agents?.length ? apiStats.agents : AGENT_KPI
+
   return (
     <AdminLayout>
       <div className="max-w-[1600px] mx-auto space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Sotuv</h1>
-          <p className="text-base text-slate-500 mt-1">Bugungi: 22,068,830 so'm · 51 zakaz</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Sotuv</h1>
+            <p className="text-base text-slate-500 mt-1">
+              Bugungi: {(apiStats?.today_sum ?? 22068830).toLocaleString("ru-RU")} so'm · {apiStats?.today_count ?? 51} zakaz
+            </p>
+          </div>
+          <div>
+            {loading && <span className="px-3 py-1.5 rounded-full bg-blue-100 text-blue-700 text-sm font-medium animate-pulse">Yuklanmoqda...</span>}
+            {!loading && apiStats && <span className="px-3 py-1.5 rounded-full bg-emerald-100 text-emerald-700 text-sm font-medium">● Real-time API</span>}
+            {!loading && usingMock && <span className="px-3 py-1.5 rounded-full bg-amber-100 text-amber-700 text-sm font-medium flex items-center gap-1"><AlertCircle className="w-3.5 h-3.5" /> Demo data — login kerak</span>}
+          </div>
         </div>
 
         {/* Big KPI cards 4 colored */}
