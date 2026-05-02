@@ -10,16 +10,16 @@ import { useApi, useAuth } from "@/hooks/use-api"
 
 type LogEntry = { id: number; timestamp: string; user: string; action: string; entity: string; details: string; ip: string; severity: "info" | "warn" | "error" }
 
-const ACTIONS: Record<string, { icon: any; color: string; label: string }> = {
-  create: { icon: Plus, color: "emerald", label: "Yaratildi" },
-  update: { icon: Edit2, color: "blue", label: "Tahrirlandi" },
-  delete: { icon: Trash2, color: "rose", label: "O'chirildi" },
-  login: { icon: User, color: "violet", label: "Tizimga kirdi" },
-  payment: { icon: Wallet, color: "amber", label: "To'lov" },
-  order: { icon: ShoppingBag, color: "emerald", label: "Zakaz" },
-  stock: { icon: Package, color: "cyan", label: "Sklad" },
-  lock: { icon: Lock, color: "rose", label: "Bloklandi" },
-  view: { icon: Eye, color: "slate", label: "Ko'rib chiqildi" },
+const ACTIONS: Record<string, { icon: any; accent: string; label: string }> = {
+  create: { icon: Plus, accent: "#10B981", label: "Yaratildi" },
+  update: { icon: Edit2, accent: "#3B82F6", label: "Tahrirlandi" },
+  delete: { icon: Trash2, accent: "#C75D3C", label: "O'chirildi" },
+  login: { icon: User, accent: "#7C3AED", label: "Tizimga kirdi" },
+  payment: { icon: Wallet, accent: "#D97706", label: "To'lov" },
+  order: { icon: ShoppingBag, accent: "#10B981", label: "Zakaz" },
+  stock: { icon: Package, accent: "#06B6D4", label: "Sklad" },
+  lock: { icon: Lock, accent: "#C75D3C", label: "Bloklandi" },
+  view: { icon: Eye, accent: "#9C8A6E", label: "Ko'rib chiqildi" },
 }
 
 const LOGS: LogEntry[] = [
@@ -41,9 +41,9 @@ const LOGS: LogEntry[] = [
 ]
 
 const SEVERITY_CFG = {
-  info: { bg: "bg-slate-100", text: "text-slate-700", label: "INFO" },
-  warn: { bg: "bg-amber-100", text: "text-amber-700", label: "WARN" },
-  error: { bg: "bg-rose-100", text: "text-rose-700", label: "ERROR" },
+  info: { bg: "bg-[#F0EAE0]", text: "text-[#6B5B4D]", label: "INFO" },
+  warn: { bg: "bg-[#FCE9DD]", text: "text-[#D97706]", label: "WARN" },
+  error: { bg: "bg-[#F5E5D6]", text: "text-[#C75D3C]", label: "ERROR" },
 }
 
 export default function AuditLogPage() {
@@ -51,7 +51,7 @@ export default function AuditLogPage() {
   const { data: api, loading } = useApi<LogEntry[]>(isAuthenticated ? "/api/v1/audit-log" : null)
   const [search, setSearch] = useState("")
   const [actionFilter, setActionFilter] = useState<string | null>(null)
-  const [severityFilter, setSeverityFilter] = useState<string | null>(null)
+  const [severityFilter] = useState<string | null>(null)
 
   const filtered = LOGS.filter(l => {
     const matchSearch = !search || l.user.toLowerCase().includes(search.toLowerCase()) || l.entity.toLowerCase().includes(search.toLowerCase()) || l.details.toLowerCase().includes(search.toLowerCase())
@@ -62,89 +62,89 @@ export default function AuditLogPage() {
 
   return (
     <AdminLayout>
-      <div className="max-w-[1700px] mx-auto space-y-6">
-        <div className="flex items-center gap-3">
-          <Link href="/audit" className="p-2 hover:bg-slate-100 rounded-lg"><ArrowLeft className="w-5 h-5" /></Link>
-          <div className="flex-1">
-            <h1 className="text-3xl font-bold tracking-tight">Audit log</h1>
-            <p className="text-base text-slate-500 mt-1">Tizimdagi barcha o'zgarishlar · {LOGS.length} ta yozuv · So'nggi 24 soat</p>
-          </div>
-          {loading && <span className="px-3 py-1.5 rounded-full bg-blue-100 text-blue-700 text-sm font-medium animate-pulse">Yuklanmoqda...</span>}
-          {!loading && api && Array.isArray(api) && <span className="px-3 py-1.5 rounded-full bg-emerald-100 text-emerald-700 text-sm font-medium">● Real API</span>}
-          <Button variant="outline" className="gap-2"><Download className="w-4 h-4" /> Excel</Button>
-        </div>
-
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <Card className="p-4 bg-slate-50 border-slate-200">
-            <Eye className="w-5 h-5 text-slate-600 mb-2" />
-            <div className="text-xs font-bold text-slate-700">JAMI</div>
-            <div className="text-2xl font-bold text-slate-900 mt-0.5">{LOGS.length}</div>
-          </Card>
-          <Card className="p-4 bg-emerald-50 border-emerald-200">
-            <Plus className="w-5 h-5 text-emerald-600 mb-2" />
-            <div className="text-xs font-bold text-emerald-700">YARATILDI</div>
-            <div className="text-2xl font-bold text-slate-900 mt-0.5">{LOGS.filter(l => l.action === "create" || l.action === "order").length}</div>
-          </Card>
-          <Card className="p-4 bg-amber-50 border-amber-200">
-            <AlertCircle className="w-5 h-5 text-amber-600 mb-2" />
-            <div className="text-xs font-bold text-amber-700">OGOHLANTIRISH</div>
-            <div className="text-2xl font-bold text-slate-900 mt-0.5">{LOGS.filter(l => l.severity === "warn").length}</div>
-          </Card>
-          <Card className="p-4 bg-violet-50 border-violet-200">
-            <User className="w-5 h-5 text-violet-600 mb-2" />
-            <div className="text-xs font-bold text-violet-700">USER LOGINS</div>
-            <div className="text-2xl font-bold text-slate-900 mt-0.5">{LOGS.filter(l => l.action === "login").length}</div>
-          </Card>
-        </div>
-
-        <Card className="p-5">
-          <div className="flex items-center gap-3 mb-4 flex-wrap">
-            <div className="relative flex-1 max-w-md">
-              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-              <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="User, entity, details..." className="pl-9" />
+      <div className="-mx-4 -my-4 px-4 py-6 min-h-full" style={{ background: "linear-gradient(180deg, #F5F1EB 0%, #FAF7F2 100%)" }}>
+        <div className="max-w-[1700px] mx-auto space-y-6">
+          <div className="flex items-end gap-3 border-b border-[#E8E0D3] pb-6">
+            <Link href="/audit" className="p-2 hover:bg-[#F0EAE0] rounded-lg"><ArrowLeft className="w-5 h-5 text-[#6B5B4D]" /></Link>
+            <div className="flex-1">
+              <div className="text-xs uppercase tracking-[0.2em] text-[#9C8A6E] font-medium mb-2">SAVDOAI · AUDIT</div>
+              <h1 className="text-4xl font-light tracking-tight text-[#1A1A1A]" style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>
+                Audit <span className="italic text-[#C75D3C]">log</span>
+              </h1>
+              <p className="text-sm text-[#6B5B4D] mt-2">Tizimdagi barcha o'zgarishlar · {LOGS.length} ta yozuv · So'nggi 24 soat</p>
             </div>
-            <div className="flex gap-1 flex-wrap">
-              <button onClick={() => setActionFilter(null)} className={`px-2 py-1 text-xs font-semibold rounded ${!actionFilter ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-700"}`}>
-                Hammasi
-              </button>
-              {Object.entries(ACTIONS).map(([k, a]) => (
-                <button key={k} onClick={() => setActionFilter(k)} className={`px-2 py-1 text-xs font-semibold rounded ${actionFilter === k ? "bg-slate-900 text-white" : `bg-${a.color}-100 text-${a.color}-700`}`}>
-                  {a.label}
+            {loading && <span className="px-3 py-1.5 rounded-full bg-[#E8E0D3] text-[#6B5B4D] text-sm animate-pulse">Yuklanmoqda...</span>}
+            {!loading && api && Array.isArray(api) && <span className="px-3 py-1.5 rounded-full bg-emerald-50 text-emerald-700 text-sm flex items-center gap-1.5"><span className="w-1.5 h-1.5 bg-emerald-600 rounded-full" /> Real API</span>}
+            <Button variant="outline" className="gap-2 border-[#E8E0D3] text-[#6B5B4D]"><Download className="w-4 h-4" /> Excel</Button>
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <KpiCard icon={Eye} accent="#9C8A6E" label="Jami" value={LOGS.length.toString()} />
+            <KpiCard icon={Plus} accent="#10B981" label="Yaratildi" value={LOGS.filter(l => l.action === "create" || l.action === "order").length.toString()} />
+            <KpiCard icon={AlertCircle} accent="#D97706" label="Ogohlantirish" value={LOGS.filter(l => l.severity === "warn").length.toString()} />
+            <KpiCard icon={User} accent="#7C3AED" label="User loginlari" value={LOGS.filter(l => l.action === "login").length.toString()} />
+          </div>
+
+          <Card className="p-6 bg-white border border-[#E8E0D3] shadow-sm rounded-2xl">
+            <div className="flex items-center gap-3 mb-4 flex-wrap">
+              <div className="relative flex-1 max-w-md">
+                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#9C8A6E]" />
+                <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="User, entity, details..." className="pl-9 border-[#E8E0D3] bg-[#FAF7F2]" />
+              </div>
+              <div className="flex gap-1 flex-wrap">
+                <button onClick={() => setActionFilter(null)} className={`px-2 py-1 text-xs font-medium rounded ${!actionFilter ? "bg-[#1A1A1A] text-white" : "bg-[#F0EAE0] text-[#6B5B4D] hover:bg-[#E8E0D3]"}`}>
+                  Hammasi
                 </button>
-              ))}
+                {Object.entries(ACTIONS).map(([k, a]) => (
+                  <button key={k} onClick={() => setActionFilter(k)} className={`px-2 py-1 text-xs font-medium rounded ${actionFilter === k ? "text-white" : "bg-white border border-[#E8E0D3] text-[#6B5B4D] hover:border-[#C75D3C]"}`} style={actionFilter === k ? { background: a.accent } : {}}>
+                    {a.label}
+                  </button>
+                ))}
+              </div>
+              <span className="text-sm text-[#9C8A6E]">{filtered.length}</span>
             </div>
-            <span className="text-sm text-slate-500">{filtered.length}</span>
-          </div>
 
-          <div className="space-y-1.5 max-h-[70vh] overflow-y-auto">
-            {filtered.map(l => {
-              const cfg = ACTIONS[l.action] || { icon: Eye, color: "slate", label: l.action }
-              const Icon = cfg.icon
-              const sev = SEVERITY_CFG[l.severity]
-              return (
-                <div key={l.id} className={`flex items-start gap-3 p-3 rounded-lg border hover:bg-slate-50 transition-all bg-${cfg.color}-50/30 border-${cfg.color}-100`}>
-                  <div className={`flex-shrink-0 w-9 h-9 rounded-lg bg-${cfg.color}-100 text-${cfg.color}-700 flex items-center justify-center`}>
-                    <Icon className="w-4 h-4" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-bold text-slate-900">{l.user}</span>
-                      <span className={`text-[10px] px-1.5 py-0.5 rounded font-semibold ${sev.bg} ${sev.text}`}>{sev.label}</span>
-                      <span className={`text-[10px] px-1.5 py-0.5 rounded font-semibold bg-${cfg.color}-200 text-${cfg.color}-800`}>{cfg.label}</span>
-                      <span className="font-mono text-xs text-slate-600">{l.entity}</span>
+            <div className="space-y-1.5 max-h-[70vh] overflow-y-auto">
+              {filtered.map(l => {
+                const cfg = ACTIONS[l.action] || { icon: Eye, accent: "#9C8A6E", label: l.action }
+                const Icon = cfg.icon
+                const sev = SEVERITY_CFG[l.severity]
+                return (
+                  <div key={l.id} className="flex items-start gap-3 p-3 rounded-2xl border border-[#E8E0D3] hover:bg-[#FAF7F2] transition-all" style={{ background: `${cfg.accent}08` }}>
+                    <div className="flex-shrink-0 w-9 h-9 rounded-xl flex items-center justify-center text-white" style={{ background: cfg.accent }}>
+                      <Icon className="w-4 h-4" />
                     </div>
-                    <div className="text-xs text-slate-600 mt-0.5">{l.details}</div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-medium text-[#1A1A1A]">{l.user}</span>
+                        <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${sev.bg} ${sev.text}`}>{sev.label}</span>
+                        <span className="text-[10px] px-1.5 py-0.5 rounded font-medium text-white" style={{ background: cfg.accent }}>{cfg.label}</span>
+                        <span className="font-mono text-xs text-[#6B5B4D]">{l.entity}</span>
+                      </div>
+                      <div className="text-xs text-[#6B5B4D] mt-0.5">{l.details}</div>
+                    </div>
+                    <div className="flex-shrink-0 text-right">
+                      <div className="text-xs font-mono text-[#9C8A6E]">{l.timestamp}</div>
+                      <div className="text-[10px] font-mono text-[#9C8A6E] mt-0.5">{l.ip}</div>
+                    </div>
                   </div>
-                  <div className="flex-shrink-0 text-right">
-                    <div className="text-xs font-mono text-slate-500">{l.timestamp}</div>
-                    <div className="text-[10px] font-mono text-slate-400 mt-0.5">{l.ip}</div>
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        </Card>
+                )
+              })}
+            </div>
+          </Card>
+        </div>
       </div>
     </AdminLayout>
+  )
+}
+
+function KpiCard({ icon: Icon, accent, label, value }: { icon: React.ElementType; accent: string; label: string; value: string }) {
+  return (
+    <Card className="p-5 bg-white border border-[#E8E0D3] shadow-sm rounded-2xl relative overflow-hidden">
+      <Icon className="w-5 h-5 mb-2" style={{ color: accent }} />
+      <div className="text-xs uppercase tracking-[0.15em] font-medium" style={{ color: accent }}>{label}</div>
+      <div className="text-2xl font-medium tabular-nums mt-1 text-[#1A1A1A]" style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>{value}</div>
+      <div className="absolute bottom-0 left-0 right-0 h-1" style={{ background: accent }} />
+    </Card>
   )
 }
