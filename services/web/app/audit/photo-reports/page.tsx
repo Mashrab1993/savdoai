@@ -9,11 +9,11 @@ import Link from "next/link"
 import { useApi, useAuth } from "@/hooks/use-api"
 
 const CATEGORIES = [
-  { key: "facing", name: "Facing", count: 142, color: "emerald" },
-  { key: "stock", name: "Sklad", count: 96, color: "blue" },
-  { key: "promo", name: "Aksiya", count: 68, color: "violet" },
-  { key: "competitor", name: "Raqobat", count: 42, color: "amber" },
-  { key: "damage", name: "Brak", count: 18, color: "rose" },
+  { key: "facing", name: "Facing", count: 142, accent: "#10B981" },
+  { key: "stock", name: "Sklad", count: 96, accent: "#3B82F6" },
+  { key: "promo", name: "Aksiya", count: 68, accent: "#8B5CF6" },
+  { key: "competitor", name: "Raqobat", count: 42, accent: "#D97706" },
+  { key: "damage", name: "Brak", count: 18, accent: "#C75D3C" },
 ]
 
 const PHOTOS = Array.from({ length: 24 }).map((_, i) => ({
@@ -29,7 +29,7 @@ const PHOTOS = Array.from({ length: 24 }).map((_, i) => ({
 
 export default function PhotoReportsPage() {
   const { isAuthenticated } = useAuth()
-  const { data: api, loading } = useApi<any[]>(isAuthenticated ? "/api/v1/photo-reports" : null)
+  const { data: _api, loading: _loading } = useApi<any[]>(isAuthenticated ? "/api/v1/photo-reports" : null)
   const [search, setSearch] = useState("")
   const [activeCategory, setActiveCategory] = useState<string | null>(null)
   const [selectedPhoto, setSelectedPhoto] = useState<typeof PHOTOS[0] | null>(null)
@@ -45,111 +45,118 @@ export default function PhotoReportsPage() {
 
   return (
     <AdminLayout>
-      <div className="max-w-[1700px] mx-auto space-y-6">
-        <div className="flex items-center gap-3">
-          <Link href="/audit" className="p-2 hover:bg-slate-100 rounded-lg"><ArrowLeft className="w-5 h-5" /></Link>
-          <div className="flex-1">
-            <h1 className="text-3xl font-bold tracking-tight">Foto-hisobotlar</h1>
-            <p className="text-base text-slate-500 mt-1">Aprel 2026 · {totalPhotos} ta foto · {approvedCount} ma'qullangan ({Math.round(approvedCount / totalPhotos * 100)}%)</p>
-          </div>
-          <Button variant="outline" className="gap-2"><Filter className="w-4 h-4" /> Filtr</Button>
-          <Button variant="outline" className="gap-2"><Download className="w-4 h-4" /> ZIP</Button>
-        </div>
-
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
-          {CATEGORIES.map(c => {
-            const isActive = activeCategory === c.key
-            return (
-              <Card
-                key={c.key}
-                onClick={() => setActiveCategory(isActive ? null : c.key)}
-                className={`p-4 cursor-pointer transition-all hover:shadow-md border-2 bg-${c.color}-50 border-${c.color}-200 ${isActive ? "ring-2 ring-offset-2 ring-slate-900" : ""}`}
-              >
-                <Camera className={`w-5 h-5 text-${c.color}-600 mb-2`} />
-                <div className={`text-xs font-bold text-${c.color}-700`}>{c.name}</div>
-                <div className="text-2xl font-bold text-slate-900 mt-0.5">{c.count}</div>
-              </Card>
-            )
-          })}
-        </div>
-
-        <Card className="p-5">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="relative flex-1 max-w-md">
-              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-              <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="Klient yoki agent..." className="pl-9" />
+      <div className="-mx-4 -my-4 px-4 py-6 min-h-full" style={{ background: "linear-gradient(180deg, #F5F1EB 0%, #FAF7F2 100%)" }}>
+        <div className="max-w-[1700px] mx-auto space-y-6">
+          <div className="flex items-end gap-3 border-b border-[#E8E0D3] pb-6">
+            <Link href="/audit" className="p-2 hover:bg-[#F0EAE0] rounded-lg"><ArrowLeft className="w-5 h-5 text-[#6B5B4D]" /></Link>
+            <div className="flex-1">
+              <div className="text-xs uppercase tracking-[0.2em] text-[#9C8A6E] font-medium mb-2">SAVDOAI · AUDIT</div>
+              <h1 className="text-4xl font-light tracking-tight text-[#1A1A1A]" style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>
+                Foto-<span className="italic text-[#C75D3C]">hisobotlar</span>
+              </h1>
+              <p className="text-sm text-[#6B5B4D] mt-2">Aprel 2026 · {totalPhotos} ta foto · {approvedCount} ma'qullangan ({Math.round(approvedCount / totalPhotos * 100)}%)</p>
             </div>
-            <span className="text-sm text-slate-500">{filtered.length} ta foto</span>
+            <Button variant="outline" className="gap-2 border-[#E8E0D3] text-[#6B5B4D]"><Filter className="w-4 h-4" /> Filtr</Button>
+            <Button variant="outline" className="gap-2 border-[#E8E0D3] text-[#6B5B4D]"><Download className="w-4 h-4" /> ZIP</Button>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
-            {filtered.map(p => {
-              const cat = CATEGORIES.find(c => c.key === p.category)!
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+            {CATEGORIES.map(c => {
+              const isActive = activeCategory === c.key
               return (
-                <button key={p.id} onClick={() => setSelectedPhoto(p)} className="relative aspect-[3/4] rounded-lg overflow-hidden hover:shadow-lg transition-all group cursor-pointer">
-                  <div className={`absolute inset-0 bg-gradient-to-br from-${cat.color}-200 via-${cat.color}-100 to-${cat.color}-50 flex items-center justify-center`}>
-                    <Camera className="w-10 h-10 text-slate-400/50" />
-                  </div>
-                  <div className="absolute top-2 left-2">
-                    <span className={`text-[10px] px-1.5 py-0.5 rounded font-bold bg-white/90 text-${cat.color}-700`}>
-                      {cat.name}
-                    </span>
-                  </div>
-                  <div className="absolute top-2 right-2">
-                    {p.approved ? (
-                      <CheckCircle2 className="w-5 h-5 text-emerald-600 bg-white rounded-full" />
-                    ) : (
-                      <AlertCircle className="w-5 h-5 text-amber-600 bg-white rounded-full" />
-                    )}
-                  </div>
-                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2">
-                    <div className="text-xs font-semibold text-white truncate">{p.client}</div>
-                    <div className="text-[10px] text-white/80 mt-0.5">{p.agent} · {p.date}</div>
-                  </div>
-                </button>
+                <Card
+                  key={c.key}
+                  onClick={() => setActiveCategory(isActive ? null : c.key)}
+                  className="p-4 cursor-pointer transition-all hover:shadow-md border bg-white rounded-2xl relative overflow-hidden"
+                  style={isActive ? { borderColor: c.accent, boxShadow: `0 0 0 2px ${c.accent}33` } : { borderColor: "#E8E0D3" }}
+                >
+                  <Camera className="w-5 h-5 mb-2" style={{ color: c.accent }} />
+                  <div className="text-xs uppercase tracking-[0.15em] font-medium" style={{ color: c.accent }}>{c.name}</div>
+                  <div className="text-3xl font-medium tabular-nums mt-1 text-[#1A1A1A]" style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>{c.count}</div>
+                  <div className="absolute bottom-0 left-0 right-0 h-1" style={{ background: c.accent }} />
+                </Card>
               )
             })}
           </div>
-        </Card>
 
-        {selectedPhoto && (
-          <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4" onClick={() => setSelectedPhoto(null)}>
-            <div className="bg-white rounded-2xl max-w-3xl w-full max-h-[90vh] overflow-auto" onClick={e => e.stopPropagation()}>
-              <div className="flex items-center justify-between p-4 border-b">
-                <h3 className="font-bold text-lg">Foto-hisobot #{selectedPhoto.id}</h3>
-                <button onClick={() => setSelectedPhoto(null)} className="p-2 hover:bg-slate-100 rounded-lg"><X className="w-5 h-5" /></button>
+          <Card className="p-6 bg-white border border-[#E8E0D3] shadow-sm rounded-2xl">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="relative flex-1 max-w-md">
+                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#9C8A6E]" />
+                <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="Klient yoki agent..." className="pl-9 border-[#E8E0D3] bg-[#FAF7F2]" />
               </div>
-              <div className="aspect-video bg-gradient-to-br from-emerald-200 to-blue-200 flex items-center justify-center">
-                <Camera className="w-16 h-16 text-slate-400" />
-              </div>
-              <div className="p-4 space-y-3">
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <div className="text-xs text-slate-500 font-bold mb-1">KLIENT</div>
-                    <div className="font-semibold flex items-center gap-1"><MapPin className="w-3 h-3" /> {selectedPhoto.client}</div>
-                    <div className="text-xs text-slate-500">{selectedPhoto.region}</div>
-                  </div>
-                  <div>
-                    <div className="text-xs text-slate-500 font-bold mb-1">AGENT</div>
-                    <div className="font-semibold flex items-center gap-1"><User className="w-3 h-3" /> {selectedPhoto.agent}</div>
-                  </div>
-                  <div>
-                    <div className="text-xs text-slate-500 font-bold mb-1">SANA</div>
-                    <div className="font-semibold flex items-center gap-1"><Calendar className="w-3 h-3" /> {selectedPhoto.date} · {selectedPhoto.time}</div>
-                  </div>
-                  <div>
-                    <div className="text-xs text-slate-500 font-bold mb-1">KATEGORIYA</div>
-                    <div className="font-semibold">{CATEGORIES.find(c => c.key === selectedPhoto.category)?.name}</div>
-                  </div>
+              <span className="text-sm text-[#9C8A6E]">{filtered.length} ta foto</span>
+            </div>
+
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
+              {filtered.map(p => {
+                const cat = CATEGORIES.find(c => c.key === p.category)!
+                return (
+                  <button key={p.id} onClick={() => setSelectedPhoto(p)} className="relative aspect-[3/4] rounded-2xl overflow-hidden hover:shadow-lg transition-all group cursor-pointer border border-[#E8E0D3]">
+                    <div className="absolute inset-0 flex items-center justify-center" style={{ background: `linear-gradient(135deg, ${cat.accent}33 0%, #FAF7F2 100%)` }}>
+                      <Camera className="w-10 h-10 opacity-50" style={{ color: cat.accent }} />
+                    </div>
+                    <div className="absolute top-2 left-2">
+                      <span className="text-[10px] px-1.5 py-0.5 rounded font-medium bg-white/95" style={{ color: cat.accent }}>
+                        {cat.name}
+                      </span>
+                    </div>
+                    <div className="absolute top-2 right-2">
+                      {p.approved ? (
+                        <CheckCircle2 className="w-5 h-5 text-emerald-600 bg-white rounded-full" />
+                      ) : (
+                        <AlertCircle className="w-5 h-5 text-[#D97706] bg-white rounded-full" />
+                      )}
+                    </div>
+                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2">
+                      <div className="text-xs font-medium text-white truncate">{p.client}</div>
+                      <div className="text-[10px] text-white/80 mt-0.5">{p.agent} · {p.date}</div>
+                    </div>
+                  </button>
+                )
+              })}
+            </div>
+          </Card>
+
+          {selectedPhoto && (
+            <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4" onClick={() => setSelectedPhoto(null)}>
+              <div className="bg-white rounded-2xl max-w-3xl w-full max-h-[90vh] overflow-auto" onClick={e => e.stopPropagation()}>
+                <div className="flex items-center justify-between p-5 border-b border-[#E8E0D3]">
+                  <h3 className="text-xl font-light text-[#1A1A1A]" style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>Foto-hisobot #{selectedPhoto.id}</h3>
+                  <button onClick={() => setSelectedPhoto(null)} className="p-2 hover:bg-[#F0EAE0] rounded-lg"><X className="w-5 h-5 text-[#6B5B4D]" /></button>
                 </div>
-                <div className="flex gap-2 pt-2">
-                  <Button className="flex-1 gap-2 bg-emerald-600 hover:bg-emerald-700"><CheckCircle2 className="w-4 h-4" /> Ma'qullash</Button>
-                  <Button variant="outline" className="flex-1 gap-2 text-rose-700 border-rose-300"><AlertCircle className="w-4 h-4" /> Rad etish</Button>
+                <div className="aspect-video flex items-center justify-center" style={{ background: "linear-gradient(135deg, #FCE9DD 0%, #F0EAE0 100%)" }}>
+                  <Camera className="w-16 h-16 text-[#9C8A6E]" />
+                </div>
+                <div className="p-5 space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <div className="text-xs uppercase tracking-wider text-[#9C8A6E] font-medium mb-1">KLIENT</div>
+                      <div className="font-medium flex items-center gap-1 text-[#1A1A1A]"><MapPin className="w-3 h-3 text-[#9C8A6E]" /> {selectedPhoto.client}</div>
+                      <div className="text-xs text-[#9C8A6E]">{selectedPhoto.region}</div>
+                    </div>
+                    <div>
+                      <div className="text-xs uppercase tracking-wider text-[#9C8A6E] font-medium mb-1">AGENT</div>
+                      <div className="font-medium flex items-center gap-1 text-[#1A1A1A]"><User className="w-3 h-3 text-[#9C8A6E]" /> {selectedPhoto.agent}</div>
+                    </div>
+                    <div>
+                      <div className="text-xs uppercase tracking-wider text-[#9C8A6E] font-medium mb-1">SANA</div>
+                      <div className="font-medium flex items-center gap-1 text-[#1A1A1A]"><Calendar className="w-3 h-3 text-[#9C8A6E]" /> {selectedPhoto.date} · {selectedPhoto.time}</div>
+                    </div>
+                    <div>
+                      <div className="text-xs uppercase tracking-wider text-[#9C8A6E] font-medium mb-1">KATEGORIYA</div>
+                      <div className="font-medium text-[#1A1A1A]">{CATEGORIES.find(c => c.key === selectedPhoto.category)?.name}</div>
+                    </div>
+                  </div>
+                  <div className="flex gap-2 pt-2">
+                    <Button className="flex-1 gap-2" style={{ background: "#10B981" }}><CheckCircle2 className="w-4 h-4" /> Ma'qullash</Button>
+                    <Button variant="outline" className="flex-1 gap-2 text-[#C75D3C] border-[#C75D3C]"><AlertCircle className="w-4 h-4" /> Rad etish</Button>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </AdminLayout>
   )
