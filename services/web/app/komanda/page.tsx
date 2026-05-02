@@ -23,73 +23,89 @@ const ROLE_TABS = [
 export default function KomandaPage() {
   return (
     <AdminLayout>
-      <div className="max-w-[1600px] mx-auto space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Komanda</h1>
-            <p className="text-base text-slate-500 mt-1">Agentlar, Supervайzerlar, Ekspeditorlar — Real-time device sync</p>
-          </div>
-          <Button size="lg">
-            <Plus className="w-5 h-5" /> Yangi xodim
-          </Button>
-        </div>
-
-        {/* Role tabs */}
-        <Card className="overflow-x-auto">
-          <div className="flex border-b border-slate-200">
-            {ROLE_TABS.map((t) => {
-              const Icon = t.icon
-              return (
-                <button
-                  key={t.key}
-                  className="flex items-center gap-2 px-6 py-4 border-b-2 border-emerald-600 text-emerald-700 font-medium first:bg-emerald-50/50"
-                >
-                  <Icon className="w-5 h-5" />
-                  {t.label}
-                  <span className="ml-1.5 px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 text-xs font-semibold">
-                    {t.count}
-                  </span>
+      <div className="-mx-4 -my-4 px-4 py-6 min-h-full" style={{ background: "linear-gradient(180deg, #F5F1EB 0%, #FAF7F2 100%)" }}>
+        <div className="max-w-[1700px] mx-auto space-y-6">
+          {/* Hero */}
+          <div className="flex items-end justify-between border-b border-[#E8E0D3] pb-6">
+            <div>
+              <div className="text-xs uppercase tracking-[0.2em] text-[#9C8A6E] font-medium mb-2">SAVDOAI</div>
+              <h1 className="text-5xl font-light tracking-tight text-[#1A1A1A]" style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>
+                Komanda <span className="italic text-[#C75D3C]">jurnali</span>
+              </h1>
+              <p className="text-base text-[#6B5B4D] mt-3 max-w-xl">
+                Agentlar, Supervайzerlar, Ekspeditorlar — Real-time device sync
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <Link href="/komanda/leaderboard">
+                <button className="px-3 py-2 rounded-md border border-[#E8E0D3] bg-white text-sm flex items-center gap-1.5 hover:border-[#C75D3C]">
+                  🏆 Leaderboard
                 </button>
-              )
-            })}
+              </Link>
+              <Button size="lg" style={{ background: "#C75D3C" }}>
+                <Plus className="w-5 h-5" /> Yangi xodim
+              </Button>
+            </div>
           </div>
-        </Card>
 
-        {/* Agents grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
-          {AGENTS.map(a => (
-            <Card key={a.login} className="p-5 hover:shadow-lg transition-shadow">
-              <div className="flex items-start gap-4 mb-4">
-                <div className="flex-shrink-0 w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white text-xl font-bold">
-                  {a.name.split(' ').map(p => p[0]).join('').slice(0, 2)}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h3 className="text-lg font-bold text-slate-900 truncate">{a.name}</h3>
-                  <p className="text-sm text-slate-500 truncate">@{a.login} · {a.phone}</p>
-                </div>
-                <div className={`flex-shrink-0 w-3 h-3 rounded-full ${
-                  a.status === "online" ? "bg-emerald-500 animate-pulse" : "bg-slate-300"
-                }`} />
-              </div>
+          {/* Role tabs */}
+          <Card className="bg-white border border-[#E8E0D3] shadow-sm rounded-2xl overflow-x-auto">
+            <div className="flex border-b border-[#E8E0D3]">
+              {ROLE_TABS.map((t, i) => {
+                const Icon = t.icon
+                const isActive = i === 0
+                return (
+                  <button
+                    key={t.key}
+                    className={`flex items-center gap-2 px-6 py-4 font-medium ${isActive ? "border-b-2 border-[#C75D3C] text-[#C75D3C] bg-[#FCE9DD]/30" : "text-[#6B5B4D] hover:bg-[#FAF7F2]"}`}
+                  >
+                    <Icon className="w-5 h-5" />
+                    {t.label}
+                    <span className={`ml-1.5 px-2 py-0.5 rounded-full text-xs font-medium ${isActive ? "bg-[#C75D3C] text-white" : "bg-[#E8E0D3] text-[#6B5B4D]"}`}>
+                      {t.count}
+                    </span>
+                  </button>
+                )
+              })}
+            </div>
+          </Card>
 
-              <div className="space-y-2 pb-3 border-b border-slate-100">
-                <div className="flex items-center gap-2 text-sm text-slate-600">
-                  <Smartphone className="w-4 h-4 flex-shrink-0" />
-                  <span className="truncate">{a.device}</span>
+          {/* Agents grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
+            {AGENTS.map(a => (
+              <Card key={a.login} className="p-5 bg-white border border-[#E8E0D3] shadow-sm rounded-2xl hover:shadow-md transition-shadow">
+                <div className="flex items-start gap-4 mb-4">
+                  <div className="flex-shrink-0 w-14 h-14 rounded-2xl flex items-center justify-center text-white text-xl font-medium" style={{ background: "linear-gradient(135deg, #C75D3C 0%, #E27B5C 100%)", fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>
+                    {a.name.split(' ').map(p => p[0]).join('').slice(0, 2)}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-lg font-medium text-[#1A1A1A] truncate" style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>
+                      {a.name}
+                    </h3>
+                    <p className="text-sm text-[#9C8A6E] truncate">@{a.login} · {a.phone}</p>
+                  </div>
+                  <div className={`flex-shrink-0 w-3 h-3 rounded-full ${a.status === "online" ? "bg-emerald-500 animate-pulse" : "bg-[#9C8A6E]"}`} />
                 </div>
-                <div className="flex items-center gap-2 text-sm text-slate-600">
-                  <Activity className="w-4 h-4 flex-shrink-0" />
-                  <span>Sync: {a.last_sync}</span>
-                </div>
-              </div>
 
-              <div className="grid grid-cols-3 gap-2 pt-3">
-                <Stat label="Visit" value="261" />
-                <Stat label="Bajardi" value="0" color="rose" />
-                <Stat label="Otkaz" value="18" color="amber" />
-              </div>
-            </Card>
-          ))}
+                <div className="space-y-2 pb-3 border-b border-[#F0EAE0]">
+                  <div className="flex items-center gap-2 text-sm text-[#6B5B4D]">
+                    <Smartphone className="w-4 h-4 flex-shrink-0 text-[#9C8A6E]" />
+                    <span className="truncate">{a.device}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm text-[#6B5B4D]">
+                    <Activity className="w-4 h-4 flex-shrink-0 text-[#9C8A6E]" />
+                    <span>Sync: {a.last_sync}</span>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-3 gap-2 pt-3">
+                  <Stat label="Visit" value="261" />
+                  <Stat label="Bajardi" value="0" color="rose" />
+                  <Stat label="Otkaz" value="18" color="amber" />
+                </div>
+              </Card>
+            ))}
+          </div>
         </div>
       </div>
     </AdminLayout>
@@ -97,11 +113,11 @@ export default function KomandaPage() {
 }
 
 function Stat({ label, value, color }: { label: string; value: string; color?: 'rose'|'amber' }) {
-  const c = color === 'rose' ? 'text-rose-600' : color === 'amber' ? 'text-amber-600' : 'text-slate-900'
+  const c = color === 'rose' ? 'text-[#C75D3C]' : color === 'amber' ? 'text-[#D97706]' : 'text-[#1A1A1A]'
   return (
     <div className="text-center">
-      <div className={`text-xl font-bold tabular-nums ${c}`}>{value}</div>
-      <div className="text-xs text-slate-500">{label}</div>
+      <div className={`text-xl font-medium tabular-nums ${c}`} style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>{value}</div>
+      <div className="text-xs text-[#9C8A6E] mt-1">{label}</div>
     </div>
   )
 }
