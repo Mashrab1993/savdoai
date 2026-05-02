@@ -1,7 +1,7 @@
 "use client"
 import { AdminLayout } from "@/components/layout/admin-layout"
 import { Card } from "@/components/ui/card"
-import { TrendingUp, Users, Package, AlertTriangle, ShoppingBag, FileText, DollarSign, Eye, AlertCircle } from "lucide-react"
+import { TrendingUp, Users, Package, AlertTriangle, ShoppingBag, FileText, DollarSign, Eye, AlertCircle, Sparkles, ArrowUpRight, Zap, Crown } from "lucide-react"
 import { formatNumber, formatCurrency } from "@/lib/utils"
 import { useApi, useAuth } from "@/hooks/use-api"
 
@@ -37,16 +37,16 @@ export default function DashboardPage() {
   const usingMock = !apiStats
 
   const topProducts = [
-    { name: "PRIMA GREEN", pct: 32.52, color: "bg-emerald-500" },
-    { name: "TRUFFLES COCOA", pct: 13.68, color: "bg-amber-500" },
-    { name: "HILOL", pct: 9.83, color: "bg-rose-500" },
-    { name: "SLADUS", pct: 8.30, color: "bg-blue-500" },
-    { name: "Muroj. shokolad", pct: 7.81, color: "bg-purple-500" },
-    { name: "ЁШ ФУТБОЛЧИ", pct: 7.53, color: "bg-orange-500" },
-    { name: "ERFIBLESS", pct: 5.82, color: "bg-cyan-500" },
-    { name: "LINDO", pct: 4.76, color: "bg-pink-500" },
-    { name: "ARIEL", pct: 1.76, color: "bg-indigo-500" },
-    { name: "COLGATE", pct: 1.28, color: "bg-teal-500" },
+    { name: "PRIMA GREEN", pct: 32.52 },
+    { name: "TRUFFLES COCOA", pct: 13.68 },
+    { name: "HILOL", pct: 9.83 },
+    { name: "SLADUS", pct: 8.30 },
+    { name: "Muroj. shokolad", pct: 7.81 },
+    { name: "ЁШ ФУТБОЛЧИ", pct: 7.53 },
+    { name: "ERFIBLESS", pct: 5.82 },
+    { name: "LINDO", pct: 4.76 },
+    { name: "ARIEL", pct: 1.76 },
+    { name: "COLGATE", pct: 1.28 },
   ]
 
   const agentKpis = [
@@ -58,197 +58,259 @@ export default function DashboardPage() {
     { name: "Турсунов Жамшид", visits: 14, done: 0, refused: 0, no_show: 14 },
   ]
 
+  const aiInsights = [
+    { type: "alert", text: "Bonjur 50g muddati 2 kunda tugaydi (216k riskda)", action: "Aktsiya" },
+    { type: "opportunity", text: "Salom Magazin №1 — premium taklif (yutgan +25%)", action: "Tayyorla" },
+    { type: "tip", text: "BORIEV M. eng samarali soat 14:00-16:00", action: "Optimallash" },
+  ]
+
   return (
     <AdminLayout>
-      <div className="max-w-[1600px] mx-auto space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
+      {/* Anthropic-style warm cream background overlay */}
+      <div className="-mx-4 -my-4 px-4 py-6 min-h-full" style={{ background: "linear-gradient(180deg, #F5F1EB 0%, #FAF7F2 100%)" }}>
+        <div className="max-w-[1500px] mx-auto space-y-8">
+
+          {/* Hero Header — Anthropic-style with serif */}
+          <div className="flex items-end justify-between border-b border-[#E8E0D3] pb-6">
+            <div>
+              <div className="text-xs uppercase tracking-[0.2em] text-[#9C8A6E] font-medium mb-2">
+                BIZNES PANELI · 02 MAY 2026
+              </div>
+              <h1 className="text-5xl font-light tracking-tight text-[#1A1A1A]" style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>
+                Xush kelibsiz, <span className="italic text-[#C75D3C]">Mashrab</span>
+              </h1>
+              <p className="text-base text-[#6B5B4D] mt-3 max-w-xl">
+                Bugungi savdo natijalari, AI tavsiyalar va komandadagi holat. Bir nigohda hammasi.
+              </p>
+            </div>
+            <div className="flex items-center gap-2 text-sm">
+              {loading && (
+                <div className="px-3 py-1.5 rounded-full bg-[#E8E0D3] text-[#6B5B4D] font-medium">
+                  Yuklanmoqda...
+                </div>
+              )}
+              {!loading && apiStats && (
+                <div className="px-3 py-1.5 rounded-full bg-[#E8E0D3] text-[#1A1A1A] font-medium flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 bg-emerald-600 rounded-full" />
+                  Real-time API
+                </div>
+              )}
+              {!loading && usingMock && (
+                <div className="px-3 py-1.5 rounded-full bg-[#F5E5D6] text-[#C75D3C] font-medium flex items-center gap-1.5">
+                  <AlertCircle className="w-3.5 h-3.5" /> Demo data
+                </div>
+              )}
+            </div>
+          </div>
+
+          {error && (
+            <div className="p-4 bg-[#FCE9DD] border border-[#E5BFA0] rounded-xl text-sm text-[#9C4019] flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 flex-shrink-0" />
+              <span>API xato: {error}. Demo ma'lumotlar ko'rsatilmoqda.</span>
+            </div>
+          )}
+
+          {/* KPI cards — Anthropic clean style */}
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Boshqaruv paneli</h1>
-            <p className="text-base text-slate-500 mt-1">Bugungi holat — 2 may, 2026</p>
+            <h2 className="text-xs uppercase tracking-[0.2em] text-[#9C8A6E] font-medium mb-4">
+              Bugungi sotuv
+            </h2>
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              <PremiumKpi
+                label="Bugungi sotuv"
+                value={formatCurrency(stats.today_sum ?? 0)}
+                subtext={`${stats.today_count ?? 0} ta zakaz`}
+                trend="+12.3%"
+                accent="positive"
+              />
+              <PremiumKpi
+                label="Muddati o'tgan qarz"
+                value={formatNumber(stats.overdue_amount ?? 0) + " so'm"}
+                subtext={`${stats.overdue_count ?? 0} ta klient`}
+                accent="negative"
+              />
+              <PremiumKpi
+                label="Bugungi vizit"
+                value={`${stats.visits_done ?? 0}/${stats.visits_total ?? 0}`}
+                subtext={`${stats.visits_refused ?? 0} otkazilgan`}
+                accent="neutral"
+              />
+              <PremiumKpi
+                label="Foto hisobotlar"
+                value={`${stats.photo_pct ?? 0}%`}
+                subtext="Bugun yuborilgan"
+                accent="neutral"
+              />
+            </div>
           </div>
-          <div className="flex items-center gap-2 text-sm">
-            {loading && (
-              <div className="px-3 py-1.5 rounded-full bg-blue-100 text-blue-700 font-medium animate-pulse">
-                Yuklanmoqda...
-              </div>
-            )}
-            {!loading && apiStats && (
-              <div className="px-3 py-1.5 rounded-full bg-emerald-100 text-emerald-700 font-medium">
-                ● Real-time API
-              </div>
-            )}
-            {!loading && usingMock && (
-              <div className="px-3 py-1.5 rounded-full bg-amber-100 text-amber-700 font-medium flex items-center gap-1">
-                <AlertCircle className="w-3.5 h-3.5" /> Demo data — login kerak
-              </div>
-            )}
-          </div>
-        </div>
 
-        {error && (
-          <div className="p-3 bg-rose-50 border border-rose-200 rounded-lg text-sm text-rose-700 flex items-center gap-2">
-            <AlertCircle className="w-4 h-4 flex-shrink-0" />
-            <span>API xato: {error}. Demo ma'lumotlar ko'rsatilmoqda.</span>
-          </div>
-        )}
-
-        {/* KPI cards row 1 — Sotuv */}
-        <div>
-          <h2 className="text-sm font-semibold uppercase tracking-wider text-slate-500 mb-3">Bugungi sotuv</h2>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <KpiCard
-              label="Bugungi sotuv"
-              value={formatCurrency(stats.today_sum ?? 0)}
-              subtext={`${stats.today_count ?? 0} ta zakaz`}
-              icon={ShoppingBag}
-              color="emerald"
-              trend="+12.3%"
-            />
-            <KpiCard
-              label="Muddati o'tgan qarz"
-              value={formatNumber(stats.overdue_amount ?? 0) + " so'm"}
-              subtext={`${stats.overdue_count ?? 0} ta klient`}
-              icon={AlertTriangle}
-              color="rose"
-              alert
-            />
-            <KpiCard
-              label="Bugungi visit"
-              value={`${stats.visits_done ?? 0}/${stats.visits_total ?? 0}`}
-              subtext={`${stats.visits_refused ?? 0} otkazilgan`}
-              icon={Eye}
-              color="amber"
-            />
-            <KpiCard
-              label="Foto hisobotlar"
-              value={`${stats.photo_pct ?? 0}%`}
-              subtext="Bugun yuborilgan"
-              icon={FileText}
-              color="blue"
-            />
-          </div>
-        </div>
-
-        {/* Two columns — Top products & Agent KPI */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Top products */}
-          <Card className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold">Brendlar bo'yicha sotuv</h3>
-              <span className="text-sm text-slate-500">Bugun</span>
+          {/* AI Insights — premium hero card */}
+          <Card className="p-7 bg-white border border-[#E8E0D3] shadow-sm rounded-2xl">
+            <div className="flex items-start gap-4 mb-5">
+              <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: "linear-gradient(135deg, #C75D3C 0%, #E27B5C 100%)" }}>
+                <Sparkles className="w-6 h-6 text-white" />
+              </div>
+              <div className="flex-1">
+                <div className="text-xs uppercase tracking-[0.2em] text-[#C75D3C] font-medium">AI INSIGHTS</div>
+                <h3 className="text-xl font-medium text-[#1A1A1A] mt-1" style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>
+                  Bugungi 3 ta muhim holat
+                </h3>
+              </div>
             </div>
             <div className="space-y-3">
-              {topProducts.map((p) => (
-                <div key={p.name} className="space-y-1.5">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="font-medium text-slate-700">{p.name}</span>
-                    <span className="font-semibold tabular-nums">{p.pct}%</span>
-                  </div>
-                  <div className="h-2 rounded-full bg-slate-100 overflow-hidden">
-                    <div
-                      className={`h-full ${p.color} rounded-full transition-all`}
-                      style={{ width: `${p.pct * 2}%` }}
-                    />
-                  </div>
+              {aiInsights.map((insight, i) => (
+                <div key={i} className="flex items-center gap-3 p-3.5 rounded-xl bg-[#FAF7F2] border border-[#E8E0D3]">
+                  <div className={`w-2 h-2 rounded-full ${
+                    insight.type === "alert" ? "bg-[#C75D3C]" :
+                    insight.type === "opportunity" ? "bg-emerald-600" :
+                    "bg-blue-600"
+                  }`} />
+                  <span className="flex-1 text-sm text-[#1A1A1A]">{insight.text}</span>
+                  <button className="text-xs px-3 py-1.5 rounded-md bg-white border border-[#E8E0D3] text-[#1A1A1A] hover:border-[#C75D3C] hover:text-[#C75D3C] transition-colors font-medium">
+                    {insight.action}
+                  </button>
                 </div>
               ))}
             </div>
           </Card>
 
-          {/* Agent KPI table */}
-          <Card className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold">Agentlar — Visit holati</h3>
-              <span className="text-sm text-slate-500">{stats.visits_total ?? 0} reja / {stats.visits_done ?? 0} bajarildi</span>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-slate-200">
-                    <th className="text-left py-2 font-medium text-slate-600">Agent</th>
-                    <th className="text-right py-2 font-medium text-slate-600">Reja</th>
-                    <th className="text-right py-2 font-medium text-slate-600">Bajardi</th>
-                    <th className="text-right py-2 font-medium text-slate-600">Otkazgan</th>
-                    <th className="text-right py-2 font-medium text-slate-600">Bormagan</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {agentKpis.map((a) => (
-                    <tr key={a.name} className="border-b border-slate-100 hover:bg-slate-50">
-                      <td className="py-2.5 font-medium text-slate-900">{a.name}</td>
-                      <td className="text-right tabular-nums">{a.visits}</td>
-                      <td className="text-right tabular-nums">
-                        <span className={a.done === 0 ? "text-rose-600" : "text-emerald-600 font-semibold"}>
-                          {a.done}
-                        </span>
-                      </td>
-                      <td className="text-right tabular-nums text-amber-600">{a.refused}</td>
-                      <td className="text-right tabular-nums text-slate-500">{a.no_show}</td>
-                    </tr>
-                  ))}
-                  <tr className="bg-slate-50 font-semibold">
-                    <td className="py-2.5">Jami</td>
-                    <td className="text-right tabular-nums">{agentKpis.reduce((s, a) => s + a.visits, 0)}</td>
-                    <td className="text-right tabular-nums">{agentKpis.reduce((s, a) => s + a.done, 0)}</td>
-                    <td className="text-right tabular-nums">{agentKpis.reduce((s, a) => s + a.refused, 0)}</td>
-                    <td className="text-right tabular-nums">{agentKpis.reduce((s, a) => s + a.no_show, 0)}</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </Card>
-        </div>
+          {/* Two columns — Top products & Agent KPI */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+            <Card className="p-6 bg-white border border-[#E8E0D3] shadow-sm rounded-2xl">
+              <div className="flex items-center justify-between mb-5">
+                <div>
+                  <div className="text-xs uppercase tracking-[0.2em] text-[#9C8A6E] font-medium mb-1">BREND BO'YICHA</div>
+                  <h3 className="text-xl font-medium text-[#1A1A1A]" style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>
+                    Bugungi sotuv
+                  </h3>
+                </div>
+                <ArrowUpRight className="w-5 h-5 text-[#9C8A6E]" />
+              </div>
+              <div className="space-y-3.5">
+                {topProducts.map((p, i) => (
+                  <div key={p.name} className="space-y-1.5">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="font-medium text-[#1A1A1A]">{i + 1}. {p.name}</span>
+                      <span className="font-semibold tabular-nums text-[#C75D3C]">{p.pct}%</span>
+                    </div>
+                    <div className="h-1.5 rounded-full bg-[#F5F1EB] overflow-hidden">
+                      <div
+                        className="h-full rounded-full transition-all"
+                        style={{ width: `${Math.min(100, p.pct * 2.5)}%`, background: "linear-gradient(90deg, #C75D3C 0%, #E27B5C 100%)" }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </Card>
 
-        {/* Quick actions */}
-        <Card className="p-6">
-          <h3 className="text-lg font-semibold mb-4">Tez harakatlar</h3>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-            <QuickAction icon={ShoppingBag} label="Yangi zakaz" href="/zakazlar/yangi" />
-            <QuickAction icon={Users} label="Yangi klient" href="/klientlar/yangi" />
-            <QuickAction icon={Package} label="Yangi tovar" href="/sklad/tovar/yangi" />
-            <QuickAction icon={DollarSign} label="Xarajat qo'shish" href="/kassa/xarajat/yangi" />
+            <Card className="p-6 bg-white border border-[#E8E0D3] shadow-sm rounded-2xl">
+              <div className="flex items-center justify-between mb-5">
+                <div>
+                  <div className="text-xs uppercase tracking-[0.2em] text-[#9C8A6E] font-medium mb-1">AGENTLAR</div>
+                  <h3 className="text-xl font-medium text-[#1A1A1A]" style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>
+                    Vizit holati
+                  </h3>
+                </div>
+                <span className="text-xs text-[#6B5B4D]">{stats.visits_total ?? 0} reja / {stats.visits_done ?? 0} bajarildi</span>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-[#E8E0D3]">
+                      <th className="text-left py-2.5 font-medium text-[#9C8A6E] text-xs uppercase tracking-wider">Agent</th>
+                      <th className="text-right py-2.5 font-medium text-[#9C8A6E] text-xs uppercase tracking-wider">Reja</th>
+                      <th className="text-right py-2.5 font-medium text-[#9C8A6E] text-xs uppercase tracking-wider">Bajardi</th>
+                      <th className="text-right py-2.5 font-medium text-[#9C8A6E] text-xs uppercase tracking-wider">Otkaz</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {agentKpis.map((a) => (
+                      <tr key={a.name} className="border-b border-[#F0EAE0]">
+                        <td className="py-3 font-medium text-[#1A1A1A]">{a.name}</td>
+                        <td className="text-right tabular-nums text-[#1A1A1A]">{a.visits}</td>
+                        <td className="text-right tabular-nums">
+                          <span className={a.done === 0 ? "text-[#C75D3C]" : "text-emerald-700 font-semibold"}>
+                            {a.done}
+                          </span>
+                        </td>
+                        <td className="text-right tabular-nums text-[#9C8A6E]">{a.refused}</td>
+                      </tr>
+                    ))}
+                    <tr className="bg-[#FAF7F2] font-semibold">
+                      <td className="py-3 text-[#1A1A1A]">Jami</td>
+                      <td className="text-right tabular-nums">{agentKpis.reduce((s, a) => s + a.visits, 0)}</td>
+                      <td className="text-right tabular-nums">{agentKpis.reduce((s, a) => s + a.done, 0)}</td>
+                      <td className="text-right tabular-nums">{agentKpis.reduce((s, a) => s + a.refused, 0)}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </Card>
           </div>
-        </Card>
+
+          {/* Quick actions */}
+          <div>
+            <h2 className="text-xs uppercase tracking-[0.2em] text-[#9C8A6E] font-medium mb-4">
+              Tez harakatlar
+            </h2>
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+              <PremiumAction icon={ShoppingBag} label="Yangi zakaz" href="/sotuv/yangi" />
+              <PremiumAction icon={Users} label="Yangi klient" href="/klientlar/yangi" />
+              <PremiumAction icon={Package} label="Yangi tovar" href="/sklad/yangi" />
+              <PremiumAction icon={Sparkles} label="AI Copilot" href="/ai/copilot" highlight />
+            </div>
+          </div>
+
+          {/* Footer signature */}
+          <div className="text-center pt-8 pb-4 text-xs text-[#9C8A6E] border-t border-[#E8E0D3]">
+            SavdoAI Premium · Anthropic Design System · {new Date().toLocaleDateString("uz-UZ")}
+          </div>
+        </div>
       </div>
     </AdminLayout>
   )
 }
 
-function KpiCard({
-  label, value, subtext, icon: Icon, color, alert, trend,
+function PremiumKpi({
+  label, value, subtext, trend, accent,
 }: {
   label: string; value: string; subtext?: string;
-  icon: React.ElementType; color: 'emerald'|'rose'|'amber'|'blue';
-  alert?: boolean; trend?: string;
+  trend?: string;
+  accent: 'positive' | 'negative' | 'neutral';
 }) {
-  const colors = {
-    emerald: "from-emerald-500 to-teal-600 text-emerald-50",
-    rose: "from-rose-500 to-rose-700 text-rose-50",
-    amber: "from-amber-500 to-orange-600 text-amber-50",
-    blue: "from-blue-500 to-indigo-600 text-blue-50",
+  const accentColors = {
+    positive: { bar: "#10B981", trend: "text-emerald-700 bg-emerald-50" },
+    negative: { bar: "#C75D3C", trend: "text-[#C75D3C] bg-[#F5E5D6]" },
+    neutral: { bar: "#9C8A6E", trend: "text-[#6B5B4D] bg-[#F5F1EB]" },
   }
+  const c = accentColors[accent]
   return (
-    <Card className={`relative overflow-hidden bg-gradient-to-br ${colors[color]} border-0 p-5`}>
+    <Card className="relative overflow-hidden bg-white border border-[#E8E0D3] shadow-sm rounded-2xl p-5 hover:shadow-md transition-shadow">
       <div className="flex items-start justify-between mb-3">
-        <Icon className="w-7 h-7 opacity-80" />
-        {trend && <span className="text-xs font-semibold bg-white/20 px-2 py-1 rounded-md">{trend}</span>}
-        {alert && <AlertTriangle className="w-5 h-5 animate-pulse" />}
+        <span className="text-xs uppercase tracking-[0.15em] text-[#9C8A6E] font-medium">{label}</span>
+        {trend && (
+          <span className={`text-xs font-semibold px-2 py-0.5 rounded-md ${c.trend}`}>
+            {trend}
+          </span>
+        )}
       </div>
-      <div className="text-3xl font-bold mb-1 tabular-nums leading-tight">{value}</div>
-      <div className="text-sm opacity-90 mb-1">{label}</div>
-      {subtext && <div className="text-xs opacity-75">{subtext}</div>}
+      <div className="text-3xl font-medium tabular-nums text-[#1A1A1A] leading-tight" style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>
+        {value}
+      </div>
+      {subtext && <div className="text-xs text-[#6B5B4D] mt-1.5">{subtext}</div>}
+      <div className="absolute bottom-0 left-0 right-0 h-1" style={{ background: c.bar }} />
     </Card>
   )
 }
 
-function QuickAction({ icon: Icon, label, href }: { icon: React.ElementType; label: string; href: string }) {
+function PremiumAction({ icon: Icon, label, href, highlight }: { icon: React.ElementType; label: string; href: string; highlight?: boolean }) {
   return (
-    <a href={href} className="flex items-center gap-3 p-3 rounded-xl border-2 border-slate-200 hover:border-emerald-500 hover:bg-emerald-50 transition-all group">
-      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-100 group-hover:bg-emerald-100 transition-colors">
-        <Icon className="w-5 h-5 text-slate-600 group-hover:text-emerald-700" />
+    <a href={href} className={`flex items-center gap-3 p-4 rounded-xl border transition-all group ${highlight ? "border-[#C75D3C] bg-gradient-to-br from-[#FCE9DD] to-white" : "border-[#E8E0D3] bg-white hover:border-[#C75D3C]"}`}>
+      <div className={`flex h-10 w-10 items-center justify-center rounded-lg transition-colors ${highlight ? "bg-[#C75D3C] text-white" : "bg-[#F5F1EB] text-[#6B5B4D] group-hover:bg-[#C75D3C] group-hover:text-white"}`}>
+        <Icon className="w-5 h-5" />
       </div>
-      <span className="font-medium text-slate-700 group-hover:text-emerald-700">{label}</span>
+      <span className="font-medium text-[#1A1A1A]">{label}</span>
     </a>
   )
 }
