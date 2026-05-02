@@ -4,7 +4,7 @@ import { AdminLayout } from "@/components/layout/admin-layout"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { ArrowLeft, Crown, Award, Search, Download, AlertCircle, Eye, ShoppingBag, Camera, MapPin } from "lucide-react"
+import { ArrowLeft, Crown, Award, Search, Download, AlertCircle, Camera, MapPin } from "lucide-react"
 import Link from "next/link"
 import { useApi, useAuth } from "@/hooks/use-api"
 
@@ -40,104 +40,114 @@ export default function AgentReportPage() {
   const totalSotuv = data.reduce((s, a) => s + a.sotuv, 0)
   const totalVisit = data.reduce((s, a) => s + a.visit, 0)
 
+  const RANK_ACCENT = ["#D97706", "#9C8A6E", "#C75D3C"]
+
   return (
     <AdminLayout>
-      <div className="max-w-[1700px] mx-auto space-y-6">
-        <div className="flex items-center gap-3">
-          <Link href="/hisobot" className="p-2 hover:bg-slate-100 rounded-lg"><ArrowLeft className="w-5 h-5" /></Link>
-          <div className="flex-1">
-            <h1 className="text-3xl font-bold tracking-tight">Agentlar reytingi</h1>
-            <p className="text-base text-slate-500 mt-1">Aprel 2026 · {data.length} agent · Jami: {fmt(totalSotuv / 1_000_000)} M so'm · {totalVisit} visit</p>
+      <div className="-mx-4 -my-4 px-4 py-6 min-h-full" style={{ background: "linear-gradient(180deg, #F5F1EB 0%, #FAF7F2 100%)" }}>
+        <div className="max-w-[1700px] mx-auto space-y-6">
+          {/* Hero */}
+          <div className="flex items-end gap-3 border-b border-[#E8E0D3] pb-6">
+            <Link href="/hisobot" className="p-2 hover:bg-[#F0EAE0] rounded-lg"><ArrowLeft className="w-5 h-5 text-[#6B5B4D]" /></Link>
+            <div className="flex-1">
+              <div className="text-xs uppercase tracking-[0.2em] text-[#9C8A6E] font-medium mb-2">SAVDOAI · HISOBOT</div>
+              <h1 className="text-4xl font-light tracking-tight text-[#1A1A1A]" style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>
+                Agentlar <span className="italic text-[#C75D3C]">reytingi</span>
+              </h1>
+              <p className="text-sm text-[#6B5B4D] mt-2">Aprel 2026 · {data.length} agent · Jami: <span className="text-[#1A1A1A] tabular-nums">{fmt(totalSotuv / 1_000_000)} M</span> so'm · {totalVisit} visit</p>
+            </div>
+            {loading && <span className="px-3 py-1.5 rounded-full bg-[#E8E0D3] text-[#6B5B4D] text-sm animate-pulse">Yuklanmoqda...</span>}
+            {!loading && !usingMock && <span className="px-3 py-1.5 rounded-full bg-emerald-50 text-emerald-700 text-sm flex items-center gap-1.5"><span className="w-1.5 h-1.5 bg-emerald-600 rounded-full" /> Real API</span>}
+            {!loading && usingMock && <span className="px-3 py-1.5 rounded-full bg-[#F5E5D6] text-[#C75D3C] text-sm flex items-center gap-1"><AlertCircle className="w-3.5 h-3.5" /> Demo</span>}
+            <Button variant="outline" className="gap-2 border-[#E8E0D3] text-[#6B5B4D]"><Download className="w-4 h-4" /> Excel</Button>
           </div>
-          {loading && <span className="px-3 py-1.5 rounded-full bg-blue-100 text-blue-700 text-sm font-medium animate-pulse">Yuklanmoqda...</span>}
-          {!loading && !usingMock && <span className="px-3 py-1.5 rounded-full bg-emerald-100 text-emerald-700 text-sm font-medium">● Real API</span>}
-          {!loading && usingMock && <span className="px-3 py-1.5 rounded-full bg-amber-100 text-amber-700 text-sm font-medium flex items-center gap-1"><AlertCircle className="w-3.5 h-3.5" /> Demo</span>}
-          <Button variant="outline" className="gap-2"><Download className="w-4 h-4" /> Excel</Button>
-        </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          {ranked.slice(0, 3).map((a, i) => {
-            const Icon = i === 0 ? Crown : Award
-            const colors = ["from-amber-50 to-amber-100/50 border-amber-300 text-amber-600", "from-slate-50 to-slate-100/50 border-slate-300 text-slate-600", "from-orange-50 to-orange-100/50 border-orange-300 text-orange-600"]
-            return (
-              <Card key={a.id} className={`p-5 border-2 bg-gradient-to-br ${colors[i]}`}>
-                <div className="flex items-start justify-between mb-2">
-                  <Icon className="w-7 h-7 bg-white p-1.5 rounded-xl shadow-sm" />
-                  <div className="text-right">
-                    <span className="text-3xl font-bold opacity-50">#{i + 1}</span>
-                    <div className={`text-xs font-bold mt-1 inline-block px-2 py-0.5 rounded ${a.rank >= 90 ? "bg-emerald-200 text-emerald-800" : a.rank >= 75 ? "bg-amber-200 text-amber-800" : "bg-rose-200 text-rose-800"}`}>
-                      {a.rank}/100
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {ranked.slice(0, 3).map((a, i) => {
+              const Icon = i === 0 ? Crown : Award
+              const accent = RANK_ACCENT[i]
+              return (
+                <Card key={a.id} className="p-6 bg-white border-2 shadow-sm rounded-2xl relative overflow-hidden" style={{ borderColor: `${accent}55` }}>
+                  <div className="flex items-start justify-between mb-3">
+                    <Icon className="w-9 h-9 p-1.5 rounded-2xl text-white shadow-sm" style={{ background: accent }} />
+                    <div className="text-right">
+                      <span className="text-3xl font-medium opacity-50" style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>#{i + 1}</span>
+                      <div className={`text-xs font-medium mt-1 inline-block px-2 py-0.5 rounded ${a.rank >= 90 ? "bg-emerald-50 text-emerald-700" : a.rank >= 75 ? "bg-[#FCE9DD] text-[#D97706]" : "bg-[#F5E5D6] text-[#C75D3C]"}`}>
+                        {a.rank}/100
+                      </div>
                     </div>
                   </div>
-                </div>
-                <Link href={`/komanda/${a.id}`} className="text-base font-bold text-slate-900 hover:underline">{a.name}</Link>
-                <div className="text-xs text-slate-500 mt-1 flex items-center gap-1"><MapPin className="w-3 h-3" /> {a.region}</div>
-                <div className="text-xl font-bold text-slate-900 mt-2">{fmt(a.sotuv / 1_000_000)} M so'm</div>
-                <div className="text-xs text-slate-600 mt-1">{a.visit} visit · {Math.round(a.sotuv / a.visit / 1000)}K so'm/visit</div>
-              </Card>
-            )
-          })}
-        </div>
+                  <Link href={`/komanda/${a.id}`} className="text-lg font-medium text-[#1A1A1A] hover:text-[#C75D3C]" style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>{a.name}</Link>
+                  <div className="text-xs text-[#9C8A6E] mt-1 flex items-center gap-1"><MapPin className="w-3 h-3" /> {a.region}</div>
+                  <div className="text-2xl font-medium text-[#1A1A1A] mt-3 tabular-nums" style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>{fmt(a.sotuv / 1_000_000)} M so'm</div>
+                  <div className="text-xs text-[#6B5B4D] mt-1">{a.visit} visit · {Math.round(a.sotuv / a.visit / 1000)}K so'm/visit</div>
+                  <div className="absolute bottom-0 left-0 right-0 h-1" style={{ background: accent }} />
+                </Card>
+              )
+            })}
+          </div>
 
-        <Card className="p-5">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="relative flex-1 max-w-md">
-              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-              <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="Agent..." className="pl-9" />
+          <Card className="p-6 bg-white border border-[#E8E0D3] shadow-sm rounded-2xl">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="relative flex-1 max-w-md">
+                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#9C8A6E]" />
+                <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="Agent..." className="pl-9 border-[#E8E0D3] bg-[#FAF7F2]" />
+              </div>
+              <span className="text-sm text-[#9C8A6E]">{filtered.length} ta</span>
             </div>
-            <span className="text-sm text-slate-500">{filtered.length} ta</span>
-          </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b-2 border-slate-200 text-left">
-                  <th className="py-3 px-2 font-semibold text-slate-600">#</th>
-                  <th className="py-3 px-2 font-semibold text-slate-600">Agent</th>
-                  <th className="py-3 px-2 font-semibold text-slate-600">Region</th>
-                  <th className="py-3 px-2 font-semibold text-slate-600 text-right">Visit %</th>
-                  <th className="py-3 px-2 font-semibold text-slate-600 text-right">Sotuv %</th>
-                  <th className="py-3 px-2 font-semibold text-slate-600 text-right">Sotuv summasi</th>
-                  <th className="py-3 px-2 font-semibold text-slate-600 text-right">SKU</th>
-                  <th className="py-3 px-2 font-semibold text-slate-600 text-right">Foto</th>
-                  <th className="py-3 px-2 font-semibold text-slate-600 text-right">Reyting</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map((a, i) => {
-                  const idx = ranked.findIndex(r => r.id === a.id)
-                  const visitPct = (a.visit / a.visitPlan * 100)
-                  const sotuvPct = (a.sotuv / a.sotuvPlan * 100)
-                  return (
-                    <tr key={a.id} className="border-b border-slate-100 hover:bg-slate-50">
-                      <td className="py-3 px-2 font-bold text-slate-400">#{idx + 1}</td>
-                      <td className="py-3 px-2">
-                        <Link href={`/komanda/${a.id}`} className="font-semibold text-emerald-700 hover:underline">{a.name}</Link>
-                      </td>
-                      <td className="py-3 px-2 text-slate-600 text-xs">{a.region}</td>
-                      <td className={`py-3 px-2 text-right font-mono font-bold ${visitPct >= 90 ? "text-emerald-700" : visitPct >= 75 ? "text-amber-700" : "text-rose-700"}`}>
-                        {a.visit}/{a.visitPlan} ({visitPct.toFixed(0)}%)
-                      </td>
-                      <td className={`py-3 px-2 text-right font-mono font-bold ${sotuvPct >= 90 ? "text-emerald-700" : sotuvPct >= 75 ? "text-amber-700" : "text-rose-700"}`}>
-                        {sotuvPct.toFixed(0)}%
-                      </td>
-                      <td className="py-3 px-2 text-right font-mono font-bold text-emerald-700">{fmt(a.sotuv)}</td>
-                      <td className="py-3 px-2 text-right font-mono">{a.sku}</td>
-                      <td className="py-3 px-2 text-right font-mono text-slate-600 inline-flex items-center justify-end gap-1 w-full">
-                        <Camera className="w-3 h-3" /> {a.foto}
-                      </td>
-                      <td className="py-3 px-2 text-right">
-                        <div className={`inline-block px-3 py-1 rounded-md font-bold text-sm ${a.rank >= 90 ? "bg-emerald-100 text-emerald-800" : a.rank >= 75 ? "bg-amber-100 text-amber-800" : "bg-rose-100 text-rose-800"}`}>
-                          {a.rank}
-                        </div>
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
-        </Card>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-[#E8E0D3] bg-[#FAF7F2]">
+                    <th className="py-3 px-2 text-left text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">#</th>
+                    <th className="py-3 px-2 text-left text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Agent</th>
+                    <th className="py-3 px-2 text-left text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Region</th>
+                    <th className="py-3 px-2 text-right text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Visit %</th>
+                    <th className="py-3 px-2 text-right text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Sotuv %</th>
+                    <th className="py-3 px-2 text-right text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Sotuv summasi</th>
+                    <th className="py-3 px-2 text-right text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">SKU</th>
+                    <th className="py-3 px-2 text-right text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Foto</th>
+                    <th className="py-3 px-2 text-right text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Reyting</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filtered.map(a => {
+                    const idx = ranked.findIndex(r => r.id === a.id)
+                    const visitPct = (a.visit / a.visitPlan * 100)
+                    const sotuvPct = (a.sotuv / a.sotuvPlan * 100)
+                    const colorClass = (p: number) => p >= 90 ? "text-emerald-700" : p >= 75 ? "text-[#D97706]" : "text-[#C75D3C]"
+                    return (
+                      <tr key={a.id} className="border-b border-[#F0EAE0] hover:bg-[#FAF7F2]">
+                        <td className="py-3 px-2 font-medium text-[#9C8A6E]">#{idx + 1}</td>
+                        <td className="py-3 px-2">
+                          <Link href={`/komanda/${a.id}`} className="font-medium text-[#C75D3C] hover:underline">{a.name}</Link>
+                        </td>
+                        <td className="py-3 px-2 text-[#6B5B4D] text-xs">{a.region}</td>
+                        <td className={`py-3 px-2 text-right font-mono font-medium ${colorClass(visitPct)}`}>
+                          {a.visit}/{a.visitPlan} ({visitPct.toFixed(0)}%)
+                        </td>
+                        <td className={`py-3 px-2 text-right font-mono font-medium ${colorClass(sotuvPct)}`}>
+                          {sotuvPct.toFixed(0)}%
+                        </td>
+                        <td className="py-3 px-2 text-right font-mono font-medium text-emerald-700" style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>{fmt(a.sotuv)}</td>
+                        <td className="py-3 px-2 text-right font-mono text-[#1A1A1A]">{a.sku}</td>
+                        <td className="py-3 px-2 text-right font-mono text-[#6B5B4D]">
+                          <span className="inline-flex items-center justify-end gap-1"><Camera className="w-3 h-3" /> {a.foto}</span>
+                        </td>
+                        <td className="py-3 px-2 text-right">
+                          <div className={`inline-block px-3 py-1 rounded-md font-medium text-sm ${a.rank >= 90 ? "bg-emerald-50 text-emerald-700" : a.rank >= 75 ? "bg-[#FCE9DD] text-[#D97706]" : "bg-[#F5E5D6] text-[#C75D3C]"}`}>
+                            {a.rank}
+                          </div>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </Card>
+        </div>
       </div>
     </AdminLayout>
   )
