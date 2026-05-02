@@ -34,96 +34,105 @@ export default function SkuAuditPage() {
 
   return (
     <AdminLayout>
-      <div className="max-w-[1900px] mx-auto space-y-4">
-        <div className="flex items-center gap-3">
-          <Link href="/audit" className="p-2 hover:bg-slate-100 rounded-lg"><ArrowLeft className="w-5 h-5" /></Link>
-          <div className="flex-1">
-            <h1 className="text-2xl font-bold tracking-tight">SKU audit</h1>
-            <p className="text-sm text-slate-500">Mavjudlik, ko'rinish va vizit asosida SKU tahlili</p>
+      <div className="-mx-4 -my-4 px-4 py-6 min-h-full" style={{ background: "linear-gradient(180deg, #F5F1EB 0%, #FAF7F2 100%)" }}>
+        <div className="max-w-[1900px] mx-auto space-y-5">
+          {/* Hero */}
+          <div className="flex items-end gap-3 border-b border-[#E8E0D3] pb-6">
+            <Link href="/audit" className="p-2 hover:bg-[#F0EAE0] rounded-lg"><ArrowLeft className="w-5 h-5 text-[#6B5B4D]" /></Link>
+            <div className="flex-1">
+              <div className="text-xs uppercase tracking-[0.2em] text-[#9C8A6E] font-medium mb-2">SAVDOAI · AUDIT</div>
+              <h1 className="text-4xl font-light tracking-tight text-[#1A1A1A]" style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>
+                SKU <span className="italic text-[#C75D3C]">audit</span>
+              </h1>
+              <p className="text-sm text-[#6B5B4D] mt-2">Mavjudlik, ko'rinish va vizit asosida SKU tahlili</p>
+            </div>
+            <Button variant="outline" className="gap-2 border-[#E8E0D3] text-[#6B5B4D]"><Download className="w-4 h-4" /> Excel</Button>
           </div>
-          <Button variant="outline" className="gap-2"><Download className="w-4 h-4" /> Excel</Button>
-        </div>
 
-        <Card className="p-4">
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-2 mb-3">
-            {["Категории клиентов", "Категории продуктов", "Торговая марка", "Продукт", "Агент", "Город", "Мин. к-во"].map(f => (
-              <button key={f} className="text-left px-3 py-2 border border-slate-300 rounded-md text-xs hover:border-emerald-400 transition-colors flex items-center justify-between">
-                <span className="text-slate-700">{f}</span>
-                <span className="text-slate-400">▾</span>
+          <Card className="p-5 bg-white border border-[#E8E0D3] shadow-sm rounded-2xl">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-2 mb-3">
+              {["Категории клиентов", "Категории продуктов", "Торговая марка", "Продукт", "Агент", "Город", "Мин. к-во"].map(f => (
+                <button key={f} className="text-left px-3 py-2 border border-[#E8E0D3] bg-[#FAF7F2] rounded-md text-xs hover:border-[#C75D3C] transition-colors flex items-center justify-between">
+                  <span className="text-[#6B5B4D]">{f}</span>
+                  <span className="text-[#9C8A6E]">▾</span>
+                </button>
+              ))}
+            </div>
+            <div className="flex items-center gap-2">
+              <button className="px-3 py-2 border border-[#C75D3C]/40 bg-[#FCE9DD] rounded-md text-xs font-medium text-[#C75D3C] flex items-center gap-1.5">
+                <Calendar className="w-3 h-3" /> апр 3 — май 2 ▾
               </button>
-            ))}
-          </div>
-          <div className="flex items-center gap-2">
-            <button className="px-3 py-2 border border-emerald-300 bg-emerald-50 rounded-md text-xs font-semibold text-emerald-700 flex items-center gap-1">
-              <Calendar className="w-3 h-3" /> апр 3 — май 2 ▾
-            </button>
-            <Button size="sm" className="gap-1 ml-auto"><Filter className="w-4 h-4" /> Filtr</Button>
-          </div>
-        </Card>
+              <Button size="sm" className="gap-1 ml-auto" style={{ background: "#C75D3C" }}><Filter className="w-4 h-4" /> Filtr</Button>
+            </div>
+          </Card>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          <Card className="p-4 bg-emerald-50 border-emerald-200">
-            <Package2 className="w-5 h-5 text-emerald-600 mb-2" />
-            <div className="text-xs font-bold text-emerald-700">Jami SKU</div>
-            <div className="text-2xl font-bold mt-1">{ROWS.length}</div>
-          </Card>
-          <Card className="p-4 bg-blue-50 border-blue-200">
-            <Package2 className="w-5 h-5 text-blue-600 mb-2" />
-            <div className="text-xs font-bold text-blue-700">Sotilgan miqdor</div>
-            <div className="text-2xl font-bold mt-1">{fmt(totalQty)}</div>
-          </Card>
-          <Card className="p-4 bg-violet-50 border-violet-200">
-            <Package2 className="w-5 h-5 text-violet-600 mb-2" />
-            <div className="text-xs font-bold text-violet-700">Vizitlar</div>
-            <div className="text-2xl font-bold mt-1">{fmt(totalVisits)}</div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <Card className="p-5 bg-white border border-[#E8E0D3] shadow-sm rounded-2xl relative overflow-hidden">
+              <Package2 className="w-6 h-6 text-emerald-600 mb-2" />
+              <div className="text-xs uppercase tracking-[0.15em] font-medium text-emerald-700">Jami SKU</div>
+              <div className="text-3xl font-medium mt-2 tabular-nums text-[#1A1A1A]" style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>{ROWS.length}</div>
+              <div className="absolute bottom-0 left-0 right-0 h-1 bg-emerald-500" />
+            </Card>
+            <Card className="p-5 bg-white border border-[#E8E0D3] shadow-sm rounded-2xl relative overflow-hidden">
+              <Package2 className="w-6 h-6 text-blue-600 mb-2" />
+              <div className="text-xs uppercase tracking-[0.15em] font-medium text-blue-700">Sotilgan miqdor</div>
+              <div className="text-3xl font-medium mt-2 tabular-nums text-[#1A1A1A]" style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>{fmt(totalQty)}</div>
+              <div className="absolute bottom-0 left-0 right-0 h-1 bg-blue-500" />
+            </Card>
+            <Card className="p-5 bg-white border border-[#E8E0D3] shadow-sm rounded-2xl relative overflow-hidden">
+              <Package2 className="w-6 h-6 text-[#C75D3C] mb-2" />
+              <div className="text-xs uppercase tracking-[0.15em] font-medium text-[#C75D3C]">Vizitlar</div>
+              <div className="text-3xl font-medium mt-2 tabular-nums text-[#1A1A1A]" style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>{fmt(totalVisits)}</div>
+              <div className="absolute bottom-0 left-0 right-0 h-1 bg-[#C75D3C]" />
+            </Card>
+          </div>
+
+          <Card className="p-5 bg-white border border-[#E8E0D3] shadow-sm rounded-2xl">
+            <div className="flex items-center gap-2 mb-4">
+              <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="SKU yoki tovar nomi..." className="max-w-md border-[#E8E0D3] bg-[#FAF7F2]" />
+              <span className="text-sm text-[#9C8A6E] ml-auto">{filtered.length} ta SKU</span>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="bg-[#FAF7F2] border-b border-[#E8E0D3]">
+                    <th className="py-2.5 px-2 text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">#</th>
+                    <th className="py-2.5 px-2 text-left text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">SKU</th>
+                    <th className="py-2.5 px-2 text-left text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Бренд</th>
+                    <th className="py-2.5 px-2 text-left text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Продукт</th>
+                    <th className="py-2.5 px-2 text-left text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Агент</th>
+                    <th className="py-2.5 px-2 text-left text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Город</th>
+                    <th className="py-2.5 px-2 text-right text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Кол-во</th>
+                    <th className="py-2.5 px-2 text-right text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Клиенты</th>
+                    <th className="py-2.5 px-2 text-right text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Визиты</th>
+                    <th className="py-2.5 px-2 text-right text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Наличие %</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filtered.map((r, i) => (
+                    <tr key={r.id} className="border-b border-[#F0EAE0] hover:bg-[#FAF7F2]">
+                      <td className="py-2 px-2 text-center text-[#9C8A6E]">{i + 1}</td>
+                      <td className="py-2 px-2 font-mono text-[#1A1A1A]">{r.sku}</td>
+                      <td className="py-2 px-2 text-[#6B5B4D]">{r.brand}</td>
+                      <td className="py-2 px-2 font-medium text-[#1A1A1A]">{r.product}</td>
+                      <td className="py-2 px-2 text-[#6B5B4D]">{r.agent}</td>
+                      <td className="py-2 px-2 text-[#6B5B4D]">{r.city}</td>
+                      <td className="py-2 px-2 text-right font-mono text-[#1A1A1A]">{fmt(r.totalQty)}</td>
+                      <td className="py-2 px-2 text-right font-mono text-[#6B5B4D]">{r.clients}</td>
+                      <td className="py-2 px-2 text-right font-mono text-[#6B5B4D]">{r.visits}</td>
+                      <td className="py-2 px-2 text-right">
+                        <span className={`px-2 py-0.5 rounded font-mono font-medium text-xs ${r.presence >= 70 ? "bg-emerald-50 text-emerald-700" : r.presence >= 50 ? "bg-[#FCE9DD] text-[#D97706]" : "bg-[#F5E5D6] text-[#C75D3C]"}`}>
+                          {r.presence}%
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </Card>
         </div>
-
-        <Card className="p-5">
-          <div className="flex items-center gap-2 mb-3">
-            <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="SKU yoki tovar nomi..." className="max-w-md" />
-            <span className="text-sm text-slate-500 ml-auto">{filtered.length} ta SKU</span>
-          </div>
-
-          <div className="overflow-x-auto">
-            <table className="w-full text-xs border-collapse">
-              <thead>
-                <tr className="bg-slate-100">
-                  <th className="border border-slate-300 py-2 px-2">#</th>
-                  <th className="border border-slate-300 py-2 px-2 text-left">SKU</th>
-                  <th className="border border-slate-300 py-2 px-2 text-left">Бренд</th>
-                  <th className="border border-slate-300 py-2 px-2 text-left">Продукт</th>
-                  <th className="border border-slate-300 py-2 px-2 text-left">Агент</th>
-                  <th className="border border-slate-300 py-2 px-2 text-left">Город</th>
-                  <th className="border border-slate-300 py-2 px-2 text-right">Кол-во</th>
-                  <th className="border border-slate-300 py-2 px-2 text-right">Клиенты</th>
-                  <th className="border border-slate-300 py-2 px-2 text-right">Визиты</th>
-                  <th className="border border-slate-300 py-2 px-2 text-right">Наличие %</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map((r, i) => (
-                  <tr key={r.id} className="hover:bg-slate-50">
-                    <td className="border border-slate-300 py-1.5 px-2 text-center text-slate-400">{i + 1}</td>
-                    <td className="border border-slate-300 py-1.5 px-2 font-mono">{r.sku}</td>
-                    <td className="border border-slate-300 py-1.5 px-2">{r.brand}</td>
-                    <td className="border border-slate-300 py-1.5 px-2 font-semibold">{r.product}</td>
-                    <td className="border border-slate-300 py-1.5 px-2">{r.agent}</td>
-                    <td className="border border-slate-300 py-1.5 px-2">{r.city}</td>
-                    <td className="border border-slate-300 py-1.5 px-2 text-right font-mono">{fmt(r.totalQty)}</td>
-                    <td className="border border-slate-300 py-1.5 px-2 text-right font-mono">{r.clients}</td>
-                    <td className="border border-slate-300 py-1.5 px-2 text-right font-mono">{r.visits}</td>
-                    <td className="border border-slate-300 py-1.5 px-2 text-right">
-                      <span className={`px-2 py-0.5 rounded font-mono font-bold text-xs ${r.presence >= 70 ? "bg-emerald-100 text-emerald-700" : r.presence >= 50 ? "bg-amber-100 text-amber-700" : "bg-rose-100 text-rose-700"}`}>
-                        {r.presence}%
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </Card>
       </div>
     </AdminLayout>
   )
