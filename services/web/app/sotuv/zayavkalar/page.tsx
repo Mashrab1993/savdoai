@@ -4,7 +4,7 @@ import { AdminLayout } from "@/components/layout/admin-layout"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { ArrowLeft, Plus, Search, Calendar, Filter as FilterIcon, FileText, Eye, Pencil, Truck, Download } from "lucide-react"
+import { ArrowLeft, Plus, Calendar, Filter as FilterIcon, Eye, Pencil, Truck, Download } from "lucide-react"
 import Link from "next/link"
 
 type Order = {
@@ -15,18 +15,18 @@ type Order = {
 }
 
 const STATUS_BADGE: Record<string, string> = {
-  novyy: "bg-slate-100 text-slate-700",
-  podtv: "bg-blue-100 text-blue-700",
-  v_obrabotke: "bg-amber-100 text-amber-700",
-  vypolnen: "bg-emerald-100 text-emerald-700",
-  otmenen: "bg-rose-100 text-rose-700",
+  novyy: "bg-[#F0EAE0] text-[#6B5B4D]",
+  podtv: "bg-blue-50 text-blue-700",
+  v_obrabotke: "bg-[#FCE9DD] text-[#D97706]",
+  vypolnen: "bg-emerald-50 text-emerald-700",
+  otmenen: "bg-[#F5E5D6] text-[#C75D3C]",
 }
 const STATUS_LABEL: Record<string, string> = {
   novyy: "Yangi",
   podtv: "✓ Tasdiq",
-  v_obrabotke: "⏳ Ishlanmoqda",
-  vypolnen: "✓✓ Bajarildi",
-  otmenen: "✕ Bekor",
+  v_obrabotke: "Ishlanmoqda",
+  vypolnen: "Bajarildi",
+  otmenen: "Bekor",
 }
 
 const ORDERS: Order[] = Array.from({ length: 24 }).map((_, i) => ({
@@ -72,128 +72,143 @@ export default function ZayavkalarPage() {
 
   return (
     <AdminLayout>
-      <div className="max-w-[1900px] mx-auto space-y-4">
-        <div className="flex items-center gap-3">
-          <Link href="/sotuv" className="p-2 hover:bg-slate-100 rounded-lg"><ArrowLeft className="w-5 h-5" /></Link>
-          <div className="flex-1">
-            <h1 className="text-2xl font-bold tracking-tight">Заявки (Zayavkalar)</h1>
-            <p className="text-sm text-slate-500">{filtered.length} ta zayavka · {fmt(totalSum / 1_000_000)} M so'm</p>
-          </div>
-          <Button variant="outline" className="gap-2"><Download className="w-4 h-4" /> Excel</Button>
-          <Link href="/sotuv/yangi"><Button className="gap-1"><Plus className="w-4 h-4" /> Yangi zakaz</Button></Link>
-        </div>
-
-        <Card className="p-4">
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-2 mb-3">
-            {["Агент", "Экспедитор", "Тип заказа", "Статус", "Способ оплаты", "Сумма от", "Сумма до"].map(f => (
-              <button key={f} className="text-left px-3 py-2 border border-slate-300 rounded-md text-xs hover:border-emerald-400 transition-colors flex items-center justify-between">
-                <span className="text-slate-700">{f}</span>
-                <span className="text-slate-400">▾</span>
-              </button>
-            ))}
-          </div>
-          <div className="flex items-center gap-2 flex-wrap">
-            <button className="px-3 py-2 border border-emerald-300 bg-emerald-50 rounded-md text-xs font-semibold text-emerald-700 flex items-center gap-1">
-              <Calendar className="w-3 h-3" /> Дата заказа ▾
-            </button>
-            <button className="px-3 py-2 border border-emerald-300 bg-emerald-50 rounded-md text-xs font-semibold text-emerald-700 flex items-center gap-1">
-              <Calendar className="w-3 h-3" /> апр 2 6 — май 2 ▾
-            </button>
-            <Button size="sm" className="gap-1 ml-auto"><FilterIcon className="w-4 h-4" /> Filtr</Button>
-          </div>
-        </Card>
-
-        <div className="flex items-center gap-2 flex-wrap">
-          {["all", "novyy", "podtv", "v_obrabotke", "vypolnen", "otmenen"].map(s => (
-            <button key={s} onClick={() => setStatus(s)} className={`px-3 py-2 rounded-md text-xs font-semibold transition-colors ${status === s ? "bg-emerald-600 text-white" : "bg-white border border-slate-300 hover:bg-slate-50"}`}>
-              {s === "all" ? "Hammasi" : STATUS_LABEL[s]}
-              <span className="ml-2 opacity-60">{s === "all" ? ORDERS.length : ORDERS.filter(o => o.status === s).length}</span>
-            </button>
-          ))}
-        </div>
-
-        <Card className="p-4">
-          <div className="flex items-center gap-2 mb-3">
-            <button className="px-2 py-1 border border-slate-300 rounded text-xs">По 20</button>
-            <button className="px-2 py-1 border border-slate-300 rounded text-xs">Показ./Скр. столбцы</button>
-            <button className="px-2 py-1 border border-slate-300 rounded text-xs">Excel</button>
-            <span className="text-xs text-slate-500 ml-2">Поиск:</span>
-            <Input value={search} onChange={e => setSearch(e.target.value)} className="w-48" placeholder="Klient yoki #..." />
-            <span className="text-xs text-slate-500 ml-auto">Tanlangan: {selected.size}</span>
-          </div>
-
-          <div className="overflow-x-auto">
-            <table className="w-full text-xs border-collapse">
-              <thead>
-                <tr className="bg-slate-100">
-                  <th className="border border-slate-300 py-2 px-2 w-8">
-                    <input type="checkbox" checked={selected.size === filtered.length && filtered.length > 0} onChange={toggleAll} />
-                  </th>
-                  <th className="border border-slate-300 py-2 px-2 w-10">№</th>
-                  <th className="border border-slate-300 py-2 px-2 text-left">ИД заказа</th>
-                  <th className="border border-slate-300 py-2 px-2 text-left">Дата</th>
-                  <th className="border border-slate-300 py-2 px-2 text-left">Создан</th>
-                  <th className="border border-slate-300 py-2 px-2 text-left">Агент</th>
-                  <th className="border border-slate-300 py-2 px-2 text-left">Клиент</th>
-                  <th className="border border-slate-300 py-2 px-2 text-left">Экспедитор</th>
-                  <th className="border border-slate-300 py-2 px-2 text-center">Тип</th>
-                  <th className="border border-slate-300 py-2 px-2 text-center">Оплата</th>
-                  <th className="border border-slate-300 py-2 px-2 text-right">Кол-во</th>
-                  <th className="border border-slate-300 py-2 px-2 text-right">Сумма</th>
-                  <th className="border border-slate-300 py-2 px-2 text-center">Статус</th>
-                  <th className="border border-slate-300 py-2 px-2 text-center w-24">Действия</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map(o => (
-                  <tr key={o.id} className={`hover:bg-slate-50 ${selected.has(o.id) ? "bg-emerald-50" : ""}`}>
-                    <td className="border border-slate-300 py-1.5 px-2 text-center">
-                      <input type="checkbox" checked={selected.has(o.id)} onChange={() => toggleOne(o.id)} />
-                    </td>
-                    <td className="border border-slate-300 py-1.5 px-2 text-center text-slate-400">{o.row}</td>
-                    <td className="border border-slate-300 py-1.5 px-2 font-mono text-blue-700">#{o.id}</td>
-                    <td className="border border-slate-300 py-1.5 px-2 font-mono">{o.date}</td>
-                    <td className="border border-slate-300 py-1.5 px-2 font-mono text-slate-500 text-[10px]">{o.createdAt}</td>
-                    <td className="border border-slate-300 py-1.5 px-2">{o.agent}</td>
-                    <td className="border border-slate-300 py-1.5 px-2 font-semibold">{o.client}</td>
-                    <td className="border border-slate-300 py-1.5 px-2">{o.expeditor}</td>
-                    <td className="border border-slate-300 py-1.5 px-2 text-center">
-                      <span className="px-2 py-0.5 rounded bg-blue-100 text-blue-700 text-[10px]">{o.orderType}</span>
-                    </td>
-                    <td className="border border-slate-300 py-1.5 px-2 text-center text-[10px]">{o.payType}</td>
-                    <td className="border border-slate-300 py-1.5 px-2 text-right font-mono">{o.qty}</td>
-                    <td className="border border-slate-300 py-1.5 px-2 text-right font-mono font-bold text-emerald-700">{fmt(o.sum)}</td>
-                    <td className="border border-slate-300 py-1.5 px-2 text-center">
-                      <span className={`text-[10px] px-2 py-0.5 rounded ${STATUS_BADGE[o.status]}`}>{STATUS_LABEL[o.status]}</span>
-                    </td>
-                    <td className="border border-slate-300 py-1.5 px-2 text-center">
-                      <div className="flex items-center justify-center gap-1">
-                        <Link href="#" className="text-blue-600 hover:bg-blue-50 p-1 rounded" title="Ko'rish"><Eye className="w-3.5 h-3.5" /></Link>
-                        <Link href="#" className="text-emerald-600 hover:bg-emerald-50 p-1 rounded" title="O'zgartirish"><Pencil className="w-3.5 h-3.5" /></Link>
-                        <Link href="#" className="text-violet-600 hover:bg-violet-50 p-1 rounded" title="Yetkazish"><Truck className="w-3.5 h-3.5" /></Link>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-                <tr className="bg-slate-100 font-bold">
-                  <td colSpan={11} className="border border-slate-300 py-2 px-2 text-right">Итого:</td>
-                  <td className="border border-slate-300 py-2 px-2 text-right font-mono text-emerald-700">{fmt(totalSum)}</td>
-                  <td colSpan={2} className="border border-slate-300"></td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-
-          <div className="mt-3 flex items-center justify-between text-xs text-slate-500">
-            <span>1 - {filtered.length} / {ORDERS.length}</span>
-            <div className="flex gap-1">
-              <button className="px-2 py-1 border border-slate-300 rounded">Пред..</button>
-              <button className="px-2 py-1 bg-emerald-600 text-white rounded">1</button>
-              <button className="px-2 py-1 border border-slate-300 rounded">2</button>
-              <button className="px-2 py-1 border border-slate-300 rounded">След..</button>
+      <div className="-mx-4 -my-4 px-4 py-6 min-h-full" style={{ background: "linear-gradient(180deg, #F5F1EB 0%, #FAF7F2 100%)" }}>
+        <div className="max-w-[1900px] mx-auto space-y-5">
+          {/* Hero */}
+          <div className="flex items-end gap-3 border-b border-[#E8E0D3] pb-6">
+            <Link href="/sotuv" className="p-2 hover:bg-[#F0EAE0] rounded-lg"><ArrowLeft className="w-5 h-5 text-[#6B5B4D]" /></Link>
+            <div className="flex-1">
+              <div className="text-xs uppercase tracking-[0.2em] text-[#9C8A6E] font-medium mb-2">SAVDOAI · SOTUV</div>
+              <h1 className="text-4xl font-light tracking-tight text-[#1A1A1A]" style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>
+                Zayavkalar <span className="italic text-[#C75D3C]">jurnali</span>
+              </h1>
+              <p className="text-sm text-[#6B5B4D] mt-2">{filtered.length} ta zayavka · <span className="font-medium text-[#1A1A1A] tabular-nums">{fmt(totalSum / 1_000_000)} M</span> so'm</p>
             </div>
+            <Button variant="outline" className="gap-2 border-[#E8E0D3] text-[#6B5B4D]"><Download className="w-4 h-4" /> Excel</Button>
+            <Link href="/sotuv/yangi"><Button className="gap-1" style={{ background: "#C75D3C" }}><Plus className="w-4 h-4" /> Yangi zakaz</Button></Link>
           </div>
-        </Card>
+
+          {/* Filters */}
+          <Card className="p-5 bg-white border border-[#E8E0D3] shadow-sm rounded-2xl">
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-2 mb-3">
+              {["Агент", "Экспедитор", "Тип заказа", "Статус", "Способ оплаты", "Сумма от", "Сумма до"].map(f => (
+                <button key={f} className="text-left px-3 py-2 border border-[#E8E0D3] bg-[#FAF7F2] rounded-md text-xs hover:border-[#C75D3C] transition-colors flex items-center justify-between">
+                  <span className="text-[#6B5B4D]">{f}</span>
+                  <span className="text-[#9C8A6E]">▾</span>
+                </button>
+              ))}
+            </div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <button className="px-3 py-2 border border-[#C75D3C]/40 bg-[#FCE9DD] rounded-md text-xs font-medium text-[#C75D3C] flex items-center gap-1.5">
+                <Calendar className="w-3 h-3" /> Дата заказа ▾
+              </button>
+              <button className="px-3 py-2 border border-[#C75D3C]/40 bg-[#FCE9DD] rounded-md text-xs font-medium text-[#C75D3C] flex items-center gap-1.5">
+                <Calendar className="w-3 h-3" /> апр 26 — май 2 ▾
+              </button>
+              <Button size="sm" className="gap-1 ml-auto" style={{ background: "#C75D3C" }}><FilterIcon className="w-4 h-4" /> Filtr</Button>
+            </div>
+          </Card>
+
+          {/* Status tabs */}
+          <div className="flex items-center gap-2 flex-wrap">
+            {["all", "novyy", "podtv", "v_obrabotke", "vypolnen", "otmenen"].map(s => {
+              const isActive = status === s
+              return (
+                <button
+                  key={s}
+                  onClick={() => setStatus(s)}
+                  className={`px-3 py-2 rounded-md text-xs font-medium transition-colors ${isActive ? "bg-[#C75D3C] text-white" : "bg-white border border-[#E8E0D3] text-[#6B5B4D] hover:border-[#C75D3C]"}`}
+                >
+                  {s === "all" ? "Hammasi" : STATUS_LABEL[s]}
+                  <span className={`ml-2 ${isActive ? "opacity-80" : "text-[#9C8A6E]"}`}>{s === "all" ? ORDERS.length : ORDERS.filter(o => o.status === s).length}</span>
+                </button>
+              )
+            })}
+          </div>
+
+          <Card className="p-5 bg-white border border-[#E8E0D3] shadow-sm rounded-2xl">
+            <div className="flex items-center gap-2 mb-3">
+              <button className="px-2.5 py-1 border border-[#E8E0D3] rounded text-xs text-[#6B5B4D] hover:border-[#C75D3C]">По 20</button>
+              <button className="px-2.5 py-1 border border-[#E8E0D3] rounded text-xs text-[#6B5B4D] hover:border-[#C75D3C]">Столбцы</button>
+              <button className="px-2.5 py-1 border border-[#E8E0D3] rounded text-xs text-[#6B5B4D] hover:border-[#C75D3C]">Excel</button>
+              <span className="text-xs text-[#9C8A6E] ml-2">Поиск:</span>
+              <Input value={search} onChange={e => setSearch(e.target.value)} className="w-48 border-[#E8E0D3] bg-[#FAF7F2]" placeholder="Klient yoki #..." />
+              <span className="text-xs text-[#9C8A6E] ml-auto">Tanlangan: <span className="font-medium text-[#C75D3C]">{selected.size}</span></span>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="bg-[#FAF7F2] border-b border-[#E8E0D3]">
+                    <th className="py-3 px-2 w-8">
+                      <input type="checkbox" checked={selected.size === filtered.length && filtered.length > 0} onChange={toggleAll} className="accent-[#C75D3C]" />
+                    </th>
+                    <th className="py-3 px-2 w-10 text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">№</th>
+                    <th className="py-3 px-2 text-left text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Заказ</th>
+                    <th className="py-3 px-2 text-left text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Дата</th>
+                    <th className="py-3 px-2 text-left text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Создан</th>
+                    <th className="py-3 px-2 text-left text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Агент</th>
+                    <th className="py-3 px-2 text-left text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Клиент</th>
+                    <th className="py-3 px-2 text-left text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Эксп.</th>
+                    <th className="py-3 px-2 text-center text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Тип</th>
+                    <th className="py-3 px-2 text-center text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Оплата</th>
+                    <th className="py-3 px-2 text-right text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Кол.</th>
+                    <th className="py-3 px-2 text-right text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Сумма</th>
+                    <th className="py-3 px-2 text-center text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Статус</th>
+                    <th className="py-3 px-2 text-center w-24 text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Действия</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filtered.map(o => (
+                    <tr key={o.id} className={`border-b border-[#F0EAE0] hover:bg-[#FAF7F2] ${selected.has(o.id) ? "bg-[#FCE9DD]/40" : ""}`}>
+                      <td className="py-2 px-2 text-center">
+                        <input type="checkbox" checked={selected.has(o.id)} onChange={() => toggleOne(o.id)} className="accent-[#C75D3C]" />
+                      </td>
+                      <td className="py-2 px-2 text-center text-[#9C8A6E]">{o.row}</td>
+                      <td className="py-2 px-2 font-mono text-[#C75D3C] font-medium">#{o.id}</td>
+                      <td className="py-2 px-2 font-mono text-[#1A1A1A]">{o.date}</td>
+                      <td className="py-2 px-2 font-mono text-[#9C8A6E] text-[10px]">{o.createdAt}</td>
+                      <td className="py-2 px-2 text-[#1A1A1A]">{o.agent}</td>
+                      <td className="py-2 px-2 font-medium text-[#1A1A1A]">{o.client}</td>
+                      <td className="py-2 px-2 text-[#6B5B4D]">{o.expeditor}</td>
+                      <td className="py-2 px-2 text-center">
+                        <span className="px-2 py-0.5 rounded bg-blue-50 text-blue-700 text-[10px]">{o.orderType}</span>
+                      </td>
+                      <td className="py-2 px-2 text-center text-[10px] text-[#6B5B4D]">{o.payType}</td>
+                      <td className="py-2 px-2 text-right font-mono text-[#1A1A1A]">{o.qty}</td>
+                      <td className="py-2 px-2 text-right font-mono font-medium text-emerald-700" style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>{fmt(o.sum)}</td>
+                      <td className="py-2 px-2 text-center">
+                        <span className={`text-[10px] px-2 py-0.5 rounded font-medium ${STATUS_BADGE[o.status]}`}>{STATUS_LABEL[o.status]}</span>
+                      </td>
+                      <td className="py-2 px-2 text-center">
+                        <div className="flex items-center justify-center gap-1">
+                          <button className="text-blue-600 hover:bg-blue-50 p-1 rounded" title="Ko'rish"><Eye className="w-3.5 h-3.5" /></button>
+                          <button className="text-emerald-600 hover:bg-emerald-50 p-1 rounded" title="O'zgartirish"><Pencil className="w-3.5 h-3.5" /></button>
+                          <button className="text-[#C75D3C] hover:bg-[#FCE9DD] p-1 rounded" title="Yetkazish"><Truck className="w-3.5 h-3.5" /></button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                  <tr className="bg-[#FAF7F2] border-t border-[#E8E0D3]">
+                    <td colSpan={11} className="py-3 px-2 text-right text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Итого:</td>
+                    <td className="py-3 px-2 text-right font-mono font-medium text-emerald-700" style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>{fmt(totalSum)}</td>
+                    <td colSpan={2}></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div className="mt-4 flex items-center justify-between text-xs text-[#9C8A6E]">
+              <span>1 - {filtered.length} / {ORDERS.length}</span>
+              <div className="flex gap-1">
+                <button className="px-2.5 py-1 border border-[#E8E0D3] rounded hover:border-[#C75D3C]">Пред.</button>
+                <button className="px-2.5 py-1 bg-[#C75D3C] text-white rounded">1</button>
+                <button className="px-2.5 py-1 border border-[#E8E0D3] rounded hover:border-[#C75D3C]">2</button>
+                <button className="px-2.5 py-1 border border-[#E8E0D3] rounded hover:border-[#C75D3C]">След.</button>
+              </div>
+            </div>
+          </Card>
+        </div>
       </div>
     </AdminLayout>
   )
