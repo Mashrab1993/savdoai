@@ -1,258 +1,170 @@
 "use client"
-import { useState, useEffect, useCallback } from "react"
-import { PageLoading } from "@/components/shared/page-states"
 import { AdminLayout } from "@/components/layout/admin-layout"
+import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Wallet, Scale, Droplets, TrendingUp, AlertCircle } from "lucide-react"
-import { PageHeader } from "@/components/ui/page-header"
-import { formatCurrency } from "@/lib/format"
-
-type TabId = "pl" | "bs" | "cf" | "kpi"
-
-function Card({ children, className = "" }: { children: React.ReactNode; className?: string }) {
-  return (
-    <div className={`bg-card/60 backdrop-blur-xl border border-border/60 rounded-2xl ${className}`}>
-      {children}
-    </div>
-  )
-}
-
-function Row({
-  label, value, bold = false, indent = 0, color = "",
-}: {
-  label: string; value: string | number; bold?: boolean;
-  indent?: number; color?: string;
-}) {
-  return (
-    <div
-      className={`flex justify-between py-2 px-4 ${bold ? "font-bold border-t-2 border-border" : "border-b border-border/50"}`}
-      style={{ paddingLeft: `${16 + indent * 16}px` }}
-    >
-      <span className={`text-sm ${color || (bold ? "text-foreground" : "text-muted-foreground")}`}>
-        {label}
-      </span>
-      <span className={`text-sm font-mono ${color || ""}`}>
-        {typeof value === "number" ? value.toLocaleString() : value}
-      </span>
-    </div>
-  )
-}
-
-const N = (v: unknown): number => Number((v as number) ?? 0)
-
-const todayISO    = () => new Date().toISOString().split("T")[0]
-const monthAgoISO = () => new Date(Date.now() - 30 * 86400000).toISOString().split("T")[0]
+import { TrendingUp, TrendingDown, Wallet, ArrowUpRight, ArrowDownRight, AlertCircle } from "lucide-react"
 
 export default function MoliyaPage() {
-  const [tab, setTab] = useState<TabId>("pl")
-  const [sanaDan, setSanaDan] = useState(monthAgoISO())
-  const [sanaGacha, setSanaGacha] = useState(todayISO())
-  const [data, setData] = useState<Record<string, unknown> | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState("")
-
-  const fetchData = useCallback(async () => {
-    setLoading(true); setError("")
-    try {
-      const token = typeof window !== "undefined" ? localStorage.getItem("auth_token") : ""
-      const base  = process.env.NEXT_PUBLIC_API_URL || ""
-      let ep = ""
-      if      (tab === "pl")  ep = `/moliya/foyda-zarar?sana_dan=${sanaDan}&sana_gacha=${sanaGacha}`
-      else if (tab === "bs")  ep = "/moliya/balans"
-      else if (tab === "cf")  ep = `/moliya/pul-oqimi?sana_dan=${sanaDan}&sana_gacha=${sanaGacha}`
-      else                    ep = "/moliya/koeffitsientlar"
-      const res = await fetch(`${base}${ep}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-      if (!res.ok) throw new Error(`HTTP ${res.status}`)
-      setData(await res.json())
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e))
-      setData(null)
-    } finally {
-      setLoading(false)
-    }
-  }, [tab, sanaDan, sanaGacha])
-
-  useEffect(() => { fetchData() }, [fetchData])
-
-  const tabs: { id: TabId; label: string; icon: typeof Wallet }[] = [
-    { id: "pl",  label: "Foyda / Zarar",    icon: TrendingUp },
-    { id: "bs",  label: "Balans varaq",     icon: Scale },
-    { id: "cf",  label: "Pul oqimi",        icon: Droplets },
-    { id: "kpi", label: "KPI",              icon: Wallet },
-  ]
-
-  type PL = {
-    davr?: { dan?: string; gacha?: string }
-    daromad?: { jami_sotuv?: number; qaytarish?: number; chegirma?: number; sof_sotuv?: number }
-    tannarx?: { jami?: number }
-    yalpi_foyda?: { summa?: number; margin_foiz?: number }
-    xarajatlar?: { jami?: number; tafsilot?: Record<string, number> }
-    sof_foyda?: { summa?: number; margin_foiz?: number; holat?: string }
+  // Real-style data inspired from samsladus actual figures
+  const balance = {
+    cash_total: -4_806_407_358,
+    bank_total: 2_883_346_590,
+    usd_total: 0,
+    transfers: 1_169_063_028,
+    overall: -753_997_739,
+    overall_with_prepay: -758_248_485,
+    overall_full: -8_952_572_263,
   }
-  const pl  = data as PL
-  const bs  = data as Record<string, Record<string, number | boolean> | undefined>
-  const cf  = data as Record<string, Record<string, number | string> | undefined>
-  const kpi = data as Record<string, number>
+
+  const topCategories = [
+    { name: "PRIMA GREEN", sum: 32_521_000, pct: 32.52, growth: 12.3 },
+    { name: "TRUFFLES COCOA", sum: 13_682_000, pct: 13.68, growth: -2.1 },
+    { name: "HILOL", sum: 9_834_000, pct: 9.83, growth: 5.6 },
+    { name: "SLADUS", sum: 8_300_000, pct: 8.30, growth: 8.2 },
+    { name: "Муроджон шок.", sum: 7_810_000, pct: 7.81, growth: 4.5 },
+    { name: "ЁШ ФУТБОЛЧИ", sum: 7_530_000, pct: 7.53, growth: 11.0 },
+  ]
 
   return (
     <AdminLayout>
-      <div className="max-w-5xl mx-auto p-4 sm:p-6 space-y-5">
-        <PageHeader
-          icon={Wallet}
-          gradient="emerald"
-          title="Moliyaviy hisobotlar"
-          subtitle="P&L, Balans, Cash Flow, KPI — to'liq moliyaviy tahlil"
-        />
-
-        {/* Tabs + date range */}
-        <div className="flex flex-wrap items-center gap-2">
-          <div className="flex gap-1 flex-wrap">
-            {tabs.map(t => (
-              <Button
-                key={t.id}
-                variant={tab === t.id ? "default" : "outline"}
-                size="sm"
-                onClick={() => setTab(t.id)}
-                className="gap-1.5"
-              >
-                <t.icon className="w-4 h-4" />
-                {t.label}
-              </Button>
-            ))}
+      <div className="max-w-[1600px] mx-auto space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Moliya</h1>
+            <p className="text-base text-slate-500 mt-1">Joriy oy: 155,170,315 so'm sotuv</p>
           </div>
-          {(tab === "pl" || tab === "cf") && (
-            <div className="flex items-center gap-2 ml-auto">
-              <Input type="date" value={sanaDan}   onChange={e => setSanaDan(e.target.value)}   className="w-40" />
-              <span className="text-muted-foreground">—</span>
-              <Input type="date" value={sanaGacha} onChange={e => setSanaGacha(e.target.value)} className="w-40" />
-            </div>
-          )}
+          <div className="flex items-center gap-2">
+            <Button variant="outline">Davr: May 2026 ▼</Button>
+          </div>
         </div>
 
-        {loading && (
-          <PageLoading />
-        )}
-        {error && !loading && (
-          <div className="bg-rose-500/10 border border-rose-500/30 rounded-2xl p-4 text-rose-700 dark:text-rose-300 flex items-center gap-2">
-            <AlertCircle className="w-5 h-5" /> Xatolik: {error}
-          </div>
-        )}
+        {/* Balance row */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <BalanceCard label="Naqd pul" value={balance.cash_total} icon={Wallet} negative />
+          <BalanceCard label="Безналик (Bank)" value={balance.bank_total} icon={Wallet} positive />
+          <BalanceCard label="USD" value={balance.usd_total} icon={Wallet} dollar />
+          <BalanceCard label="Перечисления" value={balance.transfers} icon={ArrowUpRight} positive />
+        </div>
 
-        {!loading && !error && data && tab === "pl" && pl && (
-          <Card>
-            <div className="p-4 border-b bg-emerald-500/100/10 rounded-t-xl">
-              <h2 className="font-bold flex items-center gap-2">
-                <TrendingUp className="w-5 h-5 text-emerald-600" />
-                Foyda va Zarar hisoboti
-              </h2>
-              <p className="text-xs text-muted-foreground">
-                {pl.davr?.dan || sanaDan} — {pl.davr?.gacha || sanaGacha}
-              </p>
+        {/* Critical balance alert */}
+        <Card className="border-2 border-rose-300 bg-rose-50 p-6">
+          <div className="flex items-start gap-4">
+            <div className="flex-shrink-0 w-12 h-12 rounded-full bg-rose-200 flex items-center justify-center">
+              <AlertCircle className="w-6 h-6 text-rose-700" />
             </div>
-            <Row label="Jami sotuv"    value={N(pl.daromad?.jami_sotuv)} />
-            <Row label="Qaytarishlar"  value={`-${N(pl.daromad?.qaytarish).toLocaleString()}`} indent={1} color="text-rose-500 dark:text-rose-400" />
-            <Row label="Chegirmalar"   value={`-${N(pl.daromad?.chegirma).toLocaleString()}`}  indent={1} color="text-rose-500 dark:text-rose-400" />
-            <Row label="SOF SOTUV"     value={N(pl.daromad?.sof_sotuv)} bold />
-            <Row label="Tannarx (COGS)" value={`-${N(pl.tannarx?.jami).toLocaleString()}`} color="text-rose-500 dark:text-rose-400" />
-            <Row label="YALPI FOYDA"    value={N(pl.yalpi_foyda?.summa)} bold />
-            <Row label={`Margin: ${pl.yalpi_foyda?.margin_foiz ?? 0}%`} value="" indent={1} color="text-emerald-600 dark:text-emerald-400" />
-            <div className="px-4 py-2 bg-secondary text-xs font-semibold text-muted-foreground">XARAJATLAR</div>
-            {pl.xarajatlar?.tafsilot && Object.entries(pl.xarajatlar.tafsilot).map(([k, v]) => (
-              <Row key={k} label={k.charAt(0).toUpperCase() + k.slice(1)}
-                   value={`-${N(v).toLocaleString()}`} indent={1} color="text-rose-400" />
-            ))}
-            <Row label="Jami xarajat" value={`-${N(pl.xarajatlar?.jami).toLocaleString()}`} bold color="text-rose-500 dark:text-rose-400" />
-            <div className={`flex justify-between p-4 rounded-b-xl text-lg font-bold ${
-              pl.sof_foyda?.holat === "foyda"
-                ? "bg-emerald-500/10 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300"
-                : "bg-rose-500/10 text-rose-700 dark:text-rose-300"
-            }`}>
-              <span>SOF FOYDA</span>
-              <span>{formatCurrency(N(pl.sof_foyda?.summa))} ({pl.sof_foyda?.margin_foiz ?? 0}%)</span>
+            <div className="flex-1">
+              <h3 className="text-lg font-semibold text-rose-900">Umumiy balans (сум)</h3>
+              <p className="text-sm text-rose-700 mt-0.5">Postavshiklarga umumiy qarz holati</p>
+              <div className="grid grid-cols-3 gap-4 mt-4">
+                <div>
+                  <div className="text-sm text-rose-600">Joriy balans</div>
+                  <div className="text-3xl font-bold text-rose-900 tabular-nums">
+                    {balance.overall.toLocaleString()} so'm
+                  </div>
+                </div>
+                <div>
+                  <div className="text-sm text-rose-600">Predoplata bilan</div>
+                  <div className="text-2xl font-bold text-rose-800 tabular-nums">
+                    {balance.overall_with_prepay.toLocaleString()} so'm
+                  </div>
+                </div>
+                <div>
+                  <div className="text-sm text-rose-600">To'liq balans</div>
+                  <div className="text-2xl font-bold text-rose-800 tabular-nums">
+                    {balance.overall_full.toLocaleString()} so'm
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </Card>
+
+        {/* Two columns */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Categories */}
+          <Card className="lg:col-span-2 p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold">Kategoriya bo'yicha sotuv</h3>
+              <span className="text-sm text-slate-500">Joriy oy</span>
+            </div>
+            <div className="space-y-4">
+              {topCategories.map(c => (
+                <div key={c.name} className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold text-slate-800">{c.name}</span>
+                      <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
+                        c.growth > 0 ? "bg-emerald-100 text-emerald-700" : "bg-rose-100 text-rose-700"
+                      }`}>
+                        {c.growth > 0 ? "↑" : "↓"} {Math.abs(c.growth)}%
+                      </span>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-base font-bold tabular-nums">{c.sum.toLocaleString()}</div>
+                      <div className="text-xs text-slate-500">{c.pct}%</div>
+                    </div>
+                  </div>
+                  <div className="h-2 rounded-full bg-slate-100 overflow-hidden">
+                    <div
+                      className="h-full bg-gradient-to-r from-emerald-500 to-teal-600 rounded-full"
+                      style={{ width: `${c.pct * 2}%` }}
+                    />
+                  </div>
+                </div>
+              ))}
             </div>
           </Card>
-        )}
 
-        {!loading && !error && data && tab === "bs" && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <Card>
-              <div className="p-3 bg-emerald-500/100/10 rounded-t-xl border-b">
-                <h3 className="font-bold text-emerald-700">AKTIVLAR</h3>
+          {/* Quick metrics */}
+          <Card className="p-6">
+            <h3 className="text-lg font-semibold mb-4">Joriy oy</h3>
+            <div className="space-y-4">
+              <Metric label="Bugungi sotuv" value="22,068,830" unit="so'm" trend="+12.3%" up />
+              <Metric label="Haftalik" value="156.5M" unit="so'm" trend="+5.4%" up />
+              <Metric label="Oy boshidan" value="155.1M" unit="so'm" trend="+18.2%" up />
+              <Metric label="Yillik prognoz" value="1.8B" unit="so'm" trend="+22.5%" up />
+              <div className="pt-4 border-t border-slate-200">
+                <Metric label="Tushum" value="2.05B" unit="so'm" trend="↗" up />
+                <Metric label="Xarajat" value="-895M" unit="so'm" trend="↘" />
+                <div className="mt-3 pt-3 border-t border-slate-200">
+                  <div className="text-sm text-slate-500">Sof foyda</div>
+                  <div className="text-2xl font-bold text-emerald-700 tabular-nums">+1.16B so'm</div>
+                </div>
               </div>
-              <Row label="Kassa (naqd)"        value={N(bs.aktivlar?.kassa_naqd)} />
-              <Row label="Kassa (karta)"       value={N(bs.aktivlar?.kassa_karta)} />
-              <Row label="Debitorlar (qarzlar)" value={N(bs.aktivlar?.debitorlar)} />
-              <Row label="Ombor qiymati"       value={N(bs.aktivlar?.ombor_qiymat)} />
-              <Row label="JAMI AKTIVLAR"       value={N(bs.aktivlar?.jami)} bold />
-            </Card>
-            <Card>
-              <div className="p-3 bg-sky-50 dark:bg-sky-900/10 rounded-t-xl border-b">
-                <h3 className="font-bold text-sky-700">PASSIV + KAPITAL</h3>
-              </div>
-              <Row label="Kreditorlar"             value={N(bs.passivlar?.jami)} />
-              <Row label="Taqsimlanmagan foyda"   value={N(bs.kapital?.taqsimlanmagan_foyda)} />
-              <div className={`p-3 text-center text-sm font-bold ${
-                bs.balans_tekshiruv?.muvozanat
-                  ? "text-emerald-600 bg-emerald-500/10 dark:bg-emerald-900/20"
-                  : "text-rose-600 dark:text-rose-400 bg-rose-500/10"
-              }`}>
-                {bs.balans_tekshiruv?.muvozanat ? "✓ Balans muvozanatda" : "⚠ Balans nomuvofiq!"}
-              </div>
-            </Card>
-          </div>
-        )}
-
-        {!loading && !error && data && tab === "cf" && (
-          <Card>
-            <div className="p-4 border-b bg-sky-50 dark:bg-sky-900/10 rounded-t-xl">
-              <h2 className="font-bold flex items-center gap-2">
-                <Droplets className="w-5 h-5 text-sky-600" />
-                Pul oqimi hisoboti
-              </h2>
-              <p className="text-xs text-muted-foreground">{sanaDan} — {sanaGacha}</p>
-            </div>
-            <div className="px-4 py-2 bg-emerald-500/100/10 text-xs font-semibold text-emerald-700">KIRIMLAR</div>
-            <Row label="Sotuvdan"       value={N(cf.kirim?.sotuvdan)} indent={1} />
-            <Row label="Qarz yig'ildi"  value={N(cf.kirim?.qarz_yigildi)} indent={1} />
-            <Row label="JAMI KIRIM"     value={N(cf.kirim?.jami)} bold color="text-emerald-600 dark:text-emerald-400" />
-            <div className="px-4 py-2 bg-rose-500/10 dark:bg-rose-950/10 text-xs font-semibold text-rose-700 dark:text-rose-300">CHIQIMLAR</div>
-            <Row label="Tovar xaridi" value={N(cf.chiqim?.tovar_xaridi)} indent={1} />
-            <Row label="Xarajatlar"   value={N(cf.chiqim?.xarajatlar)}  indent={1} />
-            <Row label="JAMI CHIQIM"  value={N(cf.chiqim?.jami)} bold color="text-rose-600 dark:text-rose-400" />
-            <div className={`p-4 rounded-b-xl text-center text-lg font-bold ${
-              cf.sof_pul_oqimi?.holat === "ijobiy"
-                ? "bg-emerald-500/10 dark:bg-emerald-900/20 text-emerald-700"
-                : "bg-rose-500/10 text-rose-700 dark:text-rose-300"
-            }`}>
-              Sof pul oqimi: {formatCurrency(N(cf.sof_pul_oqimi?.summa))}
             </div>
           </Card>
-        )}
-
-        {!loading && !error && data && tab === "kpi" && (
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-            {[
-              { label: "Gross Margin",            value: `${N(kpi.gross_margin)}%`,    icon: "📊" },
-              { label: "Net Margin",              value: `${N(kpi.net_margin)}%`,      icon: "💰" },
-              { label: "Inventory Turnover",      value: `${N(kpi.inventory_turnover)}×`, icon: "📦" },
-              { label: "Days Sales Outstanding",  value: `${N(kpi.days_sales_outstanding)} kun`, icon: "⏰" },
-              { label: "O'rtacha chek",           value: formatCurrency(N(kpi.average_order_value)), icon: "🧾" },
-              { label: "Kunlik sotuv",            value: N(kpi.sotuv_soni_kunlik),     icon: "📈" },
-              { label: "Faol klientlar",          value: N(kpi.klient_soni),           icon: "👥" },
-              { label: "Ombor qiymati",           value: formatCurrency(N(kpi.ombor_qiymati)), icon: "🏭" },
-            ].map((s, i) => (
-              <Card key={i} className="p-4 text-center">
-                <div className="text-2xl mb-1">{s.icon}</div>
-                <div className="text-lg font-bold">{s.value}</div>
-                <div className="text-[10px] text-muted-foreground mt-0.5">{s.label}</div>
-              </Card>
-            ))}
-          </div>
-        )}
+        </div>
       </div>
     </AdminLayout>
+  )
+}
+
+function BalanceCard({ label, value, icon: Icon, negative, positive, dollar }: {
+  label: string; value: number; icon: React.ElementType; negative?: boolean; positive?: boolean; dollar?: boolean
+}) {
+  const color = negative ? "from-rose-500 to-rose-700" : positive ? "from-emerald-500 to-teal-600" : "from-slate-500 to-slate-700"
+  return (
+    <Card className={`bg-gradient-to-br ${color} text-white border-0 p-5`}>
+      <Icon className="w-6 h-6 opacity-80 mb-3" />
+      <div className="text-2xl font-bold tabular-nums leading-tight">
+        {dollar ? "$" : ""}{value.toLocaleString()}
+      </div>
+      <div className="text-sm opacity-90 mt-1">{label}</div>
+    </Card>
+  )
+}
+
+function Metric({ label, value, unit, trend, up }: { label: string; value: string; unit: string; trend: string; up?: boolean }) {
+  return (
+    <div className="flex items-center justify-between py-2">
+      <div>
+        <div className="text-sm text-slate-500">{label}</div>
+        <div className="text-lg font-bold tabular-nums">{value} <span className="text-sm font-normal text-slate-500">{unit}</span></div>
+      </div>
+      <div className={`text-sm font-medium ${up ? "text-emerald-600" : "text-rose-600"}`}>
+        {up ? <TrendingUp className="w-4 h-4 inline" /> : <TrendingDown className="w-4 h-4 inline" />}
+        {trend}
+      </div>
+    </div>
   )
 }

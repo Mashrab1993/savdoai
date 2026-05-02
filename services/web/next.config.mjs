@@ -1,15 +1,11 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   output: 'standalone',
-  typescript: {
-    ignoreBuildErrors: false,
+  reactStrictMode: true,
+  experimental: { reactCompiler: false },
+  async rewrites() {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+    return [{ source: '/api/v1/:path*', destination: `${apiUrl}/api/v1/:path*` }];
   },
-  images: {
-    unoptimized: true,
-  },
-  turbopack: {
-    root: '.',
-  },
-}
-
-export default nextConfig
+};
+export default nextConfig;

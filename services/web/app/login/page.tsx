@@ -1,347 +1,226 @@
 "use client"
-
 import { useState } from "react"
-import { PageLoading } from "@/components/shared/page-states"
-import {
-  Building2, Eye, EyeOff, Loader2,
-  ShieldCheck, TrendingUp, Users, Package,
-  KeyRound, User, Phone,
-} from "lucide-react"
-import { PageHeader } from "@/components/ui/page-header"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { useLocale } from "@/lib/locale-context"
-import { translations } from "@/lib/i18n"
-import { LanguageSwitcher } from "@/components/ui/language-switcher"
-import { useAuth } from "@/lib/auth/auth-context"
-import { cn } from "@/lib/utils"
+import { api } from "@/lib/api"
+import { toast } from "sonner"
+import { Building2, Lock, User, Loader2, Phone, Key } from "lucide-react"
 
-type LoginMethod = "login" | "telefon" | "token"
+type Method = "login" | "phone" | "token"
 
 export default function LoginPage() {
-  const { locale } = useLocale()
-  const { loginWithToken, loginWithCredentials, loading: authLoading, error: authError, clearError } = useAuth()
-
-  const [method, setMethod] = useState<LoginMethod>("login")
-  const [showPassword, setShowPassword] = useState(false)
-
-  // Login+parol
+  const router = useRouter()
+  const [method, setMethod] = useState<Method>("login")
   const [login, setLogin] = useState("")
-  const [parol, setParol] = useState("")
-
-  // Telefon+parol
-  const [telefon, setTelefon] = useState("")
-  const [telParol, setTelParol] = useState("")
-
-  // Token
-  const [token, setToken] = useState("")
-  const [showToken, setShowToken] = useState(false)
-
-  const [fieldError, setFieldError] = useState("")
-
-  const t = {
-    title: locale === "uz" ? "SavdoAI ga kirish" : "Вход в SavdoAI",
-    subtitle: locale === "uz" ? "Do\u2018koningizni boshqaring" : "Управляйте магазином",
-    loginTab: locale === "uz" ? "Login" : "Логин",
-    phoneTab: locale === "uz" ? "Telefon" : "Телефон",
-    tokenTab: locale === "uz" ? "Token" : "Токен",
-    loginLabel: locale === "uz" ? "Login" : "Логин",
-    loginPlaceholder: locale === "uz" ? "Masalan: salimov" : "Например: salimov",
-    passwordLabel: locale === "uz" ? "Parol" : "Пароль",
-    passwordPlaceholder: locale === "uz" ? "Parolingiz" : "Ваш пароль",
-    phonePlaceholder: "+998 90 123 45 67",
-    tokenPlaceholder: locale === "uz" ? "Telegram botdan olingan token" : "Токен из Telegram бота",
-    enterBtn: locale === "uz" ? "Kirish" : "Войти",
-    checking: locale === "uz" ? "Tekshirilmoqda..." : "Проверка...",
-    loginRequired: locale === "uz" ? "Login kiriting" : "Введите логин",
-    phoneRequired: locale === "uz" ? "Telefon raqam kiriting" : "Введите номер",
-    passwordRequired: locale === "uz" ? "Parol kiriting" : "Введите пароль",
-    tokenRequired: locale === "uz" ? "Token kiriting" : "Введите токен",
-    tokenShort: locale === "uz" ? "Token juda qisqa" : "Токен слишком короткий",
-    helpLogin: locale === "uz"
-      ? "Admin bergan login va parolni kiriting"
-      : "Введите логин и пароль от администратора",
-    helpPhone: locale === "uz"
-      ? "Ro\u2018yxatdan o\u2018tgan telefon raqam va parol"
-      : "Зарегистрированный номер и пароль",
-    helpToken: locale === "uz"
-      ? "Telegram botda /token buyrug\u2018ini yuboring"
-      : "Отправьте /token в Telegram боте",
-  }
+  const [phone, setPhone] = useState("")
+  const [token, setTokenInput] = useState("")
+  const [password, setPassword] = useState("")
+  const [loading, setLoading] = useState(false)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    setFieldError("")
-    clearError()
-
-    if (method === "login") {
-      if (!login.trim()) { setFieldError(t.loginRequired); return }
-      if (!parol.trim()) { setFieldError(t.passwordRequired); return }
-      await loginWithCredentials({ login: login.trim(), parol: parol.trim() })
-    } else if (method === "telefon") {
-      if (!telefon.trim()) { setFieldError(t.phoneRequired); return }
-      if (!telParol.trim()) { setFieldError(t.passwordRequired); return }
-      await loginWithCredentials({ telefon: telefon.trim(), parol: telParol.trim() })
-    } else {
-      const trimmed = token.trim()
-      if (!trimmed) { setFieldError(t.tokenRequired); return }
-      if (trimmed.length < 10) { setFieldError(t.tokenShort); return }
-      await loginWithToken(trimmed)
+    setLoading(true)
+    try {
+      if (method === "token") {
+        // Telegram bot token
+        localStorage.setItem("auth_token", token)
+        toast.success("Token saqlandi")
+        router.push("/dashboard")
+        return
+      }
+      const body: { login?: string; telefon?: string; parol: string } = { parol: password }
+      if (method === "login") body.login = login
+      else body.telefon = phone
+      const res = await api.post<{ token: string; user_id: number }>("/auth/login", body)
+      localStorage.setItem("auth_token", res.token)
+      localStorage.setItem("auth_user_id", String(res.user_id))
+      toast.success("Tizimga kirdingiz")
+      router.push("/dashboard")
+    } catch (err: any) {
+      toast.error(err?.detail || err?.message || "Xato yuz berdi")
+    } finally {
+      setLoading(false)
     }
   }
 
-  function switchMethod(m: LoginMethod) {
-    setMethod(m)
-    setFieldError("")
-    clearError()
-  }
-
-  const stats = [
-    { label: translations.dashboard.stat1Label[locale], value: "1 200+", icon: Users },
-    { label: translations.dashboard.stat2Label[locale], value: "69M so\u2018m", icon: TrendingUp },
-    { label: translations.dashboard.stat3Label[locale], value: "340+", icon: Package },
-    { label: translations.dashboard.stat4Label[locale], value: "8 500+", icon: ShieldCheck },
-  ]
-
-  const methods: { key: LoginMethod; label: string; icon: React.ElementType }[] = [
-    { key: "login", label: t.loginTab, icon: User },
-    { key: "telefon", label: t.phoneTab, icon: Phone },
-    { key: "token", label: t.tokenTab, icon: KeyRound },
-  ]
-
-  const hasError = fieldError || authError
-
   return (
-    <div className="min-h-screen bg-background flex">
-      {/* Left panel */}
-      <div className="hidden lg:flex lg:w-[52%] bg-sidebar flex-col justify-between p-12 relative overflow-hidden">
-        <div className="absolute inset-0 opacity-[0.03]" style={{
-          backgroundImage: "radial-gradient(circle at 1px 1px, hsl(var(--sidebar-foreground)) 1px, transparent 0)",
+    <div className="min-h-screen grid lg:grid-cols-2">
+      <div className="hidden lg:flex flex-col justify-between p-12 bg-gradient-to-br from-slate-900 via-slate-800 to-emerald-900 text-white relative overflow-hidden">
+        <div className="absolute inset-0 opacity-10" style={{
+          backgroundImage: "radial-gradient(circle at 1px 1px, white 1px, transparent 0)",
           backgroundSize: "32px 32px",
         }} />
-
-        <div className="relative flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-primary shadow-lg">
-              <Building2 className="w-5 h-5 text-primary-foreground" />
-            </div>
-            <div>
-              <span className="text-lg font-bold text-sidebar-foreground tracking-tight">SavdoAI</span>
-              <span className="block text-[10px] text-sidebar-foreground/40 -mt-0.5 font-medium tracking-widest uppercase">v25</span>
-            </div>
+        <div className="relative flex items-center gap-3">
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-500 shadow-xl">
+            <Building2 className="w-7 h-7" />
           </div>
-          <div className="opacity-70">
-            <LanguageSwitcher />
+          <div>
+            <div className="text-2xl font-bold">SavdoAI</div>
+            <div className="text-sm text-emerald-300">v26 Premium</div>
           </div>
         </div>
-
-        <div className="relative space-y-7">
-          <div className="space-y-4">
-            <h2 className="text-4xl font-bold text-sidebar-foreground leading-tight text-balance">
-              {locale === "uz"
-                ? "Biznesingizni yangi darajaga olib chiqing."
-                : "Поднимите свой бизнес на новый уровень."}
-            </h2>
-            <p className="text-sidebar-foreground/55 leading-relaxed text-lg text-pretty max-w-md">
-              {locale === "uz"
-                ? "Mijozlar, ombor, savdolar, kassaxona va hisobotlar \u2014 barchasi yagona professional panelda."
-                : "Клиенты, склад, продажи, касса и отчёты \u2014 всё в едином профессиональном интерфейсе."}
-            </p>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            {stats.map(({ label, value, icon: Icon }) => (
-              <div key={label} className="bg-sidebar-accent/50 border border-sidebar-border rounded-2xl p-4 flex items-start gap-3">
-                <div className="p-1.5 rounded-lg bg-sidebar-primary/10 shrink-0">
-                  <Icon className="w-4 h-4 text-sidebar-primary" />
-                </div>
-                <div>
-                  <p className="text-xl font-bold text-sidebar-foreground leading-none">{value}</p>
-                  <p className="text-xs text-sidebar-foreground/45 mt-1">{label}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <div className="flex items-center gap-2 text-sm text-sidebar-foreground/40">
-            <ShieldCheck className="w-4 h-4" />
-            <span>
-              {locale === "uz"
-                ? "Ma\u2018lumotlar xavfsiz. SSL va JWT himoyasi."
-                : "Данные защищены. SSL и JWT шифрование."}
-            </span>
+        <div className="relative space-y-6">
+          <h1 className="text-4xl font-bold leading-tight">
+            Distribuziya biznesini<br />yangi darajaga olib chiqing
+          </h1>
+          <p className="text-lg text-slate-300 leading-relaxed">
+            Voice + Mobile + Telegram-native ERP.<br />
+            SalesDoc darajasidagi chuqurlik + zamonaviy AI.
+          </p>
+          <div className="grid grid-cols-2 gap-4 pt-4">
+            <div className="bg-white/10 backdrop-blur rounded-xl p-4">
+              <div className="text-3xl font-bold">200+</div>
+              <div className="text-sm text-slate-300">Sahifa va modul</div>
+            </div>
+            <div className="bg-white/10 backdrop-blur rounded-xl p-4">
+              <div className="text-3xl font-bold">31</div>
+              <div className="text-sm text-slate-300">Hisobot turi</div>
+            </div>
+            <div className="bg-white/10 backdrop-blur rounded-xl p-4">
+              <div className="text-3xl font-bold">8</div>
+              <div className="text-sm text-slate-300">Audit & Merchandising</div>
+            </div>
+            <div className="bg-white/10 backdrop-blur rounded-xl p-4">
+              <div className="text-3xl font-bold">🎤</div>
+              <div className="text-sm text-slate-300">Voice-first AI</div>
+            </div>
           </div>
         </div>
-
-        <p className="relative text-xs text-sidebar-foreground/30">
-          &copy; 2025 SavdoAI. All rights reserved.
-        </p>
+        <div className="relative text-sm text-slate-400">
+          © 2026 SavdoAI. Barcha huquqlar himoyalangan.
+        </div>
       </div>
 
-      {/* Right panel */}
-      <div className="flex-1 flex flex-col items-center justify-center px-6 py-12">
-        <div className="w-full max-w-sm mb-8 lg:hidden">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary">
-                <Building2 className="w-4 h-4 text-primary-foreground" />
-              </div>
-              <span className="font-bold text-foreground">SavdoAI</span>
+      <div className="flex items-center justify-center p-8">
+        <div className="w-full max-w-md space-y-8">
+          <div className="lg:hidden flex items-center gap-3 mb-8">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-600 text-white">
+              <Building2 className="w-5 h-5" />
             </div>
-            <LanguageSwitcher />
+            <div className="text-xl font-bold">SavdoAI</div>
           </div>
-        </div>
 
-        <div className="w-full max-w-sm space-y-6">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">{t.title}</h1>
-            <p className="text-muted-foreground text-sm mt-1.5">{t.subtitle}</p>
+            <h2 className="text-3xl font-bold tracking-tight">Tizimga kiring</h2>
+            <p className="text-base text-slate-500 mt-2">Do'koningizni boshqaring</p>
           </div>
 
-          {/* Method switcher */}
-          <div className="flex rounded-lg bg-muted p-1 gap-1">
-            {methods.map(({ key, label, icon: Icon }) => (
-              <button
-                key={key}
-                type="button"
-                onClick={() => switchMethod(key)}
-                className={cn(
-                  "flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-md text-xs font-medium transition-all",
-                  method === key
-                    ? "bg-background text-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
-                )}
-              >
-                <Icon className="w-3.5 h-3.5" />
-                {label}
-              </button>
-            ))}
+          {/* Method tabs */}
+          <div className="grid grid-cols-3 gap-1 p-1 bg-slate-100 rounded-lg">
+            <MethodTab active={method === "login"} onClick={() => setMethod("login")}>
+              <User className="w-4 h-4" /> Login
+            </MethodTab>
+            <MethodTab active={method === "phone"} onClick={() => setMethod("phone")}>
+              <Phone className="w-4 h-4" /> Telefon
+            </MethodTab>
+            <MethodTab active={method === "token"} onClick={() => setMethod("token")}>
+              <Key className="w-4 h-4" /> Token
+            </MethodTab>
           </div>
 
-          {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-5">
             {method === "login" && (
               <>
-                <div className="space-y-1.5">
-                  <Label htmlFor="login">{t.loginLabel}</Label>
+                <Field label="Login" icon={User}>
                   <Input
-                    id="login"
                     type="text"
-                    placeholder={t.loginPlaceholder}
+                    placeholder="Masalan: salimov"
                     value={login}
-                    onChange={e => setLogin(e.target.value)}
-                    className={cn("h-10", hasError && "border-destructive")}
-                    autoComplete="username"
+                    onChange={(e) => setLogin(e.target.value)}
                     autoFocus
+                    required
                   />
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="parol">{t.passwordLabel}</Label>
-                  <div className="relative">
-                    <Input
-                      id="parol"
-                      type={showPassword ? "text" : "password"}
-                      placeholder={t.passwordPlaceholder}
-                      value={parol}
-                      onChange={e => setParol(e.target.value)}
-                      className={cn("h-10 pr-10", hasError && "border-destructive")}
-                      autoComplete="current-password"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                    >
-                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                    </button>
-                  </div>
-                </div>
-                <p className="text-xs text-muted-foreground">{t.helpLogin}</p>
-              </>
-            )}
-
-            {method === "telefon" && (
-              <>
-                <div className="space-y-1.5">
-                  <Label htmlFor="telefon">{t.phoneTab}</Label>
+                </Field>
+                <Field label="Parol" icon={Lock}>
                   <Input
-                    id="telefon"
-                    type="tel"
-                    placeholder={t.phonePlaceholder}
-                    value={telefon}
-                    onChange={e => setTelefon(e.target.value)}
-                    className={cn("h-10", hasError && "border-destructive")}
-                    autoComplete="tel"
-                    autoFocus
+                    type="password"
+                    placeholder="Parolingiz"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
                   />
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="telParol">{t.passwordLabel}</Label>
-                  <div className="relative">
-                    <Input
-                      id="telParol"
-                      type={showPassword ? "text" : "password"}
-                      placeholder={t.passwordPlaceholder}
-                      value={telParol}
-                      onChange={e => setTelParol(e.target.value)}
-                      className={cn("h-10 pr-10", hasError && "border-destructive")}
-                      autoComplete="current-password"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                    >
-                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                    </button>
-                  </div>
-                </div>
-                <p className="text-xs text-muted-foreground">{t.helpPhone}</p>
+                </Field>
               </>
             )}
-
+            {method === "phone" && (
+              <>
+                <Field label="Telefon" icon={Phone}>
+                  <Input
+                    type="tel"
+                    placeholder="+998 90 123 45 67"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    autoFocus
+                    required
+                  />
+                </Field>
+                <Field label="Parol" icon={Lock}>
+                  <Input
+                    type="password"
+                    placeholder="Parolingiz"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                  />
+                </Field>
+              </>
+            )}
             {method === "token" && (
               <>
-                <div className="space-y-1.5">
-                  <Label htmlFor="token">API Token</Label>
-                  <div className="relative">
-                    <Input
-                      id="token"
-                      type={showToken ? "text" : "password"}
-                      placeholder={t.tokenPlaceholder}
-                      value={token}
-                      onChange={e => setToken(e.target.value)}
-                      className={cn("h-10 pr-10 font-mono text-xs", hasError && "border-destructive")}
-                      autoComplete="off"
-                      autoFocus
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowToken(!showToken)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                    >
-                      {showToken ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                    </button>
-                  </div>
-                </div>
-                <p className="text-xs text-muted-foreground">{t.helpToken}</p>
+                <Field label="Telegram bot tokeni" icon={Key}>
+                  <Input
+                    type="text"
+                    placeholder="Telegram botdan /token buyrug'i orqali olingan"
+                    value={token}
+                    onChange={(e) => setTokenInput(e.target.value)}
+                    autoFocus
+                    required
+                    className="font-mono text-sm"
+                  />
+                </Field>
+                <p className="text-xs text-slate-500">
+                  Telegram botda <code className="bg-slate-100 px-1 rounded">/token</code> buyrug'ini yuboring va olingan tokenni kiritib qo'ying.
+                </p>
               </>
             )}
 
-            {(fieldError || authError) && (
-              <p className="text-xs text-destructive text-center rounded-md bg-destructive/10 px-3 py-2">
-                {fieldError || authError}
-              </p>
-            )}
-
-            <Button type="submit" className="w-full h-10" disabled={authLoading}>
-              {authLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-              {authLoading ? t.checking : t.enterBtn}
+            <Button type="submit" className="w-full" size="lg" disabled={loading}>
+              {loading && <Loader2 className="w-5 h-5 mr-2 animate-spin" />}
+              {loading ? "Tekshirilmoqda..." : "Kirish"}
             </Button>
           </form>
+
+          <div className="text-center text-sm text-slate-500">
+            Yordam kerakmi? <span className="text-emerald-600 font-medium">+998 71 207-59-95</span>
+          </div>
         </div>
       </div>
+    </div>
+  )
+}
+
+function MethodTab({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`flex items-center justify-center gap-1.5 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+        active ? "bg-white text-slate-900 shadow-sm" : "text-slate-600 hover:text-slate-900"
+      }`}
+    >
+      {children}
+    </button>
+  )
+}
+
+function Field({ label, icon: Icon, children }: { label: string; icon: React.ElementType; children: React.ReactNode }) {
+  return (
+    <div className="space-y-2">
+      <label className="text-sm font-medium text-slate-700 flex items-center gap-2">
+        <Icon className="w-4 h-4" /> {label}
+      </label>
+      {children}
     </div>
   )
 }
