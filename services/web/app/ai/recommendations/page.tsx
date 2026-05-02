@@ -24,16 +24,22 @@ const RECOMMENDATIONS: Recommendation[] = [
 ]
 
 const TYPE_LABEL: Record<string, string> = {
-  cross_sell: "🔗 Cross-sell (qo'shni tovar)",
-  up_sell: "📈 Up-sell (qimmatroq variant)",
-  next_buy: "🔮 Next-buy (keyingi xarid)",
-  reactivation: "🎯 Reactivation (qaytarish)",
+  cross_sell: "🔗 Cross-sell",
+  up_sell: "📈 Up-sell",
+  next_buy: "🔮 Next-buy",
+  reactivation: "🎯 Reactivation",
 }
 const TYPE_COLOR: Record<string, string> = {
-  cross_sell: "bg-blue-100 text-blue-700",
-  up_sell: "bg-emerald-100 text-emerald-700",
-  next_buy: "bg-violet-100 text-violet-700",
-  reactivation: "bg-rose-100 text-rose-700",
+  cross_sell: "bg-blue-50 text-blue-700",
+  up_sell: "bg-emerald-50 text-emerald-700",
+  next_buy: "bg-purple-50 text-purple-700",
+  reactivation: "bg-[#F5E5D6] text-[#C75D3C]",
+}
+const TYPE_ACCENT: Record<string, string> = {
+  cross_sell: "#3B82F6",
+  up_sell: "#10B981",
+  next_buy: "#8B5CF6",
+  reactivation: "#C75D3C",
 }
 
 function fmt(n: number) { return n.toLocaleString("ru-RU") }
@@ -52,119 +58,118 @@ export default function RecommendationsPage() {
 
   return (
     <AdminLayout>
-      <div className="max-w-[1700px] mx-auto space-y-4">
-        <div className="flex items-center gap-3">
-          <Link href="/ai" className="p-2 hover:bg-slate-100 rounded-lg"><ArrowLeft className="w-5 h-5" /></Link>
-          <div className="flex-1">
-            <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
-              <Sparkles className="w-7 h-7 text-violet-600" />
-              AI Tovar tavsiyalar (Recommender Engine)
-            </h1>
-            <p className="text-sm text-slate-500">{RECOMMENDATIONS.length} ta tavsiya · {fmt(totalExpected / 1_000_000)} M kutilgan tushum · o'rtacha {avgConfidence}% confidence</p>
+      <div className="-mx-4 -my-4 px-4 py-6 min-h-full" style={{ background: "linear-gradient(180deg, #F5F1EB 0%, #FAF7F2 100%)" }}>
+        <div className="max-w-[1700px] mx-auto space-y-5">
+          <div className="flex items-end gap-3 border-b border-[#E8E0D3] pb-6">
+            <Link href="/dashboard" className="p-2 hover:bg-[#F0EAE0] rounded-lg"><ArrowLeft className="w-5 h-5 text-[#6B5B4D]" /></Link>
+            <div className="flex-1">
+              <div className="text-xs uppercase tracking-[0.2em] text-[#9C8A6E] font-medium mb-2">SAVDOAI · AI</div>
+              <h1 className="text-4xl font-light tracking-tight text-[#1A1A1A] flex items-center gap-3" style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>
+                <Sparkles className="w-8 h-8 text-[#8B5CF6]" />
+                AI <span className="italic text-[#C75D3C]">Recommender</span>
+              </h1>
+              <p className="text-sm text-[#6B5B4D] mt-2">{RECOMMENDATIONS.length} ta tavsiya · <span className="text-emerald-700 font-medium">{fmt(totalExpected / 1_000_000)} M</span> kutilgan tushum · o'rta {avgConfidence}% confidence</p>
+            </div>
+            <Button variant="outline" className="gap-2 border-[#E8E0D3] text-[#6B5B4D]"><Calendar className="w-4 h-4" /> Bugun yangilangan</Button>
           </div>
-          <Button variant="outline" className="gap-2"><Calendar className="w-4 h-4" /> Bugun yangilangan</Button>
-        </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <Card className="p-4 bg-blue-50 border-blue-200">
-            <Package className="w-5 h-5 text-blue-600 mb-2" />
-            <div className="text-xs font-bold text-blue-700">🔗 Cross-sell</div>
-            <div className="text-2xl font-bold mt-1">{counts.cross_sell}</div>
-          </Card>
-          <Card className="p-4 bg-emerald-50 border-emerald-200">
-            <TrendingUp className="w-5 h-5 text-emerald-600 mb-2" />
-            <div className="text-xs font-bold text-emerald-700">📈 Up-sell</div>
-            <div className="text-2xl font-bold mt-1">{counts.up_sell}</div>
-          </Card>
-          <Card className="p-4 bg-violet-50 border-violet-200">
-            <ShoppingCart className="w-5 h-5 text-violet-600 mb-2" />
-            <div className="text-xs font-bold text-violet-700">🔮 Next-buy</div>
-            <div className="text-2xl font-bold mt-1">{counts.next_buy}</div>
-          </Card>
-          <Card className="p-4 bg-rose-50 border-rose-200">
-            <Users className="w-5 h-5 text-rose-600 mb-2" />
-            <div className="text-xs font-bold text-rose-700">🎯 Reactivation</div>
-            <div className="text-2xl font-bold mt-1">{counts.reactivation}</div>
-          </Card>
-        </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <KpiCard icon={Package} accent={TYPE_ACCENT.cross_sell} label="🔗 Cross-sell" value={counts.cross_sell.toString()} />
+            <KpiCard icon={TrendingUp} accent={TYPE_ACCENT.up_sell} label="📈 Up-sell" value={counts.up_sell.toString()} />
+            <KpiCard icon={ShoppingCart} accent={TYPE_ACCENT.next_buy} label="🔮 Next-buy" value={counts.next_buy.toString()} />
+            <KpiCard icon={Users} accent={TYPE_ACCENT.reactivation} label="🎯 Reactivation" value={counts.reactivation.toString()} />
+          </div>
 
-        <Card className="p-5">
-          <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
-            <Lightbulb className="w-5 h-5 text-amber-500" />
-            Bugungi tavsiyalar (kutilgan tushum bo'yicha)
-          </h2>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b-2 border-slate-200 text-left bg-slate-50">
-                  <th className="py-3 px-2">#</th>
-                  <th className="py-3 px-2">Klient</th>
-                  <th className="py-3 px-2 text-center">Segment</th>
-                  <th className="py-3 px-2">Tavsiya</th>
-                  <th className="py-3 px-2">Sabab (data)</th>
-                  <th className="py-3 px-2 text-center">Tip</th>
-                  <th className="py-3 px-2 text-right">Kutilgan</th>
-                  <th className="py-3 px-2 text-center">Confidence</th>
-                  <th className="py-3 px-2 text-center w-24">Amal</th>
-                </tr>
-              </thead>
-              <tbody>
-                {sorted.map((r, i) => (
-                  <tr key={r.id} className="border-b border-slate-100 hover:bg-slate-50">
-                    <td className="py-3 px-2 font-bold text-slate-400">{i + 1}</td>
-                    <td className="py-3 px-2 font-semibold">{r.client}</td>
-                    <td className="py-3 px-2 text-center">
-                      <span className={`text-xs px-2 py-0.5 rounded ${
-                        r.segment === "Champions" ? "bg-amber-100 text-amber-700" :
-                        r.segment === "Loyal" ? "bg-emerald-100 text-emerald-700" :
-                        r.segment === "At Risk" ? "bg-rose-100 text-rose-700" :
-                        r.segment === "Hibernating" ? "bg-slate-100 text-slate-700" :
-                        "bg-blue-100 text-blue-700"
-                      }`}>{r.segment}</span>
-                    </td>
-                    <td className="py-3 px-2 font-semibold text-emerald-700">{r.recommendedProduct}</td>
-                    <td className="py-3 px-2 text-xs text-slate-600 italic max-w-xs">"{r.reason}"</td>
-                    <td className="py-3 px-2 text-center">
-                      <span className={`text-xs px-2 py-0.5 rounded ${TYPE_COLOR[r.type]}`}>{TYPE_LABEL[r.type]}</span>
-                    </td>
-                    <td className="py-3 px-2 text-right font-mono font-bold text-emerald-700">+{fmt(r.expectedRevenue)}</td>
-                    <td className="py-3 px-2 text-center">
-                      <div className="flex items-center justify-center gap-1">
-                        <span className={`px-2 py-0.5 rounded font-mono font-bold text-xs ${r.confidence >= 80 ? "bg-emerald-100 text-emerald-700" : r.confidence >= 65 ? "bg-amber-100 text-amber-700" : "bg-rose-100 text-rose-700"}`}>
+          <Card className="p-6 bg-white border border-[#E8E0D3] shadow-sm rounded-2xl">
+            <h2 className="text-xl font-light mb-5 flex items-center gap-2 text-[#1A1A1A]" style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>
+              <Lightbulb className="w-5 h-5 text-[#D97706]" />
+              Bugungi tavsiyalar
+            </h2>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-[#E8E0D3] bg-[#FAF7F2]">
+                    <th className="py-3 px-2 text-left text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">#</th>
+                    <th className="py-3 px-2 text-left text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Klient</th>
+                    <th className="py-3 px-2 text-center text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Segment</th>
+                    <th className="py-3 px-2 text-left text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Tavsiya</th>
+                    <th className="py-3 px-2 text-left text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Sabab (data)</th>
+                    <th className="py-3 px-2 text-center text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Tip</th>
+                    <th className="py-3 px-2 text-right text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Kutilgan</th>
+                    <th className="py-3 px-2 text-center text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Confidence</th>
+                    <th className="py-3 px-2 text-center w-24 text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Amal</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {sorted.map((r, i) => (
+                    <tr key={r.id} className="border-b border-[#F0EAE0] hover:bg-[#FAF7F2]">
+                      <td className="py-3 px-2 font-medium text-[#9C8A6E]">{i + 1}</td>
+                      <td className="py-3 px-2 font-medium text-[#1A1A1A]">{r.client}</td>
+                      <td className="py-3 px-2 text-center">
+                        <span className={`text-xs px-2 py-0.5 rounded font-medium ${
+                          r.segment === "Champions" ? "bg-[#FCE9DD] text-[#D97706]" :
+                          r.segment === "Loyal" ? "bg-emerald-50 text-emerald-700" :
+                          r.segment === "At Risk" ? "bg-[#F5E5D6] text-[#C75D3C]" :
+                          r.segment === "Hibernating" ? "bg-[#F0EAE0] text-[#6B5B4D]" :
+                          "bg-blue-50 text-blue-700"
+                        }`}>{r.segment}</span>
+                      </td>
+                      <td className="py-3 px-2 font-medium text-emerald-700" style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>{r.recommendedProduct}</td>
+                      <td className="py-3 px-2 text-xs text-[#6B5B4D] italic max-w-xs">"{r.reason}"</td>
+                      <td className="py-3 px-2 text-center">
+                        <span className={`text-xs px-2 py-0.5 rounded font-medium ${TYPE_COLOR[r.type]}`}>{TYPE_LABEL[r.type]}</span>
+                      </td>
+                      <td className="py-3 px-2 text-right font-mono font-medium text-emerald-700" style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>+{fmt(r.expectedRevenue)}</td>
+                      <td className="py-3 px-2 text-center">
+                        <span className={`px-2 py-0.5 rounded font-mono font-medium text-xs ${r.confidence >= 80 ? "bg-emerald-50 text-emerald-700" : r.confidence >= 65 ? "bg-[#FCE9DD] text-[#D97706]" : "bg-[#F5E5D6] text-[#C75D3C]"}`}>
                           {r.confidence}%
                         </span>
-                      </div>
-                    </td>
-                    <td className="py-3 px-2 text-center">
-                      <Button size="sm" className="h-7 text-xs">Bajar</Button>
-                    </td>
+                      </td>
+                      <td className="py-3 px-2 text-center">
+                        <Button size="sm" className="h-7 text-xs" style={{ background: "#C75D3C" }}>Bajar</Button>
+                      </td>
+                    </tr>
+                  ))}
+                  <tr className="bg-emerald-50/40">
+                    <td colSpan={6} className="py-3 px-2 text-right text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Jami kutilgan tushum:</td>
+                    <td className="py-3 px-2 text-right font-mono text-emerald-700 text-base font-medium" style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>+{fmt(totalExpected)}</td>
+                    <td colSpan={2}></td>
                   </tr>
-                ))}
-                <tr className="bg-emerald-50 font-bold">
-                  <td colSpan={6} className="py-3 px-2 text-right">Jami kutilgan tushum:</td>
-                  <td className="py-3 px-2 text-right font-mono text-emerald-700 text-base">+{fmt(totalExpected)}</td>
-                  <td colSpan={2}></td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </Card>
-
-        <Card className="p-5 bg-gradient-to-br from-violet-50 to-blue-50 border-2 border-violet-300">
-          <div className="flex items-start gap-3">
-            <Sparkles className="w-7 h-7 text-violet-600 flex-shrink-0" />
-            <div>
-              <h3 className="font-bold text-violet-800">AI Recommender Engine qanday ishlaydi?</h3>
-              <p className="text-sm text-slate-700 mt-1">
-                Tizim har klient uchun 4 xil tahlil yuritadi: <span className="font-bold">cross-sell</span> (qo'shni tovar),
-                <span className="font-bold"> up-sell</span> (qimmatroq variant), <span className="font-bold">next-buy</span> (keyingi xarid bashorati),
-                <span className="font-bold"> reactivation</span> (yo'qolgan klient qaytarish). Collaborative filtering + sequence prediction modeli.
-                Confidence 80%+ tavsiyalar avtomatik klientga yuboriladi.
-              </p>
+                </tbody>
+              </table>
             </div>
-          </div>
-        </Card>
+          </Card>
+
+          <Card className="p-6 bg-white border-2 border-[#8B5CF6]/30 shadow-sm rounded-2xl">
+            <div className="flex items-start gap-3">
+              <div className="w-12 h-12 rounded-2xl bg-purple-50 flex items-center justify-center flex-shrink-0">
+                <Sparkles className="w-6 h-6 text-[#8B5CF6]" />
+              </div>
+              <div>
+                <div className="text-xs uppercase tracking-[0.2em] text-[#8B5CF6] font-medium">QANDAY ISHLAYDI</div>
+                <h3 className="text-xl font-light text-[#1A1A1A] mt-1" style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>AI Recommender Engine</h3>
+                <p className="text-sm text-[#6B5B4D] mt-2 leading-relaxed">
+                  Tizim har klient uchun 4 xil tahlil yuritadi: <span className="font-medium">cross-sell</span> (qo'shni tovar),
+                  <span className="font-medium"> up-sell</span> (qimmatroq variant), <span className="font-medium">next-buy</span> (keyingi xarid bashorati),
+                  <span className="font-medium"> reactivation</span> (yo'qolgan klient qaytarish). Collaborative filtering + sequence prediction modeli.
+                  Confidence 80%+ tavsiyalar avtomatik klientga yuboriladi.
+                </p>
+              </div>
+            </div>
+          </Card>
+        </div>
       </div>
     </AdminLayout>
+  )
+}
+
+function KpiCard({ icon: Icon, accent, label, value }: { icon: React.ElementType; accent: string; label: string; value: string }) {
+  return (
+    <Card className="p-5 bg-white border border-[#E8E0D3] shadow-sm rounded-2xl relative overflow-hidden">
+      <Icon className="w-5 h-5 mb-2" style={{ color: accent }} />
+      <div className="text-xs font-medium" style={{ color: accent }}>{label}</div>
+      <div className="text-3xl font-medium tabular-nums mt-1 text-[#1A1A1A]" style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>{value}</div>
+      <div className="absolute bottom-0 left-0 right-0 h-1" style={{ background: accent }} />
+    </Card>
   )
 }
