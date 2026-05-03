@@ -4,7 +4,7 @@ import { AdminLayout } from "@/components/layout/admin-layout"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { ArrowLeft, Filter as FilterIcon, Calendar, Search } from "lucide-react"
+import { ArrowLeft, Filter as FilterIcon, Calendar } from "lucide-react"
 import Link from "next/link"
 
 const AGENTS = [
@@ -36,148 +36,157 @@ export default function SalesDetailedPage() {
 
   return (
     <AdminLayout>
-      <div className="max-w-[1900px] mx-auto space-y-4">
-        <div className="flex items-center gap-3">
-          <Link href="/hisobot" className="p-2 hover:bg-slate-100 rounded-lg"><ArrowLeft className="w-5 h-5" /></Link>
-          <h1 className="text-2xl font-bold tracking-tight flex-1">Детальный отчёт по продажам</h1>
-        </div>
+      <div className="-mx-4 -my-4 px-4 py-6 min-h-full" style={{ background: "linear-gradient(180deg, #F5F1EB 0%, #FAF7F2 100%)" }}>
+        <div className="max-w-[1900px] mx-auto space-y-5">
+          <div className="flex items-end gap-3 border-b border-[#E8E0D3] pb-6">
+            <Link href="/hisobot" className="p-2 hover:bg-[#F0EAE0] rounded-lg"><ArrowLeft className="w-5 h-5 text-[#6B5B4D]" /></Link>
+            <div className="flex-1">
+              <div className="text-xs uppercase tracking-[0.2em] text-[#9C8A6E] font-medium mb-2">SAVDOAI · HISOBOT</div>
+              <h1 className="text-4xl font-light tracking-tight text-[#1A1A1A]" style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>
+                Детальный <span className="italic text-[#C75D3C]">отчёт по продажам</span>
+              </h1>
+              <p className="text-sm text-[#6B5B4D] mt-2">Agent × Tovar pivot · qaytarish va almashish</p>
+            </div>
+          </div>
 
-        <Card className="p-4">
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
-            {["Категория продукта", "Территория", "Отгружен", "Тип цены", "Отгрузка"].map(f => (
-              <button key={f} className="text-left px-3 py-2 border border-slate-300 rounded-md text-xs hover:border-emerald-400 transition-colors flex items-center justify-between">
-                <span className="text-slate-700">{f}</span>
-                <span className="text-slate-400">▾</span>
+          <Card className="p-5 bg-white border border-[#E8E0D3] shadow-sm rounded-2xl">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
+              {["Категория продукта", "Территория", "Отгружен", "Тип цены", "Отгрузка"].map(f => (
+                <button key={f} className="text-left px-3 py-2 border border-[#E8E0D3] bg-[#FAF7F2] rounded-md text-xs hover:border-[#C75D3C] transition-colors flex items-center justify-between">
+                  <span className="text-[#6B5B4D]">{f}</span>
+                  <span className="text-[#9C8A6E]">▾</span>
+                </button>
+              ))}
+              <button className="px-3 py-2 border border-[#C75D3C]/40 bg-[#FCE9DD] rounded-md text-xs font-medium text-[#C75D3C] flex items-center gap-1.5">
+                <Calendar className="w-3 h-3" /> май 1 — май 3 ▾
               </button>
-            ))}
-            <button className="px-3 py-2 border border-emerald-300 bg-emerald-50 rounded-md text-xs font-semibold text-emerald-700 flex items-center gap-1">
-              <Calendar className="w-3 h-3" /> май 1 — май 3 ▾
-            </button>
-          </div>
-          <div className="mt-3 flex items-center gap-2">
-            <Button size="sm" className="gap-1"><FilterIcon className="w-4 h-4" /> Filtr</Button>
-            <Button size="sm" variant="outline">Сброс</Button>
-          </div>
-        </Card>
+            </div>
+            <div className="mt-3 flex items-center gap-2">
+              <Button size="sm" className="gap-1" style={{ background: "#C75D3C" }}><FilterIcon className="w-4 h-4" /> Filtr</Button>
+              <Button size="sm" variant="outline" className="border-[#E8E0D3] text-[#6B5B4D]">Сброс</Button>
+            </div>
+          </Card>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <Card className="p-4 bg-gradient-to-br from-emerald-500 to-emerald-700 text-white border-0">
-            <div className="text-xs font-bold opacity-90 mb-2">Общие заявки</div>
-            <div className="text-2xl font-bold font-mono">{fmt(totalObshie)}</div>
-            <div className="text-xs opacity-90 mt-2">Кол-во: {fmt(45)}</div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <KpiCard accent="#10B981" label="Общие заявки" value={fmt(totalObshie)} sub="Кол-во: 45" />
+            <KpiCard accent="#D97706" label="Отгружено" value={fmt(totalOtgruzeno)} sub="Кол-во: 38" />
+            <KpiCard accent="#7C3AED" label="Доставлено" value={fmt(totalDostavleno)} sub="Кол-во: 32" />
+            <KpiCard accent="#C75D3C" label="Задолженность клиентов" value={fmt(totalDolg)} sub="Просроченная" />
+          </div>
+
+          <Card className="p-5 bg-white border border-[#E8E0D3] shadow-sm rounded-2xl">
+            <div className="flex items-center gap-2 mb-4 flex-wrap">
+              <span className="text-xs uppercase tracking-wider font-medium text-[#9C8A6E] mr-2">Торговые агенты</span>
+              <button onClick={() => setTab("agent")} className={`px-3 py-1.5 text-xs font-medium rounded ${tab === "agent" ? "bg-[#C75D3C] text-white" : "bg-[#FAF7F2] text-[#6B5B4D] border border-[#E8E0D3]"}`}>По АРС</button>
+              <button onClick={() => setTab("product")} className={`px-3 py-1.5 text-xs font-medium rounded ${tab === "product" ? "bg-[#C75D3C] text-white" : "bg-[#FAF7F2] text-[#6B5B4D] border border-[#E8E0D3]"}`}>По кол-ву</button>
+              <button className="px-3 py-1.5 text-xs font-medium rounded bg-[#FAF7F2] text-[#6B5B4D] border border-[#E8E0D3]">По сумме</button>
+              <span className="ml-auto text-xs text-[#9C8A6E]">Поиск:</span>
+              <Input value={search} onChange={e => setSearch(e.target.value)} className="w-48 border-[#E8E0D3] bg-[#FAF7F2]" />
+            </div>
+
+            {tab === "agent" && (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="bg-[#FAF7F2] border-b border-[#E8E0D3]">
+                      <th className="py-3 px-2 text-left text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Агент</th>
+                      <th className="py-3 px-2 text-right text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Общие заявки</th>
+                      <th className="py-3 px-2 text-right text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Отгружено</th>
+                      <th className="py-3 px-2 text-right text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Доставлено</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {AGENTS.map(a => (
+                      <tr key={a.name} className="border-b border-[#F0EAE0] hover:bg-[#FAF7F2]">
+                        <td className="py-3 px-2 font-medium text-[#1A1A1A]">{a.name}</td>
+                        <td className="py-3 px-2 text-right font-mono font-medium text-emerald-700" style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>{fmt(a.obshie)}</td>
+                        <td className="py-3 px-2 text-right font-mono text-[#D97706]">{fmt(a.otgruzeno)}</td>
+                        <td className="py-3 px-2 text-right font-mono text-purple-700">{fmt(a.dostavleno)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+            {tab === "product" && (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="bg-[#FAF7F2] border-b border-[#E8E0D3]">
+                      <th className="py-3 px-2 text-left text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Агент</th>
+                      <th className="py-3 px-2 text-right text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Сумма</th>
+                      <th className="py-3 px-2 text-right text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Кол-во</th>
+                      <th className="py-3 px-2 text-right text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Возврат кол-во</th>
+                      <th className="py-3 px-2 text-right text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Возврат сумма</th>
+                      <th className="py-3 px-2 text-right text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Обмен кол-во</th>
+                      <th className="py-3 px-2 text-right text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Обмен сумма</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {PRODUCTS.map(p => (
+                      <tr key={p.agent} className="border-b border-[#F0EAE0] hover:bg-[#FAF7F2]">
+                        <td className="py-3 px-2 font-medium text-[#1A1A1A]">{p.agent}</td>
+                        <td className="py-3 px-2 text-right font-mono font-medium text-emerald-700" style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>{fmt(p.sum)}</td>
+                        <td className="py-3 px-2 text-right font-mono text-[#1A1A1A]">{fmt(p.qty)}</td>
+                        <td className="py-3 px-2 text-right font-mono text-[#6B5B4D]">{p.retCount || "—"}</td>
+                        <td className="py-3 px-2 text-right font-mono text-[#C75D3C]">{p.retSum ? fmt(p.retSum) : "—"}</td>
+                        <td className="py-3 px-2 text-right font-mono text-[#6B5B4D]">{p.exch || "—"}</td>
+                        <td className="py-3 px-2 text-right font-mono text-[#D97706]">{p.exchSum ? fmt(p.exchSum) : "—"}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </Card>
-          <Card className="p-4 bg-gradient-to-br from-amber-500 to-orange-600 text-white border-0">
-            <div className="text-xs font-bold opacity-90 mb-2">Отгружено</div>
-            <div className="text-2xl font-bold font-mono">{fmt(totalOtgruzeno)}</div>
-            <div className="text-xs opacity-90 mt-2">Кол-во: {fmt(38)}</div>
-          </Card>
-          <Card className="p-4 bg-gradient-to-br from-violet-500 to-violet-700 text-white border-0">
-            <div className="text-xs font-bold opacity-90 mb-2">Доставлено</div>
-            <div className="text-2xl font-bold font-mono">{fmt(totalDostavleno)}</div>
-            <div className="text-xs opacity-90 mt-2">Кол-во: {fmt(32)}</div>
-          </Card>
-          <Card className="p-4 bg-gradient-to-br from-rose-500 to-pink-700 text-white border-0">
-            <div className="text-xs font-bold opacity-90 mb-2">Задолженность клиентов</div>
-            <div className="text-2xl font-bold font-mono">{fmt(totalDolg)}</div>
-            <div className="text-xs opacity-90 mt-2">Просроченная сумма заказа</div>
+
+          <Card className="p-5 bg-white border border-[#E8E0D3] shadow-sm rounded-2xl">
+            <h3 className="text-lg font-light mb-4 text-[#1A1A1A]" style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>По категории продуктов</h3>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-[#FAF7F2] border-b border-[#E8E0D3]">
+                    <th className="py-3 px-2 text-left text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Категория</th>
+                    <th className="py-3 px-2 text-right text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Сумма (UZS)</th>
+                    <th className="py-3 px-2 text-right text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Кол-во</th>
+                    <th className="py-3 px-2 text-right text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">% от итого</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {[
+                    { cat: "Шоколад", sum: 412_800_000, qty: 4280 },
+                    { cat: "Соки и напитки", sum: 286_400_000, qty: 2840 },
+                    { cat: "Печенье", sum: 142_400_000, qty: 1840 },
+                    { cat: "Вода", sum: 84_200_000, qty: 1240 },
+                    { cat: "Прочее", sum: 38_400_000, qty: 624 },
+                  ].map(c => {
+                    const pct = c.sum / 964_200_000 * 100
+                    return (
+                      <tr key={c.cat} className="border-b border-[#F0EAE0] hover:bg-[#FAF7F2]">
+                        <td className="py-3 px-2 font-medium text-[#1A1A1A]">{c.cat}</td>
+                        <td className="py-3 px-2 text-right font-mono font-medium text-emerald-700" style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>{fmt(c.sum)}</td>
+                        <td className="py-3 px-2 text-right font-mono text-[#1A1A1A]">{fmt(c.qty)}</td>
+                        <td className="py-3 px-2 text-right font-mono text-[#1A1A1A]">{pct.toFixed(1)}%</td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
           </Card>
         </div>
-
-        <Card className="p-4">
-          <div className="flex items-center gap-2 mb-3 flex-wrap">
-            <span className="text-sm font-semibold mr-2">Торговые агенты</span>
-            <button onClick={() => setTab("agent")} className={`px-3 py-1.5 text-xs font-semibold rounded ${tab === "agent" ? "bg-emerald-600 text-white" : "bg-slate-100 text-slate-600"}`}>По АРС</button>
-            <button onClick={() => setTab("product")} className={`px-3 py-1.5 text-xs font-semibold rounded ${tab === "product" ? "bg-emerald-600 text-white" : "bg-slate-100 text-slate-600"}`}>По кол-ву</button>
-            <button className="px-3 py-1.5 text-xs font-semibold rounded bg-slate-100 text-slate-600">По сумме</button>
-            <span className="ml-auto text-xs">Поиск:</span>
-            <Input value={search} onChange={e => setSearch(e.target.value)} className="w-48" />
-          </div>
-
-          {tab === "agent" && (
-            <table className="w-full text-sm border-collapse">
-              <thead>
-                <tr className="bg-slate-100">
-                  <th className="border border-slate-300 py-2 px-2 text-left">Агент</th>
-                  <th className="border border-slate-300 py-2 px-2 text-right">Общие заявки</th>
-                  <th className="border border-slate-300 py-2 px-2 text-right">Отгружено</th>
-                  <th className="border border-slate-300 py-2 px-2 text-right">Доставлено</th>
-                </tr>
-              </thead>
-              <tbody>
-                {AGENTS.map(a => (
-                  <tr key={a.name} className="hover:bg-slate-50">
-                    <td className="border border-slate-300 py-2 px-2 font-semibold">{a.name}</td>
-                    <td className="border border-slate-300 py-2 px-2 text-right font-mono font-bold text-emerald-700">{fmt(a.obshie)}</td>
-                    <td className="border border-slate-300 py-2 px-2 text-right font-mono text-amber-700">{fmt(a.otgruzeno)}</td>
-                    <td className="border border-slate-300 py-2 px-2 text-right font-mono text-violet-700">{fmt(a.dostavleno)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-          {tab === "product" && (
-            <table className="w-full text-sm border-collapse">
-              <thead>
-                <tr className="bg-slate-100">
-                  <th className="border border-slate-300 py-2 px-2 text-left">Агент</th>
-                  <th className="border border-slate-300 py-2 px-2 text-right">Сумма</th>
-                  <th className="border border-slate-300 py-2 px-2 text-right">Кол-во</th>
-                  <th className="border border-slate-300 py-2 px-2 text-right">Возврат кол-во</th>
-                  <th className="border border-slate-300 py-2 px-2 text-right">Возврат сумма</th>
-                  <th className="border border-slate-300 py-2 px-2 text-right">Обмен кол-во</th>
-                  <th className="border border-slate-300 py-2 px-2 text-right">Обмен сумма</th>
-                </tr>
-              </thead>
-              <tbody>
-                {PRODUCTS.map(p => (
-                  <tr key={p.agent} className="hover:bg-slate-50">
-                    <td className="border border-slate-300 py-2 px-2 font-semibold">{p.agent}</td>
-                    <td className="border border-slate-300 py-2 px-2 text-right font-mono font-bold text-emerald-700">{fmt(p.sum)}</td>
-                    <td className="border border-slate-300 py-2 px-2 text-right font-mono">{fmt(p.qty)}</td>
-                    <td className="border border-slate-300 py-2 px-2 text-right font-mono">{p.retCount || "—"}</td>
-                    <td className="border border-slate-300 py-2 px-2 text-right font-mono text-rose-700">{p.retSum ? fmt(p.retSum) : "—"}</td>
-                    <td className="border border-slate-300 py-2 px-2 text-right font-mono">{p.exch || "—"}</td>
-                    <td className="border border-slate-300 py-2 px-2 text-right font-mono text-amber-700">{p.exchSum ? fmt(p.exchSum) : "—"}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </Card>
-
-        <Card className="p-4">
-          <h3 className="text-base font-bold mb-3">По категории продуктов</h3>
-          <table className="w-full text-sm border-collapse">
-            <thead>
-              <tr className="bg-slate-100">
-                <th className="border border-slate-300 py-2 px-2 text-left">Категория</th>
-                <th className="border border-slate-300 py-2 px-2 text-right">Сумма (UZS)</th>
-                <th className="border border-slate-300 py-2 px-2 text-right">Кол-во</th>
-                <th className="border border-slate-300 py-2 px-2 text-right">% от итого</th>
-              </tr>
-            </thead>
-            <tbody>
-              {[
-                { cat: "Шоколад", sum: 412_800_000, qty: 4280 },
-                { cat: "Соки и напитки", sum: 286_400_000, qty: 2840 },
-                { cat: "Печенье", sum: 142_400_000, qty: 1840 },
-                { cat: "Вода", sum: 84_200_000, qty: 1240 },
-                { cat: "Прочее", sum: 38_400_000, qty: 624 },
-              ].map(c => {
-                const pct = c.sum / 964_200_000 * 100
-                return (
-                  <tr key={c.cat} className="hover:bg-slate-50">
-                    <td className="border border-slate-300 py-2 px-2 font-semibold">{c.cat}</td>
-                    <td className="border border-slate-300 py-2 px-2 text-right font-mono font-bold text-emerald-700">{fmt(c.sum)}</td>
-                    <td className="border border-slate-300 py-2 px-2 text-right font-mono">{fmt(c.qty)}</td>
-                    <td className="border border-slate-300 py-2 px-2 text-right font-mono">{pct.toFixed(1)}%</td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
-        </Card>
       </div>
     </AdminLayout>
+  )
+}
+
+function KpiCard({ accent, label, value, sub }: { accent: string; label: string; value: string; sub: string }) {
+  return (
+    <Card className="p-5 bg-white border border-[#E8E0D3] shadow-sm rounded-2xl relative overflow-hidden">
+      <div className="text-xs uppercase tracking-[0.15em] font-medium" style={{ color: accent }}>{label}</div>
+      <div className="text-2xl font-medium font-mono tabular-nums mt-2 text-[#1A1A1A]" style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>{value}</div>
+      <div className="text-xs text-[#9C8A6E] mt-1">{sub}</div>
+      <div className="absolute bottom-0 left-0 right-0 h-1" style={{ background: accent }} />
+    </Card>
   )
 }
