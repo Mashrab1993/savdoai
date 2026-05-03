@@ -1,11 +1,12 @@
 "use client"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { api, ApiError } from "@/lib/api"
 
 export function useApi<T>(path: string | null, options?: { skip?: boolean }) {
   const [data, setData] = useState<T | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [reloadTick, setReloadTick] = useState(0)
 
   useEffect(() => {
     if (!path || options?.skip) return
@@ -21,9 +22,10 @@ export function useApi<T>(path: string | null, options?: { skip?: boolean }) {
       })
       .finally(() => { if (!cancelled) setLoading(false) })
     return () => { cancelled = true }
-  }, [path, options?.skip])
+  }, [path, options?.skip, reloadTick])
 
-  return { data, loading, error, refetch: () => {} }
+  const refetch = useCallback(() => setReloadTick(t => t + 1), [])
+  return { data, loading, error, refetch }
 }
 
 export function useAuth() {

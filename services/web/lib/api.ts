@@ -24,6 +24,16 @@ export async function apiRequest<T>(
   if (!res.ok) {
     let detail = `HTTP ${res.status}`
     try { detail = (await res.json()).detail || detail } catch {}
+    // 401 — JWT muddati tugadi yoki noto'g'ri. Avto-logout.
+    if (res.status === 401 && typeof window !== 'undefined') {
+      const onLoginPage = window.location.pathname === '/login'
+      localStorage.removeItem('auth_token')
+      localStorage.removeItem('auth_user_id')
+      if (!onLoginPage) {
+        const next = encodeURIComponent(window.location.pathname + window.location.search)
+        window.location.href = `/login?next=${next}`
+      }
+    }
     throw new ApiError(res.status, detail)
   }
 

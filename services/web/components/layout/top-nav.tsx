@@ -19,40 +19,45 @@ const NAV: TopNavItem[] = [
   {
     label: "Hisobotlar",
     dropdown: [
-      { section: "Sotuv", href: "/hisobot/agent", label: "Zakazlar agentlar bo'yicha" },
-      { section: "Sotuv", href: "/hisobot/klient", label: "Sotuvlar klientlar bo'yicha" },
-      { section: "Sotuv", href: "/hisobot/tovar", label: "Sotuvlar tovarlar bo'yicha" },
-      { section: "Sotuv", href: "/hisobot/sku", label: "SKU bo'yicha" },
+      { section: "Sotuv", href: "/hisobot/agent", label: "Agentlar bo'yicha" },
+      { section: "Sotuv", href: "/hisobot/top-klientlar", label: "Top klientlar" },
+      { section: "Sotuv", href: "/hisobot/top-tovarlar", label: "Top tovarlar" },
+      { section: "Sotuv", href: "/hisobot/sku-pivot", label: "SKU pivot" },
+      { section: "Sotuv", href: "/hisobot/sales-detailed", label: "Batafsil sotuvlar" },
       { section: "Klient", href: "/hisobot/klassifikatsiya", label: "Klient klassifikatsiyasi" },
       { section: "Klient", href: "/hisobot/rfm", label: "RFM segmentatsiya" },
+      { section: "Klient", href: "/hisobot/clv", label: "Customer LTV" },
+      { section: "Klient", href: "/hisobot/cohort", label: "Cohort tahlili" },
       { section: "Visit", href: "/hisobot/visit-calendar", label: "Visit kalendari" },
-      { section: "Bonus", href: "/hisobot/rlp", label: "RLP retro-bonus" },
-      { section: "Bonus", href: "/hisobot/nakopit", label: "Накопительный bonus" },
-      { section: "Konstruktor", href: "/hisobot/konstruktor", label: "Konstruktor (drag-drop)" },
+      { section: "Visit", href: "/hisobot/marshrut", label: "Marshrut" },
+      { section: "Foyda", href: "/hisobot/foyda", label: "Foyda hisoboti" },
+      { section: "Foyda", href: "/hisobot/promo-effectiveness", label: "Promo effektivlik" },
+      { section: "Boshqa", href: "/hisobot/heatmap", label: "Heatmap" },
+      { section: "Boshqa", href: "/hisobot/konstruktor", label: "Konstruktor" },
     ],
   },
   {
     label: "Kassa",
     dropdown: [
-      { section: "Klient", href: "/kassa/oplata-klient", label: "Klient to'lovlari" },
-      { section: "Klient", href: "/kassa/akt-sverki-klient", label: "Akt sverki (klient)" },
-      { section: "Klient", href: "/kassa/qarz-shartnoma", label: "Qarz (shartnomaga)" },
-      { section: "Klient", href: "/kassa/aging", label: "Aging (6 oraliq)" },
-      { section: "Postavshik", href: "/kassa/oplata-postavshik", label: "Postavshik to'lovlari" },
-      { section: "Postavshik", href: "/kassa/akt-sverki-postavshik", label: "Akt sverki (postavshik)" },
+      { section: "Pul", href: "/kassa/oplaty", label: "To'lovlar" },
+      { section: "Pul", href: "/kassa/cashbox-balans", label: "Kassa balansi" },
+      { section: "Pul", href: "/kassa/cashflow", label: "Pul oqimi" },
+      { section: "Pul", href: "/kassa/saldo", label: "Saldo" },
+      { section: "Klient", href: "/kassa/aging", label: "Aging (qarz yoshi)" },
+      { section: "Klient", href: "/kassa/akt-sverki", label: "Akt sverki" },
+      { section: "Klient", href: "/kassa/balansy-clientov", label: "Klient balanslari" },
+      { section: "Klient", href: "/kassa/debt-by-shipment", label: "Qarz (otgruzka)" },
+      { section: "Postavshik", href: "/kassa/obroty-postavshik", label: "Postavshik oborotlari" },
+      { section: "Pivot", href: "/kassa/kassa-pivot", label: "Kassa pivot" },
+      { section: "Pivot", href: "/kassa/oboroty", label: "Oborotlar" },
       { section: "Boshqa", href: "/kassa/xarajat", label: "Xarajatlar" },
-      { section: "Boshqa", href: "/kassa/cashflow", label: "Pul oqimi" },
-      { section: "Boshqa", href: "/kassa/kassalar", label: "Kassalar" },
-      { section: "Boshqa", href: "/kassa/stati-fondy", label: "Maqola va Fondlar" },
+      { section: "Boshqa", href: "/kassa/init-balans", label: "Boshlang'ich balans" },
+      { section: "Boshqa", href: "/kassa/stati-fondy", label: "Statyalar va Fondlar" },
     ],
   },
   {
     label: "GPS",
-    dropdown: [
-      { href: "/gps/realtime", label: "Real-time tracking" },
-      { href: "/gps/marshrut", label: "Marshrut tarixi" },
-      { href: "/gps/zakaz-on-map", label: "Zakazlar xaritada" },
-    ],
+    href: "/gps",
   },
 ]
 
@@ -177,7 +182,11 @@ export function TopNav() {
               </DropdownMenu.Item>
               <DropdownMenu.Separator className="h-px bg-slate-200 my-1" />
               <DropdownMenu.Item asChild>
-                <button onClick={() => { localStorage.removeItem('auth_token'); location.href = '/login' }}
+                <button onClick={() => {
+                  localStorage.removeItem('auth_token')
+                  localStorage.removeItem('auth_user_id')
+                  location.href = '/login'
+                }}
                   className="w-full flex items-center gap-2 px-3 py-2 text-sm text-rose-600 hover:bg-rose-50 rounded-md outline-none cursor-pointer">
                   Chiqish
                 </button>

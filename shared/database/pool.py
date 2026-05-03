@@ -361,26 +361,49 @@ async def _run_migrations() -> None:
                     statements.append(stmt)
                 current = []
 
+        # Migration'ni alohida tranzaksiyada bajarish — agar biror statement
+        # fail qilsa, butun fayl rollback bo'ladi va _migrations'ga yozilmaydi.
+        # Bu schema-code drift'ni oldini oladi (bugungi 8 fix sababidan biri).
         async with get_pool().acquire() as conn:
-            for stmt in statements:
-                try:
-                    await conn.execute(stmt)
-                except Exception as e:
-                    err = str(e)
-                    if "already exists" in err or "duplicate" in err:
-                        continue
-                    log.warning("Migratsiya %s skip: %s", fname, err[:100])
-
-            # Bajarildi deb belgilash
+            failed = False
             try:
-                await conn.execute(
-                    "INSERT INTO _migrations (filename) VALUES ($1) ON CONFLICT DO NOTHING",
+                async with conn.transaction():
+                    for stmt in statements:
+                        try:
+                            await conn.execute(stmt)
+                        except Exception as e:
+                            err = str(e)
+                            # "already exists" / "duplicate" — xavfsiz skip
+                            # (CREATE IF NOT EXISTS qaytalanish)
+                            if "already exists" in err or "duplicate" in err:
+                                continue
+                            # Boshqa har qanday xato — fail loud, transaction rollback
+                            log.error(
+                                "❌ Migratsiya %s FAIL: %s\n  Statement: %s",
+                                fname, err[:200], stmt[:200]
+                            )
+                            failed = True
+                            raise  # asosiy tranzaksiyani rollback qilish uchun
+            except Exception:
+                # Transaction rollback bo'ldi — _migrations'ga yozmaymiz
+                # Keyingi deploy'da yana urinib ko'riladi
+                log.error(
+                    "🚨 Migratsiya %s TO'LIQ rollback qilindi. Tuzatib qaytadan deploy qiling.",
                     fname
                 )
-                applied_count += 1
-                log.info("✅ Migratsiya bajarildi: %s", fname)
-            except Exception as e:
-                log.warning("Migratsiya tracking xato %s: %s", fname, e)
+                continue
+
+            if not failed:
+                # Bajarildi deb belgilash (alohida tranzaksiyada)
+                try:
+                    await conn.execute(
+                        "INSERT INTO _migrations (filename) VALUES ($1) ON CONFLICT DO NOTHING",
+                        fname
+                    )
+                    applied_count += 1
+                    log.info("✅ Migratsiya bajarildi: %s", fname)
+                except Exception as e:
+                    log.warning("Migratsiya tracking xato %s: %s", fname, e)
 
     if applied_count > 0:
         log.info("📦 %d ta yangi migratsiya bajarildi", applied_count)

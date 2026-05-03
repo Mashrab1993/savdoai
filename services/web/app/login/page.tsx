@@ -23,10 +23,17 @@ export default function LoginPage() {
     setLoading(true)
     try {
       if (method === "token") {
-        // Telegram bot token
+        // Token validatsiya — saqlash oldidan /me chaqirib tekshiramiz
         localStorage.setItem("auth_token", token)
-        toast.success("Token saqlandi")
-        router.push("/dashboard")
+        try {
+          const me = await api.get<{ id: number }>("/api/v1/me")
+          localStorage.setItem("auth_user_id", String(me.id))
+          toast.success("Token to'g'ri — kirdingiz")
+          router.push("/dashboard")
+        } catch {
+          localStorage.removeItem("auth_token")
+          toast.error("Token noto'g'ri yoki muddati o'tgan")
+        }
         return
       }
       const body: { login?: string; telefon?: string; parol: string } = { parol: password }
@@ -37,8 +44,11 @@ export default function LoginPage() {
       localStorage.setItem("auth_user_id", String(res.user_id))
       toast.success("Tizimga kirdingiz")
       router.push("/dashboard")
-    } catch (err: any) {
-      toast.error(err?.detail || err?.message || "Xato yuz berdi")
+    } catch (err) {
+      const msg = (err as { detail?: string; message?: string })?.detail
+        ?? (err as Error)?.message
+        ?? "Xato yuz berdi"
+      toast.error(msg)
     } finally {
       setLoading(false)
     }

@@ -312,13 +312,16 @@ async def lifespan(app: FastAPI):
     log.info("API to'xtatildi")
 
 
+_SHOW_DOCS = os.getenv("DEBUG", "").lower() in ("1", "true", "yes")
+
 app = FastAPI(
     title       = "SavdoAI Mashrab Moliya API",
     version     = __version__,
     description = "O'zbek bozori uchun AI-powered savdo boshqaruv tizimi REST API — 107 endpoint, CRUD, hisobotlar, foyda tahlili, real-time WebSocket",
     lifespan    = lifespan,
-    docs_url    = "/docs",
-    redoc_url   = "/redoc",
+    docs_url    = "/docs" if _SHOW_DOCS else None,
+    redoc_url   = "/redoc" if _SHOW_DOCS else None,
+    openapi_url = "/openapi.json" if _SHOW_DOCS else None,
     openapi_tags = [
         {"name": "Auth",           "description": "Autentifikatsiya — login, token"},
         {"name": "Dashboard",      "description": "Bosh sahifa statistikasi"},
@@ -355,12 +358,16 @@ _web_url = _cors_origin(os.getenv("WEB_URL", "https://savdoai-web-production.up.
 if _web_url and _web_url not in _web_cors_origins:
     _web_cors_origins.insert(0, _web_url)
 
-# CORS only (no GZip here) — gzip has interfered with preflight/OPTIONS in some deployments.
-# Explicit methods/headers avoid Starlette edge cases with "*" + credentials.
+# CORS — explicit origins only.
+# Eskirgan: `allow_origin_regex=r"https://savdoai[-\w]*\.up\.railway\.app"` har kim
+# Railway'da `savdoai-evil` deploy qilib JWT'lik so'rovlarga kirishi mumkin edi.
+# Endi: faqat tasdiqlangan origin'lar (env orqali qo'shish mumkin).
+_extra_origins = [_cors_origin(o) for o in os.getenv("EXTRA_CORS_ORIGINS", "").split(",") if o.strip()]
+_web_cors_origins.extend(o for o in _extra_origins if o not in _web_cors_origins)
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=_web_cors_origins,
-    allow_origin_regex=r"https://savdoai[-\w]*\.up\.railway\.app",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

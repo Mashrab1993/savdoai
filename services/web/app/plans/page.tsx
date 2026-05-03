@@ -18,14 +18,14 @@ export default function PlansPage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          <PlanCard icon={Target} title="Asosiy plan" desc="Oylik visit + sotuv + KPI rejasi" href="/plans/main" stats={[
+          <PlanCard icon={Target} title="Asosiy plan" desc="Oylik visit + sotuv + KPI rejasi" href="/plans/setup" stats={[
             { label: 'Qo\'yilgan', value: '0/6 agent' },
             { label: 'Faol', value: 'May 2026' },
           ]} color="emerald" />
-          <PlanCard icon={MapPin} title="Outlet targeting" desc="Har klient uchun maxsus target" href="/plans/outlet" stats={[
+          <PlanCard icon={MapPin} title="Outlet targeting" desc="Har klient uchun maxsus target" href="/plans/setup" stats={[
             { label: 'Targetlangan', value: '0/129 klient' },
           ]} color="blue" />
-          <PlanCard icon={BarChart3} title="Tovar bo'yicha plan" desc="Har brand × agent target" href="/plans/product" stats={[
+          <PlanCard icon={BarChart3} title="Tovar bo'yicha plan" desc="Har brand × agent target" href="/plans/setup" stats={[
             { label: 'Brendlar', value: '50+' },
           ]} color="purple" />
         </div>
