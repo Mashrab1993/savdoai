@@ -2,7 +2,7 @@
 import { AdminLayout } from "@/components/layout/admin-layout"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { ArrowLeft, FolderOpen, Save, Maximize2, Minimize2, Download, Settings, Filter as FilterIcon } from "lucide-react"
+import { ArrowLeft, FolderOpen, Save, Maximize2, Minimize2, Download, Settings, Filter as FilterIcon, CheckCircle2, Clock, Award } from "lucide-react"
 import Link from "next/link"
 
 const ROWS = [
@@ -14,115 +14,132 @@ const ROWS = [
 ]
 
 function fmt(n: number) { return n.toLocaleString("ru-RU") }
+const SERIF = { fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }
 
 export default function UniversalBonusPage() {
   const totalBonus = ROWS.reduce((s, r) => s + r.bonus, 0)
+  const totalTarget = ROWS.reduce((s, r) => s + r.target, 0)
+  const totalFact = ROWS.reduce((s, r) => s + r.fact, 0)
 
   return (
     <AdminLayout>
-      <div className="max-w-[1900px] mx-auto space-y-4">
-        <div className="flex items-center gap-3">
-          <Link href="/hisobot" className="p-2 hover:bg-slate-100 rounded-lg"><ArrowLeft className="w-5 h-5" /></Link>
-          <h1 className="text-2xl font-bold tracking-tight flex-1">Universal otchet po bonusam: <span className="text-emerald-700">Nachal'niy otchet</span></h1>
-        </div>
-
-        <Card className="p-4">
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2">
-            {["Agent", "Brend", "Territoriya", "Klient kategoriyasi", "Тип бонуса", "Статус", "Период начисления"].map(f => (
-              <button key={f} className="text-left px-3 py-2 border border-slate-300 rounded-md text-xs hover:border-emerald-400 transition-colors flex items-center justify-between">
-                <span className="text-slate-700">{f}</span>
-                <span className="text-slate-400">▾</span>
-              </button>
-            ))}
-          </div>
-          <div className="mt-3 flex gap-2">
-            <button className="px-3 py-2 border border-emerald-300 bg-emerald-50 rounded-md text-xs font-semibold text-emerald-700">📅 Дата начисления ▾</button>
-            <button className="px-3 py-2 border border-emerald-300 bg-emerald-50 rounded-md text-xs font-semibold text-emerald-700">📅 апр 2 6 — май 2 ▾</button>
-            <Button className="gap-2 ml-auto"><FilterIcon className="w-4 h-4" /> Filtr</Button>
-          </div>
-        </Card>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          <Card className="p-4 bg-emerald-50 border-emerald-200">
-            <div className="text-xs font-bold text-emerald-700">Bajarildi</div>
-            <div className="text-3xl font-bold text-slate-900 mt-1">{ROWS.filter(r => r.status === "completed").length}</div>
-            <div className="text-xs text-slate-600 mt-1">target bajarilgan</div>
-          </Card>
-          <Card className="p-4 bg-amber-50 border-amber-200">
-            <div className="text-xs font-bold text-amber-700">Davom etyapti</div>
-            <div className="text-3xl font-bold text-slate-900 mt-1">{ROWS.filter(r => r.status === "in_progress").length}</div>
-            <div className="text-xs text-slate-600 mt-1">target hali to'lmagan</div>
-          </Card>
-          <Card className="p-4 bg-violet-50 border-violet-200">
-            <div className="text-xs font-bold text-violet-700">Jami bonus</div>
-            <div className="text-2xl font-bold text-slate-900 mt-1">{fmt(totalBonus)}</div>
-            <div className="text-xs text-slate-600 mt-1">so'm hisoblangan</div>
-          </Card>
-        </div>
-
-        <Card className="p-4">
-          <div className="flex items-center gap-1 mb-4 pb-3 border-b border-slate-200">
-            <ToolbarBtn icon={FolderOpen} label="Отчёты" />
-            <ToolbarBtn icon={Save} label="Сохран..." />
-            <ToolbarBtn icon={Maximize2} label="Разверн..." />
-            <ToolbarBtn icon={Minimize2} label="Свернуть" />
-            <ToolbarBtn icon={Download} label="Экспорт" />
-            <div className="ml-auto flex items-center gap-1">
-              <ToolbarBtn icon={Settings} label="Формат" />
-              <ToolbarBtn icon={Settings} label="Настрой..." />
-              <ToolbarBtn icon={Settings} label="Поля" />
+      <div className="-mx-4 -my-4 px-4 py-6 min-h-full" style={{ background: "linear-gradient(180deg, #F5F1EB 0%, #FAF7F2 100%)" }}>
+        <div className="max-w-[1900px] mx-auto space-y-5">
+          <div className="flex items-end gap-3 border-b border-[#E8E0D3] pb-6">
+            <Link href="/hisobot" className="p-2 hover:bg-[#F0EAE0] rounded-lg"><ArrowLeft className="w-5 h-5 text-[#6B5B4D]" /></Link>
+            <div className="flex-1">
+              <div className="text-xs uppercase tracking-[0.2em] text-[#9C8A6E] font-medium mb-2">SAVDOAI · HISOBOT</div>
+              <h1 className="text-4xl font-light tracking-tight text-[#1A1A1A]" style={SERIF}>
+                Universal bonus <span className="italic text-[#C75D3C]">otchet</span>
+              </h1>
+              <p className="text-sm text-[#6B5B4D] mt-2">Nachal'niy otchet · {ROWS.length} ta yozuv · {fmt(totalBonus / 1000)}k so'm bonus</p>
             </div>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm border-collapse">
-              <thead>
-                <tr className="bg-slate-100">
-                  <th className="border border-slate-300 py-2 px-2 w-12">№</th>
-                  <th className="border border-slate-300 py-2 px-2 text-left">БРЕНД</th>
-                  <th className="border border-slate-300 py-2 px-2 text-left">АГЕНТ</th>
-                  <th className="border border-slate-300 py-2 px-2 text-right">ТАРГЕТ</th>
-                  <th className="border border-slate-300 py-2 px-2 text-right">ФАКТ</th>
-                  <th className="border border-slate-300 py-2 px-2 text-right">БАЖАРИШ %</th>
-                  <th className="border border-slate-300 py-2 px-2 text-right">СТАВКА</th>
-                  <th className="border border-slate-300 py-2 px-2 text-right">БОНУС</th>
-                  <th className="border border-slate-300 py-2 px-2 text-center">СТАТУС</th>
-                </tr>
-              </thead>
-              <tbody>
-                {ROWS.map(r => {
-                  const pct = (r.fact / r.target * 100)
-                  return (
-                    <tr key={r.idx} className="hover:bg-slate-50">
-                      <td className="border border-slate-300 py-2 px-2 text-center font-mono text-slate-400">{r.idx}</td>
-                      <td className="border border-slate-300 py-2 px-2 font-bold">{r.brand}</td>
-                      <td className="border border-slate-300 py-2 px-2">{r.agent}</td>
-                      <td className="border border-slate-300 py-2 px-2 text-right font-mono">{fmt(r.target)}</td>
-                      <td className={`border border-slate-300 py-2 px-2 text-right font-mono font-bold ${pct >= 100 ? "text-emerald-700" : "text-amber-700"}`}>{fmt(r.fact)}</td>
-                      <td className={`border border-slate-300 py-2 px-2 text-right font-mono font-bold ${pct >= 100 ? "text-emerald-700" : pct >= 80 ? "text-amber-700" : "text-rose-700"}`}>{pct.toFixed(1)}%</td>
-                      <td className="border border-slate-300 py-2 px-2 text-right font-mono">{r.rate}%</td>
-                      <td className="border border-slate-300 py-2 px-2 text-right font-mono font-bold text-violet-700">{fmt(r.bonus)}</td>
-                      <td className="border border-slate-300 py-2 px-2 text-center">
-                        <span className={`text-xs px-2 py-0.5 rounded ${r.status === "completed" ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}`}>
-                          {r.status === "completed" ? "✓ Bajarildi" : "⏳ Davom"}
-                        </span>
-                      </td>
-                    </tr>
-                  )
-                })}
-                <tr className="bg-slate-100 font-bold">
-                  <td className="border border-slate-300 py-2 px-2"></td>
-                  <td className="border border-slate-300 py-2 px-2" colSpan={2}>Общий итог</td>
-                  <td className="border border-slate-300 py-2 px-2 text-right font-mono">{fmt(ROWS.reduce((s, r) => s + r.target, 0))}</td>
-                  <td className="border border-slate-300 py-2 px-2 text-right font-mono">{fmt(ROWS.reduce((s, r) => s + r.fact, 0))}</td>
-                  <td colSpan={2} className="border border-slate-300"></td>
-                  <td className="border border-slate-300 py-2 px-2 text-right font-mono text-violet-800">{fmt(totalBonus)}</td>
-                  <td className="border border-slate-300"></td>
-                </tr>
-              </tbody>
-            </table>
+          <Card className="p-5 bg-white border border-[#E8E0D3] shadow-sm rounded-2xl">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2">
+              {["Agent", "Brend", "Territoriya", "Klient kategoriyasi", "Тип бонуса", "Статус", "Период начисления"].map(f => (
+                <button key={f} className="text-left px-3 py-2 border border-[#E8E0D3] rounded-md text-xs hover:border-[#C75D3C] transition-colors flex items-center justify-between bg-[#FAF7F2]">
+                  <span className="text-[#6B5B4D]">{f}</span>
+                  <span className="text-[#9C8A6E]">▾</span>
+                </button>
+              ))}
+            </div>
+            <div className="mt-3 flex gap-2 flex-wrap">
+              <button className="px-3 py-2 border border-[#E8E0D3] bg-[#F0EAE0] rounded-md text-xs font-medium text-[#6B5B4D]">Дата начисления ▾</button>
+              <button className="px-3 py-2 border border-[#E8E0D3] bg-[#F0EAE0] rounded-md text-xs font-medium text-[#6B5B4D]">апр 26 — май 2 ▾</button>
+              <Button className="gap-2 ml-auto" style={{ background: "#C75D3C" }}><FilterIcon className="w-4 h-4" /> Filtr</Button>
+            </div>
+          </Card>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Card className="p-5 bg-white border border-[#E8E0D3] shadow-sm rounded-2xl relative overflow-hidden">
+              <CheckCircle2 className="w-5 h-5 mb-2" style={{ color: "#10B981" }} />
+              <div className="text-xs uppercase tracking-[0.15em] font-medium" style={{ color: "#10B981" }}>Bajarildi</div>
+              <div className="text-2xl font-medium tabular-nums mt-1 text-[#1A1A1A]" style={SERIF}>{ROWS.filter(r => r.status === "completed").length}</div>
+              <div className="text-xs text-[#9C8A6E] mt-1">target bajarilgan</div>
+              <div className="absolute bottom-0 left-0 right-0 h-1" style={{ background: "#10B981" }} />
+            </Card>
+            <Card className="p-5 bg-white border border-[#E8E0D3] shadow-sm rounded-2xl relative overflow-hidden">
+              <Clock className="w-5 h-5 mb-2" style={{ color: "#D97706" }} />
+              <div className="text-xs uppercase tracking-[0.15em] font-medium" style={{ color: "#D97706" }}>Davom etyapti</div>
+              <div className="text-2xl font-medium tabular-nums mt-1 text-[#1A1A1A]" style={SERIF}>{ROWS.filter(r => r.status === "in_progress").length}</div>
+              <div className="text-xs text-[#9C8A6E] mt-1">target hali to'lmagan</div>
+              <div className="absolute bottom-0 left-0 right-0 h-1" style={{ background: "#D97706" }} />
+            </Card>
+            <Card className="p-5 bg-white border border-[#E8E0D3] shadow-sm rounded-2xl relative overflow-hidden">
+              <Award className="w-5 h-5 mb-2" style={{ color: "#7C3AED" }} />
+              <div className="text-xs uppercase tracking-[0.15em] font-medium" style={{ color: "#7C3AED" }}>Jami bonus</div>
+              <div className="text-2xl font-medium tabular-nums mt-1 text-[#1A1A1A] font-mono" style={SERIF}>{fmt(totalBonus)}</div>
+              <div className="text-xs text-[#9C8A6E] mt-1">so'm hisoblangan</div>
+              <div className="absolute bottom-0 left-0 right-0 h-1" style={{ background: "#7C3AED" }} />
+            </Card>
           </div>
-        </Card>
+
+          <Card className="p-5 bg-white border border-[#E8E0D3] shadow-sm rounded-2xl">
+            <div className="flex items-center gap-1 mb-4 pb-3 border-b border-[#E8E0D3]">
+              <ToolbarBtn icon={FolderOpen} label="Отчёты" />
+              <ToolbarBtn icon={Save} label="Сохран..." />
+              <ToolbarBtn icon={Maximize2} label="Разверн..." />
+              <ToolbarBtn icon={Minimize2} label="Свернуть" />
+              <ToolbarBtn icon={Download} label="Экспорт" />
+              <div className="ml-auto flex items-center gap-1">
+                <ToolbarBtn icon={Settings} label="Формат" />
+                <ToolbarBtn icon={Settings} label="Настрой..." />
+                <ToolbarBtn icon={Settings} label="Поля" />
+              </div>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-[#FAF7F2] border-b border-[#E8E0D3]">
+                    <th className="py-3 px-2 text-left text-xs uppercase tracking-wider font-medium text-[#9C8A6E] w-12">№</th>
+                    <th className="py-3 px-2 text-left text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Бренд</th>
+                    <th className="py-3 px-2 text-left text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Агент</th>
+                    <th className="py-3 px-2 text-right text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Таргет</th>
+                    <th className="py-3 px-2 text-right text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Факт</th>
+                    <th className="py-3 px-2 text-right text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Бажариш %</th>
+                    <th className="py-3 px-2 text-right text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Ставка</th>
+                    <th className="py-3 px-2 text-right text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Бонус</th>
+                    <th className="py-3 px-2 text-center text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Статус</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {ROWS.map(r => {
+                    const pct = (r.fact / r.target * 100)
+                    return (
+                      <tr key={r.idx} className="border-b border-[#F0EAE0] hover:bg-[#FAF7F2]">
+                        <td className="py-3 px-2 text-center font-mono tabular-nums text-[#9C8A6E]">{r.idx}</td>
+                        <td className="py-3 px-2 font-medium text-[#1A1A1A]">{r.brand}</td>
+                        <td className="py-3 px-2 text-[#6B5B4D]">{r.agent}</td>
+                        <td className="py-3 px-2 text-right font-mono tabular-nums text-[#1A1A1A]">{fmt(r.target)}</td>
+                        <td className={`py-3 px-2 text-right font-mono tabular-nums font-medium ${pct >= 100 ? "text-emerald-700" : "text-[#D97706]"}`}>{fmt(r.fact)}</td>
+                        <td className={`py-3 px-2 text-right font-mono tabular-nums font-medium ${pct >= 100 ? "text-emerald-700" : pct >= 80 ? "text-[#D97706]" : "text-[#C75D3C]"}`}>{pct.toFixed(1)}%</td>
+                        <td className="py-3 px-2 text-right font-mono tabular-nums text-[#6B5B4D]">{r.rate}%</td>
+                        <td className="py-3 px-2 text-right font-mono tabular-nums font-medium" style={{ color: "#7C3AED" }}>{fmt(r.bonus)}</td>
+                        <td className="py-3 px-2 text-center">
+                          <span className={`text-xs px-2 py-0.5 rounded ${r.status === "completed" ? "bg-emerald-50 text-emerald-700" : "bg-[#FCE9DD] text-[#D97706]"}`}>
+                            {r.status === "completed" ? "Bajarildi" : "Davom"}
+                          </span>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                  <tr className="bg-[#FAF7F2] font-medium border-t-2 border-[#E8E0D3]">
+                    <td className="py-3 px-2"></td>
+                    <td className="py-3 px-2 text-[#1A1A1A]" colSpan={2} style={SERIF}>Общий итог</td>
+                    <td className="py-3 px-2 text-right font-mono tabular-nums text-[#1A1A1A]" style={SERIF}>{fmt(totalTarget)}</td>
+                    <td className="py-3 px-2 text-right font-mono tabular-nums text-[#1A1A1A]" style={SERIF}>{fmt(totalFact)}</td>
+                    <td colSpan={2}></td>
+                    <td className="py-3 px-2 text-right font-mono tabular-nums" style={{ ...SERIF, color: "#7C3AED" }}>{fmt(totalBonus)}</td>
+                    <td></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </Card>
+        </div>
       </div>
     </AdminLayout>
   )
@@ -130,9 +147,9 @@ export default function UniversalBonusPage() {
 
 function ToolbarBtn({ icon: Icon, label }: { icon: any; label: string }) {
   return (
-    <button className="px-2 py-1.5 hover:bg-slate-100 rounded flex flex-col items-center gap-0.5 group">
-      <Icon className="w-5 h-5 text-slate-600 group-hover:text-emerald-700" />
-      <span className="text-[10px] text-slate-500">{label}</span>
+    <button className="px-2 py-1.5 hover:bg-[#FAF7F2] rounded flex flex-col items-center gap-0.5 group">
+      <Icon className="w-5 h-5 text-[#6B5B4D] group-hover:text-[#C75D3C]" />
+      <span className="text-[10px] text-[#9C8A6E]">{label}</span>
     </button>
   )
 }
