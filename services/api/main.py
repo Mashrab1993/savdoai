@@ -2792,18 +2792,38 @@ async def nakladnoy_excel_batch(
 async def savdolar_excel(
     sana_dan: str | None = None,
     sana_gacha: str | None = None,
+    ids: str | None = None,  # Tanlangan ID'lar (vergul bilan): ?ids=1,2,3
     uid: int = Depends(get_uid),
 ):
-    """SalesDoc Реестр 3.0 formatida Excel — sanalar bo'yicha buyurtmalar reestri."""
+    """SalesDoc Реестр 3.0 formatida Excel.
+
+    Parametrlar:
+    - sana_dan, sana_gacha: davr filteri
+    - ids: tanlangan zakaz ID'lari (vergul bilan) — har bir userda /zakazlar
+           sahifasida tanlangan zakazlar uchun
+    """
     import io
     import base64
     from openpyxl import Workbook
     from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 
+    # Tanlangan ID'larni parse qilish
+    selected_ids: list[int] = []
+    if ids:
+        for part in ids.split(","):
+            part = part.strip()
+            if part.isdigit():
+                selected_ids.append(int(part))
+        if len(selected_ids) > 1000:
+            raise HTTPException(400, "Maksimal 1000 ta zakaz Excel'ga yuklash mumkin")
+
     async with rls_conn(uid) as c:
         where_parts = []
         params: list = []
         idx = 1
+        if selected_ids:
+            where_parts.append(f"ss.id = ANY(${idx}::bigint[])")
+            params.append(selected_ids); idx += 1
         if sana_dan:
             where_parts.append(f"ss.sana >= ${idx}::timestamptz")
             params.append(sana_dan); idx += 1
