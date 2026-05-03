@@ -976,7 +976,7 @@ async def dashboard(uid: int = Depends(get_uid)):
                 COALESCE(SUM(jami),0) AS sotuv_jami,
                 COALESCE(SUM(qarz),0) AS yangi_qarz
             FROM sotuv_sessiyalar
-            WHERE (sana AT TIME ZONE 'Asia/Tashkent')::date = CURRENT_DATE
+            WHERE (sana AT TIME ZONE 'Asia/Tashkent')::date = (NOW() AT TIME ZONE 'Asia/Tashkent')::date
         """)
         jami_qarz = await c.fetchval("""
             SELECT COALESCE(SUM(qolgan),0)
@@ -1062,7 +1062,7 @@ async def dashboard_v2(uid: int = Depends(get_uid)):
             SELECT COUNT(*) soni, COALESCE(SUM(jami),0) jami,
                    COALESCE(SUM(qarz),0) qarz
             FROM sotuv_sessiyalar
-            WHERE (sana AT TIME ZONE 'Asia/Tashkent')::date = CURRENT_DATE
+            WHERE (sana AT TIME ZONE 'Asia/Tashkent')::date = (NOW() AT TIME ZONE 'Asia/Tashkent')::date
         """)
         oy = await c.fetchrow("""
             SELECT COUNT(*) soni, COALESCE(SUM(jami),0) jami
@@ -1153,7 +1153,7 @@ async def hisobot_kunlik(uid: int = Depends(get_uid)):
         kr = await c.fetchrow("""
             SELECT COUNT(*) n, COALESCE(SUM(jami),0) jami
             FROM kirimlar
-            WHERE (sana AT TIME ZONE 'Asia/Tashkent')::date=CURRENT_DATE
+            WHERE (sana AT TIME ZONE 'Asia/Tashkent')::date=(NOW() AT TIME ZONE 'Asia/Tashkent')::date
         """)
         ch = await c.fetchrow("""
             SELECT COUNT(*) n,
@@ -1161,7 +1161,7 @@ async def hisobot_kunlik(uid: int = Depends(get_uid)):
                    COALESCE(SUM(qarz),0)     qarz,
                    COALESCE(SUM(tolangan),0) tolangan
             FROM sotuv_sessiyalar
-            WHERE (sana AT TIME ZONE 'Asia/Tashkent')::date=CURRENT_DATE
+            WHERE (sana AT TIME ZONE 'Asia/Tashkent')::date=(NOW() AT TIME ZONE 'Asia/Tashkent')::date
         """)
         jami_qarz = await c.fetchval(
             "SELECT COALESCE(SUM(qolgan),0) FROM qarzlar WHERE yopildi=FALSE"
@@ -1226,7 +1226,7 @@ async def sotuv_saqlash(data: SotuvSo_rov, request: Request, uid: int = Depends(
     """
     from services.api.deps import endpoint_rate_check
     await endpoint_rate_check(request, "sotuv")
-    from shared.utils.hisob import sotuv_validatsiya, ai_hisob_tekshir
+    from shared.utils.hisob import sotuv_validatsiya, ai_hisob_tekshir, D
     from shared.cache.redis_cache import user_cache_tozala
 
     ok, xato = sotuv_validatsiya(data.model_dump())
@@ -1235,22 +1235,32 @@ async def sotuv_saqlash(data: SotuvSo_rov, request: Request, uid: int = Depends(
 
     data_d = ai_hisob_tekshir(data.model_dump())
 
+    # Klient telefon/manzil — ON CONFLICT'da yangilash uchun
+    klient_telefon = (data_d.get("klient_telefon") or data.model_dump().get("klient_telefon") or "").strip()
+    klient_manzil = (data_d.get("klient_manzil") or data.model_dump().get("klient_manzil") or "").strip()
+
     async with rls_conn(uid) as c:
         async with c.transaction():
-            # 1. Klient topish/yaratish
+            # 1. Klient topish/yaratish — telefon/manzil yangilanadi (audit fix #4)
             klient_id = None
             klient_ismi = (data_d.get("klient") or "").strip()
             if klient_ismi:
                 kl = await c.fetchrow("""
-                    INSERT INTO klientlar (user_id, ism) VALUES ($1, $2)
+                    INSERT INTO klientlar (user_id, ism, telefon, manzil)
+                    VALUES ($1, $2, NULLIF($3, ''), NULLIF($4, ''))
                     ON CONFLICT (user_id, lower(ism))
-                    DO UPDATE SET ism = klientlar.ism RETURNING id
-                """, uid, klient_ismi)
+                    DO UPDATE SET
+                        telefon = COALESCE(NULLIF(EXCLUDED.telefon, ''), klientlar.telefon),
+                        manzil  = COALESCE(NULLIF(EXCLUDED.manzil, ''), klientlar.manzil)
+                    RETURNING id
+                """, uid, klient_ismi, klient_telefon, klient_manzil)
                 klient_id = kl["id"]
 
-            jami = float(data_d.get("jami_summa", 0))
-            tolangan = float(data_d.get("tolangan", 0))
-            qarz_summa = float(data_d.get("qarz", 0))
+            # Pul matematikasi — Decimal ishlatish (audit fix #1)
+            # asyncpg Decimal'ni DECIMAL(18,2) ga to'g'ri konvertatsiya qiladi
+            jami = D(data_d.get("jami_summa", 0))
+            tolangan = D(data_d.get("tolangan", 0))
+            qarz_summa = D(data_d.get("qarz", 0))
 
             # 2. Sessiya yaratish
             sess_id = await c.fetchval("""
@@ -1263,17 +1273,22 @@ async def sotuv_saqlash(data: SotuvSo_rov, request: Request, uid: int = Depends(
             )
 
             # 3. Har bir tovar — chiqim + qoldiq
+            # Decimal arithmetic, oversells visible (audit fix #1, #2)
+            oversold_uchun_ogohlar = []
             tovarlar = data_d.get("tovarlar", [])
             for t in tovarlar:
                 nomi = t.get("nomi", "").strip()
-                miqdor = float(t.get("miqdor", 0))
-                narx = float(t.get("narx", 0))
-                t_jami = float(t.get("jami", 0)) or (miqdor * narx)
+                miqdor = D(t.get("miqdor", 0))
+                narx = D(t.get("narx", 0))
+                t_jami = D(t.get("jami", 0)) or (miqdor * narx)
                 birlik = t.get("birlik", "dona")
 
                 # Tovar topish — FOR UPDATE bilan (race condition oldini olish).
                 # Ikki kassir bir vaqtda bir tovarni sotsa, har biri bu qatorni
                 # alohida lock qilib, ketma-ket ishlaydi → qoldiq aniq kamayadi.
+                #
+                # LIKE'da ESCAPE clause qo'shilgan (audit fix #3) — `_` va `%`
+                # belgilarni literal sifatida qabul qiladi (Coca_Cola tovari uchun).
                 tovar = await c.fetchrow("""
                     SELECT id, nomi, olish_narxi, sotish_narxi, qoldiq
                     FROM tovarlar
@@ -1281,30 +1296,32 @@ async def sotuv_saqlash(data: SotuvSo_rov, request: Request, uid: int = Depends(
                     FOR UPDATE
                 """, uid, nomi.strip())
                 if not tovar:
-                    tovar = await c.fetchrow("""
+                    tovar = await c.fetchrow(r"""
                         SELECT id, nomi, olish_narxi, sotish_narxi, qoldiq
                         FROM tovarlar
-                        WHERE user_id=$1 AND lower(nomi) LIKE lower($2)
+                        WHERE user_id=$1 AND lower(nomi) LIKE lower($2) ESCAPE '\'
                         ORDER BY length(nomi) ASC LIMIT 1
                         FOR UPDATE
                     """, uid, f"%{like_escape(nomi)}%")
 
                 tovar_id = tovar["id"] if tovar else None
-                olish = float(tovar["olish_narxi"]) if tovar else 0
-                mavjud_qoldiq = float(tovar["qoldiq"]) if tovar else 0.0
+                olish = D(tovar["olish_narxi"]) if tovar else D(0)
+                mavjud_qoldiq = D(tovar["qoldiq"]) if tovar else D(0)
 
-                # Yetarli qoldiq tekshiruvi (overselling himoyasi)
+                # Overselling — qoldiq manfiy bo'lishi mumkin (audit fix #2)
+                # Avval GREATEST(...) yashirib qo'yardi → user'lar real stock'ni
+                # bilmas edi. Endi manfiy ko'rsatiladi → boss audit qilsin.
                 if tovar_id and miqdor > mavjud_qoldiq:
-                    # Qoldiqdan oshib ketmasin — ogohlantirib o'tamiz, lekin
-                    # yozuvni qabul qilamiz (kamaytirilgan miqdor bilan emas,
-                    # to'liq miqdor bilan — chunki chiqim qog'ozda bo'lishi mumkin).
-                    # Eslatma user'ga yuboriladi.
+                    oversold = miqdor - mavjud_qoldiq
+                    oversold_uchun_ogohlar.append(
+                        f"⚠️ {nomi}: {oversold} dona qoldiqdan ortiq sotildi (real qoldiq endi manfiy)"
+                    )
                     log.warning(
-                        "⚠️ Overselling: uid=%d tovar=%s qoldiq=%.2f miqdor=%.2f",
+                        "⚠️ Overselling: uid=%d tovar=%s qoldiq=%s miqdor=%s",
                         uid, nomi, mavjud_qoldiq, miqdor
                     )
 
-                # Chiqim yozuvi — foyda virtual hisoblanadi (schema'da bu ustun yo'q)
+                # Chiqim yozuvi
                 await c.execute("""
                     INSERT INTO chiqimlar
                         (user_id, sessiya_id, klient_id, tovar_id, tovar_nomi, klient_ismi,
@@ -1314,10 +1331,10 @@ async def sotuv_saqlash(data: SotuvSo_rov, request: Request, uid: int = Depends(
                     miqdor, birlik, narx, t_jami, olish,
                 )
 
-                # Qoldiq kamaytirish — endi safe (FOR UPDATE lock olingan)
+                # Qoldiq kamaytirish — manfiy bo'lishi mumkin (visible overselling)
                 if tovar_id:
                     await c.execute("""
-                        UPDATE tovarlar SET qoldiq = GREATEST(qoldiq - $2, 0)
+                        UPDATE tovarlar SET qoldiq = qoldiq - $2
                         WHERE id = $1 AND user_id = $3
                     """, tovar_id, miqdor, uid)
 
@@ -1368,9 +1385,13 @@ async def sotuv_saqlash(data: SotuvSo_rov, request: Request, uid: int = Depends(
         for r in kam:
             ogohlar.append(f"📦 {r['nomi']}: qoldiq {float(r['qoldiq'])}, min {float(r['min_qoldiq'])}")
 
-    log.info("📤 Web sotuv: sessiya=%d tovarlar=%d jami=%.0f uid=%d",
+    log.info("📤 Web sotuv: sessiya=%d tovarlar=%d jami=%s uid=%d",
              sess_id, len(tovarlar), jami, uid)
     result = {"sessiya_id": sess_id, "status": "saqlandi"}
+
+    # Overselling ogohlantirishlari foydalanuvchi ko'rsa
+    if oversold_uchun_ogohlar:
+        ogohlar = oversold_uchun_ogohlar + ogohlar
 
     # ── Loyalty ball qo'shish ──
     if klient_id and jami > 0:
@@ -2463,7 +2484,7 @@ async def savdolar_royxati(
                 COUNT(*) FILTER (WHERE holat = 'yetkazildi')    AS yetkazildi,
                 COUNT(*) FILTER (WHERE holat = 'bekor')         AS bekor
             FROM sotuv_sessiyalar
-            WHERE (sana AT TIME ZONE 'Asia/Tashkent')::date = CURRENT_DATE
+            WHERE (sana AT TIME ZONE 'Asia/Tashkent')::date = (NOW() AT TIME ZONE 'Asia/Tashkent')::date
         """)
 
     return {

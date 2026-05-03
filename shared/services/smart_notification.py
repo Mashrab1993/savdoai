@@ -39,7 +39,7 @@ async def ertalabki_xulosa(conn, uid: int) -> str | None:
         SELECT COUNT(*) soni, COALESCE(SUM(jami),0) jami,
                COALESCE(SUM(tolangan),0) tolangan, COALESCE(SUM(qarz),0) qarz
         FROM sotuv_sessiyalar
-        WHERE (sana AT TIME ZONE 'Asia/Tashkent')::date = CURRENT_DATE - 1
+        WHERE (sana AT TIME ZONE 'Asia/Tashkent')::date = (NOW() AT TIME ZONE 'Asia/Tashkent')::date - 1
     """)
 
     # Agar kecha sotuv bo'lmasa — spam qilmaymiz
@@ -126,7 +126,7 @@ async def kechki_hisobot(conn, uid: int) -> str | None:
                COALESCE(SUM(tolangan),0) tolangan, COALESCE(SUM(qarz),0) qarz,
                COUNT(DISTINCT klient_ismi) klient_soni
         FROM sotuv_sessiyalar
-        WHERE (sana AT TIME ZONE 'Asia/Tashkent')::date = CURRENT_DATE
+        WHERE (sana AT TIME ZONE 'Asia/Tashkent')::date = (NOW() AT TIME ZONE 'Asia/Tashkent')::date
     """)
 
     if int(bugun["soni"]) == 0:
@@ -137,7 +137,7 @@ async def kechki_hisobot(conn, uid: int) -> str | None:
         SELECT COALESCE(SUM((ch.sotish_narxi - ch.olish_narxi) * ch.miqdor), 0)
         FROM chiqimlar ch
         JOIN sotuv_sessiyalar ss ON ss.id = ch.sessiya_id
-        WHERE (ss.sana AT TIME ZONE 'Asia/Tashkent')::date = CURRENT_DATE
+        WHERE (ss.sana AT TIME ZONE 'Asia/Tashkent')::date = (NOW() AT TIME ZONE 'Asia/Tashkent')::date
     """) or 0
 
     jami = float(bugun["jami"])

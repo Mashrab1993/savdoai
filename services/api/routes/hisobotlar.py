@@ -95,25 +95,47 @@ async def hisobot_oylik(uid: int = Depends(get_uid)):
 
 @router.get("/hisobot/foyda")
 async def hisobot_foyda(kunlar: int = 30, uid: int = Depends(get_uid)):
-    """Foyda tahlili — sof foyda, xarajatlar, top foyda/zarar tovarlar."""
+    """Foyda tahlili — yalpi va sof foyda, top tovarlar.
+
+    TERMINOLOGIYA (audit fix #7 — barcha hisobotlarda standart):
+    - tushum: jami sotuv summasi (= sotuv_sessiyalar.jami)
+    - tannarx: olish narxi × miqdor (Cost of Goods Sold)
+    - yalpi_foyda: tushum - tannarx (Gross Profit, xarajatdan oldin)
+    - xarajatlar: operatsion xarajatlar (oylik, ijara, transport...)
+    - sof_foyda: yalpi_foyda - xarajatlar (Net Profit, xarajatdan keyin)
+
+    /hisobot/foyda, /hisobot/pnl, /moliya/foyda-zarar barchasi xuddi shu
+    formula bilan ishlaydi (canonical source: sotuv_sessiyalar.jami).
+    """
     async with rls_conn(uid) as c:
-        foyda = await c.fetchrow("""
+        # Tushum — sotuv_sessiyalar.jami (canonical source of truth)
+        # Bekor qilingan sotuvlarni hisobga olmaymiz
+        tushum_row = await c.fetchrow("""
             SELECT
-                COALESCE(SUM(ch.jami), 0) AS brutto,
-                COALESCE(SUM(ch.miqdor * ch.olish_narxi), 0) AS tannarx,
-                COALESCE(SUM(ch.jami - ch.miqdor * ch.olish_narxi), 0) AS sof_foyda
+                COALESCE(SUM(jami), 0) AS tushum,
+                COUNT(*) AS sotuv_soni
+            FROM sotuv_sessiyalar
+            WHERE sana >= NOW() - make_interval(days => $1)
+              AND COALESCE(holat, 'yangi') != 'bekor'
+        """, kunlar)
+
+        # Tannarx — chiqimlar.olish_narxi × miqdor
+        tannarx = await c.fetchval("""
+            SELECT COALESCE(SUM(ch.miqdor * ch.olish_narxi), 0)
             FROM chiqimlar ch
             JOIN sotuv_sessiyalar ss ON ss.id = ch.sessiya_id
             WHERE ss.sana >= NOW() - make_interval(days => $1)
-        """, kunlar)
+              AND COALESCE(ss.holat, 'yangi') != 'bekor'
+        """, kunlar) or 0
 
+        # Operatsion xarajatlar (xarajatlar.user_id YO'Q — admin_uid bor)
         xarajat = await c.fetchval("""
             SELECT COALESCE(SUM(summa), 0)
             FROM xarajatlar
             WHERE admin_uid = $1
               AND NOT bekor_qilingan
               AND sana >= NOW() - make_interval(days => $2)
-        """, uid, kunlar)
+        """, uid, kunlar) or 0
 
         top_foyda = await c.fetch("""
             SELECT ch.tovar_nomi,
@@ -121,7 +143,9 @@ async def hisobot_foyda(kunlar: int = 30, uid: int = Depends(get_uid)):
                    SUM(ch.miqdor) AS miqdor
             FROM chiqimlar ch
             JOIN sotuv_sessiyalar ss ON ss.id = ch.sessiya_id
-            WHERE ss.sana >= NOW() - make_interval(days => $1) AND ch.olish_narxi > 0
+            WHERE ss.sana >= NOW() - make_interval(days => $1)
+              AND ch.olish_narxi > 0
+              AND COALESCE(ss.holat, 'yangi') != 'bekor'
             GROUP BY ch.tovar_nomi ORDER BY foyda DESC LIMIT 5
         """, kunlar)
 
@@ -131,23 +155,35 @@ async def hisobot_foyda(kunlar: int = 30, uid: int = Depends(get_uid)):
                    SUM(ch.miqdor) AS miqdor
             FROM chiqimlar ch
             JOIN sotuv_sessiyalar ss ON ss.id = ch.sessiya_id
-            WHERE ss.sana >= NOW() - make_interval(days => $1) AND ch.olish_narxi > 0
+            WHERE ss.sana >= NOW() - make_interval(days => $1)
+              AND ch.olish_narxi > 0
+              AND COALESCE(ss.holat, 'yangi') != 'bekor'
             GROUP BY ch.tovar_nomi
             HAVING SUM(ch.jami - ch.miqdor * ch.olish_narxi) < 0
             ORDER BY foyda ASC LIMIT 5
         """, kunlar)
 
-    sof = float(foyda["sof_foyda"] or 0)
-    xar = float(xarajat or 0)
-    brutto = float(foyda["brutto"] or 0)
+    tushum = float(tushum_row["tushum"] or 0)
+    tannarx_f = float(tannarx)
+    xar = float(xarajat)
+    yalpi_foyda = tushum - tannarx_f
+    sof_foyda = yalpi_foyda - xar
+    margin = round(sof_foyda / tushum * 100, 1) if tushum > 0 else 0
+
     return {
         "kunlar": kunlar,
-        "brutto_sotuv": brutto,
-        "tannarx": float(foyda["tannarx"] or 0),
-        "sof_foyda": sof,
+        # Standart terminologiya (audit fix #7)
+        "tushum": tushum,
+        "sotuv_soni": int(tushum_row["sotuv_soni"] or 0),
+        "tannarx": tannarx_f,
+        "yalpi_foyda": yalpi_foyda,
         "xarajatlar": xar,
-        "toza_foyda": sof - xar,
-        "margin_foiz": round(sof / brutto * 100, 1) if brutto > 0 else 0,
+        "sof_foyda": sof_foyda,
+        "margin_foiz": margin,
+        # Eski nomlar (eski client'lar siniqib qolmasligi uchun saqlandi)
+        "brutto_sotuv": tushum,
+        "toza_foyda": sof_foyda,
+        # Top
         "top_foyda": [{"nomi": r["tovar_nomi"], "foyda": float(r["foyda"]),
                        "miqdor": float(r["miqdor"])} for r in top_foyda],
         "top_zarar": [{"nomi": r["tovar_nomi"], "zarar": abs(float(r["foyda"])),
@@ -173,7 +209,7 @@ async def dashboard_summary(uid: int = Depends(get_uid)):
             SELECT COUNT(*) AS soni, COALESCE(SUM(jami), 0) AS jami
             FROM sotuv_sessiyalar
             WHERE user_id = $1
-              AND (sana AT TIME ZONE 'Asia/Tashkent')::date = CURRENT_DATE
+              AND (sana AT TIME ZONE 'Asia/Tashkent')::date = (NOW() AT TIME ZONE 'Asia/Tashkent')::date
               AND COALESCE(holat, 'yangi') != 'bekor'
         """, uid)
 
@@ -229,7 +265,7 @@ async def dashboard_summary(uid: int = Depends(get_uid)):
             FROM chiqimlar c
             JOIN sotuv_sessiyalar ss ON ss.id = c.sessiya_id
             WHERE ss.user_id = $1
-              AND (ss.sana AT TIME ZONE 'Asia/Tashkent')::date = CURRENT_DATE
+              AND (ss.sana AT TIME ZONE 'Asia/Tashkent')::date = (NOW() AT TIME ZONE 'Asia/Tashkent')::date
             GROUP BY c.tovar_nomi
             ORDER BY SUM(c.jami) DESC LIMIT 5
         """, uid)
@@ -265,7 +301,7 @@ async def admin_statistika(uid: int = Depends(get_uid)):
         bugun_sotuv = await c.fetchrow("""
             SELECT COUNT(*) AS soni, COALESCE(SUM(jami), 0) AS jami
             FROM sotuv_sessiyalar
-            WHERE user_id=$1 AND (sana AT TIME ZONE 'Asia/Tashkent')::date = CURRENT_DATE
+            WHERE user_id=$1 AND (sana AT TIME ZONE 'Asia/Tashkent')::date = (NOW() AT TIME ZONE 'Asia/Tashkent')::date
         """, uid)
         hafta_sotuv = await c.fetchrow("""
             SELECT COUNT(*) AS soni, COALESCE(SUM(jami), 0) AS jami
@@ -302,7 +338,7 @@ async def admin_statistika(uid: int = Depends(get_uid)):
             FROM chiqimlar c
             JOIN sotuv_sessiyalar ss ON ss.id = c.sessiya_id
             WHERE ss.user_id = $1
-              AND (ss.sana AT TIME ZONE 'Asia/Tashkent')::date = CURRENT_DATE
+              AND (ss.sana AT TIME ZONE 'Asia/Tashkent')::date = (NOW() AT TIME ZONE 'Asia/Tashkent')::date
             GROUP BY c.tovar_nomi
             ORDER BY SUM(c.jami) DESC
             LIMIT 5
@@ -800,7 +836,7 @@ async def agentlar_bugungi_kpi(uid: int = Depends(get_uid)):
                 COALESCE(SUM(jami), 0)              AS summa
             FROM sotuv_sessiyalar
             WHERE user_id = $1
-              AND (sana AT TIME ZONE 'Asia/Tashkent')::date = CURRENT_DATE
+              AND (sana AT TIME ZONE 'Asia/Tashkent')::date = (NOW() AT TIME ZONE 'Asia/Tashkent')::date
               AND COALESCE(holat, 'yangi') NOT IN ('bekor')
             """,
             uid,
@@ -813,7 +849,7 @@ async def agentlar_bugungi_kpi(uid: int = Depends(get_uid)):
                 """
                 SELECT COUNT(*) FROM qaytarishlar
                 WHERE user_id=$1
-                  AND (sana AT TIME ZONE 'Asia/Tashkent')::date = CURRENT_DATE
+                  AND (sana AT TIME ZONE 'Asia/Tashkent')::date = (NOW() AT TIME ZONE 'Asia/Tashkent')::date
                 """,
                 uid,
             ) or 0
@@ -937,7 +973,7 @@ async def photo_reports(
             stats = await c.fetchrow("""
                 SELECT
                     COUNT(*)                                                      AS jami,
-                    COUNT(*) FILTER (WHERE vaqt::date = CURRENT_DATE)             AS bugun,
+                    COUNT(*) FILTER (WHERE (vaqt AT TIME ZONE 'Asia/Tashkent')::date = (NOW() AT TIME ZONE 'Asia/Tashkent')::date) AS bugun,
                     COUNT(*) FILTER (WHERE vaqt >= NOW() - interval '7 days')     AS hafta,
                     COUNT(*) FILTER (WHERE vaqt >= NOW() - interval '30 days')    AS oy,
                     COUNT(DISTINCT agent_id)                                       AS agentlar_soni
