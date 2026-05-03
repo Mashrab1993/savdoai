@@ -25,17 +25,24 @@ def D(v):
     return Decimal(str(v or 0)).quantize(Decimal("0.01"), ROUND_HALF_UP)
 
 
-async def foyda_zarar(conn, uid: int, sana_dan: str | None = None,
-                       sana_gacha: str | None = None) -> dict:
+async def foyda_zarar(conn, uid: int, sana_dan=None, sana_gacha=None) -> dict:
     """Foyda va Zarar hisoboti (P&L / Income Statement).
 
     QuickBooks Income Statement analogi.
     Agar sana berilmasa — joriy oy.
+    sana_dan/sana_gacha: date object yoki "YYYY-MM-DD" str.
     """
+    from datetime import datetime as _dt
+    bugun = date.today()
     if not sana_dan:
-        bugun = date.today()
-        sana_dan = bugun.replace(day=1).isoformat()
-        sana_gacha = bugun.isoformat()
+        sana_dan = bugun.replace(day=1)
+    if not sana_gacha:
+        sana_gacha = bugun
+    # str → date konversiya (asyncpg date type kutadi)
+    if isinstance(sana_dan, str):
+        sana_dan = _dt.strptime(sana_dan, "%Y-%m-%d").date()
+    if isinstance(sana_gacha, str):
+        sana_gacha = _dt.strptime(sana_gacha, "%Y-%m-%d").date()
 
     # ═══ DAROMAD ═══
     sotuv = await conn.fetchrow("""
@@ -210,13 +217,18 @@ async def balans_varaq(conn, uid: int) -> dict:
     }
 
 
-async def pul_oqimi(conn, uid: int, sana_dan: str | None = None,
-                     sana_gacha: str | None = None) -> dict:
+async def pul_oqimi(conn, uid: int, sana_dan=None, sana_gacha=None) -> dict:
     """Pul oqimi hisoboti (Cash Flow Statement)."""
+    from datetime import datetime as _dt
+    bugun = date.today()
     if not sana_dan:
-        bugun = date.today()
-        sana_dan = bugun.replace(day=1).isoformat()
-        sana_gacha = bugun.isoformat()
+        sana_dan = bugun.replace(day=1)
+    if not sana_gacha:
+        sana_gacha = bugun
+    if isinstance(sana_dan, str):
+        sana_dan = _dt.strptime(sana_dan, "%Y-%m-%d").date()
+    if isinstance(sana_gacha, str):
+        sana_gacha = _dt.strptime(sana_gacha, "%Y-%m-%d").date()
 
     # KIRIMLAR — sotuvdan (tolangan qismi)
     sotuv_kirim = D(await conn.fetchval("""

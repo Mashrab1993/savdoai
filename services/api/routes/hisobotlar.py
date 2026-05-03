@@ -1427,12 +1427,11 @@ async def van_selling_kunlik(
     """
     if sana:
         try:
-            datetime.strptime(sana, "%Y-%m-%d")
+            target_date = datetime.strptime(sana, "%Y-%m-%d").date()
         except ValueError:
             raise HTTPException(status_code=400, detail="sana formati noto'g'ri, YYYY-MM-DD kerak")
-        target_date = sana
     else:
-        target_date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        target_date = datetime.now(timezone.utc).date()
 
     async with rls_conn(uid) as c:
         # 1. Agentlar bo'yicha sotuv sessiyalari
@@ -1778,6 +1777,9 @@ async def vizit_hisoboti(
     cached = await cache_ol(cache_k)
     if cached:
         return cached
+
+    dan = datetime.strptime(dan, "%Y-%m-%d").date()
+    gacha = datetime.strptime(gacha, "%Y-%m-%d").date()
 
     async with rls_conn(uid) as c:
         # Jadval mavjudligini tekshirish

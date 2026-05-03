@@ -283,10 +283,13 @@ async def filial_qoldiqlari(conn, filial_id: int) -> list[dict]:
 #  5. KUNLIK KASSA
 # ════════════════════════════════════════════════════════════
 
-async def kunlik_kassa_hisoblash(conn, uid: int, sana: str = None) -> dict:
+async def kunlik_kassa_hisoblash(conn, uid: int, sana=None) -> dict:
     """Agent kunlik kassasini hisoblash. SD Agent DayTransaction analog."""
+    from datetime import datetime as _dt
     if not sana:
-        sana = date.today().isoformat()
+        sana = date.today()
+    elif isinstance(sana, str):
+        sana = _dt.strptime(sana, "%Y-%m-%d").date()
 
     # Sotuvlardan kirimlar — hozircha tolov_turi yo'q, hammasi naqd deb olinadi
     kirim = await conn.fetchrow("""
