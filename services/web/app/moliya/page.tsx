@@ -18,32 +18,17 @@ export default function MoliyaPage() {
   )
   const usingMock = !apiKassa
 
-  const balance = apiKassa ? {
-    cash_total: apiKassa.naqd_balans ?? 0,
-    bank_total: apiKassa.bank_balans ?? 0,
+  const balance = {
+    cash_total: Number(apiKassa?.naqd_balans ?? 0),
+    bank_total: Number(apiKassa?.bank_balans ?? 0),
     usd_total: 0,
     transfers: 0,
-    overall: apiKassa.jami_balans ?? 0,
-    overall_with_prepay: apiKassa.jami_balans ?? 0,
-    overall_full: apiKassa.jami_balans ?? 0,
-  } : {
-    cash_total: -4_806_407_358,
-    bank_total: 2_883_346_590,
-    usd_total: 0,
-    transfers: 1_169_063_028,
-    overall: -753_997_739,
-    overall_with_prepay: -758_248_485,
-    overall_full: -8_952_572_263,
+    overall: Number(apiKassa?.jami_balans ?? 0),
+    overall_with_prepay: Number(apiKassa?.jami_balans ?? 0),
+    overall_full: Number(apiKassa?.jami_balans ?? 0),
   }
 
-  const topCategories = [
-    { name: "PRIMA GREEN", sum: 32_521_000, pct: 32.52, growth: 12.3 },
-    { name: "TRUFFLES COCOA", sum: 13_682_000, pct: 13.68, growth: -2.1 },
-    { name: "HILOL", sum: 9_834_000, pct: 9.83, growth: 5.6 },
-    { name: "SLADUS", sum: 8_300_000, pct: 8.30, growth: 8.2 },
-    { name: "Муроджон шок.", sum: 7_810_000, pct: 7.81, growth: 4.5 },
-    { name: "ЁШ ФУТБОЛЧИ", sum: 7_530_000, pct: 7.53, growth: 11.0 },
-  ]
+  const topCategories: Array<{ name: string; sum: number; pct: number; growth: number }> = []
 
   return (
     <AdminLayout>
@@ -57,7 +42,8 @@ export default function MoliyaPage() {
                 Moliya <span className="italic text-[#C75D3C]">jurnali</span>
               </h1>
               <p className="text-base text-[#6B5B4D] mt-3 max-w-xl">
-                Joriy oy: <span className="font-medium text-[#1A1A1A] tabular-nums">155,170,315</span> so'm sotuv
+                Real-time kassa balansi va moliyaviy ko'rsatkichlar
+                {!isAuthenticated && <span className="ml-2 text-amber-600 text-xs">⚠ Login kerak</span>}
               </p>
             </div>
             <div className="flex items-center gap-2">

@@ -1,84 +1,87 @@
 "use client"
 import { AdminLayout } from "@/components/layout/admin-layout"
 import { Card } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { ArrowLeft, Plus } from "lucide-react"
+import { ArrowLeft, AlertTriangle } from "lucide-react"
 import Link from "next/link"
+import { useApi, useAuth } from "@/hooks/use-api"
+import { formatCurrency } from "@/lib/utils"
 
-const MOCK = [
-  { id: "s_001", date: "2026-05-02", reason: "Brak", warehouse: "Asosiy", items: 5, total: 125_000, status: "approved" },
-  { id: "s_002", date: "2026-05-01", reason: "Yaroqlilik tugagan", warehouse: "Химия", items: 12, total: 540_000, status: "approved" },
-  { id: "s_003", date: "2026-04-30", reason: "O'g'irlik", warehouse: "Asosiy", items: 3, total: 88_000, status: "pending" },
-  { id: "s_004", date: "2026-04-28", reason: "Inventarizatsiya farqi", warehouse: "VS", items: 8, total: 312_000, status: "approved" },
-]
+type Tovar = { id: number; nomi: string; qoldiq: number; min_qoldiq?: number; olish_narxi?: number; sotish_narxi: number }
+type TovarResp = { total: number; items: Tovar[] }
 
 export default function SpisaniePage() {
+  const { isAuthenticated } = useAuth()
+  const { data, loading } = useApi<TovarResp>(isAuthenticated ? "/api/v1/tovarlar?limit=500" : null)
+  const items = data?.items ?? []
+
+  // Items with negative qoldiq = write-off candidates
+  const negative = items.filter(t => t.qoldiq < 0)
+  const totalLoss = negative.reduce((s, t) => s + Math.abs(t.qoldiq) * Number(t.olish_narxi || 0), 0)
+
   return (
     <AdminLayout>
-      <div className="-mx-4 -my-4 px-4 py-6 min-h-full" style={{ background: "linear-gradient(180deg, #F5F1EB 0%, #FAF7F2 100%)" }}>
-        <div className="max-w-[1700px] mx-auto space-y-5">
-          <div className="flex items-end gap-3 border-b border-[#E8E0D3] pb-6">
-            <Link href="/sklad" className="p-2 hover:bg-[#F0EAE0] rounded-lg"><ArrowLeft className="w-5 h-5 text-[#6B5B4D]" /></Link>
-            <div className="flex-1">
-              <div className="text-xs uppercase tracking-[0.2em] text-[#9C8A6E] font-medium mb-2">SAVDOAI · SKLAD</div>
-              <h1 className="text-4xl font-light tracking-tight text-[#1A1A1A]" style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>
-                Spisanie
-              </h1>
-              <p className="text-sm text-[#6B5B4D] mt-2">Hisobdan chiqarish · {MOCK.length} hujjat · <span className="text-[#C75D3C] font-medium tabular-nums">{MOCK.reduce((s, x) => s + x.total, 0).toLocaleString()} so'm</span> zarar</p>
-            </div>
-            <Button size="lg" style={{ background: "#C75D3C" }}>
-              <Plus className="w-5 h-5" /> Yangi spisanie
-            </Button>
+      <div className="max-w-[1300px] mx-auto space-y-6">
+        <div className="flex items-center gap-3">
+          <Link href="/sklad" className="p-2 hover:bg-slate-100 rounded"><ArrowLeft className="w-5 h-5" /></Link>
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Spisaniya (Write-off)</h1>
+            <p className="text-base text-slate-500 mt-1">
+              Manfiy qoldiqdagi tovarlar — yozish kerak
+              {!isAuthenticated && <span className="ml-2 text-amber-600 text-xs">⚠ Login kerak</span>}
+            </p>
           </div>
+        </div>
 
-          <Card className="bg-white border border-[#E8E0D3] shadow-sm rounded-2xl overflow-hidden">
-            <table className="w-full">
-              <thead className="border-b border-[#E8E0D3] bg-[#FAF7F2]">
-                <tr>
-                  <th className="text-left px-4 py-3 text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">ID</th>
-                  <th className="text-left px-4 py-3 text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Sana</th>
-                  <th className="text-left px-4 py-3 text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Sabab</th>
-                  <th className="text-left px-4 py-3 text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Sklad</th>
-                  <th className="text-right px-4 py-3 text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Tovar</th>
-                  <th className="text-right px-4 py-3 text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Zarar</th>
-                  <th className="text-left px-4 py-3 text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {MOCK.map(s => (
-                  <tr key={s.id} className="border-b border-[#F0EAE0] hover:bg-[#FAF7F2]">
-                    <td className="px-4 py-3 font-mono text-sm font-medium text-[#C75D3C]">{s.id}</td>
-                    <td className="px-4 py-3 text-sm text-[#1A1A1A]">{s.date}</td>
-                    <td className="px-4 py-3 text-sm">
-                      <span className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        s.reason === "Brak" ? "bg-[#F5E5D6] text-[#C75D3C]" :
-                        s.reason === "O'g'irlik" ? "bg-purple-50 text-purple-700" :
-                        "bg-[#FCE9DD] text-[#D97706]"
-                      }`}>{s.reason}</span>
-                    </td>
-                    <td className="px-4 py-3 text-sm text-[#6B5B4D]">{s.warehouse}</td>
-                    <td className="px-4 py-3 text-right tabular-nums text-[#1A1A1A]">{s.items}</td>
-                    <td className="px-4 py-3 text-right tabular-nums font-medium text-[#C75D3C]" style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>{s.total.toLocaleString()}</td>
-                    <td className="px-4 py-3">
-                      <span className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        s.status === "approved" ? "bg-emerald-50 text-emerald-700" : "bg-[#FCE9DD] text-[#D97706]"
-                      }`}>{s.status === "approved" ? "Tasdiqlangan" : "Kutilmoqda"}</span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-              <tfoot className="border-t border-[#E8E0D3] bg-[#FCE9DD]/40">
-                <tr>
-                  <td colSpan={5} className="px-4 py-3 text-right text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Jami zarar:</td>
-                  <td className="px-4 py-3 text-right tabular-nums text-xl font-medium text-[#C75D3C]" style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>
-                    {MOCK.reduce((s, x) => s + x.total, 0).toLocaleString()} so'm
-                  </td>
-                  <td></td>
-                </tr>
-              </tfoot>
-            </table>
+        <div className="grid grid-cols-2 gap-4">
+          <Card className="p-5 border-rose-200 bg-rose-50/40">
+            <div className="text-xs uppercase font-semibold text-rose-700">Manfiy qoldiq</div>
+            <div className="text-3xl font-bold text-rose-800 tabular-nums">{negative.length}</div>
+            <div className="text-sm text-slate-600 mt-1">tovar</div>
+          </Card>
+          <Card className="p-5 border-amber-200 bg-amber-50/40">
+            <div className="text-xs uppercase font-semibold text-amber-700">Yo'qotish (taxminiy)</div>
+            <div className="text-3xl font-bold text-amber-800 tabular-nums">{formatCurrency(totalLoss)}</div>
           </Card>
         </div>
+
+        {loading && <div className="text-center py-12 text-slate-500">Yuklanmoqda...</div>}
+
+        {!loading && negative.length === 0 && isAuthenticated && (
+          <Card className="p-8 text-center text-slate-500">
+            ✅ Hech qanday manfiy qoldiq yo'q — sklad to'g'ri.
+          </Card>
+        )}
+
+        {negative.length > 0 && (
+          <Card>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-rose-50 border-b">
+                  <tr>
+                    <th className="px-4 py-3 text-left font-semibold w-12"></th>
+                    <th className="px-4 py-3 text-left font-semibold">Tovar</th>
+                    <th className="px-4 py-3 text-right font-semibold">Qoldiq</th>
+                    <th className="px-4 py-3 text-right font-semibold">Yo'qotish</th>
+                    <th className="px-4 py-3 text-right font-semibold">Spisat (taxminiy)</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y">
+                  {negative.map(t => (
+                    <tr key={t.id} className="hover:bg-slate-50 bg-rose-50/30">
+                      <td className="px-4 py-2"><AlertTriangle className="w-4 h-4 text-rose-600" /></td>
+                      <td className="px-4 py-2 font-medium">{t.nomi}</td>
+                      <td className="px-4 py-2 text-right tabular-nums font-bold text-rose-700">{t.qoldiq}</td>
+                      <td className="px-4 py-2 text-right tabular-nums">{Math.abs(t.qoldiq)}</td>
+                      <td className="px-4 py-2 text-right tabular-nums font-bold text-amber-700">
+                        {formatCurrency(Math.abs(t.qoldiq) * Number(t.olish_narxi || 0))}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </Card>
+        )}
       </div>
     </AdminLayout>
   )
