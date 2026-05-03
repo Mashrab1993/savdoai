@@ -59,117 +59,146 @@ export default function DuplicatesPage() {
 
   return (
     <AdminLayout>
-      <div className="max-w-[1700px] mx-auto space-y-4">
-        <div className="flex items-center gap-3">
-          <Link href="/klientlar" className="p-2 hover:bg-slate-100 rounded-lg"><ArrowLeft className="w-5 h-5" /></Link>
-          <div className="flex-1">
-            <h1 className="text-2xl font-bold tracking-tight">Takror klientlar</h1>
-            <p className="text-sm text-slate-500">{filtered.length} ta dublikat guruh · {totalSavings} ta yozuvni birlashtirish/o'chirish mumkin</p>
+      <div className="-mx-4 -my-4 px-4 py-6 min-h-full" style={{ background: "linear-gradient(180deg, #F5F1EB 0%, #FAF7F2 100%)" }}>
+        <div className="max-w-[1700px] mx-auto space-y-5">
+          <div className="flex items-end gap-3 border-b border-[#E8E0D3] pb-6">
+            <Link href="/klientlar" className="p-2 hover:bg-[#F0EAE0] rounded-lg"><ArrowLeft className="w-5 h-5 text-[#6B5B4D]" /></Link>
+            <div className="flex-1">
+              <div className="text-xs uppercase tracking-[0.2em] text-[#9C8A6E] font-medium mb-2">SAVDOAI · KLIENTLAR</div>
+              <h1 className="text-4xl font-light tracking-tight text-[#1A1A1A]" style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>
+                Takror <span className="italic text-[#C75D3C]">klientlar</span>
+              </h1>
+              <p className="text-sm text-[#6B5B4D] mt-2">{filtered.length} ta dublikat guruh · {totalSavings} ta yozuvni birlashtirish/o'chirish mumkin</p>
+            </div>
+            <div className="relative">
+              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#9C8A6E]" />
+              <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Klient nomi..." className="pl-9 pr-4 py-2 border border-[#E8E0D3] bg-white rounded-md text-sm w-64 text-[#1A1A1A]" />
+            </div>
           </div>
-          <div className="relative">
-            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Klient nomi..." className="pl-9 pr-4 py-2 border border-slate-300 rounded-md text-sm w-64" />
-          </div>
-        </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <Card className="p-4 bg-rose-50 border-rose-200">
-            <AlertTriangle className="w-5 h-5 text-rose-600 mb-2" />
-            <div className="text-xs font-bold text-rose-700">Dublikat guruhlar</div>
-            <div className="text-2xl font-bold mt-1">{totalGroups}</div>
-          </Card>
-          <Card className="p-4 bg-amber-50 border-amber-200">
-            <AlertTriangle className="w-5 h-5 text-amber-600 mb-2" />
-            <div className="text-xs font-bold text-amber-700">Jami yozuvlar</div>
-            <div className="text-2xl font-bold mt-1">{totalDups}</div>
-          </Card>
-          <Card className="p-4 bg-emerald-50 border-emerald-200">
-            <Merge className="w-5 h-5 text-emerald-600 mb-2" />
-            <div className="text-xs font-bold text-emerald-700">Birlashtirilishi mumkin</div>
-            <div className="text-2xl font-bold mt-1">{totalSavings}</div>
-          </Card>
-          <Card className="p-4 bg-blue-50 border-blue-200">
-            <Merge className="w-5 h-5 text-blue-600 mb-2" />
-            <div className="text-xs font-bold text-blue-700">Hal qilingan</div>
-            <div className="text-2xl font-bold mt-1">{resolved.size}</div>
-          </Card>
-        </div>
-
-        <div className="space-y-3">
-          {filtered.map(group => (
-            <Card key={group.id} className="p-5 border-2 border-amber-300">
-              <div className="flex items-center justify-between mb-3 pb-3 border-b border-slate-200">
-                <div>
-                  <h2 className="font-bold flex items-center gap-2">
-                    <AlertTriangle className="w-5 h-5 text-amber-600" />
-                    Dublikat guruh #{group.id}
-                  </h2>
-                  <p className="text-xs text-slate-500 mt-0.5">{group.reason} · Match score: <span className={`font-bold ${group.matchScore >= 95 ? "text-rose-700" : "text-amber-700"}`}>{group.matchScore}%</span></p>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <Card className="bg-white border border-[#E8E0D3] shadow-sm rounded-2xl p-6 relative overflow-hidden">
+              <div className="flex items-center justify-between mb-3">
+                <div className="w-10 h-10 rounded-xl bg-[#F5E5D6] flex items-center justify-center">
+                  <AlertTriangle className="w-5 h-5 text-[#C75D3C]" />
                 </div>
-                <div className="flex items-center gap-2">
-                  <Button onClick={() => handleMerge(group.id)} className="gap-1 bg-emerald-600 hover:bg-emerald-700">
-                    <Merge className="w-4 h-4" /> Birlashtirish
-                  </Button>
-                  <Button variant="outline" className="gap-1">
-                    <Eye className="w-4 h-4" /> Tanish
-                  </Button>
-                </div>
+                <span className="text-xs uppercase tracking-wider text-[#9C8A6E] font-medium">Dublikat guruhlar</span>
               </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                {group.clients.map((c, i) => (
-                  <div key={c.id} className={`p-4 rounded-lg border ${i === 0 ? "bg-emerald-50 border-emerald-300" : "bg-white border-slate-200"}`}>
-                    {i === 0 && <div className="text-xs font-bold text-emerald-700 mb-2">⭐ MASTER (saqlanadi)</div>}
-                    {i > 0 && <div className="text-xs font-bold text-rose-700 mb-2">🔗 DUPLICATE (birlashtiriladi)</div>}
-
-                    <div className="font-bold">{c.name}</div>
-                    <div className="text-xs font-mono text-slate-500 mt-1">#{c.id}</div>
-
-                    <div className="mt-2 space-y-1 text-xs">
-                      <div className="flex items-center gap-1.5">
-                        <Phone className="w-3 h-3 text-slate-400" />
-                        <span className="font-mono">{c.phone}</span>
-                      </div>
-                      <div className="flex items-start gap-1.5">
-                        <MapPin className="w-3 h-3 text-slate-400 mt-0.5" />
-                        <span>{c.address}</span>
-                      </div>
-                    </div>
-
-                    <div className="mt-3 grid grid-cols-3 gap-2 text-xs">
-                      <div>
-                        <div className="text-slate-500">Yaratildi</div>
-                        <div className="font-mono">{c.createdAt}</div>
-                      </div>
-                      <div>
-                        <div className="text-slate-500">Zakaz</div>
-                        <div className="font-mono font-bold">{c.ordersCount}</div>
-                      </div>
-                      <div>
-                        <div className="text-slate-500">Oxirgi</div>
-                        <div className="font-mono">{c.lastOrder}</div>
-                      </div>
-                    </div>
-
-                    {i > 0 && (
-                      <button className="mt-2 text-xs text-rose-600 hover:underline flex items-center gap-1">
-                        <Trash2 className="w-3 h-3" /> Faqat ushbuni o'chirish
-                      </button>
-                    )}
-                  </div>
-                ))}
-              </div>
+              <div className="text-3xl font-light text-[#1A1A1A] tabular-nums" style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>{totalGroups}</div>
+              <div className="absolute bottom-0 left-0 right-0 h-px bg-[#C75D3C]" />
             </Card>
-          ))}
-        </div>
+            <Card className="bg-white border border-[#E8E0D3] shadow-sm rounded-2xl p-6 relative overflow-hidden">
+              <div className="flex items-center justify-between mb-3">
+                <div className="w-10 h-10 rounded-xl bg-[#FCE9DD] flex items-center justify-center">
+                  <AlertTriangle className="w-5 h-5 text-[#D97706]" />
+                </div>
+                <span className="text-xs uppercase tracking-wider text-[#9C8A6E] font-medium">Jami yozuvlar</span>
+              </div>
+              <div className="text-3xl font-light text-[#1A1A1A] tabular-nums" style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>{totalDups}</div>
+              <div className="absolute bottom-0 left-0 right-0 h-px bg-[#D97706]" />
+            </Card>
+            <Card className="bg-white border border-[#E8E0D3] shadow-sm rounded-2xl p-6 relative overflow-hidden">
+              <div className="flex items-center justify-between mb-3">
+                <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center">
+                  <Merge className="w-5 h-5 text-emerald-700" />
+                </div>
+                <span className="text-xs uppercase tracking-wider text-[#9C8A6E] font-medium">Birlashtirilishi mumkin</span>
+              </div>
+              <div className="text-3xl font-light text-[#1A1A1A] tabular-nums" style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>{totalSavings}</div>
+              <div className="absolute bottom-0 left-0 right-0 h-px bg-emerald-500" />
+            </Card>
+            <Card className="bg-white border border-[#E8E0D3] shadow-sm rounded-2xl p-6 relative overflow-hidden">
+              <div className="flex items-center justify-between mb-3">
+                <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center">
+                  <Merge className="w-5 h-5 text-blue-700" />
+                </div>
+                <span className="text-xs uppercase tracking-wider text-[#9C8A6E] font-medium">Hal qilingan</span>
+              </div>
+              <div className="text-3xl font-light text-[#1A1A1A] tabular-nums" style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>{resolved.size}</div>
+              <div className="absolute bottom-0 left-0 right-0 h-px bg-blue-500" />
+            </Card>
+          </div>
 
-        {filtered.length === 0 && (
-          <Card className="p-12 text-center bg-emerald-50 border-emerald-200">
-            <Merge className="w-12 h-12 text-emerald-600 mx-auto mb-3" />
-            <h3 className="font-bold text-emerald-800 text-lg">🎉 Barcha dublikatlar hal qilindi!</h3>
-            <p className="text-sm text-slate-600 mt-1">Klient bazasi toza holat — yangi dublikatlar uchun har soatda tekshirib turamiz.</p>
-          </Card>
-        )}
+          <div className="space-y-4">
+            {filtered.map(group => (
+              <Card key={group.id} className="bg-white border border-[#E8E0D3] shadow-sm rounded-2xl p-6">
+                <div className="flex items-center justify-between mb-4 pb-4 border-b border-[#E8E0D3]">
+                  <div>
+                    <h2 className="font-medium text-lg flex items-center gap-2 text-[#1A1A1A]" style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>
+                      <AlertTriangle className="w-5 h-5 text-[#D97706]" />
+                      Dublikat guruh #{group.id}
+                    </h2>
+                    <p className="text-xs text-[#9C8A6E] mt-0.5">
+                      {group.reason} · Match score: <span className={`font-medium ${group.matchScore >= 95 ? "text-[#C75D3C]" : "text-[#D97706]"}`}>{group.matchScore}%</span>
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button onClick={() => handleMerge(group.id)} className="gap-1 text-white" style={{ background: "#C75D3C" }}>
+                      <Merge className="w-4 h-4" /> Birlashtirish
+                    </Button>
+                    <Button variant="outline" className="gap-1 border-[#E8E0D3] text-[#6B5B4D]">
+                      <Eye className="w-4 h-4" /> Tanish
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {group.clients.map((c, i) => (
+                    <div key={c.id} className={`p-4 rounded-xl border ${i === 0 ? "bg-emerald-50 border-emerald-200" : "bg-[#FAF7F2] border-[#E8E0D3]"}`}>
+                      {i === 0 && <div className="text-xs uppercase tracking-wider font-medium text-emerald-700 mb-2">MASTER (saqlanadi)</div>}
+                      {i > 0 && <div className="text-xs uppercase tracking-wider font-medium text-[#C75D3C] mb-2">DUPLICATE (birlashtiriladi)</div>}
+
+                      <div className="font-medium text-[#1A1A1A]">{c.name}</div>
+                      <div className="text-xs font-mono tabular-nums text-[#9C8A6E] mt-1">#{c.id}</div>
+
+                      <div className="mt-2 space-y-1 text-xs text-[#6B5B4D]">
+                        <div className="flex items-center gap-1.5">
+                          <Phone className="w-3 h-3 text-[#9C8A6E]" />
+                          <span className="font-mono tabular-nums">{c.phone}</span>
+                        </div>
+                        <div className="flex items-start gap-1.5">
+                          <MapPin className="w-3 h-3 text-[#9C8A6E] mt-0.5" />
+                          <span>{c.address}</span>
+                        </div>
+                      </div>
+
+                      <div className="mt-3 grid grid-cols-3 gap-2 text-xs">
+                        <div>
+                          <div className="text-[#9C8A6E]">Yaratildi</div>
+                          <div className="font-mono tabular-nums text-[#1A1A1A]">{c.createdAt}</div>
+                        </div>
+                        <div>
+                          <div className="text-[#9C8A6E]">Zakaz</div>
+                          <div className="font-mono tabular-nums font-medium text-[#1A1A1A]">{c.ordersCount}</div>
+                        </div>
+                        <div>
+                          <div className="text-[#9C8A6E]">Oxirgi</div>
+                          <div className="font-mono tabular-nums text-[#1A1A1A]">{c.lastOrder}</div>
+                        </div>
+                      </div>
+
+                      {i > 0 && (
+                        <button className="mt-3 text-xs text-[#C75D3C] hover:underline flex items-center gap-1">
+                          <Trash2 className="w-3 h-3" /> Faqat ushbuni o'chirish
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </Card>
+            ))}
+          </div>
+
+          {filtered.length === 0 && (
+            <Card className="bg-white border border-[#E8E0D3] shadow-sm rounded-2xl p-12 text-center">
+              <div className="w-14 h-14 rounded-2xl bg-emerald-50 mx-auto mb-3 flex items-center justify-center">
+                <Merge className="w-7 h-7 text-emerald-700" />
+              </div>
+              <h3 className="font-light text-[#1A1A1A] text-2xl" style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>Barcha dublikatlar hal qilindi</h3>
+              <p className="text-sm text-[#6B5B4D] mt-2">Klient bazasi toza holat — yangi dublikatlar uchun har soatda tekshirib turamiz.</p>
+            </Card>
+          )}
+        </div>
       </div>
     </AdminLayout>
   )
