@@ -5,7 +5,8 @@ from __future__ import annotations
 import os
 import sys
 import logging
-from fastapi import APIRouter, Depends
+from datetime import date, datetime, timedelta
+from fastapi import APIRouter, Depends, HTTPException
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))))
 from services.api.deps import get_uid
@@ -24,12 +25,28 @@ log = logging.getLogger(__name__)
 moliya_router = APIRouter(prefix="/moliya", tags=["moliya"])
 
 
+def _parse_dates(sana_dan: str | None, sana_gacha: str | None,
+                 default_days: int = 30) -> tuple[date, date]:
+    """ISO YYYY-MM-DD stringlarni date obyektlariga aylantirish."""
+    today = date.today()
+    try:
+        d_to = datetime.strptime(sana_gacha, "%Y-%m-%d").date() if sana_gacha else today
+    except ValueError:
+        raise HTTPException(400, "sana_gacha formati noto'g'ri (YYYY-MM-DD kerak)")
+    try:
+        d_from = datetime.strptime(sana_dan, "%Y-%m-%d").date() if sana_dan else (d_to - timedelta(days=default_days))
+    except ValueError:
+        raise HTTPException(400, "sana_dan formati noto'g'ri (YYYY-MM-DD kerak)")
+    return d_from, d_to
+
+
 @moliya_router.get("/foyda-zarar")
 async def pl(sana_dan: str | None = None, sana_gacha: str | None = None,
              uid: int = Depends(get_uid)):
     """Foyda va Zarar hisoboti (P&L) — QuickBooks analog."""
+    d_from, d_to = _parse_dates(sana_dan, sana_gacha)
     async with get_conn(uid) as conn:
-        return await foyda_zarar(conn, uid, sana_dan, sana_gacha)
+        return await foyda_zarar(conn, uid, d_from, d_to)
 
 
 @moliya_router.get("/balans")
@@ -43,8 +60,9 @@ async def bs(uid: int = Depends(get_uid)):
 async def cf(sana_dan: str | None = None, sana_gacha: str | None = None,
              uid: int = Depends(get_uid)):
     """Pul oqimi hisoboti (Cash Flow)."""
+    d_from, d_to = _parse_dates(sana_dan, sana_gacha)
     async with get_conn(uid) as conn:
-        return await pul_oqimi(conn, uid, sana_dan, sana_gacha)
+        return await pul_oqimi(conn, uid, d_from, d_to)
 
 
 @moliya_router.get("/koeffitsientlar")

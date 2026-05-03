@@ -179,9 +179,16 @@ async def checkin_tarix(conn, uid: int, klient_id: int = None,
         idx += 1
 
     if sana:
-        query += f" AND co.vaqt::date = ${idx}::date"
-        params.append(sana)
-        idx += 1
+        from datetime import datetime, date
+        if isinstance(sana, str):
+            try:
+                sana = datetime.strptime(sana, "%Y-%m-%d").date()
+            except ValueError:
+                sana = None
+        if sana:
+            query += f" AND co.vaqt::date = ${idx}"
+            params.append(sana)
+            idx += 1
 
     query += f" ORDER BY co.vaqt DESC LIMIT ${idx}"
     params.append(limit)

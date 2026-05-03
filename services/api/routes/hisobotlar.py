@@ -110,7 +110,7 @@ async def hisobot_foyda(kunlar: int = 30, uid: int = Depends(get_uid)):
         xarajat = await c.fetchval("""
             SELECT COALESCE(SUM(summa), 0)
             FROM xarajatlar
-            WHERE user_id = $1
+            WHERE admin_uid = $1
               AND NOT bekor_qilingan
               AND sana >= NOW() - make_interval(days => $2)
         """, uid, kunlar)
@@ -361,7 +361,7 @@ async def hisobot_pnl(kunlar: int = 30, uid: int = Depends(get_uid)):
         xarajat = await c.fetchval("""
             SELECT COALESCE(SUM(summa), 0)
             FROM xarajatlar
-            WHERE user_id = $1
+            WHERE admin_uid = $1
               AND sana >= NOW() - make_interval(days => $2)
               AND COALESCE(bekor_qilingan, FALSE) = FALSE
         """, uid, kunlar) or 0
@@ -383,7 +383,7 @@ async def hisobot_pnl(kunlar: int = 30, uid: int = Depends(get_uid)):
                     COALESCE(kategoriya_nomi, 'Boshqa') AS nomi,
                     SUM(summa)                          AS summa
                 FROM xarajatlar
-                WHERE user_id = $1
+                WHERE admin_uid = $1
                   AND sana >= NOW() - make_interval(days => $2)
                   AND COALESCE(bekor_qilingan, FALSE) = FALSE
                 GROUP BY kategoriya_nomi
@@ -410,7 +410,7 @@ async def hisobot_pnl(kunlar: int = 30, uid: int = Depends(get_uid)):
         prev_xarajat = await c.fetchval("""
             SELECT COALESCE(SUM(summa), 0)
             FROM xarajatlar
-            WHERE user_id = $1
+            WHERE admin_uid = $1
               AND sana >= NOW() - make_interval(days => $2)
               AND sana < NOW() - make_interval(days => $3)
               AND COALESCE(bekor_qilingan, FALSE) = FALSE
@@ -1660,6 +1660,9 @@ async def ekspeditor_hisoboti(
     if cached:
         return cached
 
+    dan_d = datetime.strptime(dan, "%Y-%m-%d").date()
+    gacha_d = datetime.strptime(gacha, "%Y-%m-%d").date()
+
     async with rls_conn(uid) as c:
         rows = await c.fetch("""
             SELECT
@@ -1695,7 +1698,7 @@ async def ekspeditor_hisoboti(
                     BETWEEN $1::date AND $2::date
             GROUP BY ss.user_id, u.ism, u.dokon_nomi, u.username
             ORDER BY COUNT(ss.id) DESC
-        """, dan, gacha)
+        """, dan_d, gacha_d)
 
         jami_buyurtma = 0
         jami_yetkazilgan = 0
