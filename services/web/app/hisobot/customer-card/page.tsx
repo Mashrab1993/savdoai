@@ -18,6 +18,8 @@ const ROWS = [
 
 function fmt(n: number) { return n.toLocaleString("ru-RU") }
 
+const SERIF = { fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }
+
 export default function CustomerCardPage() {
   const [search, setSearch] = useState("")
   const filtered = ROWS.filter(r => !search || r.name.toLowerCase().includes(search.toLowerCase()))
@@ -29,104 +31,120 @@ export default function CustomerCardPage() {
 
   return (
     <AdminLayout>
-      <div className="max-w-[1900px] mx-auto space-y-4">
-        <div className="flex items-center gap-3">
-          <Link href="/hisobot" className="p-2 hover:bg-slate-100 rounded-lg"><ArrowLeft className="w-5 h-5" /></Link>
-          <h1 className="text-2xl font-bold tracking-tight flex-1">Карточка клиента — детальный отчёт</h1>
-          <Button variant="outline" className="gap-2"><Download className="w-4 h-4" /> Excel</Button>
-        </div>
-
-        <Card className="p-4">
-          <div className="flex items-center gap-2 flex-wrap">
-            <div className="relative flex-1 max-w-md">
-              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-              <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="Klient..." className="pl-9" />
+      <div className="-mx-4 -my-4 px-4 py-6 min-h-full" style={{ background: "linear-gradient(180deg, #F5F1EB 0%, #FAF7F2 100%)" }}>
+        <div className="max-w-[1900px] mx-auto space-y-5">
+          <div className="flex items-end gap-3 border-b border-[#E8E0D3] pb-6">
+            <Link href="/hisobot" className="p-2 hover:bg-[#F0EAE0] rounded-lg"><ArrowLeft className="w-5 h-5 text-[#6B5B4D]" /></Link>
+            <div className="flex-1">
+              <div className="text-xs uppercase tracking-[0.2em] text-[#9C8A6E] font-medium mb-2">SAVDOAI · HISOBOT</div>
+              <h1 className="text-4xl font-light tracking-tight text-[#1A1A1A]" style={SERIF}>
+                Карточка клиента <span className="italic text-[#C75D3C]">детальный отчёт</span>
+              </h1>
+              <p className="text-sm text-[#6B5B4D] mt-2">{ROWS.length} klient · har biri uchun vizit, zakaz, tushum va qarz</p>
             </div>
-            {["Агент", "Территория", "Категория клиента"].map(f => (
-              <button key={f} className="px-3 py-2 border border-slate-300 rounded-md text-xs hover:border-emerald-400 transition-colors flex items-center gap-1">
-                <span>{f}</span><span className="text-slate-400">▾</span>
-              </button>
-            ))}
-            <button className="px-3 py-2 border border-emerald-300 bg-emerald-50 rounded-md text-xs font-semibold text-emerald-700 flex items-center gap-1">
-              <Calendar className="w-3 h-3" /> май 2 ▾
-            </button>
+            <Button variant="outline" className="gap-2 border-[#E8E0D3] text-[#6B5B4D]"><Download className="w-4 h-4" /> Excel</Button>
           </div>
-        </Card>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <Card className="p-4 bg-emerald-50 border-emerald-200">
-            <TrendingUp className="w-5 h-5 text-emerald-600 mb-2" />
-            <div className="text-xs font-bold text-emerald-700">Общая выручка</div>
-            <div className="text-xl font-bold mt-1">{fmt(totalRevenue / 1_000_000)} M</div>
+          <Card className="p-4 bg-white border border-[#E8E0D3] shadow-sm rounded-2xl">
+            <div className="flex items-center gap-2 flex-wrap">
+              <div className="relative flex-1 max-w-md">
+                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#9C8A6E]" />
+                <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="Klient..." className="pl-9 border-[#E8E0D3]" />
+              </div>
+              {["Агент", "Территория", "Категория клиента"].map(f => (
+                <button key={f} className="px-3 py-2 border border-[#E8E0D3] rounded-md text-xs hover:border-[#C75D3C] transition-colors flex items-center gap-1 text-[#6B5B4D] bg-white">
+                  <span>{f}</span><span className="text-[#9C8A6E]">▾</span>
+                </button>
+              ))}
+              <button className="px-3 py-2 border border-[#C75D3C] bg-[#F5E5D6] rounded-md text-xs font-medium text-[#C75D3C] flex items-center gap-1">
+                <Calendar className="w-3 h-3" /> май 2 ▾
+              </button>
+            </div>
           </Card>
-          <Card className="p-4 bg-blue-50 border-blue-200">
-            <Building2 className="w-5 h-5 text-blue-600 mb-2" />
-            <div className="text-xs font-bold text-blue-700">Заказы</div>
-            <div className="text-xl font-bold mt-1">{totalOrders}</div>
-          </Card>
-          <Card className="p-4 bg-violet-50 border-violet-200">
-            <Building2 className="w-5 h-5 text-violet-600 mb-2" />
-            <div className="text-xs font-bold text-violet-700">Visit'ы</div>
-            <div className="text-xl font-bold mt-1">{totalVisits}</div>
-          </Card>
-          <Card className="p-4 bg-rose-50 border-rose-200">
-            <AlertCircle className="w-5 h-5 text-rose-600 mb-2" />
-            <div className="text-xs font-bold text-rose-700">Долги</div>
-            <div className="text-xl font-bold mt-1">{fmt(totalDebt / 1_000_000)} M</div>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <Card className="p-5 bg-white border border-[#E8E0D3] shadow-sm rounded-2xl relative overflow-hidden">
+              <TrendingUp className="w-5 h-5 mb-2" style={{ color: "#10B981" }} />
+              <div className="text-xs uppercase tracking-[0.15em] font-medium" style={{ color: "#10B981" }}>Общая выручка</div>
+              <div className="text-2xl font-medium tabular-nums mt-1 text-[#1A1A1A] font-mono" style={SERIF}>{fmt(totalRevenue / 1_000_000)} M</div>
+              <div className="text-xs text-[#9C8A6E] mt-1">jami tushum</div>
+              <div className="absolute bottom-0 left-0 right-0 h-1" style={{ background: "#10B981" }} />
+            </Card>
+            <Card className="p-5 bg-white border border-[#E8E0D3] shadow-sm rounded-2xl relative overflow-hidden">
+              <Building2 className="w-5 h-5 mb-2" style={{ color: "#3B82F6" }} />
+              <div className="text-xs uppercase tracking-[0.15em] font-medium" style={{ color: "#3B82F6" }}>Заказы</div>
+              <div className="text-2xl font-medium tabular-nums mt-1 text-[#1A1A1A] font-mono" style={SERIF}>{totalOrders}</div>
+              <div className="text-xs text-[#9C8A6E] mt-1">jami zakazlar</div>
+              <div className="absolute bottom-0 left-0 right-0 h-1" style={{ background: "#3B82F6" }} />
+            </Card>
+            <Card className="p-5 bg-white border border-[#E8E0D3] shadow-sm rounded-2xl relative overflow-hidden">
+              <Building2 className="w-5 h-5 mb-2" style={{ color: "#7C3AED" }} />
+              <div className="text-xs uppercase tracking-[0.15em] font-medium" style={{ color: "#7C3AED" }}>Visit'ы</div>
+              <div className="text-2xl font-medium tabular-nums mt-1 text-[#1A1A1A] font-mono" style={SERIF}>{totalVisits}</div>
+              <div className="text-xs text-[#9C8A6E] mt-1">tashriflar</div>
+              <div className="absolute bottom-0 left-0 right-0 h-1" style={{ background: "#7C3AED" }} />
+            </Card>
+            <Card className="p-5 bg-white border border-[#E8E0D3] shadow-sm rounded-2xl relative overflow-hidden">
+              <AlertCircle className="w-5 h-5 mb-2" style={{ color: "#C75D3C" }} />
+              <div className="text-xs uppercase tracking-[0.15em] font-medium" style={{ color: "#C75D3C" }}>Долги</div>
+              <div className="text-2xl font-medium tabular-nums mt-1 text-[#1A1A1A] font-mono" style={SERIF}>{fmt(totalDebt / 1_000_000)} M</div>
+              <div className="text-xs text-[#9C8A6E] mt-1">qarz qoldig'i</div>
+              <div className="absolute bottom-0 left-0 right-0 h-1" style={{ background: "#C75D3C" }} />
+            </Card>
+          </div>
+
+          <Card className="p-5 bg-white border border-[#E8E0D3] shadow-sm rounded-2xl">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-[#FAF7F2] border-b border-[#E8E0D3]">
+                    <th className="py-3 px-2 w-12 text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">№</th>
+                    <th className="py-3 px-2 text-left text-xs uppercase tracking-wider font-medium text-[#9C8A6E] min-w-[200px]">Клиент</th>
+                    <th className="py-3 px-2 text-left text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">ИНН</th>
+                    <th className="py-3 px-2 text-left text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Агент</th>
+                    <th className="py-3 px-2 text-left text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Регион</th>
+                    <th className="py-3 px-2 text-right text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Visit</th>
+                    <th className="py-3 px-2 text-right text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Заказы</th>
+                    <th className="py-3 px-2 text-right text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Выручка</th>
+                    <th className="py-3 px-2 text-right text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Средний</th>
+                    <th className="py-3 px-2 text-left text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Последний</th>
+                    <th className="py-3 px-2 text-right text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Долг</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filtered.map((r, i) => (
+                    <tr key={r.id} className="border-b border-[#F0EAE0] hover:bg-[#FAF7F2]">
+                      <td className="py-3 px-2 text-center font-mono tabular-nums text-[#9C8A6E]">{i + 1}</td>
+                      <td className="py-3 px-2">
+                        <Link href={`/klientlar/${r.id}`} className="font-medium text-[#C75D3C] hover:underline">{r.name}</Link>
+                      </td>
+                      <td className="py-3 px-2 font-mono tabular-nums text-[#6B5B4D]">{r.inn}</td>
+                      <td className="py-3 px-2 text-[#6B5B4D]">{r.agent}</td>
+                      <td className="py-3 px-2 text-[#6B5B4D]">{r.region}</td>
+                      <td className="py-3 px-2 text-right font-mono tabular-nums text-[#1A1A1A]">{r.visits}</td>
+                      <td className="py-3 px-2 text-right font-mono tabular-nums text-[#1A1A1A]">{r.orders}</td>
+                      <td className="py-3 px-2 text-right font-mono tabular-nums font-medium text-emerald-700">{fmt(r.revenue)}</td>
+                      <td className="py-3 px-2 text-right font-mono tabular-nums text-[#1A1A1A]">{fmt(r.avgOrder)}</td>
+                      <td className="py-3 px-2 font-mono tabular-nums text-xs text-[#6B5B4D]">{r.lastOrder}</td>
+                      <td className={`py-3 px-2 text-right font-mono tabular-nums font-medium ${r.debt > 0 ? "text-[#C75D3C]" : "text-[#9C8A6E]"}`}>
+                        {r.debt > 0 ? fmt(r.debt) : "—"}
+                      </td>
+                    </tr>
+                  ))}
+                  <tr className="bg-[#FAF7F2] font-medium border-t border-[#E8E0D3]">
+                    <td colSpan={5} className="py-3 px-2 text-[#1A1A1A]" style={SERIF}>Итого: {filtered.length} клиентов</td>
+                    <td className="py-3 px-2 text-right font-mono tabular-nums text-[#1A1A1A]" style={SERIF}>{totalVisits}</td>
+                    <td className="py-3 px-2 text-right font-mono tabular-nums text-[#1A1A1A]" style={SERIF}>{totalOrders}</td>
+                    <td className="py-3 px-2 text-right font-mono tabular-nums text-emerald-700" style={SERIF}>{fmt(totalRevenue)}</td>
+                    <td className="py-3 px-2 text-right font-mono tabular-nums text-[#1A1A1A]" style={SERIF}>{fmt(Math.round(totalRevenue / totalOrders))}</td>
+                    <td></td>
+                    <td className="py-3 px-2 text-right font-mono tabular-nums text-[#C75D3C]" style={SERIF}>{fmt(totalDebt)}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           </Card>
         </div>
-
-        <Card className="p-4">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm border-collapse">
-              <thead>
-                <tr className="bg-slate-100">
-                  <th className="border border-slate-300 py-2 px-2 w-12">№</th>
-                  <th className="border border-slate-300 py-2 px-2 text-left min-w-[200px]">Клиент</th>
-                  <th className="border border-slate-300 py-2 px-2 text-left">ИНН</th>
-                  <th className="border border-slate-300 py-2 px-2 text-left">Агент</th>
-                  <th className="border border-slate-300 py-2 px-2 text-left">Регион</th>
-                  <th className="border border-slate-300 py-2 px-2 text-right">Visit</th>
-                  <th className="border border-slate-300 py-2 px-2 text-right">Заказы</th>
-                  <th className="border border-slate-300 py-2 px-2 text-right">Выручка</th>
-                  <th className="border border-slate-300 py-2 px-2 text-right">Средний</th>
-                  <th className="border border-slate-300 py-2 px-2 text-left">Последний</th>
-                  <th className="border border-slate-300 py-2 px-2 text-right">Долг</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map((r, i) => (
-                  <tr key={r.id} className="hover:bg-slate-50">
-                    <td className="border border-slate-300 py-2 px-2 text-center font-mono text-slate-400">{i + 1}</td>
-                    <td className="border border-slate-300 py-2 px-2">
-                      <Link href={`/klientlar/${r.id}`} className="font-semibold text-emerald-700 hover:underline">{r.name}</Link>
-                    </td>
-                    <td className="border border-slate-300 py-2 px-2 font-mono">{r.inn}</td>
-                    <td className="border border-slate-300 py-2 px-2 text-slate-700">{r.agent}</td>
-                    <td className="border border-slate-300 py-2 px-2 text-slate-700">{r.region}</td>
-                    <td className="border border-slate-300 py-2 px-2 text-right font-mono">{r.visits}</td>
-                    <td className="border border-slate-300 py-2 px-2 text-right font-mono">{r.orders}</td>
-                    <td className="border border-slate-300 py-2 px-2 text-right font-mono font-bold text-emerald-700">{fmt(r.revenue)}</td>
-                    <td className="border border-slate-300 py-2 px-2 text-right font-mono">{fmt(r.avgOrder)}</td>
-                    <td className="border border-slate-300 py-2 px-2 font-mono text-xs">{r.lastOrder}</td>
-                    <td className={`border border-slate-300 py-2 px-2 text-right font-mono font-bold ${r.debt > 0 ? "text-rose-700" : "text-slate-400"}`}>
-                      {r.debt > 0 ? fmt(r.debt) : "—"}
-                    </td>
-                  </tr>
-                ))}
-                <tr className="bg-slate-100 font-bold">
-                  <td colSpan={5} className="border border-slate-300 py-2 px-2">Итого: {filtered.length} клиентов</td>
-                  <td className="border border-slate-300 py-2 px-2 text-right font-mono">{totalVisits}</td>
-                  <td className="border border-slate-300 py-2 px-2 text-right font-mono">{totalOrders}</td>
-                  <td className="border border-slate-300 py-2 px-2 text-right font-mono text-emerald-800">{fmt(totalRevenue)}</td>
-                  <td className="border border-slate-300 py-2 px-2 text-right font-mono">{fmt(Math.round(totalRevenue / totalOrders))}</td>
-                  <td className="border border-slate-300"></td>
-                  <td className="border border-slate-300 py-2 px-2 text-right font-mono text-rose-700">{fmt(totalDebt)}</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </Card>
       </div>
     </AdminLayout>
   )

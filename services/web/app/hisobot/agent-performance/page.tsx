@@ -22,8 +22,10 @@ const AGENTS: Agent[] = [
 
 function fmt(n: number) { return n.toLocaleString("ru-RU") }
 
-const RANK_BADGE = ["bg-amber-100 text-amber-800 border-amber-300", "bg-slate-100 text-slate-700 border-slate-300", "bg-orange-100 text-orange-700 border-orange-300"]
+const RANK_ACCENTS = ["#D97706", "#9C8A6E", "#C75D3C"]
 const RANK_ICON = ["🥇", "🥈", "🥉"]
+
+const SERIF = { fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }
 
 export default function AgentPerformancePage() {
   const sorted = [...AGENTS].sort((a, b) => b.revenue - a.revenue)
@@ -33,128 +35,138 @@ export default function AgentPerformancePage() {
 
   return (
     <AdminLayout>
-      <div className="max-w-[1700px] mx-auto space-y-4">
-        <div className="flex items-center gap-3">
-          <Link href="/hisobot" className="p-2 hover:bg-slate-100 rounded-lg"><ArrowLeft className="w-5 h-5" /></Link>
-          <div className="flex-1">
-            <h1 className="text-2xl font-bold tracking-tight">Agent KPI rating</h1>
-            <p className="text-sm text-slate-500">{AGENTS.length} agent · jami {fmt(totalRevenue / 1_000_000)}M / {fmt(totalTarget / 1_000_000)}M ({overall}%)</p>
-          </div>
-          <Button variant="outline" className="gap-2"><Calendar className="w-4 h-4" /> апр 1 — май 2</Button>
-          <Button variant="outline" className="gap-2"><Download className="w-4 h-4" /> Excel</Button>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          {sorted.slice(0, 3).map((a, i) => (
-            <Card key={a.id} className={`p-5 border-2 ${RANK_BADGE[i]}`}>
-              <div className="flex items-center gap-3 mb-3">
-                <div className="text-4xl">{RANK_ICON[i]}</div>
-                <div>
-                  <div className="text-xs font-semibold opacity-70">RANK {i + 1}</div>
-                  <div className="text-base font-bold">{a.name}</div>
-                </div>
-              </div>
-              <div className="space-y-1.5 text-sm">
-                <div className="flex justify-between">
-                  <span className="opacity-70">Tushum</span>
-                  <span className="font-mono font-bold">{fmt(a.revenue / 1_000_000)} M</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="opacity-70">Plan%</span>
-                  <span className="font-mono font-bold">{Math.round((a.revenue / a.targetRevenue) * 100)}%</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="opacity-70">Reyting</span>
-                  <span className="font-mono font-bold">{a.rating.toFixed(1)} ⭐</span>
-                </div>
-              </div>
-            </Card>
-          ))}
-        </div>
-
-        <Card className="p-5">
-          <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
-            <Trophy className="w-5 h-5 text-amber-600" /> Agent KPI table
-          </h2>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b-2 border-slate-200 text-left bg-slate-50">
-                  <th className="py-3 px-2">#</th>
-                  <th className="py-3 px-2">Agent</th>
-                  <th className="py-3 px-2 text-right">Vizit (reja/fakt)</th>
-                  <th className="py-3 px-2 text-right">Zakazlar</th>
-                  <th className="py-3 px-2 text-right">Klientlar (active/total)</th>
-                  <th className="py-3 px-2 text-right">O'rta zakaz</th>
-                  <th className="py-3 px-2 text-right">Konversiya</th>
-                  <th className="py-3 px-2 text-right">Tushum</th>
-                  <th className="py-3 px-2">Plan%</th>
-                  <th className="py-3 px-2 text-center">Rating</th>
-                </tr>
-              </thead>
-              <tbody>
-                {sorted.map((a, i) => {
-                  const planPct = Math.round((a.revenue / a.targetRevenue) * 100)
-                  return (
-                    <tr key={a.id} className="border-b border-slate-100 hover:bg-slate-50">
-                      <td className="py-3 px-2 font-bold text-slate-400">{i + 1}</td>
-                      <td className="py-3 px-2 font-semibold">
-                        <Link href="#" className="text-blue-700 hover:underline flex items-center gap-2">
-                          {i < 3 && <span>{RANK_ICON[i]}</span>}
-                          {a.name}
-                        </Link>
-                      </td>
-                      <td className="py-3 px-2 text-right font-mono text-xs">{a.visitsPlanned} / <span className="font-bold">{a.visits}</span></td>
-                      <td className="py-3 px-2 text-right font-mono">{a.orders}</td>
-                      <td className="py-3 px-2 text-right font-mono text-xs">
-                        <span className="text-emerald-700 font-bold">{a.activeClients}</span> / {a.clients}
-                      </td>
-                      <td className="py-3 px-2 text-right font-mono">{fmt(a.avgOrderSum)}</td>
-                      <td className="py-3 px-2 text-right">
-                        <span className={`px-2 py-0.5 rounded font-mono font-bold text-xs ${a.conversionRate >= 80 ? "bg-emerald-100 text-emerald-700" : a.conversionRate >= 70 ? "bg-amber-100 text-amber-700" : "bg-rose-100 text-rose-700"}`}>
-                          {a.conversionRate}%
-                        </span>
-                      </td>
-                      <td className="py-3 px-2 text-right font-mono font-bold text-emerald-700">{fmt(a.revenue)}</td>
-                      <td className="py-3 px-2">
-                        <div className="flex items-center gap-2">
-                          <div className="flex-1 h-2 bg-slate-200 rounded-full overflow-hidden min-w-[80px]">
-                            <div className={`h-full ${planPct >= 100 ? "bg-emerald-500" : planPct >= 85 ? "bg-amber-500" : "bg-rose-500"}`} style={{ width: `${Math.min(100, planPct)}%` }} />
-                          </div>
-                          <span className={`text-xs font-bold font-mono w-10 text-right ${planPct >= 100 ? "text-emerald-700" : planPct >= 85 ? "text-amber-700" : "text-rose-700"}`}>{planPct}%</span>
-                        </div>
-                      </td>
-                      <td className="py-3 px-2 text-center">
-                        <span className="font-mono font-bold flex items-center justify-center gap-0.5">
-                          <Award className={`w-4 h-4 ${a.rating >= 4.5 ? "text-amber-500" : a.rating >= 4.0 ? "text-slate-400" : "text-rose-400"}`} />
-                          {a.rating.toFixed(1)}
-                        </span>
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
-        </Card>
-
-        <Card className="p-5 bg-gradient-to-br from-emerald-50 to-blue-50 border-2 border-emerald-300">
-          <div className="flex items-center gap-3">
-            <TrendingUp className="w-8 h-8 text-emerald-600" />
+      <div className="-mx-4 -my-4 px-4 py-6 min-h-full" style={{ background: "linear-gradient(180deg, #F5F1EB 0%, #FAF7F2 100%)" }}>
+        <div className="max-w-[1700px] mx-auto space-y-5">
+          <div className="flex items-end gap-3 border-b border-[#E8E0D3] pb-6">
+            <Link href="/hisobot" className="p-2 hover:bg-[#F0EAE0] rounded-lg"><ArrowLeft className="w-5 h-5 text-[#6B5B4D]" /></Link>
             <div className="flex-1">
-              <h3 className="text-lg font-bold">Komanda umumiy ko'rsatkichi</h3>
-              <p className="text-sm text-slate-600 mt-1">
-                Jami {fmt(totalRevenue)} so'm tushum / target {fmt(totalTarget)} so'm
-              </p>
+              <div className="text-xs uppercase tracking-[0.2em] text-[#9C8A6E] font-medium mb-2">SAVDOAI · HISOBOT</div>
+              <h1 className="text-4xl font-light tracking-tight text-[#1A1A1A]" style={SERIF}>
+                Agent KPI <span className="italic text-[#C75D3C]">rating</span>
+              </h1>
+              <p className="text-sm text-[#6B5B4D] mt-2">{AGENTS.length} agent · jami {fmt(totalRevenue / 1_000_000)}M / {fmt(totalTarget / 1_000_000)}M ({overall}%)</p>
             </div>
-            <div className="text-right">
-              <div className={`text-4xl font-bold font-mono ${overall >= 100 ? "text-emerald-700" : overall >= 85 ? "text-amber-700" : "text-rose-700"}`}>
-                {overall}%
-              </div>
-              <div className="text-xs text-slate-600">plan bajarish</div>
-            </div>
+            <Button variant="outline" className="gap-2 border-[#E8E0D3] text-[#6B5B4D]"><Calendar className="w-4 h-4" /> апр 1 — май 2</Button>
+            <Button variant="outline" className="gap-2 border-[#E8E0D3] text-[#6B5B4D]"><Download className="w-4 h-4" /> Excel</Button>
           </div>
-        </Card>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {sorted.slice(0, 3).map((a, i) => {
+              const accent = RANK_ACCENTS[i]
+              return (
+                <Card key={a.id} className="p-5 bg-white border border-[#E8E0D3] shadow-sm rounded-2xl relative overflow-hidden">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="text-4xl">{RANK_ICON[i]}</div>
+                    <div>
+                      <div className="text-xs uppercase tracking-[0.15em] font-medium" style={{ color: accent }}>RANK {i + 1}</div>
+                      <div className="text-base font-medium text-[#1A1A1A]">{a.name}</div>
+                    </div>
+                  </div>
+                  <div className="space-y-1.5 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-[#9C8A6E]">Tushum</span>
+                      <span className="font-mono tabular-nums text-[#1A1A1A]" style={SERIF}>{fmt(a.revenue / 1_000_000)} M</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-[#9C8A6E]">Plan%</span>
+                      <span className="font-mono tabular-nums text-[#1A1A1A]">{Math.round((a.revenue / a.targetRevenue) * 100)}%</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-[#9C8A6E]">Reyting</span>
+                      <span className="font-mono tabular-nums text-[#1A1A1A]">{a.rating.toFixed(1)} ⭐</span>
+                    </div>
+                  </div>
+                  <div className="absolute bottom-0 left-0 right-0 h-1" style={{ background: accent }} />
+                </Card>
+              )
+            })}
+          </div>
+
+          <Card className="p-6 bg-white border border-[#E8E0D3] shadow-sm rounded-2xl">
+            <h2 className="text-lg font-medium mb-4 flex items-center gap-2 text-[#1A1A1A]" style={SERIF}>
+              <Trophy className="w-5 h-5" style={{ color: "#D97706" }} /> Agent KPI table
+            </h2>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-[#FAF7F2] border-b border-[#E8E0D3]">
+                    <th className="py-3 px-2 text-left text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">#</th>
+                    <th className="py-3 px-2 text-left text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Agent</th>
+                    <th className="py-3 px-2 text-right text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Vizit (reja/fakt)</th>
+                    <th className="py-3 px-2 text-right text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Zakazlar</th>
+                    <th className="py-3 px-2 text-right text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Klientlar (active/total)</th>
+                    <th className="py-3 px-2 text-right text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">O'rta zakaz</th>
+                    <th className="py-3 px-2 text-right text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Konversiya</th>
+                    <th className="py-3 px-2 text-right text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Tushum</th>
+                    <th className="py-3 px-2 text-left text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Plan%</th>
+                    <th className="py-3 px-2 text-center text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Rating</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {sorted.map((a, i) => {
+                    const planPct = Math.round((a.revenue / a.targetRevenue) * 100)
+                    return (
+                      <tr key={a.id} className="border-b border-[#F0EAE0] hover:bg-[#FAF7F2]">
+                        <td className="py-3 px-2 font-medium text-[#9C8A6E]">{i + 1}</td>
+                        <td className="py-3 px-2 font-medium">
+                          <Link href="#" className="text-[#C75D3C] hover:underline flex items-center gap-2">
+                            {i < 3 && <span>{RANK_ICON[i]}</span>}
+                            {a.name}
+                          </Link>
+                        </td>
+                        <td className="py-3 px-2 text-right font-mono tabular-nums text-xs text-[#6B5B4D]">{a.visitsPlanned} / <span className="font-medium text-[#1A1A1A]">{a.visits}</span></td>
+                        <td className="py-3 px-2 text-right font-mono tabular-nums text-[#1A1A1A]">{a.orders}</td>
+                        <td className="py-3 px-2 text-right font-mono tabular-nums text-xs">
+                          <span className="text-emerald-700 font-medium">{a.activeClients}</span> <span className="text-[#9C8A6E]">/ {a.clients}</span>
+                        </td>
+                        <td className="py-3 px-2 text-right font-mono tabular-nums text-[#1A1A1A]">{fmt(a.avgOrderSum)}</td>
+                        <td className="py-3 px-2 text-right">
+                          <span className={`px-2 py-0.5 rounded font-mono tabular-nums font-medium text-xs ${a.conversionRate >= 80 ? "bg-emerald-50 text-emerald-700" : a.conversionRate >= 70 ? "bg-[#FCE9DD] text-[#D97706]" : "bg-[#F5E5D6] text-[#C75D3C]"}`}>
+                            {a.conversionRate}%
+                          </span>
+                        </td>
+                        <td className="py-3 px-2 text-right font-mono tabular-nums font-medium text-emerald-700">{fmt(a.revenue)}</td>
+                        <td className="py-3 px-2">
+                          <div className="flex items-center gap-2">
+                            <div className="flex-1 h-2 bg-[#F0EAE0] rounded-full overflow-hidden min-w-[80px]">
+                              <div className="h-full" style={{ width: `${Math.min(100, planPct)}%`, background: planPct >= 100 ? "#10B981" : planPct >= 85 ? "#D97706" : "#C75D3C" }} />
+                            </div>
+                            <span className="text-xs font-medium font-mono tabular-nums w-10 text-right" style={{ color: planPct >= 100 ? "#047857" : planPct >= 85 ? "#D97706" : "#C75D3C" }}>{planPct}%</span>
+                          </div>
+                        </td>
+                        <td className="py-3 px-2 text-center">
+                          <span className="font-mono tabular-nums font-medium flex items-center justify-center gap-0.5 text-[#1A1A1A]">
+                            <Award className="w-4 h-4" style={{ color: a.rating >= 4.5 ? "#D97706" : a.rating >= 4.0 ? "#9C8A6E" : "#C75D3C" }} />
+                            {a.rating.toFixed(1)}
+                          </span>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </Card>
+
+          <Card className="p-6 bg-white border border-[#E8E0D3] shadow-sm rounded-2xl relative overflow-hidden">
+            <div className="flex items-center gap-3">
+              <TrendingUp className="w-8 h-8" style={{ color: overall >= 100 ? "#10B981" : overall >= 85 ? "#D97706" : "#C75D3C" }} />
+              <div className="flex-1">
+                <h3 className="text-lg font-medium text-[#1A1A1A]" style={SERIF}>Komanda umumiy ko'rsatkichi</h3>
+                <p className="text-sm text-[#6B5B4D] mt-1">
+                  Jami {fmt(totalRevenue)} so'm tushum / target {fmt(totalTarget)} so'm
+                </p>
+              </div>
+              <div className="text-right">
+                <div className="text-4xl font-light font-mono tabular-nums" style={{ ...SERIF, color: overall >= 100 ? "#047857" : overall >= 85 ? "#D97706" : "#C75D3C" }}>
+                  {overall}%
+                </div>
+                <div className="text-xs text-[#9C8A6E]">plan bajarish</div>
+              </div>
+            </div>
+            <div className="absolute bottom-0 left-0 right-0 h-1" style={{ background: overall >= 100 ? "#10B981" : overall >= 85 ? "#D97706" : "#C75D3C" }} />
+          </Card>
+        </div>
       </div>
     </AdminLayout>
   )

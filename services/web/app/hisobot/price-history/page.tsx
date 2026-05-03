@@ -4,7 +4,7 @@ import { AdminLayout } from "@/components/layout/admin-layout"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { ArrowLeft, Search, Calendar, Download, TrendingUp, TrendingDown } from "lucide-react"
+import { ArrowLeft, Search, Calendar, Download, TrendingUp, TrendingDown, Minus } from "lucide-react"
 import Link from "next/link"
 
 const ITEMS = [
@@ -27,6 +27,8 @@ const ITEMS = [
 
 function fmt(n: number) { return n.toLocaleString("ru-RU") }
 
+const SERIF = { fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }
+
 export default function PriceHistoryPage() {
   const [search, setSearch] = useState("")
   const filtered = ITEMS.filter(i => !search || i.name.toLowerCase().includes(search.toLowerCase()))
@@ -35,90 +37,105 @@ export default function PriceHistoryPage() {
 
   return (
     <AdminLayout>
-      <div className="max-w-[1900px] mx-auto space-y-4">
-        <div className="flex items-center gap-3">
-          <Link href="/hisobot" className="p-2 hover:bg-slate-100 rounded-lg"><ArrowLeft className="w-5 h-5" /></Link>
-          <h1 className="text-2xl font-bold tracking-tight flex-1">История изменения цен</h1>
-          <button className="px-3 py-2 border border-emerald-300 bg-emerald-50 rounded-md text-sm font-semibold text-emerald-700 flex items-center gap-1">
-            <Calendar className="w-4 h-4" /> 05/01/2026 - 05/02/2026
-          </button>
-        </div>
-
-        <Card className="p-4">
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2">
-            {["Тип цен фикст. кондитерская", "Категория поставшика", "Категория продукта"].map(f => (
-              <button key={f} className="text-left px-3 py-2 border border-slate-300 rounded-md text-xs hover:border-emerald-400 transition-colors flex items-center justify-between">
-                <span className="text-slate-700 truncate">{f}</span>
-                <span className="text-slate-400">▾</span>
-              </button>
-            ))}
-          </div>
-        </Card>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          <Card className="p-4 bg-emerald-50 border-emerald-200">
-            <TrendingUp className="w-5 h-5 text-emerald-600 mb-2" />
-            <div className="text-xs font-bold text-emerald-700">Подорожало</div>
-            <div className="text-2xl font-bold mt-1">{increases}</div>
-          </Card>
-          <Card className="p-4 bg-rose-50 border-rose-200">
-            <TrendingDown className="w-5 h-5 text-rose-600 mb-2" />
-            <div className="text-xs font-bold text-rose-700">Подешевело</div>
-            <div className="text-2xl font-bold mt-1">{decreases}</div>
-          </Card>
-          <Card className="p-4 bg-slate-50 border-slate-200">
-            <div className="text-xs font-bold text-slate-700">Без изменений</div>
-            <div className="text-2xl font-bold mt-1">{ITEMS.length - increases - decreases}</div>
-          </Card>
-        </div>
-
-        <Card className="p-4">
-          <div className="flex items-center gap-2 mb-3">
-            <span className="text-xs">Поиск:</span>
-            <Input value={search} onChange={e => setSearch(e.target.value)} className="w-48" />
-          </div>
-
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm border-collapse">
-              <thead>
-                <tr className="bg-slate-100">
-                  <th className="border border-slate-300 py-2 px-2 w-12">№</th>
-                  <th className="border border-slate-300 py-2 px-2 text-left">Товар ИД</th>
-                  <th className="border border-slate-300 py-2 px-2 text-left">Код товара</th>
-                  <th className="border border-slate-300 py-2 px-2 text-left">Категория</th>
-                  <th className="border border-slate-300 py-2 px-2 text-left">Наименование</th>
-                  <th className="border border-slate-300 py-2 px-2 text-right">Стар. цена</th>
-                  <th className="border border-slate-300 py-2 px-2 text-right">Нов. цена</th>
-                  <th className="border border-slate-300 py-2 px-2 text-right">Изменение %</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map(it => (
-                  <tr key={it.id} className="hover:bg-slate-50">
-                    <td className="border border-slate-300 py-1.5 px-2 text-center font-mono">{it.id}</td>
-                    <td className="border border-slate-300 py-1.5 px-2 font-mono text-slate-400">{it.code}</td>
-                    <td className="border border-slate-300 py-1.5 px-2 font-mono">{`SKU${it.id.toString().padStart(4, "0")}`}</td>
-                    <td className="border border-slate-300 py-1.5 px-2 text-xs text-slate-500">{it.category}</td>
-                    <td className="border border-slate-300 py-1.5 px-2">{it.name}</td>
-                    <td className="border border-slate-300 py-1.5 px-2 text-right font-mono text-slate-500 line-through">{fmt(it.oldPrice)}</td>
-                    <td className="border border-slate-300 py-1.5 px-2 text-right font-mono font-bold">{fmt(it.newPrice)}</td>
-                    <td className={`border border-slate-300 py-1.5 px-2 text-right font-mono font-bold ${it.change > 0 ? "text-rose-700" : it.change < 0 ? "text-emerald-700" : "text-slate-400"}`}>
-                      {it.change === 0 ? "—" : (it.change > 0 ? "+" : "") + it.change.toFixed(2) + "%"}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          <div className="mt-3 flex items-center justify-between text-xs text-slate-500">
-            <span>Показано {filtered.length} из 1455</span>
-            <div className="flex gap-1">
-              <button className="px-2 py-1 border border-slate-300 rounded">Пред..</button>
-              <button className="px-2 py-1 border border-slate-300 rounded">След..</button>
+      <div className="-mx-4 -my-4 px-4 py-6 min-h-full" style={{ background: "linear-gradient(180deg, #F5F1EB 0%, #FAF7F2 100%)" }}>
+        <div className="max-w-[1900px] mx-auto space-y-5">
+          <div className="flex items-end gap-3 border-b border-[#E8E0D3] pb-6">
+            <Link href="/hisobot" className="p-2 hover:bg-[#F0EAE0] rounded-lg"><ArrowLeft className="w-5 h-5 text-[#6B5B4D]" /></Link>
+            <div className="flex-1">
+              <div className="text-xs uppercase tracking-[0.2em] text-[#9C8A6E] font-medium mb-2">SAVDOAI · HISOBOT</div>
+              <h1 className="text-4xl font-light tracking-tight text-[#1A1A1A]" style={SERIF}>
+                История изменения <span className="italic text-[#C75D3C]">цен</span>
+              </h1>
+              <p className="text-sm text-[#6B5B4D] mt-2">{ITEMS.length} ta tovar · {increases} podorojalo · {decreases} podeshevelo</p>
             </div>
+            <button className="px-3 py-2 border border-[#C75D3C] bg-[#F5E5D6] rounded-md text-sm font-medium text-[#C75D3C] flex items-center gap-1">
+              <Calendar className="w-4 h-4" /> 05/01/2026 - 05/02/2026
+            </button>
           </div>
-        </Card>
+
+          <Card className="p-4 bg-white border border-[#E8E0D3] shadow-sm rounded-2xl">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2">
+              {["Тип цен фикст. кондитерская", "Категория поставшика", "Категория продукта"].map(f => (
+                <button key={f} className="text-left px-3 py-2 border border-[#E8E0D3] rounded-md text-xs hover:border-[#C75D3C] transition-colors flex items-center justify-between bg-white">
+                  <span className="text-[#6B5B4D] truncate">{f}</span>
+                  <span className="text-[#9C8A6E]">▾</span>
+                </button>
+              ))}
+            </div>
+          </Card>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Card className="p-5 bg-white border border-[#E8E0D3] shadow-sm rounded-2xl relative overflow-hidden">
+              <TrendingUp className="w-5 h-5 mb-2" style={{ color: "#C75D3C" }} />
+              <div className="text-xs uppercase tracking-[0.15em] font-medium" style={{ color: "#C75D3C" }}>Подорожало</div>
+              <div className="text-2xl font-medium tabular-nums mt-1 text-[#1A1A1A]" style={SERIF}>{increases}</div>
+              <div className="text-xs text-[#9C8A6E] mt-1">narxlar oshgan</div>
+              <div className="absolute bottom-0 left-0 right-0 h-1" style={{ background: "#C75D3C" }} />
+            </Card>
+            <Card className="p-5 bg-white border border-[#E8E0D3] shadow-sm rounded-2xl relative overflow-hidden">
+              <TrendingDown className="w-5 h-5 mb-2" style={{ color: "#10B981" }} />
+              <div className="text-xs uppercase tracking-[0.15em] font-medium" style={{ color: "#10B981" }}>Подешевело</div>
+              <div className="text-2xl font-medium tabular-nums mt-1 text-[#1A1A1A]" style={SERIF}>{decreases}</div>
+              <div className="text-xs text-[#9C8A6E] mt-1">narxlar tushgan</div>
+              <div className="absolute bottom-0 left-0 right-0 h-1" style={{ background: "#10B981" }} />
+            </Card>
+            <Card className="p-5 bg-white border border-[#E8E0D3] shadow-sm rounded-2xl relative overflow-hidden">
+              <Minus className="w-5 h-5 mb-2" style={{ color: "#9C8A6E" }} />
+              <div className="text-xs uppercase tracking-[0.15em] font-medium" style={{ color: "#9C8A6E" }}>Без изменений</div>
+              <div className="text-2xl font-medium tabular-nums mt-1 text-[#1A1A1A]" style={SERIF}>{ITEMS.length - increases - decreases}</div>
+              <div className="text-xs text-[#9C8A6E] mt-1">o'zgarishsiz</div>
+              <div className="absolute bottom-0 left-0 right-0 h-1" style={{ background: "#9C8A6E" }} />
+            </Card>
+          </div>
+
+          <Card className="p-5 bg-white border border-[#E8E0D3] shadow-sm rounded-2xl">
+            <div className="flex items-center gap-2 mb-3">
+              <span className="text-xs text-[#6B5B4D]">Поиск:</span>
+              <Input value={search} onChange={e => setSearch(e.target.value)} className="w-48 border-[#E8E0D3]" />
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-[#FAF7F2] border-b border-[#E8E0D3]">
+                    <th className="py-3 px-2 w-12 text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">№</th>
+                    <th className="py-3 px-2 text-left text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Товар ИД</th>
+                    <th className="py-3 px-2 text-left text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Код товара</th>
+                    <th className="py-3 px-2 text-left text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Категория</th>
+                    <th className="py-3 px-2 text-left text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Наименование</th>
+                    <th className="py-3 px-2 text-right text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Стар. цена</th>
+                    <th className="py-3 px-2 text-right text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Нов. цена</th>
+                    <th className="py-3 px-2 text-right text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Изменение %</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filtered.map(it => (
+                    <tr key={it.id} className="border-b border-[#F0EAE0] hover:bg-[#FAF7F2]">
+                      <td className="py-2 px-2 text-center font-mono tabular-nums text-[#9C8A6E]">{it.id}</td>
+                      <td className="py-2 px-2 font-mono tabular-nums text-[#9C8A6E]">{it.code}</td>
+                      <td className="py-2 px-2 font-mono tabular-nums text-[#1A1A1A]">{`SKU${it.id.toString().padStart(4, "0")}`}</td>
+                      <td className="py-2 px-2 text-xs text-[#9C8A6E]">{it.category}</td>
+                      <td className="py-2 px-2 text-[#1A1A1A]">{it.name}</td>
+                      <td className="py-2 px-2 text-right font-mono tabular-nums text-[#9C8A6E] line-through">{fmt(it.oldPrice)}</td>
+                      <td className="py-2 px-2 text-right font-mono tabular-nums font-medium text-[#1A1A1A]">{fmt(it.newPrice)}</td>
+                      <td className="py-2 px-2 text-right font-mono tabular-nums font-medium" style={{ color: it.change > 0 ? "#C75D3C" : it.change < 0 ? "#047857" : "#9C8A6E" }}>
+                        {it.change === 0 ? "—" : (it.change > 0 ? "+" : "") + it.change.toFixed(2) + "%"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="mt-3 flex items-center justify-between text-xs text-[#9C8A6E]">
+              <span>Показано {filtered.length} из 1455</span>
+              <div className="flex gap-1">
+                <button className="px-2 py-1 border border-[#E8E0D3] rounded text-[#6B5B4D] hover:bg-[#FAF7F2]">Пред..</button>
+                <button className="px-2 py-1 border border-[#E8E0D3] rounded text-[#6B5B4D] hover:bg-[#FAF7F2]">След..</button>
+              </div>
+            </div>
+          </Card>
+        </div>
       </div>
     </AdminLayout>
   )
