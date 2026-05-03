@@ -2906,6 +2906,211 @@ async def savdolar_excel(
     }
 
 
+@app.get("/api/v1/savdolar/nakladnoy/excel", tags=["Sotuv"])
+async def savdolar_nakladnoy_excel(
+    sana_dan: str | None = None,
+    sana_gacha: str | None = None,
+    ids: str | None = None,  # Vergul bilan: ?ids=1,2,3
+    uid: int = Depends(get_uid),
+):
+    """Накладной (invoice) Excel — har sotuv ichidagi tovarlar alohida qatorlar.
+
+    Реестр endpoint'idan farqi: bu yerda har tovar alohida qator bo'ladi.
+    Har sotuv guruhi: shapka (klient + sana) + tovar qatorlar + JAMI.
+    """
+    import io
+    import base64
+    from openpyxl import Workbook
+    from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+
+    # Tanlangan ID'lar
+    selected_ids: list[int] = []
+    if ids:
+        for part in ids.split(","):
+            part = part.strip()
+            if part.isdigit():
+                selected_ids.append(int(part))
+
+    async with rls_conn(uid) as c:
+        where_parts = []
+        params: list = []
+        idx = 1
+        if selected_ids:
+            where_parts.append(f"ss.id = ANY(${idx}::bigint[])")
+            params.append(selected_ids); idx += 1
+        if sana_dan:
+            where_parts.append(f"ss.sana >= ${idx}::timestamptz")
+            params.append(sana_dan); idx += 1
+        if sana_gacha:
+            where_parts.append(f"ss.sana < ${idx}::timestamptz + interval '1 day'")
+            params.append(sana_gacha); idx += 1
+        where_sql = (" AND " + " AND ".join(where_parts)) if where_parts else ""
+
+        # Sotuvlar
+        sotuvlar = await c.fetch(f"""
+            SELECT ss.id, ss.klient_ismi, ss.jami, ss.tolangan, ss.qarz, ss.sana, ss.izoh,
+                   COALESCE(k.telefon, '') AS telefon,
+                   COALESCE(k.manzil, '')  AS manzil
+            FROM sotuv_sessiyalar ss
+            LEFT JOIN klientlar k ON k.id = ss.klient_id
+            WHERE 1=1 {where_sql}
+            ORDER BY ss.sana DESC
+        """, *params)
+
+        # Har sotuv uchun chiqimlar
+        sess_ids = [s["id"] for s in sotuvlar]
+        chiqimlar_by_sess: dict[int, list] = {}
+        if sess_ids:
+            chiq = await c.fetch("""
+                SELECT sessiya_id, tovar_nomi, miqdor, birlik, sotish_narxi, jami
+                FROM chiqimlar
+                WHERE sessiya_id = ANY($1::bigint[])
+                ORDER BY sessiya_id, id
+            """, sess_ids)
+            for ch in chiq:
+                chiqimlar_by_sess.setdefault(ch["sessiya_id"], []).append(ch)
+
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Накладной"
+
+    # Headers
+    headers = ["№", "Tovar nomi", "Miqdor", "Birlik", "Narx", "Summa"]
+    widths = [6, 35, 10, 10, 14, 14]
+
+    header_fill = PatternFill(start_color="0A819C", end_color="0A819C", fill_type="solid")
+    header_font = Font(bold=True, color="FFFFFF", size=11)
+    section_fill = PatternFill(start_color="FFE0B2", end_color="FFE0B2", fill_type="solid")
+    section_font = Font(bold=True, color="1A1A1A", size=11)
+    total_fill = PatternFill(start_color="E8F5E9", end_color="E8F5E9", fill_type="solid")
+    thin = Side(style="thin", color="888888")
+    border = Border(left=thin, right=thin, top=thin, bottom=thin)
+
+    for i, w in enumerate(widths, 1):
+        ws.column_dimensions[chr(64 + i)].width = w
+
+    row = 1
+    grand_total = 0.0
+    grand_count = 0
+
+    for s in sotuvlar:
+        sd = dict(s)
+        sana_str = sd["sana"].strftime("%d.%m.%Y %H:%M") if sd.get("sana") else ""
+        # Section header — klient + sana
+        ws.cell(row=row, column=1, value=f"📋 SOTUV #{sd['id']} · {sana_str}")
+        ws.merge_cells(start_row=row, start_column=1, end_row=row, end_column=6)
+        for col in range(1, 7):
+            cell = ws.cell(row=row, column=col)
+            cell.fill = section_fill
+            cell.font = section_font
+            cell.border = border
+        row += 1
+
+        # Klient info
+        ws.cell(row=row, column=1, value="Klient:")
+        ws.cell(row=row, column=1).font = Font(bold=True, size=10)
+        ws.cell(row=row, column=2, value=sd["klient_ismi"] or "Mijoz")
+        ws.merge_cells(start_row=row, start_column=2, end_row=row, end_column=4)
+        ws.cell(row=row, column=5, value="Telefon:")
+        ws.cell(row=row, column=5).font = Font(bold=True, size=10)
+        ws.cell(row=row, column=6, value=sd["telefon"] or "—")
+        for col in range(1, 7):
+            ws.cell(row=row, column=col).border = border
+        row += 1
+
+        if sd["manzil"]:
+            ws.cell(row=row, column=1, value="Manzil:")
+            ws.cell(row=row, column=1).font = Font(bold=True, size=10)
+            ws.cell(row=row, column=2, value=sd["manzil"])
+            ws.merge_cells(start_row=row, start_column=2, end_row=row, end_column=6)
+            for col in range(1, 7):
+                ws.cell(row=row, column=col).border = border
+            row += 1
+
+        # Column headers (per sotuv)
+        for i, h in enumerate(headers, 1):
+            cell = ws.cell(row=row, column=i, value=h)
+            cell.fill = header_fill
+            cell.font = header_font
+            cell.alignment = Alignment(horizontal="center", vertical="center")
+            cell.border = border
+        ws.row_dimensions[row].height = 22
+        row += 1
+
+        # Items
+        items = chiqimlar_by_sess.get(sd["id"], [])
+        sotuv_total = 0.0
+        for j, it in enumerate(items, 1):
+            id_ = dict(it)
+            vals = [
+                j,
+                id_["tovar_nomi"] or "—",
+                float(id_["miqdor"]),
+                id_["birlik"] or "dona",
+                float(id_["sotish_narxi"]),
+                float(id_["jami"]),
+            ]
+            for col, v in enumerate(vals, 1):
+                cell = ws.cell(row=row, column=col, value=v)
+                cell.border = border
+                if col in (3, 5, 6):
+                    cell.alignment = Alignment(horizontal="right")
+                if col in (5, 6):
+                    cell.number_format = '#,##0'
+            sotuv_total += float(id_["jami"])
+            row += 1
+
+        # Sotuv JAMI
+        ws.cell(row=row, column=1, value="JAMI:")
+        ws.merge_cells(start_row=row, start_column=1, end_row=row, end_column=5)
+        ws.cell(row=row, column=1).font = Font(bold=True, size=11)
+        ws.cell(row=row, column=1).alignment = Alignment(horizontal="right")
+        cell = ws.cell(row=row, column=6, value=sotuv_total)
+        cell.font = Font(bold=True, color="1B5E20", size=11)
+        cell.number_format = '#,##0'
+        cell.alignment = Alignment(horizontal="right")
+        for col in range(1, 7):
+            ws.cell(row=row, column=col).fill = total_fill
+            ws.cell(row=row, column=col).border = border
+        row += 1
+
+        # To'langan / qarz qisqartirilgan ko'rinish
+        if float(sd.get("tolangan") or 0) > 0 or float(sd.get("qarz") or 0) > 0:
+            ws.cell(row=row, column=1, value=f"To'langan: {float(sd.get('tolangan') or 0):,.0f}  ·  Qarz: {float(sd.get('qarz') or 0):,.0f}")
+            ws.merge_cells(start_row=row, start_column=1, end_row=row, end_column=6)
+            ws.cell(row=row, column=1).font = Font(italic=True, color="6B5B4D", size=9)
+            ws.cell(row=row, column=1).alignment = Alignment(horizontal="left")
+            row += 1
+
+        # Bo'sh qator
+        row += 1
+        grand_total += sotuv_total
+        grand_count += 1
+
+    # Grand total
+    if grand_count > 1:
+        ws.cell(row=row, column=1, value="GRAND TOTAL:")
+        ws.merge_cells(start_row=row, start_column=1, end_row=row, end_column=5)
+        ws.cell(row=row, column=1).font = Font(bold=True, size=14, color="C75D3C")
+        ws.cell(row=row, column=1).alignment = Alignment(horizontal="right")
+        cell = ws.cell(row=row, column=6, value=grand_total)
+        cell.font = Font(bold=True, color="C75D3C", size=14)
+        cell.number_format = '#,##0'
+        cell.alignment = Alignment(horizontal="right")
+        for col in range(1, 7):
+            ws.cell(row=row, column=col).fill = PatternFill(start_color="FCE9DD", end_color="FCE9DD", fill_type="solid")
+            ws.cell(row=row, column=col).border = border
+
+    buf = io.BytesIO()
+    wb.save(buf); buf.seek(0)
+    return {
+        "filename": f"Накладной_{len(sotuvlar)}_zakaz.xlsx",
+        "content_base64": base64.b64encode(buf.getvalue()).decode(),
+        "soni": len(sotuvlar),
+        "jami_summa": grand_total,
+    }
+
+
 @app.get("/api/v1/savdo/{sessiya_id}", tags=["Sotuv"])
 async def savdo_tafsilot(sessiya_id: int, uid: int = Depends(get_uid)):
     """Bitta sotuv sessiyasi tafsiloti — tovarlar + klient + status bilan"""

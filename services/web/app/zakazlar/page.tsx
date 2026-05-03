@@ -68,12 +68,14 @@ export default function ZakazlarPage() {
   const [exporting, setExporting] = useState(false)
 
   // Excel export — JSON+base64 javobini blob ga aylantirib yuklash
-  const downloadExcel = async (selectedOnly: boolean) => {
+  // format = "registr" (oddiy) yoki "nakladnoy" (har tovar alohida)
+  const downloadExcel = async (selectedOnly: boolean, format: "registr" | "nakladnoy" = "registr") => {
     setExporting(true)
     try {
-      const path = selectedOnly && selected.size > 0
-        ? `/api/v1/savdolar/excel?ids=${Array.from(selected).join(",")}`
-        : "/api/v1/savdolar/excel"
+      const idsParam = selectedOnly && selected.size > 0 ? `?ids=${Array.from(selected).join(",")}` : ""
+      const path = format === "nakladnoy"
+        ? `/api/v1/savdolar/nakladnoy/excel${idsParam}`
+        : `/api/v1/savdolar/excel${idsParam}`
       const resp = await api.get<{ filename: string; content_base64: string }>(path)
       const bin = atob(resp.content_base64)
       const bytes = new Uint8Array(bin.length)
@@ -86,7 +88,8 @@ export default function ZakazlarPage() {
       document.body.appendChild(a); a.click(); a.remove()
       URL.revokeObjectURL(url)
       const tanlangan = selectedOnly && selected.size > 0 ? selected.size : filtered.length
-      toast.success(`${tanlangan} ta zakaz Excel'ga yuklandi`)
+      const formatLabel = format === "nakladnoy" ? "Накладной" : "Реестр"
+      toast.success(`${tanlangan} ta zakaz ${formatLabel}'da yuklandi`)
     } catch (e) {
       toast.error(e instanceof ApiError ? e.detail : (e as Error).message)
     } finally {
@@ -149,9 +152,13 @@ export default function ZakazlarPage() {
             <Button variant="outline">
               <Filter className="w-4 h-4" /> Qo'shimcha
             </Button>
-            <Button variant="outline" onClick={() => downloadExcel(false)} disabled={exporting}>
+            <Button variant="outline" onClick={() => downloadExcel(false, "registr")} disabled={exporting}>
               {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-              Excel (barcha)
+              Реестр (barcha)
+            </Button>
+            <Button variant="outline" onClick={() => downloadExcel(false, "nakladnoy")} disabled={exporting}>
+              {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+              Накладной (barcha)
             </Button>
           </div>
         </Card>
@@ -162,10 +169,14 @@ export default function ZakazlarPage() {
               <span className="text-sm font-semibold text-emerald-800">
                 {selected.size} ta zakaz tanlangan
               </span>
-              <div className="flex gap-2">
-                <Button variant="outline" onClick={() => downloadExcel(true)} disabled={exporting}>
+              <div className="flex gap-2 flex-wrap">
+                <Button variant="outline" onClick={() => downloadExcel(true, "registr")} disabled={exporting}>
                   {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-                  Excel ({selected.size} ta)
+                  Реестр ({selected.size})
+                </Button>
+                <Button variant="outline" onClick={() => downloadExcel(true, "nakladnoy")} disabled={exporting}>
+                  {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                  Накладной ({selected.size})
                 </Button>
                 <Button variant="outline" onClick={printSelected}>
                   <Printer className="w-4 h-4" /> Pechat
