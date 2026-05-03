@@ -73,7 +73,13 @@ async def foyda_zarar(conn, uid: int, sana_dan=None, sana_gacha=None) -> dict:
               BETWEEN $2::date AND $3::date
     """, uid, sana_dan, sana_gacha) or Decimal("0")
 
-    sof_sotuv = D(sotuv["jami_sotuv"]) - D(qaytarish) - D(chegirma)
+    # CANONICAL FORMULA (audit fix #6+#7 — barcha hisobotlarda bir xil):
+    # tushum = sotuv_sessiyalar.jami (raw)
+    # sof_sotuv = tushum - qaytarish (chegirma chegirib olinmaydi — u ichidagi narxda)
+    # yalpi_foyda = sof_sotuv - tannarx
+    # sof_foyda = yalpi_foyda - xarajatlar
+    tushum = D(sotuv["jami_sotuv"])
+    sof_sotuv = tushum - D(qaytarish)
 
     # ═══ TANNARX (COGS) ═══
     tannarx = await conn.fetchval("""
