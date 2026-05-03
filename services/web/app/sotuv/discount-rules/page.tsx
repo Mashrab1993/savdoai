@@ -3,7 +3,7 @@ import { useState } from "react"
 import { AdminLayout } from "@/components/layout/admin-layout"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { ArrowLeft, Plus, Tag, ToggleLeft, Edit, Trash2, Sparkles } from "lucide-react"
+import { ArrowLeft, Plus, Tag, Edit, Trash2, Sparkles } from "lucide-react"
 import Link from "next/link"
 
 type Rule = {
@@ -24,6 +24,8 @@ const RULES: Rule[] = [
   { id: 8, name: "Cash sotuv (naqd)", priority: 8, triggers: ["To'lov turi = Naqd"], conditions: [], action: "3% chegirma", active: true, applicationsCount: 248, totalDiscount: 4_240_000 },
 ]
 
+const SERIF: React.CSSProperties = { fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }
+
 function fmt(n: number) { return n.toLocaleString("ru-RU") }
 
 export default function DiscountRulesPage() {
@@ -39,110 +41,107 @@ export default function DiscountRulesPage() {
 
   return (
     <AdminLayout>
-      <div className="max-w-[1700px] mx-auto space-y-4">
-        <div className="flex items-center gap-3">
-          <Link href="/sotuv" className="p-2 hover:bg-slate-100 rounded-lg"><ArrowLeft className="w-5 h-5" /></Link>
-          <div className="flex-1">
-            <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
-              <Tag className="w-7 h-7 text-rose-600" />
-              Chegirma qoidalari (Engine)
-            </h1>
-            <p className="text-sm text-slate-500">{activeRules} faol qoida · {totalApplications} marta qo'llandi · jami {fmt(totalDiscount / 1_000_000)} M chegirma</p>
+      <div className="-mx-4 -my-4 px-4 py-6 min-h-full" style={{ background: "linear-gradient(180deg, #F5F1EB 0%, #FAF7F2 100%)" }}>
+        <div className="max-w-[1700px] mx-auto space-y-5">
+          <div className="flex items-end gap-3 border-b border-[#E8E0D3] pb-6">
+            <Link href="/sotuv" className="p-2 hover:bg-[#F0EAE0] rounded-lg"><ArrowLeft className="w-5 h-5 text-[#6B5B4D]" /></Link>
+            <div className="flex-1">
+              <div className="text-xs uppercase tracking-[0.2em] text-[#9C8A6E] font-medium mb-2">SAVDOAI · SOTUV</div>
+              <h1 className="text-4xl font-light tracking-tight text-[#1A1A1A] flex items-center gap-3" style={SERIF}>
+                <Tag className="w-8 h-8 text-[#C75D3C]" />
+                Chegirma <span className="italic text-[#C75D3C]">qoidalari</span>
+              </h1>
+              <p className="text-sm text-[#6B5B4D] mt-2">{activeRules} faol qoida · {totalApplications} marta qo'llandi · jami {fmt(totalDiscount / 1_000_000)} M chegirma</p>
+            </div>
+            <Button className="gap-1 text-white" style={{ background: "#C75D3C" }}><Plus className="w-4 h-4" /> Yangi qoida</Button>
           </div>
-          <Button className="gap-1"><Plus className="w-4 h-4" /> Yangi qoida</Button>
-        </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <Card className="p-4 bg-emerald-50 border-emerald-200">
-            <Tag className="w-5 h-5 text-emerald-600 mb-2" />
-            <div className="text-xs font-bold text-emerald-700">Faol qoidalar</div>
-            <div className="text-2xl font-bold mt-1">{activeRules}</div>
-          </Card>
-          <Card className="p-4 bg-blue-50 border-blue-200">
-            <Tag className="w-5 h-5 text-blue-600 mb-2" />
-            <div className="text-xs font-bold text-blue-700">Qo'llanish soni</div>
-            <div className="text-2xl font-bold mt-1">{fmt(totalApplications)}</div>
-          </Card>
-          <Card className="p-4 bg-violet-50 border-violet-200">
-            <Tag className="w-5 h-5 text-violet-600 mb-2" />
-            <div className="text-xs font-bold text-violet-700">Jami chegirma</div>
-            <div className="text-2xl font-bold mt-1 font-mono">{fmt(totalDiscount / 1_000_000)} M</div>
-          </Card>
-          <Card className="p-4 bg-amber-50 border-amber-200">
-            <Tag className="w-5 h-5 text-amber-600 mb-2" />
-            <div className="text-xs font-bold text-amber-700">O'rtacha bir zakazga</div>
-            <div className="text-2xl font-bold mt-1 font-mono">{fmt(Math.round(totalDiscount / Math.max(1, totalApplications) / 1000))}k</div>
-          </Card>
-        </div>
-
-        <Card className="p-5">
-          <h2 className="text-lg font-bold mb-4">Qoidalar (prioritet bo'yicha)</h2>
-          <div className="space-y-2">
-            {rules.sort((a, b) => a.priority - b.priority).map(r => (
-              <div key={r.id} className={`p-4 rounded-lg border-l-4 ${r.active ? "border-emerald-500 bg-white" : "border-slate-300 bg-slate-50 opacity-60"}`}>
-                <div className="flex items-start gap-3">
-                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center font-bold text-white flex-shrink-0 ${r.active ? "bg-emerald-500" : "bg-slate-400"}`}>
-                    {r.priority}
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2 flex-wrap">
-                      <h3 className="font-bold text-base">{r.name}</h3>
-                      {r.active ? <span className="text-xs px-2 py-0.5 rounded bg-emerald-100 text-emerald-700">✓ Faol</span>
-                                 : <span className="text-xs px-2 py-0.5 rounded bg-slate-200 text-slate-700">○ Off</span>}
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
-                      <div className="bg-blue-50 p-2 rounded border border-blue-200">
-                        <div className="font-bold text-blue-700 mb-1">⚡ Trigger (bo'lganda)</div>
-                        <ul className="space-y-0.5">
-                          {r.triggers.map((t, i) => <li key={i}>• {t}</li>)}
-                        </ul>
-                      </div>
-                      {r.conditions.length > 0 && (
-                        <div className="bg-amber-50 p-2 rounded border border-amber-200">
-                          <div className="font-bold text-amber-700 mb-1">📋 Shart (qachon)</div>
-                          <ul className="space-y-0.5">
-                            {r.conditions.map((c, i) => <li key={i}>• {c}</li>)}
-                          </ul>
-                        </div>
-                      )}
-                      <div className="bg-emerald-50 p-2 rounded border border-emerald-200">
-                        <div className="font-bold text-emerald-700 mb-1">🎯 Amal (chegirma)</div>
-                        <div className="font-bold text-base">{r.action}</div>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-3 mt-2 text-xs text-slate-500">
-                      <span>Qo'llanish: <span className="font-bold">{r.applicationsCount}</span></span>
-                      <span>Jami chegirma: <span className="font-bold font-mono text-rose-700">{fmt(r.totalDiscount / 1000)}k so'm</span></span>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-1 flex-shrink-0">
-                    <button onClick={() => toggle(r.id)} className={`w-12 h-6 rounded-full relative transition-colors ${r.active ? "bg-emerald-500" : "bg-slate-300"}`}>
-                      <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${r.active ? "translate-x-6" : ""}`} />
-                    </button>
-                    <button className="p-1.5 text-blue-600 hover:bg-blue-50 rounded"><Edit className="w-4 h-4" /></button>
-                    <button className="p-1.5 text-rose-600 hover:bg-rose-50 rounded"><Trash2 className="w-4 h-4" /></button>
-                  </div>
-                </div>
-              </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {[
+              { label: "FAOL QOIDALAR", value: activeRules, color: "#059669" },
+              { label: "QO'LLANISH SONI", value: fmt(totalApplications), color: "#1D4ED8" },
+              { label: "JAMI CHEGIRMA, M", value: fmt(totalDiscount / 1_000_000), color: "#6D28D9" },
+              { label: "O'RTACHA, K", value: fmt(Math.round(totalDiscount / Math.max(1, totalApplications) / 1000)), color: "#C75D3C" },
+            ].map((kpi, i) => (
+              <Card key={i} className="bg-white border border-[#E8E0D3] shadow-sm rounded-2xl p-5 relative overflow-hidden">
+                <Tag className="w-5 h-5 mb-3" style={{ color: kpi.color }} />
+                <div className="text-[10px] uppercase tracking-[0.18em] font-medium" style={{ color: kpi.color }}>{kpi.label}</div>
+                <div className="text-3xl font-light mt-2 tabular-nums text-[#1A1A1A]" style={SERIF}>{kpi.value}</div>
+                <div className="absolute bottom-0 left-0 right-0 h-px" style={{ background: kpi.color, opacity: 0.4 }} />
+              </Card>
             ))}
           </div>
-        </Card>
 
-        <Card className="p-5 bg-violet-50 border-violet-200">
-          <div className="flex items-start gap-3">
-            <Sparkles className="w-6 h-6 text-violet-600 flex-shrink-0 mt-1" />
-            <div>
-              <h3 className="font-bold text-violet-800">Qoida engine qanday ishlaydi?</h3>
-              <p className="text-sm text-slate-700 mt-1">
-                Tizim har zakaz uchun qoidalarni prioritet bo'yicha tekshiradi. Birinchi mos tushgan qoida qo'llanadi.
-                Bir nechta qoida bo'lsa — ularning yig'indisi (max 25%) hisoblanadi. Qoidalar bekor qilinishi yoki o'zgartirilishi mumkin.
-              </p>
+          <Card className="bg-white border border-[#E8E0D3] shadow-sm rounded-2xl p-6">
+            <h2 className="text-xl font-light mb-4 text-[#1A1A1A]" style={SERIF}>Qoidalar (prioritet bo'yicha)</h2>
+            <div className="space-y-2">
+              {rules.sort((a, b) => a.priority - b.priority).map(r => (
+                <div key={r.id} className={`p-4 rounded-2xl border ${r.active ? "bg-white border-[#E8E0D3]" : "bg-[#FAF7F2] border-[#F0EAE0] opacity-70"}`}>
+                  <div className="flex items-start gap-3">
+                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center font-light text-white text-lg flex-shrink-0`} style={{ background: r.active ? "#C75D3C" : "#9C8A6E", fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>
+                      {r.priority}
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2 flex-wrap">
+                        <h3 className="font-medium text-base text-[#1A1A1A]" style={SERIF}>{r.name}</h3>
+                        {r.active
+                          ? <span className="text-xs px-2 py-0.5 rounded bg-emerald-50 text-emerald-700">Faol</span>
+                          : <span className="text-xs px-2 py-0.5 rounded bg-[#F0EAE0] text-[#6B5B4D]">Off</span>}
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+                        <div className="bg-blue-50 p-2 rounded border border-blue-100">
+                          <div className="font-medium text-blue-700 mb-1 uppercase tracking-wider text-[10px]">Trigger (bo'lganda)</div>
+                          <ul className="space-y-0.5 text-[#1A1A1A]">
+                            {r.triggers.map((t, i) => <li key={i}>· {t}</li>)}
+                          </ul>
+                        </div>
+                        {r.conditions.length > 0 && (
+                          <div className="bg-[#FCE9DD] p-2 rounded border border-[#E8C9A8]">
+                            <div className="font-medium text-[#D97706] mb-1 uppercase tracking-wider text-[10px]">Shart (qachon)</div>
+                            <ul className="space-y-0.5 text-[#1A1A1A]">
+                              {r.conditions.map((c, i) => <li key={i}>· {c}</li>)}
+                            </ul>
+                          </div>
+                        )}
+                        <div className="bg-emerald-50 p-2 rounded border border-emerald-100">
+                          <div className="font-medium text-emerald-700 mb-1 uppercase tracking-wider text-[10px]">Amal (chegirma)</div>
+                          <div className="font-medium text-base text-[#1A1A1A]">{r.action}</div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-3 mt-2 text-xs text-[#9C8A6E]">
+                        <span>Qo'llanish: <span className="font-medium text-[#1A1A1A]">{r.applicationsCount}</span></span>
+                        <span>Jami chegirma: <span className="font-medium font-mono tabular-nums text-[#C75D3C]">{fmt(r.totalDiscount / 1000)}k so'm</span></span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-1 flex-shrink-0">
+                      <button onClick={() => toggle(r.id)} className={`w-12 h-6 rounded-full relative transition-colors`} style={{ background: r.active ? "#C75D3C" : "#E8E0D3" }}>
+                        <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${r.active ? "translate-x-6" : ""}`} />
+                      </button>
+                      <button className="p-1.5 text-[#6B5B4D] hover:bg-[#F0EAE0] rounded"><Edit className="w-4 h-4" /></button>
+                      <button className="p-1.5 text-[#C75D3C] hover:bg-[#F5E5D6] rounded"><Trash2 className="w-4 h-4" /></button>
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
-          </div>
-        </Card>
+          </Card>
+
+          <Card className="bg-[#FAF7F2] border border-[#E8E0D3] shadow-sm rounded-2xl p-6">
+            <div className="flex items-start gap-3">
+              <Sparkles className="w-6 h-6 text-[#C75D3C] flex-shrink-0 mt-1" />
+              <div>
+                <h3 className="font-medium text-[#1A1A1A]" style={SERIF}>Qoida engine qanday ishlaydi?</h3>
+                <p className="text-sm text-[#6B5B4D] mt-1">
+                  Tizim har zakaz uchun qoidalarni prioritet bo'yicha tekshiradi. Birinchi mos tushgan qoida qo'llanadi.
+                  Bir nechta qoida bo'lsa — ularning yig'indisi (max 25%) hisoblanadi. Qoidalar bekor qilinishi yoki o'zgartirilishi mumkin.
+                </p>
+              </div>
+            </div>
+          </Card>
+        </div>
       </div>
     </AdminLayout>
   )

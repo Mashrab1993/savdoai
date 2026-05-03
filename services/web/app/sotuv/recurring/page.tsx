@@ -23,12 +23,14 @@ const SUBS: Subscription[] = [
   { id: 6, client: "Family Маркет", agent: "ДАВЛАТ", cadence: "biweekly", nextDate: "2026-05-15", lastOrder: "2026-05-01", itemsCount: 14, avgSum: 1_640_000, totalGenerated: 11_480_000, active: true, autoConfirm: true },
 ]
 
+const SERIF: React.CSSProperties = { fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }
+
 function fmt(n: number) { return n.toLocaleString("ru-RU") }
 
 const CADENCE_LABEL: Record<string, string> = {
-  weekly: "🔁 Haftalik",
-  biweekly: "🔁 2-haftalik",
-  monthly: "🔁 Oylik",
+  weekly: "Haftalik",
+  biweekly: "2-haftalik",
+  monthly: "Oylik",
 }
 const CADENCE_DAYS: Record<string, number> = {
   weekly: 7, biweekly: 14, monthly: 30,
@@ -47,107 +49,107 @@ export default function RecurringOrdersPage() {
 
   return (
     <AdminLayout>
-      <div className="max-w-[1700px] mx-auto space-y-4">
-        <div className="flex items-center gap-3">
-          <Link href="/sotuv" className="p-2 hover:bg-slate-100 rounded-lg"><ArrowLeft className="w-5 h-5" /></Link>
-          <div className="flex-1">
-            <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
-              <Repeat className="w-7 h-7 text-emerald-600" />
-              Avtomatik takroriy zakazlar
-            </h1>
-            <p className="text-sm text-slate-500">{activeCount} faol obuna · ~{fmt(totalMonthlyValue / 1_000_000)} M oylik · {fmt(totalLifetime / 1_000_000)} M lifetime</p>
-          </div>
-          <Button className="gap-1"><Plus className="w-4 h-4" /> Yangi obuna</Button>
-        </div>
-
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <Card className="p-4 bg-emerald-50 border-emerald-200">
-            <Repeat className="w-5 h-5 text-emerald-600 mb-2" />
-            <div className="text-xs font-bold text-emerald-700">Faol obuna</div>
-            <div className="text-2xl font-bold mt-1">{activeCount}</div>
-          </Card>
-          <Card className="p-4 bg-blue-50 border-blue-200">
-            <Calendar className="w-5 h-5 text-blue-600 mb-2" />
-            <div className="text-xs font-bold text-blue-700">Bu oy ETA</div>
-            <div className="text-2xl font-bold mt-1 font-mono">{fmt(totalMonthlyValue / 1_000_000)} M</div>
-          </Card>
-          <Card className="p-4 bg-violet-50 border-violet-200">
-            <Sparkles className="w-5 h-5 text-violet-600 mb-2" />
-            <div className="text-xs font-bold text-violet-700">Auto-confirm</div>
-            <div className="text-2xl font-bold mt-1">{subs.filter(s => s.autoConfirm).length}</div>
-          </Card>
-          <Card className="p-4 bg-amber-50 border-amber-200">
-            <Repeat className="w-5 h-5 text-amber-600 mb-2" />
-            <div className="text-xs font-bold text-amber-700">Lifetime tushum</div>
-            <div className="text-2xl font-bold mt-1 font-mono">{fmt(totalLifetime / 1_000_000)} M</div>
-          </Card>
-        </div>
-
-        <Card className="p-5">
-          <h2 className="text-lg font-bold mb-4">Obunalar ro'yxati</h2>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b-2 border-slate-200 text-left bg-slate-50">
-                  <th className="py-3 px-2">Klient</th>
-                  <th className="py-3 px-2">Agent</th>
-                  <th className="py-3 px-2 text-center">Davriylik</th>
-                  <th className="py-3 px-2 text-center">Keyingi</th>
-                  <th className="py-3 px-2 text-right">SKU</th>
-                  <th className="py-3 px-2 text-right">O'rta zakaz</th>
-                  <th className="py-3 px-2 text-right">Lifetime</th>
-                  <th className="py-3 px-2 text-center">Auto</th>
-                  <th className="py-3 px-2 text-center">Holat</th>
-                  <th className="py-3 px-2 text-center w-32">Amal</th>
-                </tr>
-              </thead>
-              <tbody>
-                {subs.map(s => (
-                  <tr key={s.id} className={`border-b border-slate-100 hover:bg-slate-50 ${!s.active ? "opacity-50" : ""}`}>
-                    <td className="py-3 px-2 font-semibold">{s.client}</td>
-                    <td className="py-3 px-2 text-xs">{s.agent}</td>
-                    <td className="py-3 px-2 text-center">
-                      <span className="text-xs px-2 py-0.5 rounded bg-blue-100 text-blue-700">{CADENCE_LABEL[s.cadence]}</span>
-                    </td>
-                    <td className="py-3 px-2 text-center font-mono text-xs">{s.nextDate}</td>
-                    <td className="py-3 px-2 text-right font-mono">{s.itemsCount}</td>
-                    <td className="py-3 px-2 text-right font-mono font-bold text-emerald-700">{fmt(s.avgSum)}</td>
-                    <td className="py-3 px-2 text-right font-mono">{fmt(s.totalGenerated / 1_000_000)} M</td>
-                    <td className="py-3 px-2 text-center">
-                      {s.autoConfirm ? <span className="text-xs px-2 py-0.5 rounded bg-emerald-100 text-emerald-700">✓ Auto</span> : <span className="text-xs px-2 py-0.5 rounded bg-amber-100 text-amber-700">Manual</span>}
-                    </td>
-                    <td className="py-3 px-2 text-center">
-                      {s.active ? <span className="text-xs px-2 py-0.5 rounded bg-emerald-100 text-emerald-700">▶ Faol</span> : <span className="text-xs px-2 py-0.5 rounded bg-slate-100 text-slate-700">⏸ Pauza</span>}
-                    </td>
-                    <td className="py-3 px-2">
-                      <div className="flex items-center justify-center gap-1">
-                        <button onClick={() => toggleActive(s.id)} className={`p-1.5 rounded ${s.active ? "text-amber-600 hover:bg-amber-50" : "text-emerald-600 hover:bg-emerald-50"}`} title={s.active ? "Pauza" : "Davom"}>
-                          {s.active ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
-                        </button>
-                        <button className="p-1.5 text-blue-600 hover:bg-blue-50 rounded"><Edit className="w-4 h-4" /></button>
-                        <button className="p-1.5 text-rose-600 hover:bg-rose-50 rounded"><Trash2 className="w-4 h-4" /></button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </Card>
-
-        <Card className="p-5 bg-emerald-50 border-emerald-200">
-          <div className="flex items-start gap-3">
-            <Sparkles className="w-6 h-6 text-emerald-600 flex-shrink-0 mt-1" />
-            <div>
-              <h3 className="font-bold text-emerald-800">Avtomatik takroriy zakaz nima?</h3>
-              <p className="text-sm text-slate-700 mt-1">
-                Klient haftalik/oylik bir xil tovar to'plamini sotib oladigan bo'lsa — uni avtomatlashtirish mumkin.
-                Belgilangan kunda tizim avtomatik zakaz yaratadi va (auto-confirm bo'lsa) yetkazib berishga yuboradi.
-                Champions klientlar bilan ishlash uchun ideal vosita.
-              </p>
+      <div className="-mx-4 -my-4 px-4 py-6 min-h-full" style={{ background: "linear-gradient(180deg, #F5F1EB 0%, #FAF7F2 100%)" }}>
+        <div className="max-w-[1700px] mx-auto space-y-5">
+          <div className="flex items-end gap-3 border-b border-[#E8E0D3] pb-6">
+            <Link href="/sotuv" className="p-2 hover:bg-[#F0EAE0] rounded-lg"><ArrowLeft className="w-5 h-5 text-[#6B5B4D]" /></Link>
+            <div className="flex-1">
+              <div className="text-xs uppercase tracking-[0.2em] text-[#9C8A6E] font-medium mb-2">SAVDOAI · SOTUV</div>
+              <h1 className="text-4xl font-light tracking-tight text-[#1A1A1A] flex items-center gap-3" style={SERIF}>
+                <Repeat className="w-8 h-8 text-[#C75D3C]" />
+                Avtomatik <span className="italic text-[#C75D3C]">takroriy zakazlar</span>
+              </h1>
+              <p className="text-sm text-[#6B5B4D] mt-2">{activeCount} faol obuna · ~{fmt(totalMonthlyValue / 1_000_000)} M oylik · {fmt(totalLifetime / 1_000_000)} M lifetime</p>
             </div>
+            <Button className="gap-1 text-white" style={{ background: "#C75D3C" }}><Plus className="w-4 h-4" /> Yangi obuna</Button>
           </div>
-        </Card>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {[
+              { Icon: Repeat, label: "FAOL OBUNA", value: activeCount, color: "#059669" },
+              { Icon: Calendar, label: "BU OY ETA, M", value: fmt(totalMonthlyValue / 1_000_000), color: "#1D4ED8" },
+              { Icon: Sparkles, label: "AUTO-CONFIRM", value: subs.filter(s => s.autoConfirm).length, color: "#6D28D9" },
+              { Icon: Repeat, label: "LIFETIME, M", value: fmt(totalLifetime / 1_000_000), color: "#C75D3C" },
+            ].map((kpi, i) => (
+              <Card key={i} className="bg-white border border-[#E8E0D3] shadow-sm rounded-2xl p-5 relative overflow-hidden">
+                <kpi.Icon className="w-5 h-5 mb-3" style={{ color: kpi.color }} />
+                <div className="text-[10px] uppercase tracking-[0.18em] font-medium" style={{ color: kpi.color }}>{kpi.label}</div>
+                <div className="text-3xl font-light mt-2 tabular-nums text-[#1A1A1A]" style={SERIF}>{kpi.value}</div>
+                <div className="absolute bottom-0 left-0 right-0 h-px" style={{ background: kpi.color, opacity: 0.4 }} />
+              </Card>
+            ))}
+          </div>
+
+          <Card className="bg-white border border-[#E8E0D3] shadow-sm rounded-2xl p-6">
+            <h2 className="text-xl font-light mb-4 text-[#1A1A1A]" style={SERIF}>Obunalar ro'yxati</h2>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-[#FAF7F2] border-b border-[#E8E0D3]">
+                    <th className="py-3 px-2 text-left text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Klient</th>
+                    <th className="py-3 px-2 text-left text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Agent</th>
+                    <th className="py-3 px-2 text-center text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Davriylik</th>
+                    <th className="py-3 px-2 text-center text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Keyingi</th>
+                    <th className="py-3 px-2 text-right text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">SKU</th>
+                    <th className="py-3 px-2 text-right text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">O'rta zakaz</th>
+                    <th className="py-3 px-2 text-right text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Lifetime</th>
+                    <th className="py-3 px-2 text-center text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Auto</th>
+                    <th className="py-3 px-2 text-center text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Holat</th>
+                    <th className="py-3 px-2 text-center text-xs uppercase tracking-wider font-medium text-[#9C8A6E] w-32">Amal</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {subs.map(s => (
+                    <tr key={s.id} className={`border-b border-[#F0EAE0] hover:bg-[#FAF7F2] ${!s.active ? "opacity-50" : ""}`}>
+                      <td className="py-3 px-2 font-medium text-[#1A1A1A]">{s.client}</td>
+                      <td className="py-3 px-2 text-xs text-[#6B5B4D]">{s.agent}</td>
+                      <td className="py-3 px-2 text-center">
+                        <span className="text-xs px-2 py-0.5 rounded bg-blue-50 text-blue-700">{CADENCE_LABEL[s.cadence]}</span>
+                      </td>
+                      <td className="py-3 px-2 text-center font-mono tabular-nums text-xs text-[#1A1A1A]">{s.nextDate}</td>
+                      <td className="py-3 px-2 text-right font-mono tabular-nums text-[#1A1A1A]">{s.itemsCount}</td>
+                      <td className="py-3 px-2 text-right font-mono tabular-nums font-medium text-emerald-700">{fmt(s.avgSum)}</td>
+                      <td className="py-3 px-2 text-right font-mono tabular-nums text-[#1A1A1A]">{fmt(s.totalGenerated / 1_000_000)} M</td>
+                      <td className="py-3 px-2 text-center">
+                        {s.autoConfirm
+                          ? <span className="text-xs px-2 py-0.5 rounded bg-emerald-50 text-emerald-700">Auto</span>
+                          : <span className="text-xs px-2 py-0.5 rounded bg-[#FCE9DD] text-[#D97706]">Manual</span>}
+                      </td>
+                      <td className="py-3 px-2 text-center">
+                        {s.active
+                          ? <span className="text-xs px-2 py-0.5 rounded bg-emerald-50 text-emerald-700">Faol</span>
+                          : <span className="text-xs px-2 py-0.5 rounded bg-[#F0EAE0] text-[#6B5B4D]">Pauza</span>}
+                      </td>
+                      <td className="py-3 px-2">
+                        <div className="flex items-center justify-center gap-1">
+                          <button onClick={() => toggleActive(s.id)} className={`p-1.5 rounded ${s.active ? "text-[#D97706] hover:bg-[#FCE9DD]" : "text-emerald-700 hover:bg-emerald-50"}`} title={s.active ? "Pauza" : "Davom"}>
+                            {s.active ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+                          </button>
+                          <button className="p-1.5 text-[#6B5B4D] hover:bg-[#F0EAE0] rounded"><Edit className="w-4 h-4" /></button>
+                          <button className="p-1.5 text-[#C75D3C] hover:bg-[#F5E5D6] rounded"><Trash2 className="w-4 h-4" /></button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </Card>
+
+          <Card className="bg-[#FAF7F2] border border-[#E8E0D3] shadow-sm rounded-2xl p-6">
+            <div className="flex items-start gap-3">
+              <Sparkles className="w-6 h-6 text-[#C75D3C] flex-shrink-0 mt-1" />
+              <div>
+                <h3 className="font-medium text-[#1A1A1A]" style={SERIF}>Avtomatik takroriy zakaz nima?</h3>
+                <p className="text-sm text-[#6B5B4D] mt-1">
+                  Klient haftalik/oylik bir xil tovar to'plamini sotib oladigan bo'lsa — uni avtomatlashtirish mumkin.
+                  Belgilangan kunda tizim avtomatik zakaz yaratadi va (auto-confirm bo'lsa) yetkazib berishga yuboradi.
+                  Champions klientlar bilan ishlash uchun ideal vosita.
+                </p>
+              </div>
+            </div>
+          </Card>
+        </div>
       </div>
     </AdminLayout>
   )

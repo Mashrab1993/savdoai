@@ -26,29 +26,31 @@ const CONTRACTS: Contract[] = [
 ]
 
 const TYPE_LABEL: Record<string, string> = {
-  supply: "📦 Yetkazib berish",
-  wholesale: "🏢 Ulgurji",
-  exclusive: "👑 Ekskluziv",
-  consignment: "🤝 Konsignatsiya",
+  supply: "Yetkazib berish",
+  wholesale: "Ulgurji",
+  exclusive: "Ekskluziv",
+  consignment: "Konsignatsiya",
 }
 const TYPE_COLOR: Record<string, string> = {
-  supply: "bg-blue-100 text-blue-700",
-  wholesale: "bg-emerald-100 text-emerald-700",
-  exclusive: "bg-amber-100 text-amber-700",
-  consignment: "bg-violet-100 text-violet-700",
+  supply: "bg-blue-50 text-blue-700",
+  wholesale: "bg-emerald-50 text-emerald-700",
+  exclusive: "bg-[#FCE9DD] text-[#D97706]",
+  consignment: "bg-purple-50 text-purple-700",
 }
 const STATUS_COLOR: Record<string, string> = {
-  active: "bg-emerald-100 text-emerald-700",
-  expiring: "bg-amber-100 text-amber-700",
-  expired: "bg-rose-100 text-rose-700",
-  draft: "bg-slate-100 text-slate-700",
+  active: "bg-emerald-50 text-emerald-700",
+  expiring: "bg-[#FCE9DD] text-[#D97706]",
+  expired: "bg-[#F5E5D6] text-[#C75D3C]",
+  draft: "bg-[#F0EAE0] text-[#6B5B4D]",
 }
 const STATUS_LABEL: Record<string, string> = {
-  active: "✓ Faol",
-  expiring: "⚠️ Tugayapti",
-  expired: "✕ Tugagan",
-  draft: "📝 Qoralama",
+  active: "Faol",
+  expiring: "Tugayapti",
+  expired: "Tugagan",
+  draft: "Qoralama",
 }
+
+const SERIF: React.CSSProperties = { fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }
 
 function fmt(n: number) { return n.toLocaleString("ru-RU") }
 
@@ -68,120 +70,125 @@ export default function ContractsPage() {
 
   const expiringCount = CONTRACTS.filter(c => c.status === "expiring").length
   const totalRevenue = CONTRACTS.reduce((s, c) => s + c.revenueGenerated, 0)
+  const activeCount = CONTRACTS.filter(c => c.status === "active").length
+  const expiredCount = CONTRACTS.filter(c => c.status === "expired").length
 
   return (
     <AdminLayout>
-      <div className="max-w-[1700px] mx-auto space-y-4">
-        <div className="flex items-center gap-3">
-          <Link href="/sotuv" className="p-2 hover:bg-slate-100 rounded-lg"><ArrowLeft className="w-5 h-5" /></Link>
-          <div className="flex-1">
-            <h1 className="text-2xl font-bold tracking-tight">Shartnomalar</h1>
-            <p className="text-sm text-slate-500">{CONTRACTS.length} ta shartnoma · jami {fmt(totalRevenue / 1_000_000)} M tushum keltirilgan</p>
+      <div className="-mx-4 -my-4 px-4 py-6 min-h-full" style={{ background: "linear-gradient(180deg, #F5F1EB 0%, #FAF7F2 100%)" }}>
+        <div className="max-w-[1700px] mx-auto space-y-5">
+          <div className="flex items-end gap-3 border-b border-[#E8E0D3] pb-6">
+            <Link href="/sotuv" className="p-2 hover:bg-[#F0EAE0] rounded-lg"><ArrowLeft className="w-5 h-5 text-[#6B5B4D]" /></Link>
+            <div className="flex-1">
+              <div className="text-xs uppercase tracking-[0.2em] text-[#9C8A6E] font-medium mb-2">SAVDOAI · SOTUV</div>
+              <h1 className="text-4xl font-light tracking-tight text-[#1A1A1A]" style={SERIF}>
+                Shartnomalar <span className="italic text-[#C75D3C]">arxivi</span>
+              </h1>
+              <p className="text-sm text-[#6B5B4D] mt-2">{CONTRACTS.length} ta shartnoma · jami {fmt(totalRevenue / 1_000_000)} M tushum keltirilgan</p>
+            </div>
+            <Button variant="outline" className="gap-2 border-[#E8E0D3] text-[#6B5B4D]"><Download className="w-4 h-4" /> Excel</Button>
+            <Button className="gap-1 text-white" style={{ background: "#C75D3C" }}><Plus className="w-4 h-4" /> Yangi shartnoma</Button>
           </div>
-          <Button variant="outline" className="gap-2"><Download className="w-4 h-4" /> Excel</Button>
-          <Button className="gap-1"><Plus className="w-4 h-4" /> Yangi shartnoma</Button>
-        </div>
 
-        {expiringCount > 0 && (
-          <Card className="p-5 bg-amber-50 border-amber-300 border-2">
-            <div className="flex items-start gap-3">
-              <AlertCircle className="w-7 h-7 text-amber-600 flex-shrink-0" />
-              <div>
-                <h3 className="font-bold text-amber-800">⏰ {expiringCount} ta shartnoma 90 kunda tugaydi</h3>
-                <p className="text-sm text-slate-700 mt-1">
-                  Yangilash bo'yicha klient bilan bog'lanish kerak: {CONTRACTS.filter(c => c.status === "expiring").map(c => c.client).join(", ")}.
-                </p>
+          {expiringCount > 0 && (
+            <Card className="p-5 bg-[#FCE9DD] border border-[#E8C9A8] rounded-2xl shadow-sm">
+              <div className="flex items-start gap-3">
+                <AlertCircle className="w-7 h-7 text-[#D97706] flex-shrink-0" />
+                <div>
+                  <h3 className="font-medium text-[#1A1A1A]" style={SERIF}>{expiringCount} ta shartnoma 90 kunda tugaydi</h3>
+                  <p className="text-sm text-[#6B5B4D] mt-1">
+                    Yangilash bo'yicha klient bilan bog'lanish kerak: {CONTRACTS.filter(c => c.status === "expiring").map(c => c.client).join(", ")}.
+                  </p>
+                </div>
               </div>
+            </Card>
+          )}
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {[
+              { label: "FAOL", value: activeCount, color: "#059669" },
+              { label: "TUGAYAPTI", value: expiringCount, color: "#D97706" },
+              { label: "TUGAGAN", value: expiredCount, color: "#C75D3C" },
+              { label: "TUSHUM, M", value: fmt(totalRevenue / 1_000_000), color: "#C75D3C" },
+            ].map((kpi, i) => (
+              <Card key={i} className="bg-white border border-[#E8E0D3] shadow-sm rounded-2xl p-5 relative overflow-hidden">
+                <FileText className="w-5 h-5 mb-3" style={{ color: kpi.color }} />
+                <div className="text-[10px] uppercase tracking-[0.18em] font-medium" style={{ color: kpi.color }}>{kpi.label}</div>
+                <div className="text-3xl font-light mt-2 tabular-nums text-[#1A1A1A]" style={SERIF}>{kpi.value}</div>
+                <div className="absolute bottom-0 left-0 right-0 h-px" style={{ background: kpi.color, opacity: 0.4 }} />
+              </Card>
+            ))}
+          </div>
+
+          <div className="flex items-center gap-2 flex-wrap">
+            {["all", "active", "expiring", "expired", "draft"].map(s => (
+              <button
+                key={s}
+                onClick={() => setStatusFilter(s)}
+                className={`px-3 py-2 rounded-md text-xs font-medium ${statusFilter === s ? "text-white" : "bg-white border border-[#E8E0D3] text-[#6B5B4D]"}`}
+                style={statusFilter === s ? { background: "#C75D3C" } : undefined}
+              >
+                {s === "all" ? "Hammasi" : STATUS_LABEL[s]}
+              </button>
+            ))}
+            <div className="ml-auto relative">
+              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#9C8A6E]" />
+              <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="№ yoki klient..." className="pl-9 w-64 border-[#E8E0D3]" />
+            </div>
+          </div>
+
+          <Card className="bg-white border border-[#E8E0D3] shadow-sm rounded-2xl p-5">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-[#FAF7F2] border-b border-[#E8E0D3]">
+                    <th className="py-3 px-2 text-left text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">№</th>
+                    <th className="py-3 px-2 text-left text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Klient</th>
+                    <th className="py-3 px-2 text-center text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Tip</th>
+                    <th className="py-3 px-2 text-left text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Davr</th>
+                    <th className="py-3 px-2 text-left text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">To'lov shartlari</th>
+                    <th className="py-3 px-2 text-right text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Limit</th>
+                    <th className="py-3 px-2 text-right text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Tushum</th>
+                    <th className="py-3 px-2 text-center text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Status</th>
+                    <th className="py-3 px-2 text-center text-xs uppercase tracking-wider font-medium text-[#9C8A6E] w-24">Amal</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filtered.map(c => {
+                    const daysLeft = daysUntil(c.endDate)
+                    return (
+                      <tr key={c.id} className="border-b border-[#F0EAE0] hover:bg-[#FAF7F2]">
+                        <td className="py-3 px-2 font-mono tabular-nums text-[#C75D3C]">{c.number}</td>
+                        <td className="py-3 px-2 font-medium text-[#1A1A1A]">{c.client}</td>
+                        <td className="py-3 px-2 text-center">
+                          <span className={`text-xs px-2 py-0.5 rounded ${TYPE_COLOR[c.type]}`}>{TYPE_LABEL[c.type]}</span>
+                        </td>
+                        <td className="py-3 px-2 text-xs">
+                          <div className="font-mono tabular-nums text-[#1A1A1A]">{c.startDate}</div>
+                          <div className="font-mono tabular-nums text-[#9C8A6E]">→ {c.endDate}</div>
+                          {c.status === "active" && daysLeft > 0 && <div className={`text-[10px] mt-0.5 ${daysLeft < 90 ? "text-[#D97706]" : "text-[#9C8A6E]"}`}>{daysLeft} kun qoldi</div>}
+                          {c.status === "expired" && <div className="text-[10px] mt-0.5 text-[#C75D3C]">tugagan</div>}
+                        </td>
+                        <td className="py-3 px-2 text-xs text-[#6B5B4D]">{c.paymentTerms}</td>
+                        <td className="py-3 px-2 text-right font-mono tabular-nums text-xs text-[#1A1A1A]">{c.totalValue > 0 ? fmt(c.totalValue / 1_000_000) + " M" : "—"}</td>
+                        <td className="py-3 px-2 text-right font-mono tabular-nums font-medium text-emerald-700">{fmt(c.revenueGenerated / 1_000_000)} M</td>
+                        <td className="py-3 px-2 text-center">
+                          <span className={`text-xs px-2 py-0.5 rounded ${STATUS_COLOR[c.status]}`}>{STATUS_LABEL[c.status]}</span>
+                        </td>
+                        <td className="py-3 px-2 text-center">
+                          <div className="flex items-center justify-center gap-1">
+                            <button className="p-1 text-[#6B5B4D] hover:bg-[#F0EAE0] rounded"><Eye className="w-4 h-4" /></button>
+                            <button className="p-1 text-[#C75D3C] hover:bg-[#F5E5D6] rounded" title="PDF"><FileText className="w-4 h-4" /></button>
+                          </div>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
             </div>
           </Card>
-        )}
-
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <Card className="p-4 bg-emerald-50 border-emerald-200">
-            <FileText className="w-5 h-5 text-emerald-600 mb-2" />
-            <div className="text-xs font-bold text-emerald-700">Faol</div>
-            <div className="text-2xl font-bold mt-1">{CONTRACTS.filter(c => c.status === "active").length}</div>
-          </Card>
-          <Card className="p-4 bg-amber-50 border-amber-200">
-            <FileText className="w-5 h-5 text-amber-600 mb-2" />
-            <div className="text-xs font-bold text-amber-700">Tugayapti</div>
-            <div className="text-2xl font-bold mt-1">{expiringCount}</div>
-          </Card>
-          <Card className="p-4 bg-rose-50 border-rose-200">
-            <FileText className="w-5 h-5 text-rose-600 mb-2" />
-            <div className="text-xs font-bold text-rose-700">Tugagan</div>
-            <div className="text-2xl font-bold mt-1">{CONTRACTS.filter(c => c.status === "expired").length}</div>
-          </Card>
-          <Card className="p-4 bg-blue-50 border-blue-200">
-            <FileText className="w-5 h-5 text-blue-600 mb-2" />
-            <div className="text-xs font-bold text-blue-700">Tushum</div>
-            <div className="text-2xl font-bold mt-1 font-mono">{fmt(totalRevenue / 1_000_000)} M</div>
-          </Card>
         </div>
-
-        <div className="flex items-center gap-2 flex-wrap">
-          {["all", "active", "expiring", "expired", "draft"].map(s => (
-            <button key={s} onClick={() => setStatusFilter(s)} className={`px-3 py-2 rounded-md text-xs font-semibold ${statusFilter === s ? "bg-emerald-600 text-white" : "bg-white border border-slate-300"}`}>
-              {s === "all" ? "Hammasi" : STATUS_LABEL[s]}
-            </button>
-          ))}
-          <div className="ml-auto relative">
-            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-            <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="№ yoki klient..." className="pl-9 w-64" />
-          </div>
-        </div>
-
-        <Card className="p-5">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b-2 border-slate-200 text-left bg-slate-50">
-                  <th className="py-3 px-2">№</th>
-                  <th className="py-3 px-2">Klient</th>
-                  <th className="py-3 px-2 text-center">Tip</th>
-                  <th className="py-3 px-2">Davr</th>
-                  <th className="py-3 px-2">To'lov shartlari</th>
-                  <th className="py-3 px-2 text-right">Limit</th>
-                  <th className="py-3 px-2 text-right">Tushum</th>
-                  <th className="py-3 px-2 text-center">Status</th>
-                  <th className="py-3 px-2 text-center w-24">Amal</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map(c => {
-                  const daysLeft = daysUntil(c.endDate)
-                  return (
-                    <tr key={c.id} className="border-b border-slate-100 hover:bg-slate-50">
-                      <td className="py-3 px-2 font-mono text-blue-700">{c.number}</td>
-                      <td className="py-3 px-2 font-semibold">{c.client}</td>
-                      <td className="py-3 px-2 text-center">
-                        <span className={`text-xs px-2 py-0.5 rounded ${TYPE_COLOR[c.type]}`}>{TYPE_LABEL[c.type]}</span>
-                      </td>
-                      <td className="py-3 px-2 text-xs">
-                        <div className="font-mono">{c.startDate}</div>
-                        <div className="font-mono text-slate-500">→ {c.endDate}</div>
-                        {c.status === "active" && daysLeft > 0 && <div className={`text-[10px] mt-0.5 ${daysLeft < 90 ? "text-amber-700" : "text-slate-500"}`}>{daysLeft} kun qoldi</div>}
-                        {c.status === "expired" && <div className="text-[10px] mt-0.5 text-rose-700">tugagan</div>}
-                      </td>
-                      <td className="py-3 px-2 text-xs">{c.paymentTerms}</td>
-                      <td className="py-3 px-2 text-right font-mono text-xs">{c.totalValue > 0 ? fmt(c.totalValue / 1_000_000) + " M" : "—"}</td>
-                      <td className="py-3 px-2 text-right font-mono font-bold text-emerald-700">{fmt(c.revenueGenerated / 1_000_000)} M</td>
-                      <td className="py-3 px-2 text-center">
-                        <span className={`text-xs px-2 py-0.5 rounded ${STATUS_COLOR[c.status]}`}>{STATUS_LABEL[c.status]}</span>
-                      </td>
-                      <td className="py-3 px-2 text-center">
-                        <div className="flex items-center justify-center gap-1">
-                          <button className="p-1 text-blue-600 hover:bg-blue-50 rounded"><Eye className="w-4 h-4" /></button>
-                          <button className="p-1 text-emerald-600 hover:bg-emerald-50 rounded" title="PDF"><FileText className="w-4 h-4" /></button>
-                        </div>
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
-        </Card>
       </div>
     </AdminLayout>
   )
