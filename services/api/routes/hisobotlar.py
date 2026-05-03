@@ -366,29 +366,35 @@ async def hisobot_pnl(kunlar: int = 30, uid: int = Depends(get_uid)):
               AND COALESCE(bekor_qilingan, FALSE) = FALSE
         """, uid, kunlar) or 0
 
+        # Savepoint — qaytarishlar jadvali yo'q bo'lsa ham tranzaksiya tirik qoladi
+        qaytarish = 0
         try:
-            qaytarish = await c.fetchval("""
-                SELECT COALESCE(SUM(summa), 0)
-                FROM qaytarishlar
-                WHERE user_id = $1
-                  AND sana >= NOW() - make_interval(days => $2)
-            """, uid, kunlar) or 0
+            async with c.transaction():
+                qaytarish = await c.fetchval("""
+                    SELECT COALESCE(SUM(summa), 0)
+                    FROM qaytarishlar
+                    WHERE user_id = $1
+                      AND sana >= NOW() - make_interval(days => $2)
+                """, uid, kunlar) or 0
         except Exception:
             qaytarish = 0
 
-        # Xarajat kategoriyalar breakdown
+        # Xarajat kategoriyalar breakdown — savepoint bilan
+        # (xato bo'lsa transaction aborted bo'lmasligi uchun)
+        xar_kat = []
         try:
-            xar_kat = await c.fetch("""
-                SELECT
-                    COALESCE(kategoriya_nomi, 'Boshqa') AS nomi,
-                    SUM(summa)                          AS summa
-                FROM xarajatlar
-                WHERE admin_uid = $1
-                  AND sana >= NOW() - make_interval(days => $2)
-                  AND COALESCE(bekor_qilingan, FALSE) = FALSE
-                GROUP BY kategoriya_nomi
-                ORDER BY SUM(summa) DESC
-            """, uid, kunlar)
+            async with c.transaction():
+                xar_kat = await c.fetch("""
+                    SELECT
+                        COALESCE(kategoriya_nomi, 'Boshqa') AS nomi,
+                        SUM(summa)                          AS summa
+                    FROM xarajatlar
+                    WHERE admin_uid = $1
+                      AND sana >= NOW() - make_interval(days => $2)
+                      AND COALESCE(bekor_qilingan, FALSE) = FALSE
+                    GROUP BY kategoriya_nomi
+                    ORDER BY SUM(summa) DESC
+                """, uid, kunlar)
         except Exception:
             xar_kat = []
 
