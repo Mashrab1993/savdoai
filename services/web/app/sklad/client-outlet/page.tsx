@@ -1,65 +1,70 @@
 "use client"
-import { PremiumPage, PremiumCard, PremiumSectionHeader } from "@/components/layout/premium-page"
-import { Search, Download, Building2 } from "lucide-react"
+import { AdminLayout } from "@/components/layout/admin-layout"
+import { Card } from "@/components/ui/card"
+import { ArrowLeft } from "lucide-react"
+import Link from "next/link"
+import { useApi, useAuth } from "@/hooks/use-api"
+import { formatCurrency } from "@/lib/utils"
 
-const CLIENTS = [
-  { id: 1024, name: "Salom Magazin №1", agent: "Babadjanova N.", region: "Toshkent — Yashnobod", products: ["Choco-Boom × 84", "Coca-Cola × 36", "Bonjur × 24"], totalQty: 144, totalValue: 2_840_000 },
-  { id: 1058, name: "Bona Магазин", agent: "Berdiyev R.", region: "Toshkent — Sergeli", products: ["Pechenye × 48", "Sok × 24", "Choco-Boom × 36"], totalQty: 108, totalValue: 1_840_000 },
-  { id: 1142, name: "Дастархон Сервис", agent: "Sayitqulov M.", region: "Toshkent — M.Ulug'bek", products: ["Coca-Cola × 60", "Voda × 36", "Bonjur × 48"], totalQty: 144, totalValue: 2_120_000 },
-  { id: 1224, name: "Гулямов Маркет", agent: "ДАВЛАТ", region: "Toshkent — Bektemir", products: ["Choco-Boom × 96", "Pechenye × 72"], totalQty: 168, totalValue: 1_960_000 },
-  { id: 1389, name: "Ali Ake Магазин", agent: "BORIEV M.", region: "Toshkent — Yashnobod", products: ["Sok × 48", "Voda × 24"], totalQty: 72, totalValue: 980_000 },
-  { id: 1502, name: "Турсун Ake Магазин", agent: "BORIEV M.", region: "Toshkent — Mirzo", products: ["Choco-Boom × 60", "Bonjur × 36", "Coca-Cola × 24"], totalQty: 120, totalValue: 1_640_000 },
-]
-
-function fmt(n: number) { return n.toLocaleString("ru-RU") }
+type Tovar = { id: number; nomi: string; qoldiq: number; min_qoldiq?: number; olish_narxi?: number; sotish_narxi: number; brend?: string }
+type TovarResp = { total: number; items: Tovar[] }
 
 export default function ClientOutletPage() {
-  const totalValue = CLIENTS.reduce((s, c) => s + c.totalValue, 0)
-  const totalQty = CLIENTS.reduce((s, c) => s + c.totalQty, 0)
-
+  const { isAuthenticated } = useAuth()
+  const { data, loading } = useApi<TovarResp>(isAuthenticated ? "/api/v1/tovarlar?limit=500" : null)
+  const items = data?.items ?? []
   return (
-    <PremiumPage
-      backLink={{ href: "/klientlar", label: "KLIENTLAR" }}
-      title="Klient"
-      accent="qoldiqlari"
-      description={`${CLIENTS.length} ta klient · ${fmt(totalQty)} dona qoldiq · ${fmt(totalValue / 1_000_000)} M so'm`}
-      actions={
-        <button className="px-3 py-2 rounded-md border border-[#E8E0D3] bg-white text-sm flex items-center gap-1.5">
-          <Download className="w-3.5 h-3.5" /> Excel
-        </button>
-      }
-    >
-      <PremiumCard className="p-6">
-        <PremiumSectionHeader eyebrow="TORGOVAYA TOCHKA" title="Klient sotmagan tovarlar" />
-        <div className="space-y-3">
-          {CLIENTS.map(c => (
-            <div key={c.id} className="flex items-start gap-4 p-4 rounded-xl bg-[#FAF7F2] border border-[#E8E0D3] hover:border-[#C75D3C]">
-              <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-white border border-[#E8E0D3]">
-                <Building2 className="w-6 h-6 text-[#9C8A6E]" />
-              </div>
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="font-medium text-[#1A1A1A]">{c.name}</span>
-                  <span className="text-xs text-[#9C8A6E]">#{c.id}</span>
-                </div>
-                <div className="text-xs text-[#6B5B4D] mb-2">{c.agent} · {c.region}</div>
-                <div className="flex flex-wrap gap-2">
-                  {c.products.map((p, i) => (
-                    <span key={i} className="text-xs px-2 py-0.5 rounded bg-white border border-[#E8E0D3] text-[#6B5B4D]">{p}</span>
-                  ))}
-                </div>
-              </div>
-              <div className="text-right">
-                <div className="text-xs uppercase tracking-wider text-[#9C8A6E] font-medium">Qoldiq</div>
-                <div className="text-xl font-medium tabular-nums text-[#1A1A1A]" style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>
-                  {fmt(c.totalQty)}
-                </div>
-                <div className="text-sm font-medium text-[#C75D3C]">{fmt(c.totalValue)} so'm</div>
-              </div>
-            </div>
-          ))}
+    <AdminLayout>
+      <div className="max-w-[1300px] mx-auto space-y-6">
+        <div className="flex items-center gap-3">
+          <Link href="/sklad" className="p-2 hover:bg-slate-100 rounded"><ArrowLeft className="w-5 h-5" /></Link>
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Klient outlet</h1>
+            <p className="text-base text-slate-500 mt-1">Outlet'larga tarqalish{!isAuthenticated && <span className="ml-2 text-amber-600 text-xs">⚠ Login kerak</span>}</p>
+          </div>
         </div>
-      </PremiumCard>
-    </PremiumPage>
+        <div className="grid grid-cols-3 gap-4">
+          <Card className="p-4 border-blue-200 bg-blue-50/40">
+            <div className="text-xs uppercase font-semibold text-blue-700">Jami SKU</div>
+            <div className="text-3xl font-bold text-blue-800 tabular-nums">{items.length}</div>
+          </Card>
+          <Card className="p-4 border-emerald-200 bg-emerald-50/40">
+            <div className="text-xs uppercase font-semibold text-emerald-700">Jami qoldiq</div>
+            <div className="text-3xl font-bold text-emerald-800 tabular-nums">{items.reduce((s, t) => s + Math.max(0, t.qoldiq), 0)}</div>
+          </Card>
+          <Card className="p-4 border-amber-200 bg-amber-50/40">
+            <div className="text-xs uppercase font-semibold text-amber-700">Qiymati</div>
+            <div className="text-3xl font-bold text-amber-800 tabular-nums">{formatCurrency(items.reduce((s, t) => s + Math.max(0, t.qoldiq) * Number(t.olish_narxi || 0), 0))}</div>
+          </Card>
+        </div>
+        {loading && <div className="text-center py-12 text-slate-500">Yuklanmoqda...</div>}
+        {items.length > 0 && (
+          <Card className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-slate-50 border-b">
+                <tr>
+                  <th className="px-4 py-3 text-left font-semibold">Tovar</th>
+                  <th className="px-4 py-3 text-left font-semibold">Brend</th>
+                  <th className="px-4 py-3 text-right font-semibold">Qoldiq</th>
+                  <th className="px-4 py-3 text-right font-semibold">Min</th>
+                  <th className="px-4 py-3 text-right font-semibold">Qiymati</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y">
+                {items.slice(0, 100).map(t => (
+                  <tr key={t.id} className="hover:bg-slate-50">
+                    <td className="px-4 py-2 font-medium">{t.nomi}</td>
+                    <td className="px-4 py-2 text-slate-600">{t.brend || "—"}</td>
+                    <td className={`px-4 py-2 text-right tabular-nums font-medium ${t.qoldiq < 0 ? "text-rose-700" : t.qoldiq === 0 ? "text-amber-700" : "text-slate-900"}`}>{t.qoldiq}</td>
+                    <td className="px-4 py-2 text-right tabular-nums text-slate-500">{t.min_qoldiq ?? "—"}</td>
+                    <td className="px-4 py-2 text-right tabular-nums text-emerald-700">{formatCurrency(Math.max(0, t.qoldiq) * Number(t.olish_narxi || 0))}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </Card>
+        )}
+      </div>
+    </AdminLayout>
   )
 }
