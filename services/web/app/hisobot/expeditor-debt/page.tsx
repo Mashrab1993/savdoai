@@ -26,98 +26,95 @@ export default function ExpeditorDebtPage() {
 
   return (
     <AdminLayout>
-      <div className="max-w-[1700px] mx-auto space-y-6">
-        <div className="flex items-center gap-3">
-          <Link href="/hisobot" className="p-2 hover:bg-slate-100 rounded-lg"><ArrowLeft className="w-5 h-5" /></Link>
-          <div className="flex-1">
-            <h1 className="text-3xl font-bold tracking-tight">Ekspeditor qarzlari</h1>
-            <p className="text-base text-slate-500 mt-1">Yetkazish vakili qo'lidagi naqd pul · {EXPEDITORS.length} ta ekspeditor</p>
-          </div>
-          <Button variant="outline" className="gap-2"><Download className="w-4 h-4" /> Excel</Button>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-          <Card className="p-5 bg-gradient-to-br from-emerald-50 to-emerald-100/50 border-emerald-300 border-2">
-            <TrendingUp className="w-7 h-7 text-emerald-600 bg-white p-1.5 rounded-xl shadow-sm mb-2" />
-            <div className="text-xs font-bold text-emerald-700">Yig'ilgan to'lovlar</div>
-            <div className="text-2xl font-bold text-slate-900 mt-1">{fmt(totalCollected / 1_000_000)} M</div>
-            <div className="text-xs text-slate-600 mt-1">so'm · oy davomida</div>
-          </Card>
-          <Card className="p-5 bg-gradient-to-br from-rose-50 to-rose-100/50 border-rose-300 border-2">
-            <AlertCircle className="w-7 h-7 text-rose-600 bg-white p-1.5 rounded-xl shadow-sm mb-2" />
-            <div className="text-xs font-bold text-rose-700">Ekspeditor qo'lida</div>
-            <div className="text-2xl font-bold text-slate-900 mt-1">{fmt(totalOwed / 1_000_000)} M</div>
-            <div className="text-xs text-slate-600 mt-1">{(totalOwed / totalCollected * 100).toFixed(1)}% topshirilmagan</div>
-          </Card>
-          <Card className="p-5 bg-gradient-to-br from-blue-50 to-blue-100/50 border-blue-300 border-2">
-            <TrendingUp className="w-7 h-7 text-blue-600 bg-white p-1.5 rounded-xl shadow-sm mb-2" />
-            <div className="text-xs font-bold text-blue-700">Yetkazib berish</div>
-            <div className="text-2xl font-bold text-slate-900 mt-1">{totalDeliveries}</div>
-            <div className="text-xs text-slate-600 mt-1">ta dostavka oy davomida</div>
-          </Card>
-          <Card className="p-5 bg-gradient-to-br from-violet-50 to-violet-100/50 border-violet-300 border-2">
-            <TrendingUp className="w-7 h-7 text-violet-600 bg-white p-1.5 rounded-xl shadow-sm mb-2" />
-            <div className="text-xs font-bold text-violet-700">O'rtacha</div>
-            <div className="text-2xl font-bold text-slate-900 mt-1">{fmt(Math.round(totalCollected / totalDeliveries / 1000))}K</div>
-            <div className="text-xs text-slate-600 mt-1">so'm/dostavka</div>
-          </Card>
-        </div>
-
-        <Card className="p-5">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="relative flex-1 max-w-md">
-              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-              <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="Ekspeditor..." className="pl-9" />
+      <div className="-mx-4 -my-4 px-4 py-6 min-h-full" style={{ background: "linear-gradient(180deg, #F5F1EB 0%, #FAF7F2 100%)" }}>
+        <div className="max-w-[1700px] mx-auto space-y-5">
+          <div className="flex items-end gap-3 border-b border-[#E8E0D3] pb-6">
+            <Link href="/hisobot" className="p-2 hover:bg-[#F0EAE0] rounded-lg"><ArrowLeft className="w-5 h-5 text-[#6B5B4D]" /></Link>
+            <div className="flex-1">
+              <div className="text-xs uppercase tracking-[0.2em] text-[#9C8A6E] font-medium mb-2">SAVDOAI · HISOBOT</div>
+              <h1 className="text-4xl font-light tracking-tight text-[#1A1A1A]" style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>
+                Ekspeditor <span className="italic text-[#C75D3C]">qarzlari</span>
+              </h1>
+              <p className="text-sm text-[#6B5B4D] mt-2">Yetkazish vakili qo'lidagi naqd pul · {EXPEDITORS.length} ta ekspeditor</p>
             </div>
-            <span className="text-sm text-slate-500">{filtered.length}</span>
+            <Button variant="outline" className="gap-2 border-[#E8E0D3] text-[#6B5B4D]"><Download className="w-4 h-4" /> Excel</Button>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b-2 border-slate-200 text-left">
-                  <th className="py-3 px-2 font-semibold text-slate-600">Ekspeditor</th>
-                  <th className="py-3 px-2 font-semibold text-slate-600">Region</th>
-                  <th className="py-3 px-2 font-semibold text-slate-600 text-right">Dostavka</th>
-                  <th className="py-3 px-2 font-semibold text-slate-600 text-right">Yig'ilgan</th>
-                  <th className="py-3 px-2 font-semibold text-slate-600 text-right">Qo'lida (qarz)</th>
-                  <th className="py-3 px-2 font-semibold text-slate-600">So'nggi topshirish</th>
-                  <th className="py-3 px-2 font-semibold text-slate-600 text-center">Aloqa</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map(e => (
-                  <tr key={e.id} className="border-b border-slate-100 hover:bg-slate-50">
-                    <td className="py-3 px-2">
-                      <div className="font-bold text-slate-900">{e.name}</div>
-                      <div className="text-xs text-slate-500">{e.phone}</div>
-                    </td>
-                    <td className="py-3 px-2 text-slate-700 text-xs">{e.region}</td>
-                    <td className="py-3 px-2 text-right font-mono">{e.deliveries}</td>
-                    <td className="py-3 px-2 text-right font-mono font-bold text-emerald-700">{fmt(e.collected)}</td>
-                    <td className={`py-3 px-2 text-right font-mono font-bold ${e.owed > 0 ? "text-rose-700" : "text-slate-400"}`}>
-                      {e.owed > 0 ? fmt(e.owed) : "—"}
-                    </td>
-                    <td className="py-3 px-2 text-slate-500 font-mono text-xs">{e.last}</td>
-                    <td className="py-3 px-2 text-center">
-                      <button className="p-1.5 hover:bg-emerald-100 rounded-lg"><Phone className="w-4 h-4 text-emerald-600" /></button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-              <tfoot>
-                <tr className="border-t-2 border-slate-300 bg-slate-50 font-bold">
-                  <td colSpan={2} className="py-3 px-2">Jami:</td>
-                  <td className="py-3 px-2 text-right font-mono">{totalDeliveries}</td>
-                  <td className="py-3 px-2 text-right font-mono text-emerald-800">{fmt(totalCollected)}</td>
-                  <td className="py-3 px-2 text-right font-mono text-rose-700">{fmt(totalOwed)}</td>
-                  <td colSpan={2} />
-                </tr>
-              </tfoot>
-            </table>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+            <KpiCard icon={TrendingUp} accent="#10B981" label="Yig'ilgan" value={`${fmt(totalCollected / 1_000_000)} M`} sub="so'm · oy davomida" />
+            <KpiCard icon={AlertCircle} accent="#C75D3C" label="Ekspeditor qo'lida" value={`${fmt(totalOwed / 1_000_000)} M`} sub={`${(totalOwed / totalCollected * 100).toFixed(1)}% topshirilmagan`} />
+            <KpiCard icon={TrendingUp} accent="#3B82F6" label="Yetkazish" value={totalDeliveries.toString()} sub="ta dostavka" />
+            <KpiCard icon={TrendingUp} accent="#7C3AED" label="O'rtacha" value={`${fmt(Math.round(totalCollected / totalDeliveries / 1000))}K`} sub="so'm/dostavka" />
           </div>
-        </Card>
+
+          <Card className="p-6 bg-white border border-[#E8E0D3] shadow-sm rounded-2xl">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="relative flex-1 max-w-md">
+                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#9C8A6E]" />
+                <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="Ekspeditor..." className="pl-9 border-[#E8E0D3] bg-[#FAF7F2]" />
+              </div>
+              <span className="text-sm text-[#9C8A6E]">{filtered.length}</span>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-[#E8E0D3] bg-[#FAF7F2]">
+                    <th className="py-3 px-2 text-left text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Ekspeditor</th>
+                    <th className="py-3 px-2 text-left text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Region</th>
+                    <th className="py-3 px-2 text-right text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Dostavka</th>
+                    <th className="py-3 px-2 text-right text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Yig'ilgan</th>
+                    <th className="py-3 px-2 text-right text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Qo'lida (qarz)</th>
+                    <th className="py-3 px-2 text-left text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">So'nggi</th>
+                    <th className="py-3 px-2 text-center text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Aloqa</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filtered.map(e => (
+                    <tr key={e.id} className="border-b border-[#F0EAE0] hover:bg-[#FAF7F2]">
+                      <td className="py-3 px-2">
+                        <div className="font-medium text-[#1A1A1A]">{e.name}</div>
+                        <div className="text-xs text-[#9C8A6E]">{e.phone}</div>
+                      </td>
+                      <td className="py-3 px-2 text-[#6B5B4D] text-xs">{e.region}</td>
+                      <td className="py-3 px-2 text-right font-mono text-[#1A1A1A]">{e.deliveries}</td>
+                      <td className="py-3 px-2 text-right font-mono font-medium text-emerald-700" style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>{fmt(e.collected)}</td>
+                      <td className={`py-3 px-2 text-right font-mono font-medium ${e.owed > 0 ? "text-[#C75D3C]" : "text-[#9C8A6E]"}`} style={e.owed > 0 ? { fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' } : {}}>
+                        {e.owed > 0 ? fmt(e.owed) : "—"}
+                      </td>
+                      <td className="py-3 px-2 text-[#9C8A6E] font-mono text-xs">{e.last}</td>
+                      <td className="py-3 px-2 text-center">
+                        <button className="p-1.5 hover:bg-emerald-50 rounded-lg"><Phone className="w-4 h-4 text-emerald-600" /></button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+                <tfoot>
+                  <tr className="border-t border-[#E8E0D3] bg-[#FAF7F2]">
+                    <td colSpan={2} className="py-3 px-2 text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Jami:</td>
+                    <td className="py-3 px-2 text-right font-mono text-[#1A1A1A]">{totalDeliveries}</td>
+                    <td className="py-3 px-2 text-right font-mono font-medium text-emerald-700" style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>{fmt(totalCollected)}</td>
+                    <td className="py-3 px-2 text-right font-mono font-medium text-[#C75D3C]" style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>{fmt(totalOwed)}</td>
+                    <td colSpan={2} />
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          </Card>
+        </div>
       </div>
     </AdminLayout>
+  )
+}
+
+function KpiCard({ icon: Icon, accent, label, value, sub }: { icon: React.ElementType; accent: string; label: string; value: string; sub: string }) {
+  return (
+    <Card className="p-5 bg-white border border-[#E8E0D3] shadow-sm rounded-2xl relative overflow-hidden">
+      <Icon className="w-7 h-7 mb-2" style={{ color: accent }} />
+      <div className="text-xs uppercase tracking-[0.15em] font-medium" style={{ color: accent }}>{label}</div>
+      <div className="text-2xl font-medium tabular-nums mt-1 text-[#1A1A1A]" style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>{value}</div>
+      <div className="text-xs text-[#9C8A6E] mt-1">{sub}</div>
+      <div className="absolute bottom-0 left-0 right-0 h-1" style={{ background: accent }} />
+    </Card>
   )
 }
