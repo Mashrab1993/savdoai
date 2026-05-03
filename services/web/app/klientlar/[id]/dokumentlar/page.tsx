@@ -8,6 +8,8 @@ import { ArrowLeft, FileText, Upload, Search, Download, Trash2, Eye, FileImage, 
 import Link from "next/link"
 import { toast } from "sonner"
 
+const SERIF = { fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' } as const
+
 const DOCS = [
   { id: 1, name: "Договор поставки 2026.pdf", type: "pdf", size: "2.4 MB", uploaded: "2026-01-15", category: "Контракт" },
   { id: 2, name: "Свидетельство о регистрации.pdf", type: "pdf", size: "840 KB", uploaded: "2024-03-12", category: "Регистрация" },
@@ -20,7 +22,11 @@ const DOCS = [
 ]
 
 const ICONS = { pdf: FileText, image: FileImage, excel: FileSpreadsheet }
-const COLORS = { pdf: "rose", image: "blue", excel: "emerald" }
+const TYPE_STYLE: Record<string, { iconBg: string; iconColor: string; chip: string }> = {
+  pdf: { iconBg: "#F5E5D6", iconColor: "#C75D3C", chip: "bg-[#F5E5D6] text-[#C75D3C]" },
+  image: { iconBg: "#EFF6FF", iconColor: "#1D4ED8", chip: "bg-blue-50 text-blue-700" },
+  excel: { iconBg: "#ECFDF5", iconColor: "#047857", chip: "bg-emerald-50 text-emerald-700" },
+}
 
 export default function ClientDocsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
@@ -36,77 +42,82 @@ export default function ClientDocsPage({ params }: { params: Promise<{ id: strin
 
   return (
     <AdminLayout>
-      <div className="max-w-[1700px] mx-auto space-y-4">
-        <div className="flex items-center gap-3">
-          <Link href={`/klientlar/${id}`} className="p-2 hover:bg-slate-100 rounded-lg"><ArrowLeft className="w-5 h-5" /></Link>
-          <div className="flex-1">
-            <h1 className="text-2xl font-bold tracking-tight">Klient hujjatlari · #{id}</h1>
-            <p className="text-sm text-slate-500">Salom Magazin №1 · {DOCS.length} ta hujjat saqlangan</p>
-          </div>
-          <Button className="gap-2" onClick={() => toast.success("Hujjat yuklash dialog ochildi")}>
-            <Upload className="w-4 h-4" /> Yuklash
-          </Button>
-        </div>
-
-        <Card className="p-4">
-          <div className="flex items-center gap-3 flex-wrap">
-            <div className="relative flex-1 max-w-md">
-              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-              <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="Hujjat..." className="pl-9" />
+      <div className="-mx-4 -my-4 px-4 py-6 min-h-full" style={{ background: "linear-gradient(180deg, #F5F1EB 0%, #FAF7F2 100%)" }}>
+        <div className="max-w-[1700px] mx-auto space-y-5">
+          <div className="flex items-end gap-3 border-b border-[#E8E0D3] pb-6">
+            <Link href={`/klientlar/${id}`} className="p-2 hover:bg-[#F0EAE0] rounded-lg"><ArrowLeft className="w-5 h-5 text-[#6B5B4D]" /></Link>
+            <div className="flex-1">
+              <div className="text-xs uppercase tracking-[0.2em] text-[#9C8A6E] font-medium mb-2">SAVDOAI · KLIENT #{id}</div>
+              <h1 className="text-4xl font-light tracking-tight text-[#1A1A1A]" style={SERIF}>
+                Klient <span className="italic text-[#C75D3C]">hujjatlari</span>
+              </h1>
+              <p className="text-sm text-[#6B5B4D] mt-2">Salom Magazin №1 · {DOCS.length} ta hujjat saqlangan</p>
             </div>
-            <button onClick={() => setActiveCategory(null)} className={`px-3 py-1.5 text-xs font-semibold rounded ${!activeCategory ? "bg-slate-900 text-white" : "bg-slate-100"}`}>
-              Hammasi ({DOCS.length})
-            </button>
-            {categories.map(c => {
-              const count = DOCS.filter(d => d.category === c).length
+            <Button className="gap-2 text-white" style={{ background: "#C75D3C" }} onClick={() => toast.success("Hujjat yuklash dialog ochildi")}>
+              <Upload className="w-4 h-4" /> Yuklash
+            </Button>
+          </div>
+
+          <Card className="p-4 bg-white border border-[#E8E0D3] shadow-sm rounded-2xl">
+            <div className="flex items-center gap-3 flex-wrap">
+              <div className="relative flex-1 max-w-md">
+                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#9C8A6E]" />
+                <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="Hujjat..." className="pl-9 border-[#E8E0D3]" />
+              </div>
+              <button onClick={() => setActiveCategory(null)} className={`px-3 py-1.5 text-xs font-medium rounded-md ${!activeCategory ? "bg-[#1A1A1A] text-white" : "bg-[#F0EAE0] text-[#6B5B4D]"}`}>
+                Hammasi ({DOCS.length})
+              </button>
+              {categories.map(c => {
+                const count = DOCS.filter(d => d.category === c).length
+                return (
+                  <button key={c} onClick={() => setActiveCategory(c)} className={`px-3 py-1.5 text-xs font-medium rounded-md ${activeCategory === c ? "bg-[#1A1A1A] text-white" : "bg-[#F0EAE0] text-[#6B5B4D]"}`}>
+                    {c} ({count})
+                  </button>
+                )
+              })}
+            </div>
+          </Card>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+            {filtered.map(d => {
+              const Icon = ICONS[d.type as keyof typeof ICONS] || FileText
+              const style = TYPE_STYLE[d.type] || TYPE_STYLE.pdf
               return (
-                <button key={c} onClick={() => setActiveCategory(c)} className={`px-3 py-1.5 text-xs font-semibold rounded ${activeCategory === c ? "bg-slate-900 text-white" : "bg-slate-100"}`}>
-                  {c} ({count})
-                </button>
+                <Card key={d.id} className="p-4 bg-white border border-[#E8E0D3] shadow-sm rounded-2xl hover:shadow-md transition-all group">
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 w-12 h-12 rounded-xl flex items-center justify-center" style={{ background: style.iconBg }}>
+                      <Icon className="w-6 h-6" style={{ color: style.iconColor }} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-medium text-[#1A1A1A] truncate">{d.name}</h3>
+                      <p className="text-xs text-[#9C8A6E] mt-1">{d.size} · {d.uploaded}</p>
+                      <span className={`inline-block mt-2 text-[10px] px-1.5 py-0.5 rounded font-medium ${style.chip}`}>
+                        {d.category}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="mt-3 pt-3 border-t border-[#F0EAE0] flex justify-end gap-1">
+                    <button onClick={() => toast.info("Ko'rish...")} className="p-1.5 hover:bg-blue-50 rounded text-blue-600">
+                      <Eye className="w-4 h-4" />
+                    </button>
+                    <button onClick={() => toast.success("Yuklab olinmoqda")} className="p-1.5 hover:bg-emerald-50 rounded text-emerald-600">
+                      <Download className="w-4 h-4" />
+                    </button>
+                    <button onClick={() => toast.error("O'chirildi")} className="p-1.5 hover:bg-[#F5E5D6] rounded" style={{ color: "#C75D3C" }}>
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </Card>
               )
             })}
           </div>
-        </Card>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-          {filtered.map(d => {
-            const Icon = ICONS[d.type as keyof typeof ICONS] || FileText
-            const color = COLORS[d.type as keyof typeof COLORS] || "slate"
-            return (
-              <Card key={d.id} className={`p-4 border-2 transition-all hover:shadow-md group bg-${color}-50/30 border-${color}-200`}>
-                <div className="flex items-start gap-3">
-                  <div className={`flex-shrink-0 w-12 h-12 rounded-xl bg-${color}-100 text-${color}-700 flex items-center justify-center`}>
-                    <Icon className="w-6 h-6" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-bold text-slate-900 truncate">{d.name}</h3>
-                    <p className="text-xs text-slate-500 mt-1">{d.size} · {d.uploaded}</p>
-                    <span className={`inline-block mt-2 text-[10px] px-1.5 py-0.5 rounded font-bold bg-${color}-200 text-${color}-800`}>
-                      {d.category}
-                    </span>
-                  </div>
-                </div>
-                <div className="mt-3 pt-3 border-t border-slate-200/60 flex justify-end gap-1">
-                  <button onClick={() => toast.info("Ko'rish...")} className="p-1.5 hover:bg-blue-100 rounded text-blue-600">
-                    <Eye className="w-4 h-4" />
-                  </button>
-                  <button onClick={() => toast.success("Yuklab olinmoqda")} className="p-1.5 hover:bg-emerald-100 rounded text-emerald-600">
-                    <Download className="w-4 h-4" />
-                  </button>
-                  <button onClick={() => toast.error("O'chirildi")} className="p-1.5 hover:bg-rose-100 rounded text-rose-600">
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-              </Card>
-            )
-          })}
+          <Card className="p-5 bg-white border border-dashed border-[#E8E0D3] hover:border-[#C75D3C] transition-colors text-center cursor-pointer rounded-2xl">
+            <Upload className="w-10 h-10 mx-auto text-[#9C8A6E] mb-2" />
+            <p className="font-medium text-[#1A1A1A]">Hujjat yuklash uchun bosing yoki shu yerga sudrang</p>
+            <p className="text-xs text-[#9C8A6E] mt-1">PDF, JPG, PNG, XLSX · max 10MB / fayl</p>
+          </Card>
         </div>
-
-        <Card className="p-5 border-2 border-dashed border-slate-300 hover:border-emerald-400 transition-colors text-center cursor-pointer">
-          <Upload className="w-10 h-10 mx-auto text-slate-400 mb-2" />
-          <p className="font-semibold text-slate-700">Hujjat yuklash uchun bosing yoki shu yerga sudrang</p>
-          <p className="text-xs text-slate-500 mt-1">PDF, JPG, PNG, XLSX · max 10MB / fayl</p>
-        </Card>
       </div>
     </AdminLayout>
   )

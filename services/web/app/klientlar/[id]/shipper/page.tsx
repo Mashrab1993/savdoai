@@ -7,6 +7,8 @@ import { Input } from "@/components/ui/input"
 import { ArrowLeft, Search, Calendar, Download, Truck, Eye, Phone } from "lucide-react"
 import Link from "next/link"
 
+const SERIF = { fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' } as const
+
 type Shipment = {
   id: number; date: string; expeditor: string; vehicle: string; route: string;
   qty: number; sum: number; status: "delivered" | "pending" | "cancelled";
@@ -35,99 +37,112 @@ export default function ClientShipperPage({ params }: { params: Promise<{ id: st
 
   return (
     <AdminLayout>
-      <div className="max-w-[1700px] mx-auto space-y-4">
-        <div className="flex items-center gap-3">
-          <Link href={`/klientlar/${id}`} className="p-2 hover:bg-slate-100 rounded-lg"><ArrowLeft className="w-5 h-5" /></Link>
-          <div className="flex-1">
-            <h1 className="text-2xl font-bold tracking-tight">Yetkazib berish (Shipper) · #{id}</h1>
-            <p className="text-sm text-slate-500">Salom Magazin №1 · Ekspeditor va marshrut tarixi</p>
-          </div>
-          <Button variant="outline" className="gap-2"><Calendar className="w-4 h-4" /> апр 1 — май 2</Button>
-          <Button variant="outline" className="gap-2"><Download className="w-4 h-4" /> Excel</Button>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-          <Card className="p-4 bg-emerald-50 border-emerald-200">
-            <Truck className="w-5 h-5 text-emerald-600 mb-2" />
-            <div className="text-xs font-bold text-emerald-700">Yetkazildi</div>
-            <div className="text-2xl font-bold mt-1">{deliveredCount}</div>
-          </Card>
-          <Card className="p-4 bg-amber-50 border-amber-200">
-            <Truck className="w-5 h-5 text-amber-600 mb-2" />
-            <div className="text-xs font-bold text-amber-700">Kutilmoqda</div>
-            <div className="text-2xl font-bold mt-1">{SHIPMENTS.filter(s => s.status === "pending").length}</div>
-          </Card>
-          <Card className="p-4 bg-blue-50 border-blue-200">
-            <Truck className="w-5 h-5 text-blue-600 mb-2" />
-            <div className="text-xs font-bold text-blue-700">Tovar miqdori</div>
-            <div className="text-2xl font-bold mt-1">{fmt(totalQty)}</div>
-          </Card>
-          <Card className="p-4 bg-violet-50 border-violet-200">
-            <Truck className="w-5 h-5 text-violet-600 mb-2" />
-            <div className="text-xs font-bold text-violet-700">Jami summa</div>
-            <div className="text-2xl font-bold mt-1">{fmt(totalSum / 1_000_000)} M</div>
-          </Card>
-        </div>
-
-        <Card className="p-5">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="relative flex-1 max-w-md">
-              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-              <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="Yetkazib berish # yoki ekspeditor..." className="pl-9" />
+      <div className="-mx-4 -my-4 px-4 py-6 min-h-full" style={{ background: "linear-gradient(180deg, #F5F1EB 0%, #FAF7F2 100%)" }}>
+        <div className="max-w-[1700px] mx-auto space-y-5">
+          <div className="flex items-end gap-3 border-b border-[#E8E0D3] pb-6">
+            <Link href={`/klientlar/${id}`} className="p-2 hover:bg-[#F0EAE0] rounded-lg"><ArrowLeft className="w-5 h-5 text-[#6B5B4D]" /></Link>
+            <div className="flex-1">
+              <div className="text-xs uppercase tracking-[0.2em] text-[#9C8A6E] font-medium mb-2">SAVDOAI · KLIENT #{id}</div>
+              <h1 className="text-4xl font-light tracking-tight text-[#1A1A1A]" style={SERIF}>
+                Yetkazib <span className="italic text-[#C75D3C]">berish (Shipper)</span>
+              </h1>
+              <p className="text-sm text-[#6B5B4D] mt-2">Salom Magazin №1 · Ekspeditor va marshrut tarixi</p>
             </div>
-            <span className="text-sm text-slate-500">{filtered.length}</span>
+            <Button variant="outline" className="gap-2 border-[#E8E0D3] text-[#6B5B4D]"><Calendar className="w-4 h-4" /> апр 1 — май 2</Button>
+            <Button variant="outline" className="gap-2 border-[#E8E0D3] text-[#6B5B4D]"><Download className="w-4 h-4" /> Excel</Button>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b-2 border-slate-200 text-left bg-slate-50">
-                  <th className="py-3 px-2">№</th>
-                  <th className="py-3 px-2">Sana</th>
-                  <th className="py-3 px-2">Ekspeditor</th>
-                  <th className="py-3 px-2">Avtomobil</th>
-                  <th className="py-3 px-2">Marshrut</th>
-                  <th className="py-3 px-2 text-right">Tovar</th>
-                  <th className="py-3 px-2 text-right">Summa</th>
-                  <th className="py-3 px-2 text-center">Imzo</th>
-                  <th className="py-3 px-2 text-center">Holat</th>
-                  <th className="py-3 px-2 text-center">Amal</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map(s => (
-                  <tr key={s.id} className="border-b border-slate-100 hover:bg-slate-50">
-                    <td className="py-3 px-2 text-slate-400 font-mono">#{s.id}</td>
-                    <td className="py-3 px-2 font-mono text-xs">{s.date}</td>
-                    <td className="py-3 px-2">
-                      <div className="font-semibold">{s.expeditor.split(" (")[0]}</div>
-                      <div className="text-xs text-slate-500 flex items-center gap-1">
-                        <Phone className="w-3 h-3" /> {s.expeditor.match(/\(([^)]+)\)/)?.[1] ?? ""}
-                      </div>
-                    </td>
-                    <td className="py-3 px-2 font-mono text-xs">{s.vehicle}</td>
-                    <td className="py-3 px-2">{s.route}</td>
-                    <td className="py-3 px-2 text-right font-mono">{fmt(s.qty)}</td>
-                    <td className="py-3 px-2 text-right font-mono font-bold text-emerald-700">{fmt(s.sum)}</td>
-                    <td className="py-3 px-2 text-center">
-                      {s.signature ? <span className="text-emerald-600 text-lg">✓</span> : <span className="text-slate-300 text-lg">○</span>}
-                    </td>
-                    <td className="py-3 px-2 text-center">
-                      {s.status === "delivered" && <span className="text-xs px-2 py-0.5 rounded bg-emerald-100 text-emerald-700">✓ Yetkazildi</span>}
-                      {s.status === "pending" && <span className="text-xs px-2 py-0.5 rounded bg-amber-100 text-amber-700">⏳ Kutilmoqda</span>}
-                      {s.status === "cancelled" && <span className="text-xs px-2 py-0.5 rounded bg-rose-100 text-rose-700">✕ Bekor</span>}
-                    </td>
-                    <td className="py-3 px-2 text-center">
-                      <Link href={`/sotuv/yangi`} className="inline-flex items-center gap-1 text-emerald-700 hover:underline text-xs">
-                        <Eye className="w-3.5 h-3.5" /> Ko'rish
-                      </Link>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+            <Card className="p-5 bg-white border border-[#E8E0D3] shadow-sm rounded-2xl relative overflow-hidden">
+              <Truck className="w-5 h-5 mb-2" style={{ color: "#047857" }} />
+              <div className="text-xs uppercase tracking-[0.15em] font-medium" style={{ color: "#047857" }}>Yetkazildi</div>
+              <div className="text-2xl font-medium tabular-nums mt-1 text-[#1A1A1A]" style={SERIF}>{deliveredCount}</div>
+              <div className="text-xs text-[#9C8A6E] mt-1">jami</div>
+              <div className="absolute bottom-0 left-0 right-0 h-1" style={{ background: "#10B981" }} />
+            </Card>
+            <Card className="p-5 bg-white border border-[#E8E0D3] shadow-sm rounded-2xl relative overflow-hidden">
+              <Truck className="w-5 h-5 mb-2" style={{ color: "#D97706" }} />
+              <div className="text-xs uppercase tracking-[0.15em] font-medium" style={{ color: "#D97706" }}>Kutilmoqda</div>
+              <div className="text-2xl font-medium tabular-nums mt-1 text-[#1A1A1A]" style={SERIF}>{SHIPMENTS.filter(s => s.status === "pending").length}</div>
+              <div className="text-xs text-[#9C8A6E] mt-1">yo'lda</div>
+              <div className="absolute bottom-0 left-0 right-0 h-1" style={{ background: "#D97706" }} />
+            </Card>
+            <Card className="p-5 bg-white border border-[#E8E0D3] shadow-sm rounded-2xl relative overflow-hidden">
+              <Truck className="w-5 h-5 mb-2" style={{ color: "#1D4ED8" }} />
+              <div className="text-xs uppercase tracking-[0.15em] font-medium" style={{ color: "#1D4ED8" }}>Tovar miqdori</div>
+              <div className="text-2xl font-medium tabular-nums mt-1 text-[#1A1A1A]" style={SERIF}>{fmt(totalQty)}</div>
+              <div className="text-xs text-[#9C8A6E] mt-1">dona</div>
+              <div className="absolute bottom-0 left-0 right-0 h-1" style={{ background: "#3B82F6" }} />
+            </Card>
+            <Card className="p-5 bg-white border border-[#E8E0D3] shadow-sm rounded-2xl relative overflow-hidden">
+              <Truck className="w-5 h-5 mb-2" style={{ color: "#7C3AED" }} />
+              <div className="text-xs uppercase tracking-[0.15em] font-medium" style={{ color: "#7C3AED" }}>Jami summa</div>
+              <div className="text-2xl font-medium tabular-nums mt-1 text-[#1A1A1A]" style={SERIF}>{fmt(totalSum / 1_000_000)} M</div>
+              <div className="text-xs text-[#9C8A6E] mt-1">so'm</div>
+              <div className="absolute bottom-0 left-0 right-0 h-1" style={{ background: "#8B5CF6" }} />
+            </Card>
           </div>
-        </Card>
+
+          <Card className="p-6 bg-white border border-[#E8E0D3] shadow-sm rounded-2xl">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="relative flex-1 max-w-md">
+                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#9C8A6E]" />
+                <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="Yetkazib berish # yoki ekspeditor..." className="pl-9 border-[#E8E0D3]" />
+              </div>
+              <span className="text-sm text-[#9C8A6E]">{filtered.length}</span>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-[#FAF7F2] border-b border-[#E8E0D3]">
+                    <th className="py-3 px-2 text-left text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">№</th>
+                    <th className="py-3 px-2 text-left text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Sana</th>
+                    <th className="py-3 px-2 text-left text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Ekspeditor</th>
+                    <th className="py-3 px-2 text-left text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Avtomobil</th>
+                    <th className="py-3 px-2 text-left text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Marshrut</th>
+                    <th className="py-3 px-2 text-right text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Tovar</th>
+                    <th className="py-3 px-2 text-right text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Summa</th>
+                    <th className="py-3 px-2 text-center text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Imzo</th>
+                    <th className="py-3 px-2 text-center text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Holat</th>
+                    <th className="py-3 px-2 text-center text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Amal</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filtered.map(s => (
+                    <tr key={s.id} className="border-b border-[#F0EAE0] hover:bg-[#FAF7F2]">
+                      <td className="py-3 px-2 text-[#9C8A6E] font-mono">#{s.id}</td>
+                      <td className="py-3 px-2 font-mono text-xs text-[#6B5B4D]">{s.date}</td>
+                      <td className="py-3 px-2">
+                        <div className="font-medium text-[#1A1A1A]">{s.expeditor.split(" (")[0]}</div>
+                        <div className="text-xs text-[#9C8A6E] flex items-center gap-1">
+                          <Phone className="w-3 h-3" /> {s.expeditor.match(/\(([^)]+)\)/)?.[1] ?? ""}
+                        </div>
+                      </td>
+                      <td className="py-3 px-2 font-mono text-xs text-[#6B5B4D]">{s.vehicle}</td>
+                      <td className="py-3 px-2 text-[#6B5B4D]">{s.route}</td>
+                      <td className="py-3 px-2 text-right font-mono tabular-nums text-[#1A1A1A]">{fmt(s.qty)}</td>
+                      <td className="py-3 px-2 text-right font-mono tabular-nums font-medium text-emerald-700" style={SERIF}>{fmt(s.sum)}</td>
+                      <td className="py-3 px-2 text-center">
+                        {s.signature ? <span className="text-emerald-600 text-lg">✓</span> : <span className="text-[#E8E0D3] text-lg">○</span>}
+                      </td>
+                      <td className="py-3 px-2 text-center">
+                        {s.status === "delivered" && <span className="text-xs px-2 py-0.5 rounded bg-emerald-50 text-emerald-700">Yetkazildi</span>}
+                        {s.status === "pending" && <span className="text-xs px-2 py-0.5 rounded bg-[#FCE9DD] text-[#D97706]">Kutilmoqda</span>}
+                        {s.status === "cancelled" && <span className="text-xs px-2 py-0.5 rounded bg-[#F5E5D6] text-[#C75D3C]">Bekor</span>}
+                      </td>
+                      <td className="py-3 px-2 text-center">
+                        <Link href={`/sotuv/yangi`} className="inline-flex items-center gap-1 text-[#C75D3C] hover:underline text-xs">
+                          <Eye className="w-3.5 h-3.5" /> Ko'rish
+                        </Link>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </Card>
+        </div>
       </div>
     </AdminLayout>
   )
