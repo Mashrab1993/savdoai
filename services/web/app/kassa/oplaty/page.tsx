@@ -1,150 +1,77 @@
 "use client"
-import { useState } from "react"
 import { AdminLayout } from "@/components/layout/admin-layout"
 import { Card } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { ArrowLeft, Plus, Search, Calendar, Filter as FilterIcon } from "lucide-react"
+import { ArrowLeft, DollarSign } from "lucide-react"
 import Link from "next/link"
+import { useApi, useAuth } from "@/hooks/use-api"
+import { formatCurrency } from "@/lib/utils"
 
-type Payment = {
-  id: number; date: string; createdAt: string; inn: string; client: string; clientType: string;
-  agent: string; region: string; expeditor: string; territory: string; method: string; sum: number;
+type TarixRow = {
+  id: number
+  sana: string
+  turi?: string
+  summa: number
+  klient_ismi?: string
+  izoh?: string
 }
+type TarixResp = { items: TarixRow[]; total: number }
 
-const PAYMENTS: Payment[] = Array.from({ length: 18 }).map((_, i) => ({
-  id: 8000 + i,
-  date: `2026-05-0${(i % 9) + 1}`,
-  createdAt: "2026-05-01 14:25",
-  inn: `30213${4900 + i}`,
-  client: ["Бегзод Ака MARKET", "ХАСАН MARKET", "M.NEKAR Аф", "Несаждан магазин", "ХУЖА Москва Магазин", "Ali Ake Магазин Сирож", "Раис Бола, Семурғ", "Билтек Маркет / OOO", "Мукл МО ИМ", "Ali Ake Магазин Шум", "Маркет Маҳкам", "Mu Magazin Бобо", "Юм Янги Бона Бой", "Жабиржон, Жабиржон", "ESKI MAGAZIN", "Дилёра, Истагикон М.А", "Магазин · Coq Sub MARKET", "Manzil MARKET CENTRAL ASIA SAVDO PLUS"][i % 18],
-  clientType: ["Магазин", "Магазин", "Магазин", "Магазин", "Магазин", "Магазин", "Магазин", "OOO", "Магазин", "Магазин", "Магазин", "Магазин", "Магазин", "Магазин", "Магазин", "Магазин", "Магазин", "OOO"][i % 18],
-  agent: ["Babadjanova Nargiza", "Berdiyev Rahmatillo", "Sayitqulov Mashrab", "ДАВЛАТ", "BORIEV MIRJALOL", "Турсунов Жамшед"][i % 6],
-  region: ["Боидак", "Бектемир", "Янгийор", "Камашли", "Сергели", "Самарканд"][i % 6],
-  expeditor: ["Toxirov M.", "Aminov R.", "Karimov F.", "Sobirov G."][i % 4],
-  territory: ["Toshkent", "Sergeli", "Yashnobod"][i % 3],
-  method: ["Наличные", "Click", "Payme", "Bank"][i % 4],
-  sum: 1_000_000 + i * 240_000,
-}))
-
-function fmt(n: number) { return n.toLocaleString("ru-RU") }
-
-export default function OplatyClientsPage() {
-  const [search, setSearch] = useState("")
-  const [selected, setSelected] = useState<Set<number>>(new Set())
-
-  const filtered = PAYMENTS.filter(p => !search || p.client.toLowerCase().includes(search.toLowerCase()))
-
-  const toggleAll = () => {
-    if (selected.size === filtered.length) setSelected(new Set())
-    else setSelected(new Set(filtered.map(p => p.id)))
-  }
-  const toggleOne = (id: number) => {
-    const next = new Set(selected)
-    if (next.has(id)) next.delete(id)
-    else next.add(id)
-    setSelected(next)
-  }
-
-  const totalSum = PAYMENTS.reduce((s, p) => s + p.sum, 0)
+export default function OplatyPage() {
+  const { isAuthenticated } = useAuth()
+  const { data, loading } = useApi<TarixResp>(isAuthenticated ? "/api/v1/kassa/tarix?limit=200" : null)
+  const items = (data?.items ?? []).filter(i => (i.turi || "").toLowerCase() === "kirim")
+  const total = items.reduce((s, i) => s + Number(i.summa || 0), 0)
 
   return (
     <AdminLayout>
-      <div className="max-w-[1900px] mx-auto space-y-4">
+      <div className="max-w-[1300px] mx-auto space-y-6">
         <div className="flex items-center gap-3">
-          <Link href="/kassa" className="p-2 hover:bg-slate-100 rounded-lg"><ArrowLeft className="w-5 h-5" /></Link>
-          <h1 className="text-2xl font-bold tracking-tight flex-1">Оплаты клиентов</h1>
-          <button className="px-3 py-2 border border-emerald-300 text-emerald-700 rounded-md text-sm bg-white hover:bg-emerald-50">Группировать</button>
-          <button className="px-3 py-2 border border-emerald-300 text-emerald-700 rounded-md text-sm bg-white hover:bg-emerald-50">Активность</button>
-          <Button className="gap-1"><Plus className="w-4 h-4" /> Добавить оплату</Button>
+          <Link href="/kassa" className="p-2 hover:bg-slate-100 rounded"><ArrowLeft className="w-5 h-5" /></Link>
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Klient to'lovlari</h1>
+            <p className="text-base text-slate-500 mt-1">
+              {items.length} ta to'lov · Jami: <span className="font-semibold tabular-nums">{formatCurrency(total)}</span>
+              {!isAuthenticated && <span className="ml-2 text-amber-600 text-xs">⚠ Login kerak</span>}
+            </p>
+          </div>
         </div>
 
-        <Card className="p-4">
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2 mb-3">
-            {["Касса", "Агент", "Территория", "Тип клиента", "Способ оплаты", "Сумма от"].map(f => (
-              <button key={f} className="text-left px-3 py-2 border border-slate-300 rounded-md text-xs hover:border-emerald-400 transition-colors flex items-center justify-between">
-                <span className="text-slate-700">{f}</span>
-                <span className="text-slate-400">▾</span>
-              </button>
-            ))}
-          </div>
-          <div className="flex items-center gap-2">
-            <button className="px-3 py-2 border border-emerald-300 bg-emerald-50 rounded-md text-xs font-semibold text-emerald-700 flex items-center gap-1">
-              <Calendar className="w-3 h-3" /> Дата оплаты ▾
-            </button>
-            <button className="px-3 py-2 border border-emerald-300 bg-emerald-50 rounded-md text-xs font-semibold text-emerald-700 flex items-center gap-1">
-              <Calendar className="w-3 h-3" /> апр 2 6 — май 2 ▾
-            </button>
-            <Button size="sm" className="gap-1 ml-auto"><FilterIcon className="w-4 h-4" /> Filtr</Button>
-          </div>
-        </Card>
+        {loading && <div className="text-center py-12 text-slate-500">Yuklanmoqda...</div>}
 
-        <Card className="p-4">
-          <div className="flex items-center gap-2 mb-3">
-            <Button size="sm" className="gap-1" disabled={selected.size === 0}>
-              <span className="text-xs">Группировка</span>
-            </Button>
-            <Button size="sm" variant="outline" className="gap-1" disabled={selected.size === 0}>
-              <span className="text-xs">Удалить выбранные</span>
-            </Button>
-            {selected.size > 0 && <span className="text-xs text-slate-600">{selected.size} выбрано</span>}
-            <button className="px-2 py-1 border border-slate-300 rounded text-xs ml-auto">По 2 0</button>
-            <button className="px-2 py-1 border border-slate-300 rounded text-xs">Показ./Скр. столбцы</button>
-            <button className="px-2 py-1 border border-slate-300 rounded text-xs">Excel</button>
-            <span className="text-xs text-slate-500">Быстрый поиск:</span>
-            <Input value={search} onChange={e => setSearch(e.target.value)} className="w-48" />
-          </div>
+        {!loading && items.length === 0 && isAuthenticated && (
+          <Card className="p-8 text-center text-slate-500">Hozircha to'lov yo'q</Card>
+        )}
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-xs border-collapse">
-              <thead>
-                <tr className="bg-slate-100">
-                  <th className="border border-slate-300 py-2 px-2 w-8">
-                    <input type="checkbox" checked={selected.size === filtered.length && filtered.length > 0} onChange={toggleAll} />
-                  </th>
-                  <th className="border border-slate-300 py-2 px-2 text-left">ИД оплаты</th>
-                  <th className="border border-slate-300 py-2 px-2 text-left">Дата оплаты</th>
-                  <th className="border border-slate-300 py-2 px-2 text-left">Дата создания записи</th>
-                  <th className="border border-slate-300 py-2 px-2 text-left">ИНН</th>
-                  <th className="border border-slate-300 py-2 px-2 text-left">Клиент</th>
-                  <th className="border border-slate-300 py-2 px-2 text-left">Тип клиента</th>
-                  <th className="border border-slate-300 py-2 px-2 text-left">ИД Агент</th>
-                  <th className="border border-slate-300 py-2 px-2 text-left">ИД Заказа</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map(p => (
-                  <tr key={p.id} className={`hover:bg-slate-50 ${selected.has(p.id) ? "bg-emerald-50" : ""}`}>
-                    <td className="border border-slate-300 py-1.5 px-2 text-center">
-                      <input type="checkbox" checked={selected.has(p.id)} onChange={() => toggleOne(p.id)} />
-                    </td>
-                    <td className="border border-slate-300 py-1.5 px-2 font-mono">#{p.id}</td>
-                    <td className="border border-slate-300 py-1.5 px-2 font-mono">{p.date}</td>
-                    <td className="border border-slate-300 py-1.5 px-2 font-mono text-slate-500">{p.createdAt}</td>
-                    <td className="border border-slate-300 py-1.5 px-2 font-mono">{p.inn}</td>
-                    <td className="border border-slate-300 py-1.5 px-2 font-semibold">{p.client}</td>
-                    <td className="border border-slate-300 py-1.5 px-2">{p.clientType}</td>
-                    <td className="border border-slate-300 py-1.5 px-2 text-xs text-slate-600">{p.agent}</td>
-                    <td className="border border-slate-300 py-1.5 px-2 font-mono">{p.id - 7000}</td>
+        {items.length > 0 && (
+          <Card>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-emerald-50 border-b">
+                  <tr>
+                    <th className="px-4 py-3 text-left font-semibold w-12"></th>
+                    <th className="px-4 py-3 text-left font-semibold">Sana</th>
+                    <th className="px-4 py-3 text-left font-semibold">Klient</th>
+                    <th className="px-4 py-3 text-left font-semibold">Izoh</th>
+                    <th className="px-4 py-3 text-right font-semibold">Summa</th>
                   </tr>
-                ))}
-                <tr className="bg-slate-100 font-bold">
-                  <td colSpan={9} className="border border-slate-300 py-2 px-2 text-center">Итого: {filtered.length} ta to'lov · {fmt(totalSum)} so'm</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-
-          <div className="mt-3 flex items-center justify-between text-xs text-slate-500">
-            <span>1 - {filtered.length} / {PAYMENTS.length}</span>
-            <div className="flex gap-1">
-              <button className="px-2 py-1 border border-slate-300 rounded">Пред..</button>
-              <button className="px-2 py-1 bg-emerald-600 text-white rounded">1</button>
-              <button className="px-2 py-1 border border-slate-300 rounded">2</button>
-              <button className="px-2 py-1 border border-slate-300 rounded">След..</button>
+                </thead>
+                <tbody className="divide-y">
+                  {items.map(i => (
+                    <tr key={i.id} className="hover:bg-slate-50">
+                      <td className="px-4 py-2"><DollarSign className="w-4 h-4 text-emerald-600" /></td>
+                      <td className="px-4 py-2 text-slate-600 tabular-nums">
+                        {new Date(i.sana).toLocaleString("uz-UZ", { dateStyle: "short", timeStyle: "short" })}
+                      </td>
+                      <td className="px-4 py-2 font-medium">{i.klient_ismi || "—"}</td>
+                      <td className="px-4 py-2 text-slate-600 truncate max-w-[200px]">{i.izoh || "—"}</td>
+                      <td className="px-4 py-2 text-right tabular-nums font-bold text-emerald-700">{formatCurrency(Number(i.summa))}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
-          </div>
-        </Card>
+          </Card>
+        )}
       </div>
     </AdminLayout>
   )
