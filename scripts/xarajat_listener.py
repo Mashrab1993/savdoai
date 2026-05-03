@@ -22,14 +22,15 @@ from google import genai
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 log = logging.getLogger(__name__)
 
-# Config
-API_ID = 35573767
-API_HASH = "***REDACTED-OLD-APIHASH***"
-SESSION = "/root/savdoai/scripts/savdoai_user_session"
-GROUP_ID = 4667855704
-ADMIN_UID = 7888864785
+# Config — barcha sirlar env vars'dan olinadi
+# (avval API_HASH va DB_URL fayl ichida hardcoded edi — public git'da edi)
+API_ID = int(os.environ.get("TELEGRAM_API_ID", "35573767"))
+API_HASH = os.environ["TELEGRAM_API_HASH"]
+SESSION = os.environ.get("TELEGRAM_SESSION", "/root/savdoai/scripts/savdoai_user_session")
+GROUP_ID = int(os.environ.get("XARAJAT_GROUP_ID", "4667855704"))
+ADMIN_UID = int(os.environ.get("ADMIN_UID", "7888864785"))
 
-DB_URL = "postgresql://postgres:***REDACTED-OLD-PASSWORD***@caboose.proxy.rlwy.net:34205/railway"
+DB_URL = os.environ["DATABASE_URL"]
 GEMINI_API_KEY = os.environ["GEMINI_API_KEY"]
 GEMINI_MODEL = os.environ.get("GEMINI_LISTENER_MODEL", "gemini-2.5-pro")
 
