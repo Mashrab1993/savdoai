@@ -1,107 +1,86 @@
 "use client"
-import { useState } from "react"
 import { AdminLayout } from "@/components/layout/admin-layout"
 import { Card } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { ArrowLeft, Save, Filter as FilterIcon } from "lucide-react"
+import { ArrowLeft, Target, Users, Box, TrendingUp } from "lucide-react"
 import Link from "next/link"
-import { toast } from "sonner"
+import { useApi, useAuth } from "@/hooks/use-api"
+import { formatCurrency } from "@/lib/utils"
 
-const AGENTS = [
-  { name: "BORIEV MIRJALOL", id: 1 },
-  { name: "Babadjanova Nargiza", id: 2 },
-  { name: "Sayitqulov Mashrab", id: 3 },
-  { name: "Berdiyev Rahmatillo", id: 4 },
-  { name: "ДАВЛАТ", id: 5 },
-  { name: "Турсунов Жамшед", id: 6 },
-]
+type DashboardStats = {
+  today_sum?: number
+  today_count?: number
+}
 
-const PRODUCTS = [
-  "PERFECT", "Elif chocolate", "PRIMA GREEN", "GANGAALI Karol", "СЕМЕЧКИ", "FRUCTIS",
-  "Н BABY салфетки", "Тувлетная бумаговилотчник", "Игрушки CANDY TOYS", "NEWON веха магазин",
-  "Мочадков веха шоколада", "BORD крем", "HILOL", "PRIMA Оранжевый", "SALPETE&Полярикников волосви Direm",
-  "ERFIBLES", "Еш ФУТБОЛЧИ", "NISO", "EMERALD CANDY", "BREF", "PERSIL", "VUMOS", "DOVE", "CLEAR", "ARIEL",
-  "DOMESTOS", "FAIRY", "PANTINE PRO-V", "LINDO", "COLGATE", "Mr.Muscle&MrProper", "LENOR", "CALGON",
-  "OLD SPISE", "SLADUS", "HEAD & SHOULDERS", "REXONA", "PALMOLIVE", "HACI SAKIR", "TIDE&AMP", "AXE",
-  "Lady Speed Stick", "GRASS", "Sofia", "TRUFFLES COCOA", "Choco Boms", "ACE", "Хорден",
-]
+type SavdoResp = { total: number }
+type KlientResp = { total: number }
+type TovarResp = { total: number }
 
-export default function PlanSetupPage() {
-  const [tab, setTab] = useState<"setup" | "merch">("setup")
-  const [selectedTab, setSelectedTab] = useState<"products" | "monthly" | "axs" | "orders">("products")
+export default function PlansSetupPage() {
+  const { isAuthenticated } = useAuth()
+  const { data: stats } = useApi<DashboardStats>(isAuthenticated ? "/api/v1/dashboard/summary" : null)
+  const { data: savdoResp } = useApi<SavdoResp>(isAuthenticated ? "/api/v1/savdolar?limit=1" : null)
+  const { data: klientResp } = useApi<KlientResp>(isAuthenticated ? "/api/v1/klientlar?limit=1" : null)
+  const { data: tovarResp } = useApi<TovarResp>(isAuthenticated ? "/api/v1/tovarlar?limit=1" : null)
 
   return (
     <AdminLayout>
-      <div className="max-w-[1900px] mx-auto space-y-4">
+      <div className="max-w-[1300px] mx-auto space-y-6">
         <div className="flex items-center gap-3">
-          <Link href="/plans" className="p-2 hover:bg-slate-100 rounded-lg"><ArrowLeft className="w-5 h-5" /></Link>
-          <h1 className="text-2xl font-bold tracking-tight flex-1">Установка плана</h1>
-          <Button onClick={() => toast.success("Plan saqlandi")} className="gap-2"><Save className="w-4 h-4" /> Saqlash</Button>
+          <Link href="/plans" className="p-2 hover:bg-slate-100 rounded"><ArrowLeft className="w-5 h-5" /></Link>
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Plan setup</h1>
+            <p className="text-base text-slate-500 mt-1">
+              Asosiy reja: oylik sotuv, vizit, klient hududlari
+              {!isAuthenticated && <span className="ml-2 text-amber-600 text-xs">⚠ Login kerak</span>}
+            </p>
+          </div>
         </div>
 
-        <Card className="p-4">
-          <div className="flex border-b border-slate-200 mb-4">
-            <button onClick={() => setTab("setup")} className={`px-4 py-2 text-sm font-semibold border-b-2 ${tab === "setup" ? "border-emerald-500 text-emerald-700" : "border-transparent text-slate-500"}`}>
-              Настройка плана
-            </button>
-            <button onClick={() => setTab("merch")} className={`px-4 py-2 text-sm font-semibold border-b-2 ${tab === "merch" ? "border-emerald-500 text-emerald-700" : "border-transparent text-slate-500"}`}>
-              Мерчандайзинг
-            </button>
+        {isAuthenticated && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <Card className="p-5 border-emerald-200 bg-emerald-50/40">
+              <div className="flex items-start justify-between mb-2">
+                <span className="text-xs uppercase font-semibold text-emerald-700">Bugungi sotuv</span>
+                <Target className="w-5 h-5 text-emerald-500" />
+              </div>
+              <div className="text-2xl font-bold text-emerald-800 tabular-nums">
+                {formatCurrency(stats?.today_sum || 0)}
+              </div>
+              <div className="text-xs text-slate-500 mt-1">{stats?.today_count || 0} ta zakaz</div>
+            </Card>
+            <Card className="p-5 border-blue-200 bg-blue-50/40">
+              <div className="flex items-start justify-between mb-2">
+                <span className="text-xs uppercase font-semibold text-blue-700">Jami sotuv</span>
+                <TrendingUp className="w-5 h-5 text-blue-500" />
+              </div>
+              <div className="text-2xl font-bold text-blue-800 tabular-nums">{savdoResp?.total ?? "..."}</div>
+            </Card>
+            <Card className="p-5 border-amber-200 bg-amber-50/40">
+              <div className="flex items-start justify-between mb-2">
+                <span className="text-xs uppercase font-semibold text-amber-700">Klientlar</span>
+                <Users className="w-5 h-5 text-amber-500" />
+              </div>
+              <div className="text-2xl font-bold text-amber-800 tabular-nums">{klientResp?.total ?? "..."}</div>
+            </Card>
+            <Card className="p-5 border-purple-200 bg-purple-50/40">
+              <div className="flex items-start justify-between mb-2">
+                <span className="text-xs uppercase font-semibold text-purple-700">Tovarlar</span>
+                <Box className="w-5 h-5 text-purple-500" />
+              </div>
+              <div className="text-2xl font-bold text-purple-800 tabular-nums">{tovarResp?.total ?? "..."}</div>
+            </Card>
           </div>
+        )}
 
-          <div className="flex items-center gap-3 mb-3 flex-wrap">
-            <label className="flex items-center gap-2 text-sm">
-              <input type="checkbox" className="rounded" />
-              Считать с возврата
-            </label>
-            <select className="px-3 py-1.5 border border-slate-300 rounded text-xs">
-              <option>1 неделя</option>
-              <option>1 месяц</option>
-              <option>1 квартал</option>
-            </select>
-            <select className="px-3 py-1.5 border border-slate-300 rounded text-xs">
-              <option>Объем</option>
-              <option>АРС</option>
-              <option>Кол-во заказов</option>
-            </select>
-            <Button size="sm" className="ml-auto">Бнять</Button>
-          </div>
-
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm border-collapse">
-              <thead>
-                <tr className="bg-slate-100 sticky top-0">
-                  <th className="border border-slate-300 py-2 px-2 text-left min-w-[200px]">Агент</th>
-                  <th className="border border-slate-300 py-2 px-2 text-right">Сумма</th>
-                  <th className="border border-slate-300 py-2 px-2 text-right">Количество</th>
-                  <th className="border border-slate-300 py-2 px-2 text-right">Объем</th>
-                  <th className="border border-slate-300 py-2 px-2 text-right">АРС</th>
-                  <th className="border border-slate-300 py-2 px-2 text-right">Кол-во заказов</th>
-                </tr>
-              </thead>
-              <tbody>
-                {AGENTS.map(a => (
-                  <tr key={a.id} className="bg-emerald-50/30 border-y-2 border-emerald-200">
-                    <td className="border border-slate-300 py-2 px-2 font-bold text-slate-900">▸ {a.name}</td>
-                    <td className="border border-slate-300 py-2 px-2 text-right font-mono">0</td>
-                    <td className="border border-slate-300 py-2 px-2 text-right font-mono">0</td>
-                    <td className="border border-slate-300 py-2 px-2 text-right font-mono">0</td>
-                    <td className="border border-slate-300 py-2 px-2 text-right font-mono">0</td>
-                    <td className="border border-slate-300 py-2 px-2 text-right font-mono">0</td>
-                  </tr>
-                ))}
-                {PRODUCTS.map((p, i) => (
-                  <tr key={p} className="hover:bg-slate-50">
-                    <td className="border border-slate-300 py-1.5 px-2 text-emerald-700 hover:underline cursor-pointer pl-6 text-xs">{p}</td>
-                    <td className="border border-slate-300 py-1.5 px-2 text-right font-mono text-slate-300">—</td>
-                    <td className="border border-slate-300 py-1.5 px-2 text-right font-mono text-slate-300">—</td>
-                    <td className="border border-slate-300 py-1.5 px-2 text-right font-mono text-slate-300">—</td>
-                    <td className="border border-slate-300 py-1.5 px-2 text-right font-mono text-slate-300">—</td>
-                    <td className="border border-slate-300 py-1.5 px-2 text-right font-mono text-slate-300">—</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+        <Card className="p-6">
+          <h3 className="text-lg font-semibold mb-3">Plan moduli</h3>
+          <p className="text-sm text-slate-600 mb-4">
+            Bu funksiya hali to'liq qurilmagan. Hozirgi statistika real ma'lumotlardan olinadi,
+            lekin oylik plan/target sozlash tizimi rivojlantirilmoqda.
+          </p>
+          <div className="bg-amber-50 border border-amber-200 rounded p-4 text-sm text-amber-800">
+            <strong>Kelajakda:</strong> Oylik sotuv targeti, agent-level KPI, klient-level visit reja.
+            Hozir esa siz sotuv qila olasiz, statistika real-time ko'rsatiladi.
           </div>
         </Card>
       </div>

@@ -1,81 +1,106 @@
 "use client"
 import { AdminLayout } from "@/components/layout/admin-layout"
 import { Card } from "@/components/ui/card"
-import Link from "next/link"
 import {
-  Building2, CreditCard, Ruler, MapPin, Tag, User, Layers, Package,
-  DollarSign, Banknote, XCircle, RotateCcw, Camera, Box, Gift,
-  Sparkles, Users, Briefcase, FileText, Lock, ListTodo, ArrowLeftRight,
-  Boxes, Square, BookOpen, Cable, Printer, Container, Boxes as BoxesIcon,
-  Tags, Smartphone, Database
+  User, Building, Bell, Shield, CreditCard, Palette, FileText,
+  Tag, Box, Truck, Database, Zap, Globe
 } from "lucide-react"
+import Link from "next/link"
+import { useApi, useAuth } from "@/hooks/use-api"
 
-const SETTINGS = [
-  { id: 1, slug: "diler", icon: Building2, title: "Profil kompaniyasi", desc: "MCH/Sam/Ulug'bek/Sale (4 region)" },
-  { id: 2, slug: "paymentType", icon: CreditCard, title: "To'lov usullari", desc: "Naqd/Безнал/Доллар/Перечисление" },
-  { id: 3, slug: "measureUnit", icon: Ruler, title: "O'lchov birliklari", desc: "Dona/Kg/Litr/Blok/Korobka" },
-  { id: 4, slug: "territory", icon: MapPin, title: "Territoriya", desc: "Geografik hududlar (20+)" },
-  { id: 5, slug: "clientCategory", icon: Tag, title: "Klient kategoriya", desc: "Tier kategoriyalar" },
-  { id: 6, slug: "clientType", icon: User, title: "Klient tipi", desc: "Магазин/Хорека/Опт" },
-  { id: 7, slug: "grouping", icon: Layers, title: "Mahsulot ierarxiyasi", desc: "7 daraja: Kategoriya→Brend→Segment" },
-  { id: 8, slug: "product", icon: Package, title: "Tovarlar", desc: "Master katalog (1000+ SKU)" },
-  { id: 9, slug: "priceType", icon: Tag, title: "Narx turlari", desc: "ОПТ/Розница/Маршрут/VIP" },
-  { id: 10, slug: "price", icon: DollarSign, title: "Narxlar", desc: "Sotish/Olish/Прайс — 3 tab" },
-  { id: 11, slug: "reject", icon: XCircle, title: "Otkaz sabablari", desc: "Standart 5 sabab" },
-  { id: 12, slug: "rejectDefect", icon: RotateCcw, title: "Qaytarish sabablari", desc: "Возврат/Обмен" },
-  { id: 13, slug: "photoReportCategory", icon: Camera, title: "Foto report kategoriya", desc: "Storecheck turlari" },
-  { id: 14, slug: "inventoryType", icon: Box, title: "Inventar turlari", desc: "Холодильник/Стенд" },
-  { id: 15, slug: "bonus", icon: Gift, title: "Bonuslar va chegirmalar", desc: "5 tip: Avto/Manual/Накопит." },
-  { id: 16, slug: "RLP", icon: Sparkles, title: "RLP Bonuslar", desc: "Brand-specific retro-bonus" },
-  { id: 17, slug: "users", icon: Users, title: "Foydalanuvchilar", desc: "User management" },
-  { id: 18, slug: "partner", icon: Briefcase, title: "Partnyorlar", desc: "Wholesale tier" },
-  { id: 19, slug: "orderNote", icon: FileText, title: "Zakaz izohlari", desc: "Pre-defined notes" },
-  { id: 20, slug: "closed", icon: Lock, title: "Davr yopilishi", desc: "8 selective lock toggle" },
-  { id: 21, slug: "taskType", icon: ListTodo, title: "Vazifa turlari", desc: "Task type definitions" },
-  { id: 22, slug: "tradeDirection", icon: ArrowLeftRight, title: "Savdo yo'nalishi", desc: "Trade direction" },
-  { id: 23, slug: "salesChannel", icon: Boxes, title: "Sotuv kanali", desc: "B2B/B2C/Wholesale" },
-  { id: 24, slug: "boxType", icon: Square, title: "Quti turlari", desc: "Блок/Коробка/Пачка/Мешок" },
-  { id: 25, slug: "knowledgeBase", icon: BookOpen, title: "Bilim bazasi", desc: "Built-in dokumentlar" },
-  { id: 26, slug: "integration", icon: Cable, title: "Integratsiya", desc: "6 platform marketplace" },
-  { id: 27, slug: "printer", icon: Printer, title: "Printerlar", desc: "Network printer config" },
-  { id: 28, slug: "tara", icon: Container, title: "Tara", desc: "Bottle/container deposit" },
-  { id: 29, slug: "inventoryGroup", icon: BoxesIcon, title: "Inventar guruhi", desc: "Inventory grouping" },
-  { id: 30, slug: "tag", icon: Tags, title: "Teglar", desc: "Free-form tags" },
-  { id: 31, slug: "applications", icon: Smartphone, title: "Mobil ilovalar", desc: "App config" },
-  { id: 32, slug: "backup", icon: Database, title: "Backup", desc: "Manual backup UI" },
+type Me = { id: number; ism?: string; to_liq_ism?: string; dokon_nomi?: string; faol?: boolean }
+
+const SECTIONS = [
+  {
+    title: "Profil va kompaniya",
+    items: [
+      { slug: "diler", icon: Building, title: "Kompaniya profili", desc: "Logo, nom, INN" },
+      { slug: "users", icon: User, title: "Foydalanuvchilar", desc: "Admin/Agent ro'yxati" },
+      { slug: "security", icon: Shield, title: "Xavfsizlik", desc: "Parol, 2FA" },
+      { slug: "billing", icon: CreditCard, title: "Billing", desc: "Tarif, to'lovlar" },
+    ],
+  },
+  {
+    title: "Tovar va narx",
+    items: [
+      { slug: "subkategoriya", icon: Tag, title: "Subkategoriya", desc: "Tovar kategoriya" },
+      { slug: "unit-conversion", icon: Box, title: "Birlik konvertatsiya", desc: "kg ↔ dona" },
+      { slug: "tara", icon: Box, title: "Tara", desc: "Qutilar" },
+      { slug: "season", icon: FileText, title: "Mavsumlar", desc: "Sezonlik" },
+    ],
+  },
+  {
+    title: "Sotuv va kanal",
+    items: [
+      { slug: "salesChannel", icon: Tag, title: "Savdo kanali", desc: "Optom/Chakana" },
+      { slug: "tradeDirection", icon: Globe, title: "Savdo yo'nalishi", desc: "B2B/B2C" },
+      { slug: "tag", icon: Tag, title: "Teglar", desc: "Klient teglar" },
+      { slug: "territory", icon: Globe, title: "Hududlar", desc: "Region" },
+    ],
+  },
+  {
+    title: "Tizim",
+    items: [
+      { slug: "notifications", icon: Bell, title: "Bildirishnomalar", desc: "Telegram, SMS" },
+      { slug: "integrations", icon: Zap, title: "Integratsiyalar", desc: "Click, Payme" },
+      { slug: "backup", icon: Database, title: "Backup", desc: "Ma'lumotlar zaxiralash" },
+      { slug: "themes", icon: Palette, title: "Tema", desc: "Yorug'/Qorong'i" },
+    ],
+  },
 ]
 
 export default function SozlamalarPage() {
+  const { isAuthenticated } = useAuth()
+  const { data: me } = useApi<Me>(isAuthenticated ? "/api/v1/me" : null)
+
   return (
     <AdminLayout>
-      <div className="max-w-[1700px] mx-auto space-y-6">
+      <div className="max-w-[1500px] mx-auto space-y-6">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Sozlamalar</h1>
-          <p className="text-base text-slate-500 mt-1">{SETTINGS.length} ta sozlash bo'limi · Tizim konfiguratsiyasi</p>
+          <p className="text-base text-slate-500 mt-1">
+            Kompaniya, tovar, sotuv va tizim sozlamalari
+            {!isAuthenticated && <span className="ml-2 text-amber-600 text-xs">⚠ Login kerak</span>}
+          </p>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-          {SETTINGS.map(s => {
-            const Icon = s.icon
-            return (
-              <Link key={s.slug} href={`/sozlamalar/${s.slug}`}>
-                <Card className="p-4 hover:shadow-lg hover:border-emerald-300 hover:bg-emerald-50/30 transition-all cursor-pointer h-full group">
-                  <div className="flex items-start gap-3">
-                    <div className="flex-shrink-0 w-10 h-10 rounded-xl bg-slate-100 group-hover:bg-emerald-100 flex items-center justify-center transition-colors">
-                      <Icon className="w-5 h-5 text-slate-600 group-hover:text-emerald-700" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-1.5 mb-0.5">
-                        <span className="text-xs font-mono text-slate-400">{s.id}.</span>
-                        <h3 className="text-sm font-semibold text-slate-900 group-hover:text-emerald-700 line-clamp-1">{s.title}</h3>
-                      </div>
-                      <p className="text-xs text-slate-500 line-clamp-2">{s.desc}</p>
-                    </div>
-                  </div>
-                </Card>
+        {me && (
+          <Card className="p-5 bg-gradient-to-br from-emerald-50 to-blue-50 border-emerald-200">
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 rounded-full bg-emerald-600 flex items-center justify-center text-white text-xl font-bold">
+                {(me.dokon_nomi || me.ism || "?")[0].toUpperCase()}
+              </div>
+              <div className="flex-1">
+                <div className="text-lg font-semibold">{me.dokon_nomi || me.to_liq_ism || me.ism || "Kompaniya"}</div>
+                <div className="text-sm text-slate-600">ID: {me.id} · {me.faol !== false ? "✓ Faol" : "Pas"}</div>
+              </div>
+              <Link href="/profile" className="px-4 py-2 bg-white border border-emerald-200 rounded text-sm hover:bg-emerald-100">
+                Profil
               </Link>
-            )
-          })}
+            </div>
+          </Card>
+        )}
+
+        <div className="space-y-6">
+          {SECTIONS.map(s => (
+            <div key={s.title}>
+              <h2 className="text-lg font-semibold mb-3">{s.title}</h2>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                {s.items.map(item => {
+                  const Icon = item.icon
+                  return (
+                    <Link key={item.slug} href={`/sozlamalar/${item.slug}`}>
+                      <Card className="p-4 hover:shadow-md transition-all cursor-pointer h-full">
+                        <Icon className="w-7 h-7 mb-2 text-slate-600" />
+                        <h3 className="text-sm font-semibold">{item.title}</h3>
+                        <p className="text-xs text-slate-500">{item.desc}</p>
+                      </Card>
+                    </Link>
+                  )
+                })}
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     </AdminLayout>
