@@ -1,177 +1,94 @@
 "use client"
-import { useState } from "react"
 import { AdminLayout } from "@/components/layout/admin-layout"
 import { Card } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { ArrowLeft, Plus, Search, Download, AlertTriangle } from "lucide-react"
+import { ArrowLeft, RotateCcw, Plus } from "lucide-react"
 import Link from "next/link"
+import { useApi, useAuth } from "@/hooks/use-api"
+import { formatCurrency } from "@/lib/utils"
 
-type ReturnRow = {
-  id: number; date: string; client: string; agent: string; orderRef: number;
-  product: string; qty: number; sum: number;
-  reason: "broken" | "expired" | "wrong" | "client_refused" | "other";
-  status: "draft" | "approved" | "rejected" | "refunded";
+type SotuvRow = {
+  id: number
+  sana: string
+  klient_ismi?: string
+  jami: number
+  holat?: string
 }
-
-const REASONS: Record<string, string> = {
-  broken: "Buzuq",
-  expired: "Muddati o'tgan",
-  wrong: "Noto'g'ri yetkazma",
-  client_refused: "Klient rad etdi",
-  other: "Boshqa",
-}
-const REASON_COLOR: Record<string, string> = {
-  broken: "bg-[#F5E5D6] text-[#C75D3C]",
-  expired: "bg-[#FCE9DD] text-[#D97706]",
-  wrong: "bg-[#FCE9DD] text-[#D97706]",
-  client_refused: "bg-blue-50 text-blue-700",
-  other: "bg-[#F0EAE0] text-[#6B5B4D]",
-}
-
-const RETURNS: ReturnRow[] = [
-  { id: 4001, date: "2026-05-02", client: "Salom Magazin №1", agent: "Babadjanova N.", orderRef: 9024, product: "Choco-Boom 75g (12 dona)", qty: 12, sum: 144_000, reason: "broken", status: "approved" },
-  { id: 4002, date: "2026-04-30", client: "Bona Магазин", agent: "Berdiyev R.", orderRef: 9018, product: "Sok Apelsin 1L (6 dona)", qty: 6, sum: 84_000, reason: "expired", status: "refunded" },
-  { id: 4003, date: "2026-04-28", client: "Дастархон Сервис", agent: "Sayitqulov M.", orderRef: 9012, product: "Coca-Cola 1.5L (4 dona)", qty: 4, sum: 64_000, reason: "wrong", status: "approved" },
-  { id: 4004, date: "2026-04-26", client: "Гулямов Маркет", agent: "ДАВЛАТ", orderRef: 9006, product: "Bonjur 50g (24 dona)", qty: 24, sum: 96_000, reason: "client_refused", status: "draft" },
-  { id: 4005, date: "2026-04-25", client: "Турсун Ake Магазин", agent: "BORIEV M.", orderRef: 9000, product: "Pechenye Yubileynoye (6 dona)", qty: 6, sum: 72_000, reason: "broken", status: "rejected" },
-]
-
-const SERIF: React.CSSProperties = { fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }
-
-function fmt(n: number) { return n.toLocaleString("ru-RU") }
+type SavdoResp = { total: number; items: SotuvRow[] }
 
 export default function ReturnPage() {
-  const [search, setSearch] = useState("")
-  const [statusFilter, setStatusFilter] = useState<string>("all")
+  const { isAuthenticated } = useAuth()
+  const { data, loading } = useApi<SavdoResp>(isAuthenticated ? "/api/v1/savdolar?limit=200" : null)
 
-  const filtered = RETURNS
-    .filter(r => statusFilter === "all" || r.status === statusFilter)
-    .filter(r => !search || r.client.toLowerCase().includes(search.toLowerCase()) || String(r.id).includes(search))
-
-  const totalSum = filtered.reduce((s, r) => s + r.sum, 0)
-  const totalQty = filtered.reduce((s, r) => s + r.qty, 0)
-
-  const byReason = Object.entries(REASONS).map(([key, label]) => ({
-    key, label,
-    count: RETURNS.filter(r => r.reason === key).length,
-    sum: RETURNS.filter(r => r.reason === key).reduce((s, r) => s + r.sum, 0)
-  }))
+  const items = data?.items ?? []
+  const returns = items.filter(s => (s.holat || "").toLowerCase() === "bekor" || (s.holat || "").toLowerCase() === "qaytarildi")
+  const totalReturned = returns.reduce((s, x) => s + Number(x.jami || 0), 0)
 
   return (
     <AdminLayout>
-      <div className="-mx-4 -my-4 px-4 py-6 min-h-full" style={{ background: "linear-gradient(180deg, #F5F1EB 0%, #FAF7F2 100%)" }}>
-        <div className="max-w-[1700px] mx-auto space-y-5">
-          <div className="flex items-end gap-3 border-b border-[#E8E0D3] pb-6">
-            <Link href="/sotuv" className="p-2 hover:bg-[#F0EAE0] rounded-lg"><ArrowLeft className="w-5 h-5 text-[#6B5B4D]" /></Link>
-            <div className="flex-1">
-              <div className="text-xs uppercase tracking-[0.2em] text-[#9C8A6E] font-medium mb-2">SAVDOAI · SOTUV</div>
-              <h1 className="text-4xl font-light tracking-tight text-[#1A1A1A]" style={SERIF}>
-                Возвраты <span className="italic text-[#C75D3C]">qaytarishlar</span>
-              </h1>
-              <p className="text-sm text-[#6B5B4D] mt-2">{RETURNS.length} ta qaytarish · {fmt(totalSum)} so'm</p>
-            </div>
-            <Button variant="outline" className="gap-2 border-[#E8E0D3] text-[#6B5B4D]"><Download className="w-4 h-4" /> Excel</Button>
-            <Button className="gap-1 text-white" style={{ background: "#C75D3C" }}><Plus className="w-4 h-4" /> Yangi qaytarish</Button>
+      <div className="max-w-[1300px] mx-auto space-y-6">
+        <div className="flex items-center gap-3">
+          <Link href="/sotuv" className="p-2 hover:bg-slate-100 rounded"><ArrowLeft className="w-5 h-5" /></Link>
+          <div className="flex-1">
+            <h1 className="text-3xl font-bold tracking-tight">Qaytarishlar (Return)</h1>
+            <p className="text-base text-slate-500 mt-1">
+              Bekor qilingan yoki qaytarilgan sotuvlar
+              {!isAuthenticated && <span className="ml-2 text-amber-600 text-xs">⚠ Login kerak</span>}
+            </p>
           </div>
+          <Link href="/sotuv/yangi" className="px-4 py-2 bg-emerald-600 text-white rounded flex items-center gap-2">
+            <Plus className="w-4 h-4" /> Yangi sotuv
+          </Link>
+        </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-            {byReason.map(r => (
-              <Card key={r.key} className="bg-white border border-[#E8E0D3] shadow-sm rounded-2xl p-5 relative overflow-hidden">
-                <div className="text-[10px] uppercase tracking-[0.18em] font-medium text-[#9C8A6E]">{r.label}</div>
-                <div className="text-3xl font-light mt-2 tabular-nums text-[#1A1A1A]" style={SERIF}>{r.count}</div>
-                <div className="text-xs text-[#6B5B4D] font-mono tabular-nums mt-1">{fmt(r.sum / 1000)}k so'm</div>
-                <div className="absolute bottom-0 left-0 right-0 h-px bg-[#C75D3C] opacity-40" />
-              </Card>
-            ))}
-          </div>
+        <div className="grid grid-cols-2 gap-4">
+          <Card className="p-5 border-rose-200 bg-rose-50/40">
+            <div className="text-xs uppercase font-semibold text-rose-700">Qaytarilgan soni</div>
+            <div className="text-3xl font-bold text-rose-800 tabular-nums">{returns.length}</div>
+          </Card>
+          <Card className="p-5 border-amber-200 bg-amber-50/40">
+            <div className="text-xs uppercase font-semibold text-amber-700">Qaytarilgan summa</div>
+            <div className="text-3xl font-bold text-amber-800 tabular-nums">{formatCurrency(totalReturned)}</div>
+          </Card>
+        </div>
 
-          <div className="flex items-center gap-2 flex-wrap">
-            {["all", "draft", "approved", "rejected", "refunded"].map(s => (
-              <button
-                key={s}
-                onClick={() => setStatusFilter(s)}
-                className={`px-3 py-2 rounded-md text-xs font-medium transition-colors ${statusFilter === s ? "text-white" : "bg-white border border-[#E8E0D3] text-[#6B5B4D] hover:bg-[#FAF7F2]"}`}
-                style={statusFilter === s ? { background: "#C75D3C" } : undefined}
-              >
-                {s === "all" ? "Hammasi" :
-                 s === "draft" ? "Qoralama" :
-                 s === "approved" ? "Tasdiqlangan" :
-                 s === "rejected" ? "Rad etilgan" :
-                 "To'langan"}
-              </button>
-            ))}
-            <div className="ml-auto relative">
-              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#9C8A6E]" />
-              <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="Klient yoki #..." className="pl-9 w-64 border-[#E8E0D3]" />
-            </div>
-          </div>
+        {loading && <div className="text-center py-12 text-slate-500">Yuklanmoqda...</div>}
 
-          <Card className="bg-white border border-[#E8E0D3] shadow-sm rounded-2xl p-5">
+        {!loading && returns.length === 0 && isAuthenticated && (
+          <Card className="p-8 text-center text-slate-500">
+            ✅ Hech qanday qaytarish yo'q — barcha sotuvlar qabul qilingan
+          </Card>
+        )}
+
+        {returns.length > 0 && (
+          <Card>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
-                <thead>
-                  <tr className="bg-[#FAF7F2] border-b border-[#E8E0D3]">
-                    <th className="py-3 px-2 text-left text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">№</th>
-                    <th className="py-3 px-2 text-left text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Sana</th>
-                    <th className="py-3 px-2 text-left text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Klient / Agent</th>
-                    <th className="py-3 px-2 text-left text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Zakaz</th>
-                    <th className="py-3 px-2 text-left text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Tovar</th>
-                    <th className="py-3 px-2 text-right text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Miqdor</th>
-                    <th className="py-3 px-2 text-right text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Summa</th>
-                    <th className="py-3 px-2 text-center text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Sabab</th>
-                    <th className="py-3 px-2 text-center text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Status</th>
+                <thead className="bg-rose-50 border-b">
+                  <tr>
+                    <th className="px-4 py-3 text-left font-semibold w-12"></th>
+                    <th className="px-4 py-3 text-left font-semibold">Sana</th>
+                    <th className="px-4 py-3 text-left font-semibold">Klient</th>
+                    <th className="px-4 py-3 text-right font-semibold">Summa</th>
+                    <th className="px-4 py-3 text-left font-semibold">Holat</th>
                   </tr>
                 </thead>
-                <tbody>
-                  {filtered.map(r => (
-                    <tr key={r.id} className="border-b border-[#F0EAE0] hover:bg-[#FAF7F2]">
-                      <td className="py-3 px-2 font-mono tabular-nums text-[#C75D3C]">#{r.id}</td>
-                      <td className="py-3 px-2 font-mono tabular-nums text-xs text-[#1A1A1A]">{r.date}</td>
-                      <td className="py-3 px-2">
-                        <div className="font-medium text-[#1A1A1A]">{r.client}</div>
-                        <div className="text-xs text-[#9C8A6E]">{r.agent}</div>
+                <tbody className="divide-y">
+                  {returns.map(r => (
+                    <tr key={r.id} className="hover:bg-slate-50">
+                      <td className="px-4 py-2"><RotateCcw className="w-4 h-4 text-rose-600" /></td>
+                      <td className="px-4 py-2 tabular-nums text-slate-600">
+                        {new Date(r.sana).toLocaleDateString("uz-UZ")}
                       </td>
-                      <td className="py-3 px-2 font-mono tabular-nums text-xs text-[#9C8A6E]">#{r.orderRef}</td>
-                      <td className="py-3 px-2 text-[#1A1A1A]">{r.product}</td>
-                      <td className="py-3 px-2 text-right font-mono tabular-nums text-[#1A1A1A]">{r.qty}</td>
-                      <td className="py-3 px-2 text-right font-mono tabular-nums font-medium text-[#C75D3C]">−{fmt(r.sum)}</td>
-                      <td className="py-3 px-2 text-center">
-                        <span className={`text-xs px-2 py-0.5 rounded ${REASON_COLOR[r.reason]}`}>{REASONS[r.reason]}</span>
-                      </td>
-                      <td className="py-3 px-2 text-center">
-                        {r.status === "draft" && <span className="text-xs px-2 py-0.5 rounded bg-[#F0EAE0] text-[#6B5B4D]">Qoralama</span>}
-                        {r.status === "approved" && <span className="text-xs px-2 py-0.5 rounded bg-emerald-50 text-emerald-700">Tasdiq</span>}
-                        {r.status === "rejected" && <span className="text-xs px-2 py-0.5 rounded bg-[#F5E5D6] text-[#C75D3C]">Rad</span>}
-                        {r.status === "refunded" && <span className="text-xs px-2 py-0.5 rounded bg-blue-50 text-blue-700">To'langan</span>}
-                      </td>
+                      <td className="px-4 py-2 font-medium">{r.klient_ismi || "—"}</td>
+                      <td className="px-4 py-2 text-right tabular-nums font-bold text-rose-700">{formatCurrency(Number(r.jami))}</td>
+                      <td className="px-4 py-2"><span className="text-xs px-2 py-0.5 bg-rose-100 text-rose-700 rounded">{r.holat || "bekor"}</span></td>
                     </tr>
                   ))}
-                  <tr className="bg-[#FAF7F2] font-medium">
-                    <td colSpan={5} className="py-3 px-2 text-right text-[#6B5B4D] uppercase text-xs tracking-wider">Итого</td>
-                    <td className="py-3 px-2 text-right font-mono tabular-nums text-[#1A1A1A]" style={SERIF}>{totalQty}</td>
-                    <td className="py-3 px-2 text-right font-mono tabular-nums text-[#C75D3C]" style={SERIF}>−{fmt(totalSum)}</td>
-                    <td colSpan={2}></td>
-                  </tr>
                 </tbody>
               </table>
             </div>
           </Card>
-
-          <Card className="bg-[#FCE9DD] border border-[#E8C9A8] shadow-sm rounded-2xl p-6">
-            <div className="flex items-start gap-3">
-              <AlertTriangle className="w-6 h-6 text-[#D97706] flex-shrink-0 mt-1" />
-              <div>
-                <h3 className="font-medium text-[#1A1A1A]" style={SERIF}>Qaytarish darajasi</h3>
-                <p className="text-sm text-[#6B5B4D] mt-1">
-                  Hozirgi kunda <span className="font-mono tabular-nums font-medium">{RETURNS.length}</span> ta qaytarish ro'yxatga olindi.
-                  Eng ko'p sabab: <span className="font-medium">{byReason.sort((a, b) => b.count - a.count)[0].label}</span>.
-                  Tavsiya: yetkazib berishda sifat nazoratini kuchaytirish.
-                </p>
-              </div>
-            </div>
-          </Card>
-        </div>
+        )}
       </div>
     </AdminLayout>
   )
