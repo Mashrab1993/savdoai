@@ -85,8 +85,8 @@ async def qoldiq_qaytarish(conn, uid: int, sotuv_id: int) -> dict:
 CHECK_IN_OUT_MIGRATION = """
 CREATE TABLE IF NOT EXISTS checkin_out (
     id SERIAL PRIMARY KEY,
-    user_id INTEGER NOT NULL,
-    klient_id INTEGER NOT NULL,
+    user_id BIGINT NOT NULL,
+    klient_id BIGINT NOT NULL,
     turi VARCHAR(10) NOT NULL,  -- checkin / checkout
     latitude DOUBLE PRECISION,
     longitude DOUBLE PRECISION,
