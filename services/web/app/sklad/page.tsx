@@ -34,16 +34,7 @@ const HIERARCHY_TABS = [
   { key: "grouping", label: "Guruhlash" },
 ]
 
-const MOCK_FALLBACK: Tovar[] = [
-  { id: 64, kod: "1001", artikul: "AR-001", nomi: "GANJAVALI-Krem", brend: "GANJAVALI", kategoriya: "Kosmetika", birlik: "Шtuk", qoldiq: 1250, sotish_narxi: 35000, olish_narxi: 28000, faol: true },
-  { id: 65, kod: "1002", artikul: "AR-002", nomi: "Муроджон ёнги шоколад", brend: "Муроджон", kategoriya: "Shirinlik", birlik: "Шtuk", qoldiq: 850, sotish_narxi: 12000, olish_narxi: 9500, faol: true },
-  { id: 66, kod: "1003", artikul: "AR-003", nomi: "SLADUS", brend: "SLADUS", kategoriya: "Shirinlik", birlik: "Блок", qoldiq: 320, sotish_narxi: 24000, olish_narxi: 19000, faol: true },
-  { id: 67, kod: "1004", artikul: "AR-004", nomi: "ERFIBLESS", brend: "ERFIBLESS", kategoriya: "Shirinlik", birlik: "Шtuk", qoldiq: 12, sotish_narxi: 18000, olish_narxi: 14000, faol: true },
-  { id: 68, kod: "1005", artikul: "AR-005", nomi: "ЁШ ФУТБОЛЧИ", brend: "ЁШ ФУТБОЛЧИ", kategoriya: "Shirinlik", birlik: "Шtuk", qoldiq: 980, sotish_narxi: 8500, olish_narxi: 6500, faol: true },
-  { id: 69, kod: "1006", artikul: "AR-006", nomi: "PRIMA GREEN", brend: "PRIMA", kategoriya: "Maishiy kimyo", birlik: "Кг", qoldiq: 450, sotish_narxi: 45000, olish_narxi: 35000, faol: true },
-  { id: 70, kod: "1007", artikul: "AR-007", nomi: "ARIEL", brend: "ARIEL", kategoriya: "Maishiy kimyo", birlik: "Кг", qoldiq: 0, sotish_narxi: 78000, olish_narxi: 62000, faol: true },
-  { id: 71, kod: "1008", artikul: "AR-008", nomi: "PERSIL", brend: "PERSIL", kategoriya: "Maishiy kimyo", birlik: "Кг", qoldiq: 320, sotish_narxi: 82000, olish_narxi: 65000, faol: true },
-]
+interface TovarResp { total: number; items: Tovar[] }
 
 export default function SkladPage() {
   const { isAuthenticated } = useAuth()
@@ -52,8 +43,8 @@ export default function SkladPage() {
   const [importOpen, setImportOpen] = useState(false)
   const [reloadKey, setReloadKey] = useState(0)
 
-  const { data, loading, error } = useApi<Tovar[]>(isAuthenticated ? `/api/v1/tovarlar?_=${reloadKey}` : null)
-  const tovarlar: Tovar[] = data ?? MOCK_FALLBACK
+  const { data, loading, error } = useApi<TovarResp>(isAuthenticated ? `/api/v1/tovarlar?limit=300&_=${reloadKey}` : null)
+  const tovarlar: Tovar[] = data?.items ?? []
 
   const filtered = tovarlar.filter(p =>
     p.nomi.toLowerCase().includes(search.toLowerCase()) ||
@@ -77,7 +68,7 @@ export default function SkladPage() {
               </h1>
               <p className="text-base text-[#6B5B4D] mt-3 max-w-xl">
                 {filtered.length} tovar · Qoldiq: {filtered.reduce((s, p) => s + p.qoldiq, 0).toLocaleString()} dona
-                {!isAuthenticated && <span className="ml-2 text-xs text-[#D97706]">⚠ Demo data — login kerak</span>}
+                {!isAuthenticated && <span className="ml-2 text-xs text-[#D97706]">⚠ Login kerak</span>}
               </p>
             </div>
             <div className="flex items-center gap-2">

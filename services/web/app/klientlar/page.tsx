@@ -12,6 +12,7 @@ import Link from "next/link"
 interface Klient {
   id: number
   nomi: string
+  ism?: string
   telefon?: string
   manzil?: string
   kategoriya?: string
@@ -20,26 +21,20 @@ interface Klient {
   qarz?: number
 }
 
-const MOCK_FALLBACK: Klient[] = [
-  { id: 36, nomi: "Аббос Ака Мирбозор №55", telefon: "+998 90 123 45 67", kategoriya: "Розница", hudud: "Mirbozor", qarz: -1683800 },
-  { id: 5301, nomi: "Булунгур Астановка №3", telefon: "+998 90 234 56 78", kategoriya: "Розница", hudud: "Bulungʻur", qarz: 0 },
-  { id: 5776, nomi: "Диайди №99", telefon: "+998 90 345 67 89", kategoriya: "Опт", hudud: "Busygina", qarz: -100000 },
-  { id: 1558, nomi: "Салим Гараж (Вокзал) №6", telefon: "+998 90 456 78 90", kategoriya: "Опт", hudud: "Vokzal", qarz: 0 },
-  { id: 4797, nomi: "Akmal Aka Narimon №88-Машраб", telefon: "+998 90 567 89 01", kategoriya: "Розница", hudud: "Narimon", qarz: -4824300 },
-  { id: 4206, nomi: "Бегзод Маркет № 0 (Бигзод Маркет)", telefon: "+998 91 316-16-66", kategoriya: "Розница", hudud: "Sayfullin", qarz: 1500000 },
-]
+interface KlientResp { total: number; items: Klient[] }
 
 export default function ClientsPage() {
   const { isAuthenticated } = useAuth()
   const [search, setSearch] = useState("")
   const [filter, setFilter] = useState<"all" | "active" | "debt">("all")
 
-  const { data, loading, error } = useApi<Klient[]>(isAuthenticated ? "/api/v1/klientlar" : null)
-  const klientlar: Klient[] = data ?? MOCK_FALLBACK
+  const { data, loading, error } = useApi<KlientResp>(isAuthenticated ? "/api/v1/klientlar?limit=200" : null)
+  const klientlar: Klient[] = (data?.items ?? []).map(k => ({ ...k, nomi: k.nomi || k.ism || "—" }))
 
   const filtered = klientlar.filter(c => {
     if (filter === "debt" && (c.qarz ?? 0) >= 0) return false
-    return c.nomi.toLowerCase().includes(search.toLowerCase()) ||
+    const name = (c.nomi || c.ism || "").toLowerCase()
+    return name.includes(search.toLowerCase()) ||
       String(c.id).includes(search)
   })
 
@@ -61,7 +56,7 @@ export default function ClientsPage() {
                 <span className={totalDebt < 0 ? "text-[#C75D3C] font-medium" : "text-emerald-700 font-medium"}>
                   {totalDebt.toLocaleString('uz-UZ')} so'm
                 </span>
-                {!isAuthenticated && <span className="ml-2 text-xs text-[#D97706]">⚠ Demo data — login kerak</span>}
+                {!isAuthenticated && <span className="ml-2 text-xs text-[#D97706]">⚠ Login kerak</span>}
               </p>
             </div>
             <div className="flex gap-2">

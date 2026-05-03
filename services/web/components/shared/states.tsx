@@ -25,14 +25,32 @@ export function ErrorState({ message, retry }: { message: string; retry?: () => 
   )
 }
 
-export function EmptyState({ title, desc, icon }: { title: string; desc: string; icon?: React.ReactNode }) {
+export function EmptyState({
+  title, desc, description, icon, actionLabel, actionHref,
+}: {
+  title: string;
+  desc?: string;
+  description?: string;
+  icon?: React.ReactNode;
+  actionLabel?: string;
+  actionHref?: string;
+}) {
+  const text = description ?? desc ?? ""
   return (
     <div className="text-center py-12">
       <div className="inline-flex w-16 h-16 rounded-full bg-slate-100 items-center justify-center mb-4">
         {icon || <span className="text-3xl text-slate-400">∅</span>}
       </div>
       <p className="text-lg font-medium text-slate-700 mb-1">{title}</p>
-      <p className="text-sm text-slate-500">{desc}</p>
+      {text && <p className="text-sm text-slate-500">{text}</p>}
+      {actionLabel && actionHref && (
+        <a
+          href={actionHref}
+          className="inline-block mt-4 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 text-sm font-medium"
+        >
+          {actionLabel}
+        </a>
+      )}
     </div>
   )
 }

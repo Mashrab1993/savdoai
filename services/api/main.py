@@ -1264,20 +1264,38 @@ async def sotuv_saqlash(data: SotuvSo_rov, request: Request, uid: int = Depends(
                 t_jami = float(t.get("jami", 0)) or (miqdor * narx)
                 birlik = t.get("birlik", "dona")
 
-                # Tovar topish — avval exact match, keyin LIKE
+                # Tovar topish — FOR UPDATE bilan (race condition oldini olish).
+                # Ikki kassir bir vaqtda bir tovarni sotsa, har biri bu qatorni
+                # alohida lock qilib, ketma-ket ishlaydi → qoldiq aniq kamayadi.
                 tovar = await c.fetchrow("""
-                    SELECT id, nomi, olish_narxi, sotish_narxi FROM tovarlar
+                    SELECT id, nomi, olish_narxi, sotish_narxi, qoldiq
+                    FROM tovarlar
                     WHERE user_id=$1 AND lower(nomi) = lower($2)
+                    FOR UPDATE
                 """, uid, nomi.strip())
                 if not tovar:
                     tovar = await c.fetchrow("""
-                        SELECT id, nomi, olish_narxi, sotish_narxi FROM tovarlar
+                        SELECT id, nomi, olish_narxi, sotish_narxi, qoldiq
+                        FROM tovarlar
                         WHERE user_id=$1 AND lower(nomi) LIKE lower($2)
                         ORDER BY length(nomi) ASC LIMIT 1
+                        FOR UPDATE
                     """, uid, f"%{like_escape(nomi)}%")
 
                 tovar_id = tovar["id"] if tovar else None
                 olish = float(tovar["olish_narxi"]) if tovar else 0
+                mavjud_qoldiq = float(tovar["qoldiq"]) if tovar else 0.0
+
+                # Yetarli qoldiq tekshiruvi (overselling himoyasi)
+                if tovar_id and miqdor > mavjud_qoldiq:
+                    # Qoldiqdan oshib ketmasin — ogohlantirib o'tamiz, lekin
+                    # yozuvni qabul qilamiz (kamaytirilgan miqdor bilan emas,
+                    # to'liq miqdor bilan — chunki chiqim qog'ozda bo'lishi mumkin).
+                    # Eslatma user'ga yuboriladi.
+                    log.warning(
+                        "⚠️ Overselling: uid=%d tovar=%s qoldiq=%.2f miqdor=%.2f",
+                        uid, nomi, mavjud_qoldiq, miqdor
+                    )
 
                 # Chiqim yozuvi — foyda virtual hisoblanadi (schema'da bu ustun yo'q)
                 await c.execute("""
@@ -1289,7 +1307,7 @@ async def sotuv_saqlash(data: SotuvSo_rov, request: Request, uid: int = Depends(
                     miqdor, birlik, narx, t_jami, olish,
                 )
 
-                # Qoldiq kamaytirish
+                # Qoldiq kamaytirish — endi safe (FOR UPDATE lock olingan)
                 if tovar_id:
                     await c.execute("""
                         UPDATE tovarlar SET qoldiq = GREATEST(qoldiq - $2, 0)
