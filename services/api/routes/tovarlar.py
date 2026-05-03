@@ -101,6 +101,10 @@ class TovarImportSorov(BaseModel):
     tovarlar: list[TovarImportItem]
 
 
+class TovarExcelImportSorov(BaseModel):
+    file_base64: str = Field(..., min_length=10, description="Base64-encoded .xlsx kontent")
+
+
 # ═══ ENDPOINTS ═══
 
 @router.get("/tovarlar")
@@ -631,8 +635,8 @@ async def tovar_excel_export(uid: int = Depends(get_uid)):
 
 @router.post("/tovar/import/excel")
 async def tovar_import_excel(
-    file_base64: str,
     request: Request,
+    payload: TovarExcelImportSorov,
     uid: int = Depends(get_uid),
 ):
     """Excel faylidan tovarlarni import qilish.
@@ -640,6 +644,8 @@ async def tovar_import_excel(
     Shablondan (GET /tovar/shablon/excel) yuklab olingan formatdagi
     27 ustunli xlsx faylni qabul qiladi. Birinchi 1-qator sarlavha,
     2-qator namuna (o'chiriladi), 3-qatordan boshlab real tovarlar.
+
+    Body (JSON): { "file_base64": "..." }
 
     Security:
       - Rate limit: "import" endpoint (daqiqada N marta)
@@ -655,7 +661,7 @@ async def tovar_import_excel(
         raise HTTPException(500, "openpyxl mavjud emas")
 
     try:
-        content = _b64.b64decode(file_base64)
+        content = _b64.b64decode(payload.file_base64)
         wb = load_workbook(_io.BytesIO(content), data_only=True)
     except Exception as e:
         raise HTTPException(400, f"Fayl o'qilmadi: {e}")

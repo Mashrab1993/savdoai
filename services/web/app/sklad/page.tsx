@@ -8,6 +8,7 @@ import { useApi, useAuth } from "@/hooks/use-api"
 import { LoadingSkeleton, ErrorState, EmptyState } from "@/components/shared/states"
 import { Search, Plus, Download, Filter, Package, AlertTriangle, MoreVertical, Upload, ChevronDown } from "lucide-react"
 import Link from "next/link"
+import { ExcelImportDialog } from "@/components/sklad/excel-import-dialog"
 
 interface Tovar {
   id: number
@@ -48,8 +49,10 @@ export default function SkladPage() {
   const { isAuthenticated } = useAuth()
   const [activeTab, setActiveTab] = useState("category")
   const [search, setSearch] = useState("")
+  const [importOpen, setImportOpen] = useState(false)
+  const [reloadKey, setReloadKey] = useState(0)
 
-  const { data, loading, error } = useApi<Tovar[]>(isAuthenticated ? "/api/v1/tovarlar" : null)
+  const { data, loading, error } = useApi<Tovar[]>(isAuthenticated ? `/api/v1/tovarlar?_=${reloadKey}` : null)
   const tovarlar: Tovar[] = data ?? MOCK_FALLBACK
 
   const filtered = tovarlar.filter(p =>
@@ -78,7 +81,10 @@ export default function SkladPage() {
               </p>
             </div>
             <div className="flex items-center gap-2">
-              <button className="px-3 py-2 rounded-md border border-[#E8E0D3] bg-white text-sm flex items-center gap-1.5 hover:border-[#C75D3C]">
+              <button
+                onClick={() => setImportOpen(true)}
+                className="px-3 py-2 rounded-md border border-[#E8E0D3] bg-white text-sm flex items-center gap-1.5 hover:border-[#C75D3C]"
+              >
                 <Upload className="w-3.5 h-3.5" /> Excel import
               </button>
               <Button size="lg" style={{ background: "#C75D3C" }}>
@@ -205,6 +211,12 @@ export default function SkladPage() {
           </Card>
         </div>
       </div>
+
+      <ExcelImportDialog
+        open={importOpen}
+        onClose={() => setImportOpen(false)}
+        onImported={() => setReloadKey(k => k + 1)}
+      />
     </AdminLayout>
   )
 }

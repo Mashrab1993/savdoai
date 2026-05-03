@@ -64,9 +64,9 @@ export function PremiumPage({ backLink, title, accent, description, actions, chi
 /**
  * Premium card with cream background, soft border, subtle shadow.
  */
-export function PremiumCard({ children, className = "" }: { children: ReactNode; className?: string }) {
+export function PremiumCard({ children, className = "", style }: { children: ReactNode; className?: string; style?: React.CSSProperties }) {
   return (
-    <div className={`bg-white border border-[#E8E0D3] shadow-sm rounded-2xl ${className}`}>
+    <div className={`bg-white border border-[#E8E0D3] shadow-sm rounded-2xl ${className}`} style={style}>
       {children}
     </div>
   )
