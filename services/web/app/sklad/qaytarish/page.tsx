@@ -4,7 +4,7 @@ import { AdminLayout } from "@/components/layout/admin-layout"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { ArrowLeft, RotateCcw, ArrowDownLeft, ArrowUpRight, Plus, Search, AlertCircle, CheckCircle2 } from "lucide-react"
+import { ArrowLeft, ArrowDownLeft, ArrowUpRight, Plus, Search, AlertCircle, CheckCircle2 } from "lucide-react"
 import Link from "next/link"
 
 const RETURNS = [
@@ -17,9 +17,9 @@ const RETURNS = [
 ]
 
 const STATUS_CFG: Record<string, { bg: string; text: string; label: string; icon: any }> = {
-  pending: { bg: "bg-amber-100", text: "text-amber-700", label: "Kutilmoqda", icon: AlertCircle },
-  approved: { bg: "bg-emerald-100", text: "text-emerald-700", label: "Tasdiqlandi", icon: CheckCircle2 },
-  rejected: { bg: "bg-rose-100", text: "text-rose-700", label: "Rad etildi", icon: AlertCircle },
+  pending: { bg: "bg-[#FCE9DD]", text: "text-[#D97706]", label: "Kutilmoqda", icon: AlertCircle },
+  approved: { bg: "bg-emerald-50", text: "text-emerald-700", label: "Tasdiqlandi", icon: CheckCircle2 },
+  rejected: { bg: "bg-[#F5E5D6]", text: "text-[#C75D3C]", label: "Rad etildi", icon: AlertCircle },
 }
 
 function fmt(n: number) { return n.toLocaleString("ru-RU") }
@@ -41,111 +41,110 @@ export default function QaytarishPage() {
 
   return (
     <AdminLayout>
-      <div className="max-w-[1700px] mx-auto space-y-6">
-        <div className="flex items-center gap-3">
-          <Link href="/sklad" className="p-2 hover:bg-slate-100 rounded-lg"><ArrowLeft className="w-5 h-5" /></Link>
-          <div className="flex-1">
-            <h1 className="text-3xl font-bold tracking-tight">Qaytarishlar</h1>
-            <p className="text-base text-slate-500 mt-1">Klientdan + Postavshikga · {RETURNS.length} ta operatsiya · Aprel-May 2026</p>
-          </div>
-          <Button className="gap-2"><Plus className="w-4 h-4" /> Yangi qaytarish</Button>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-          <Card className="p-5 bg-gradient-to-br from-blue-50 to-blue-100/50 border-blue-300 border-2">
-            <ArrowDownLeft className="w-7 h-7 text-blue-600 bg-white p-1.5 rounded-xl shadow-sm mb-2" />
-            <div className="text-xs font-bold text-blue-700">Klientdan</div>
-            <div className="text-3xl font-bold text-slate-900 mt-1">{fromClient.length}</div>
-            <div className="text-xs text-slate-600 mt-0.5">{fmt(fromClientSum)} so'm</div>
-          </Card>
-          <Card className="p-5 bg-gradient-to-br from-violet-50 to-violet-100/50 border-violet-300 border-2">
-            <ArrowUpRight className="w-7 h-7 text-violet-600 bg-white p-1.5 rounded-xl shadow-sm mb-2" />
-            <div className="text-xs font-bold text-violet-700">Postavshikga</div>
-            <div className="text-3xl font-bold text-slate-900 mt-1">{toSupplier.length}</div>
-            <div className="text-xs text-slate-600 mt-0.5">{fmt(toSupplierSum)} so'm</div>
-          </Card>
-          <Card className="p-5 bg-gradient-to-br from-emerald-50 to-emerald-100/50 border-emerald-300 border-2">
-            <CheckCircle2 className="w-7 h-7 text-emerald-600 bg-white p-1.5 rounded-xl shadow-sm mb-2" />
-            <div className="text-xs font-bold text-emerald-700">Tasdiqlangan</div>
-            <div className="text-3xl font-bold text-slate-900 mt-1">{RETURNS.filter(r => r.status === "approved").length}</div>
-          </Card>
-          <Card className="p-5 bg-gradient-to-br from-amber-50 to-amber-100/50 border-amber-300 border-2">
-            <AlertCircle className="w-7 h-7 text-amber-600 bg-white p-1.5 rounded-xl shadow-sm mb-2" />
-            <div className="text-xs font-bold text-amber-700">Kutilmoqda</div>
-            <div className="text-3xl font-bold text-slate-900 mt-1">{RETURNS.filter(r => r.status === "pending").length}</div>
-          </Card>
-        </div>
-
-        <Card className="p-5">
-          <div className="flex items-center gap-3 mb-4 flex-wrap">
-            <div className="relative flex-1 max-w-md">
-              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-              <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="Qaytarish # yoki klient..." className="pl-9" />
+      <div className="-mx-4 -my-4 px-4 py-6 min-h-full" style={{ background: "linear-gradient(180deg, #F5F1EB 0%, #FAF7F2 100%)" }}>
+        <div className="max-w-[1700px] mx-auto space-y-6">
+          <div className="flex items-end gap-3 border-b border-[#E8E0D3] pb-6">
+            <Link href="/sklad" className="p-2 hover:bg-[#F0EAE0] rounded-lg"><ArrowLeft className="w-5 h-5 text-[#6B5B4D]" /></Link>
+            <div className="flex-1">
+              <div className="text-xs uppercase tracking-[0.2em] text-[#9C8A6E] font-medium mb-2">SAVDOAI · SKLAD</div>
+              <h1 className="text-4xl font-light tracking-tight text-[#1A1A1A]" style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>
+                Qaytarishlar
+              </h1>
+              <p className="text-sm text-[#6B5B4D] mt-2">Klientdan + Postavshikga · {RETURNS.length} ta operatsiya · Aprel-May 2026</p>
             </div>
-            <div className="flex gap-1 border border-slate-200 rounded-lg p-1">
-              {([
-                { k: "all", l: "Hammasi" },
-                { k: "from_client", l: "↓ Klientdan" },
-                { k: "to_supplier", l: "↑ Postavshikga" },
-              ] as const).map(t => (
-                <button key={t.k} onClick={() => setDirection(t.k)} className={`px-3 py-1.5 text-xs font-semibold rounded-md ${direction === t.k ? "bg-emerald-600 text-white" : "text-slate-600 hover:bg-slate-100"}`}>
-                  {t.l}
-                </button>
-              ))}
-            </div>
-            <span className="text-sm text-slate-500">{filtered.length}</span>
+            <Button className="gap-2" style={{ background: "#C75D3C" }}><Plus className="w-4 h-4" /> Yangi qaytarish</Button>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b-2 border-slate-200 text-left">
-                  <th className="py-3 px-2 font-semibold text-slate-600">№</th>
-                  <th className="py-3 px-2 font-semibold text-slate-600">Sana</th>
-                  <th className="py-3 px-2 font-semibold text-slate-600">Yo'nalish</th>
-                  <th className="py-3 px-2 font-semibold text-slate-600">Manba</th>
-                  <th className="py-3 px-2 font-semibold text-slate-600">Sabab</th>
-                  <th className="py-3 px-2 font-semibold text-slate-600 text-right">Tovar</th>
-                  <th className="py-3 px-2 font-semibold text-slate-600 text-right">Summa</th>
-                  <th className="py-3 px-2 font-semibold text-slate-600">Agent</th>
-                  <th className="py-3 px-2 font-semibold text-slate-600 text-center">Holat</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map(r => {
-                  const cfg = STATUS_CFG[r.status]
-                  const Icon = cfg.icon
-                  const isFromClient = r.direction === "from_client"
-                  return (
-                    <tr key={r.id} className="border-b border-slate-100 hover:bg-slate-50">
-                      <td className="py-3 px-2 text-slate-400 font-mono">#{r.id}</td>
-                      <td className="py-3 px-2 text-slate-700 font-mono text-xs">{r.date}</td>
-                      <td className="py-3 px-2">
-                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold ${isFromClient ? "bg-blue-100 text-blue-700" : "bg-violet-100 text-violet-700"}`}>
-                          {isFromClient ? <ArrowDownLeft className="w-3 h-3" /> : <ArrowUpRight className="w-3 h-3" />}
-                          {isFromClient ? "Klientdan" : "Postavshikga"}
-                        </span>
-                      </td>
-                      <td className="py-3 px-2 font-semibold text-slate-900">{r.from}</td>
-                      <td className="py-3 px-2 text-slate-600 text-xs">{r.reason}</td>
-                      <td className="py-3 px-2 text-right font-mono">{r.items} pos.</td>
-                      <td className={`py-3 px-2 text-right font-mono font-bold ${isFromClient ? "text-blue-700" : "text-violet-700"}`}>
-                        {fmt(r.sum)}
-                      </td>
-                      <td className="py-3 px-2 text-slate-600 text-xs">{r.agent}</td>
-                      <td className="py-3 px-2 text-center">
-                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold ${cfg.bg} ${cfg.text}`}>
-                          <Icon className="w-3 h-3" /> {cfg.label}
-                        </span>
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+            <KpiBig icon={ArrowDownLeft} accent="#3B82F6" label="Klientdan" value={fromClient.length.toString()} sub={`${fmt(fromClientSum)} so'm`} />
+            <KpiBig icon={ArrowUpRight} accent="#7C3AED" label="Postavshikga" value={toSupplier.length.toString()} sub={`${fmt(toSupplierSum)} so'm`} />
+            <KpiBig icon={CheckCircle2} accent="#10B981" label="Tasdiqlangan" value={RETURNS.filter(r => r.status === "approved").length.toString()} sub="status: approved" />
+            <KpiBig icon={AlertCircle} accent="#D97706" label="Kutilmoqda" value={RETURNS.filter(r => r.status === "pending").length.toString()} sub="ko'rib chiqish" />
           </div>
-        </Card>
+
+          <Card className="p-6 bg-white border border-[#E8E0D3] shadow-sm rounded-2xl">
+            <div className="flex items-center gap-3 mb-4 flex-wrap">
+              <div className="relative flex-1 max-w-md">
+                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#9C8A6E]" />
+                <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="Qaytarish # yoki klient..." className="pl-9 border-[#E8E0D3] bg-[#FAF7F2]" />
+              </div>
+              <div className="flex gap-1 border border-[#E8E0D3] rounded-lg p-1 bg-[#FAF7F2]">
+                {([
+                  { k: "all", l: "Hammasi" },
+                  { k: "from_client", l: "↓ Klientdan" },
+                  { k: "to_supplier", l: "↑ Postavshikga" },
+                ] as const).map(t => (
+                  <button key={t.k} onClick={() => setDirection(t.k)} className={`px-3 py-1.5 text-xs font-medium rounded-md ${direction === t.k ? "bg-[#C75D3C] text-white" : "text-[#6B5B4D] hover:bg-white"}`}>
+                    {t.l}
+                  </button>
+                ))}
+              </div>
+              <span className="text-sm text-[#9C8A6E]">{filtered.length}</span>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-[#E8E0D3] bg-[#FAF7F2]">
+                    <th className="py-3 px-2 text-left text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">№</th>
+                    <th className="py-3 px-2 text-left text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Sana</th>
+                    <th className="py-3 px-2 text-left text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Yo'nalish</th>
+                    <th className="py-3 px-2 text-left text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Manba</th>
+                    <th className="py-3 px-2 text-left text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Sabab</th>
+                    <th className="py-3 px-2 text-right text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Tovar</th>
+                    <th className="py-3 px-2 text-right text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Summa</th>
+                    <th className="py-3 px-2 text-left text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Agent</th>
+                    <th className="py-3 px-2 text-center text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Holat</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filtered.map(r => {
+                    const cfg = STATUS_CFG[r.status]
+                    const Icon = cfg.icon
+                    const isFromClient = r.direction === "from_client"
+                    return (
+                      <tr key={r.id} className="border-b border-[#F0EAE0] hover:bg-[#FAF7F2]">
+                        <td className="py-3 px-2 text-[#9C8A6E] font-mono">#{r.id}</td>
+                        <td className="py-3 px-2 text-[#6B5B4D] font-mono text-xs">{r.date}</td>
+                        <td className="py-3 px-2">
+                          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium ${isFromClient ? "bg-blue-50 text-blue-700" : "bg-purple-50 text-purple-700"}`}>
+                            {isFromClient ? <ArrowDownLeft className="w-3 h-3" /> : <ArrowUpRight className="w-3 h-3" />}
+                            {isFromClient ? "Klientdan" : "Postavshikga"}
+                          </span>
+                        </td>
+                        <td className="py-3 px-2 font-medium text-[#1A1A1A]">{r.from}</td>
+                        <td className="py-3 px-2 text-[#6B5B4D] text-xs">{r.reason}</td>
+                        <td className="py-3 px-2 text-right font-mono text-[#1A1A1A]">{r.items} pos.</td>
+                        <td className={`py-3 px-2 text-right font-mono font-medium ${isFromClient ? "text-blue-700" : "text-purple-700"}`} style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>
+                          {fmt(r.sum)}
+                        </td>
+                        <td className="py-3 px-2 text-[#6B5B4D] text-xs">{r.agent}</td>
+                        <td className="py-3 px-2 text-center">
+                          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium ${cfg.bg} ${cfg.text}`}>
+                            <Icon className="w-3 h-3" /> {cfg.label}
+                          </span>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </Card>
+        </div>
       </div>
     </AdminLayout>
+  )
+}
+
+function KpiBig({ icon: Icon, accent, label, value, sub }: { icon: React.ElementType; accent: string; label: string; value: string; sub: string }) {
+  return (
+    <Card className="p-5 bg-white border border-[#E8E0D3] shadow-sm rounded-2xl relative overflow-hidden">
+      <Icon className="w-7 h-7 mb-3" style={{ color: accent }} />
+      <div className="text-xs uppercase tracking-[0.15em] font-medium" style={{ color: accent }}>{label}</div>
+      <div className="text-3xl font-medium tabular-nums mt-1 text-[#1A1A1A]" style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>{value}</div>
+      <div className="text-xs text-[#9C8A6E] mt-1">{sub}</div>
+      <div className="absolute bottom-0 left-0 right-0 h-1" style={{ background: accent }} />
+    </Card>
   )
 }
