@@ -16,12 +16,12 @@ const TASKS = [
   { id: 5, title: "Холодильник montaj", agent: "Aminov R.", client: "Bobur Magazin", type: "install", priority: "low", deadline: "2026-05-04 10:00", status: "completed" },
 ]
 
-const TYPE_CFG: Record<string, { color: string; label: string }> = {
-  storecheck: { color: "blue", label: "Storecheck" },
-  delivery: { color: "violet", label: "Yetkazish" },
-  collection: { color: "amber", label: "Inkasaciya" },
-  photo: { color: "emerald", label: "Foto" },
-  install: { color: "rose", label: "Montaj" },
+const TYPE_CFG: Record<string, { tone: string; bar: string; label: string }> = {
+  storecheck: { tone: "bg-blue-50 text-blue-700", bar: "border-blue-500", label: "Storecheck" },
+  delivery: { tone: "bg-purple-50 text-purple-700", bar: "border-purple-500", label: "Yetkazish" },
+  collection: { tone: "bg-[#FCE9DD] text-[#D97706]", bar: "border-[#D97706]", label: "Inkasaciya" },
+  photo: { tone: "bg-emerald-50 text-emerald-700", bar: "border-emerald-500", label: "Foto" },
+  install: { tone: "bg-[#F5E5D6] text-[#C75D3C]", bar: "border-[#C75D3C]", label: "Montaj" },
 }
 
 export default function AgentTasksPage() {
@@ -37,109 +37,117 @@ export default function AgentTasksPage() {
 
   return (
     <AdminLayout>
-      <div className="max-w-[1700px] mx-auto space-y-4">
-        <div className="flex items-center gap-3">
-          <Link href="/komanda" className="p-2 hover:bg-slate-100 rounded-lg"><ArrowLeft className="w-5 h-5" /></Link>
-          <h1 className="text-2xl font-bold tracking-tight flex-1">Vazifalar (Agent Tasks)</h1>
-          <Button onClick={() => setShowForm(true)} className="gap-2"><Plus className="w-4 h-4" /> Yangi vazifa</Button>
-        </div>
-
-        {showForm && (
-          <Card className="p-5 border-2 border-emerald-300 bg-emerald-50/30">
-            <h2 className="text-lg font-bold mb-4">Yangi vazifa yaratish</h2>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-              <div>
-                <label className="text-xs font-semibold text-slate-600 mb-1 block">Sarlavha *</label>
-                <Input placeholder="Storecheck Klient X" />
-              </div>
-              <div>
-                <label className="text-xs font-semibold text-slate-600 mb-1 block">Agent</label>
-                <select className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm">
-                  <option>Nurmatov A.</option>
-                  <option>Karimov S.</option>
-                  <option>Rasulov B.</option>
-                  <option>Yusupov D.</option>
-                </select>
-              </div>
-              <div>
-                <label className="text-xs font-semibold text-slate-600 mb-1 block">Klient</label>
-                <Input placeholder="Klient nomi" />
-              </div>
-              <div>
-                <label className="text-xs font-semibold text-slate-600 mb-1 block">Tur</label>
-                <select className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm">
-                  {Object.entries(TYPE_CFG).map(([k, v]) => <option key={k}>{v.label}</option>)}
-                </select>
-              </div>
-              <div>
-                <label className="text-xs font-semibold text-slate-600 mb-1 block">Muhimligi</label>
-                <select className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm">
-                  <option>Yuqori</option>
-                  <option>O'rtacha</option>
-                  <option>Past</option>
-                </select>
-              </div>
-              <div>
-                <label className="text-xs font-semibold text-slate-600 mb-1 block">Muddat</label>
-                <Input type="datetime-local" />
-              </div>
+      <div className="-mx-4 -my-4 px-4 py-6 min-h-full" style={{ background: "linear-gradient(180deg, #F5F1EB 0%, #FAF7F2 100%)" }}>
+        <div className="max-w-[1700px] mx-auto space-y-5">
+          <div className="flex items-end gap-3 border-b border-[#E8E0D3] pb-6">
+            <Link href="/komanda" className="p-2 hover:bg-[#F0EAE0] rounded-lg"><ArrowLeft className="w-5 h-5 text-[#6B5B4D]" /></Link>
+            <div className="flex-1">
+              <div className="text-xs uppercase tracking-[0.2em] text-[#9C8A6E] font-medium mb-2">SAVDOAI · KOMANDA</div>
+              <h1 className="text-4xl font-light tracking-tight text-[#1A1A1A]" style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>
+                Vazifalar <span className="italic text-[#C75D3C]">agent tasks</span>
+              </h1>
+              <p className="text-sm text-[#6B5B4D] mt-2">{TASKS.length} ta vazifa · jamoaga tayinlangan</p>
             </div>
-            <div className="flex gap-2 justify-end mt-4">
-              <Button variant="outline" onClick={() => setShowForm(false)}>Bekor</Button>
-              <Button onClick={() => { toast.success("Vazifa yaratildi"); setShowForm(false) }}>Yaratish</Button>
+            <Button onClick={() => setShowForm(true)} className="gap-2 text-white" style={{ background: "#C75D3C" }}><Plus className="w-4 h-4" /> Yangi vazifa</Button>
+          </div>
+
+          {showForm && (
+            <Card className="bg-white border border-[#C75D3C] shadow-sm rounded-2xl p-6">
+              <h2 className="text-lg font-medium mb-4 text-[#1A1A1A]" style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>Yangi vazifa yaratish</h2>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                <div>
+                  <label className="text-xs uppercase tracking-wider font-medium text-[#9C8A6E] mb-1 block">Sarlavha *</label>
+                  <Input placeholder="Storecheck Klient X" className="border-[#E8E0D3]" />
+                </div>
+                <div>
+                  <label className="text-xs uppercase tracking-wider font-medium text-[#9C8A6E] mb-1 block">Agent</label>
+                  <select className="w-full px-3 py-2 border border-[#E8E0D3] rounded-lg text-sm bg-white text-[#1A1A1A]">
+                    <option>Nurmatov A.</option>
+                    <option>Karimov S.</option>
+                    <option>Rasulov B.</option>
+                    <option>Yusupov D.</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs uppercase tracking-wider font-medium text-[#9C8A6E] mb-1 block">Klient</label>
+                  <Input placeholder="Klient nomi" className="border-[#E8E0D3]" />
+                </div>
+                <div>
+                  <label className="text-xs uppercase tracking-wider font-medium text-[#9C8A6E] mb-1 block">Tur</label>
+                  <select className="w-full px-3 py-2 border border-[#E8E0D3] rounded-lg text-sm bg-white text-[#1A1A1A]">
+                    {Object.entries(TYPE_CFG).map(([k, v]) => <option key={k}>{v.label}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs uppercase tracking-wider font-medium text-[#9C8A6E] mb-1 block">Muhimligi</label>
+                  <select className="w-full px-3 py-2 border border-[#E8E0D3] rounded-lg text-sm bg-white text-[#1A1A1A]">
+                    <option>Yuqori</option>
+                    <option>O'rtacha</option>
+                    <option>Past</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs uppercase tracking-wider font-medium text-[#9C8A6E] mb-1 block">Muddat</label>
+                  <Input type="datetime-local" className="border-[#E8E0D3]" />
+                </div>
+              </div>
+              <div className="flex gap-2 justify-end mt-4">
+                <Button variant="outline" onClick={() => setShowForm(false)} className="border-[#E8E0D3] text-[#6B5B4D]">Bekor</Button>
+                <Button onClick={() => { toast.success("Vazifa yaratildi"); setShowForm(false) }} className="text-white" style={{ background: "#C75D3C" }}>Yaratish</Button>
+              </div>
+            </Card>
+          )}
+
+          <Card className="bg-white border border-[#E8E0D3] shadow-sm rounded-2xl p-5">
+            <div className="flex items-center gap-3 flex-wrap">
+              <div className="relative flex-1 max-w-md">
+                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#9C8A6E]" />
+                <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="Vazifa..." className="pl-9 border-[#E8E0D3]" />
+              </div>
+              <div className="flex gap-1 flex-wrap">
+                <button onClick={() => setStatusFilter(null)} className={`px-3 py-1.5 text-xs font-medium rounded ${!statusFilter ? "text-white" : "bg-[#F0EAE0] text-[#6B5B4D]"}`} style={!statusFilter ? { background: "#C75D3C" } : undefined}>Hammasi ({TASKS.length})</button>
+                <button onClick={() => setStatusFilter("pending")} className={`px-3 py-1.5 text-xs font-medium rounded ${statusFilter === "pending" ? "text-white" : "bg-[#FCE9DD] text-[#D97706]"}`} style={statusFilter === "pending" ? { background: "#C75D3C" } : undefined}>Kutilmoqda ({TASKS.filter(t => t.status === "pending").length})</button>
+                <button onClick={() => setStatusFilter("in_progress")} className={`px-3 py-1.5 text-xs font-medium rounded ${statusFilter === "in_progress" ? "text-white" : "bg-blue-50 text-blue-700"}`} style={statusFilter === "in_progress" ? { background: "#C75D3C" } : undefined}>Davom etyapti ({TASKS.filter(t => t.status === "in_progress").length})</button>
+                <button onClick={() => setStatusFilter("completed")} className={`px-3 py-1.5 text-xs font-medium rounded ${statusFilter === "completed" ? "text-white" : "bg-emerald-50 text-emerald-700"}`} style={statusFilter === "completed" ? { background: "#C75D3C" } : undefined}>Bajarildi ({TASKS.filter(t => t.status === "completed").length})</button>
+              </div>
             </div>
           </Card>
-        )}
 
-        <Card className="p-4">
-          <div className="flex items-center gap-3 flex-wrap">
-            <div className="relative flex-1 max-w-md">
-              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-              <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="Vazifa..." className="pl-9" />
-            </div>
-            <div className="flex gap-1">
-              <button onClick={() => setStatusFilter(null)} className={`px-3 py-1.5 text-xs font-semibold rounded ${!statusFilter ? "bg-slate-900 text-white" : "bg-slate-100"}`}>Hammasi ({TASKS.length})</button>
-              <button onClick={() => setStatusFilter("pending")} className={`px-3 py-1.5 text-xs font-semibold rounded ${statusFilter === "pending" ? "bg-slate-900 text-white" : "bg-amber-100 text-amber-700"}`}>Kutilmoqda ({TASKS.filter(t => t.status === "pending").length})</button>
-              <button onClick={() => setStatusFilter("in_progress")} className={`px-3 py-1.5 text-xs font-semibold rounded ${statusFilter === "in_progress" ? "bg-slate-900 text-white" : "bg-blue-100 text-blue-700"}`}>Davom etyapti ({TASKS.filter(t => t.status === "in_progress").length})</button>
-              <button onClick={() => setStatusFilter("completed")} className={`px-3 py-1.5 text-xs font-semibold rounded ${statusFilter === "completed" ? "bg-slate-900 text-white" : "bg-emerald-100 text-emerald-700"}`}>Bajarildi ({TASKS.filter(t => t.status === "completed").length})</button>
-            </div>
+          <div className="space-y-3">
+            {filtered.map(t => {
+              const typeCfg = TYPE_CFG[t.type]
+              return (
+                <Card key={t.id} className={`bg-white border border-[#E8E0D3] shadow-sm rounded-2xl p-5 hover:shadow-md transition-all border-l-4 ${typeCfg.bar}`}>
+                  <div className="flex items-start gap-4">
+                    <div className={`w-12 h-12 rounded-xl ${typeCfg.tone} flex items-center justify-center flex-shrink-0`}>
+                      {t.status === "completed" ? <CheckCircle2 className="w-6 h-6" /> : t.status === "in_progress" ? <Clock className="w-6 h-6" /> : <AlertCircle className="w-6 h-6" />}
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h3 className="font-medium text-[#1A1A1A]">{t.title}</h3>
+                        <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${typeCfg.tone}`}>{typeCfg.label}</span>
+                        <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${t.priority === "high" ? "bg-[#F5E5D6] text-[#C75D3C]" : t.priority === "medium" ? "bg-[#FCE9DD] text-[#D97706]" : "bg-[#F0EAE0] text-[#6B5B4D]"}`}>
+                          {t.priority === "high" ? "Yuqori" : t.priority === "medium" ? "O'rtacha" : "Past"}
+                        </span>
+                      </div>
+                      <div className="text-sm text-[#6B5B4D] mt-2 flex items-center gap-3 flex-wrap">
+                        <span className="flex items-center gap-1"><User className="w-3 h-3" /> {t.agent}</span>
+                        <span>{t.client}</span>
+                        <span className="flex items-center gap-1 font-mono tabular-nums"><Calendar className="w-3 h-3" /> {t.deadline}</span>
+                      </div>
+                    </div>
+                    <div className={`flex-shrink-0 inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-medium ${
+                      t.status === "completed" ? "bg-emerald-50 text-emerald-700" :
+                      t.status === "in_progress" ? "bg-blue-50 text-blue-700" :
+                      "bg-[#FCE9DD] text-[#D97706]"
+                    }`}>
+                      {t.status === "completed" ? "Bajarildi" : t.status === "in_progress" ? "Davom etyapti" : "Kutilmoqda"}
+                    </div>
+                  </div>
+                </Card>
+              )
+            })}
           </div>
-        </Card>
-
-        <div className="space-y-3">
-          {filtered.map(t => {
-            const typeCfg = TYPE_CFG[t.type]
-            return (
-              <Card key={t.id} className={`p-4 hover:shadow-md transition-all border-l-4 border-${typeCfg.color}-500`}>
-                <div className="flex items-start gap-4">
-                  <div className={`w-12 h-12 rounded-xl bg-${typeCfg.color}-100 text-${typeCfg.color}-700 flex items-center justify-center flex-shrink-0`}>
-                    {t.status === "completed" ? <CheckCircle2 className="w-6 h-6" /> : t.status === "in_progress" ? <Clock className="w-6 h-6" /> : <AlertCircle className="w-6 h-6" />}
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <h3 className="font-bold text-slate-900">{t.title}</h3>
-                      <span className={`text-[10px] px-1.5 py-0.5 rounded font-bold bg-${typeCfg.color}-100 text-${typeCfg.color}-700`}>{typeCfg.label}</span>
-                      <span className={`text-[10px] px-1.5 py-0.5 rounded font-bold ${t.priority === "high" ? "bg-rose-100 text-rose-700" : t.priority === "medium" ? "bg-amber-100 text-amber-700" : "bg-slate-100 text-slate-600"}`}>
-                        {t.priority === "high" ? "Yuqori" : t.priority === "medium" ? "O'rtacha" : "Past"}
-                      </span>
-                    </div>
-                    <div className="text-sm text-slate-600 mt-2 flex items-center gap-3 flex-wrap">
-                      <span className="flex items-center gap-1"><User className="w-3 h-3" /> {t.agent}</span>
-                      <span>📍 {t.client}</span>
-                      <span className="flex items-center gap-1"><Calendar className="w-3 h-3" /> {t.deadline}</span>
-                    </div>
-                  </div>
-                  <div className={`flex-shrink-0 inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-semibold ${
-                    t.status === "completed" ? "bg-emerald-100 text-emerald-700" :
-                    t.status === "in_progress" ? "bg-blue-100 text-blue-700" :
-                    "bg-amber-100 text-amber-700"
-                  }`}>
-                    {t.status === "completed" ? "✓ Bajarildi" : t.status === "in_progress" ? "⏳ Davom etyapti" : "⚠ Kutilmoqda"}
-                  </div>
-                </div>
-              </Card>
-            )
-          })}
         </div>
       </div>
     </AdminLayout>

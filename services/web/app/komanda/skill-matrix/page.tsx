@@ -2,7 +2,7 @@
 import { AdminLayout } from "@/components/layout/admin-layout"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { ArrowLeft, Star, Sparkles, GraduationCap, TrendingUp, Download } from "lucide-react"
+import { ArrowLeft, Sparkles, GraduationCap, TrendingUp, Download } from "lucide-react"
 import Link from "next/link"
 
 const SKILLS = [
@@ -37,10 +37,10 @@ const AGENTS: AgentSkills[] = [
 function getColor(score: number) {
   if (score === 5) return "bg-emerald-600 text-white"
   if (score === 4) return "bg-emerald-400 text-white"
-  if (score === 3) return "bg-amber-400 text-white"
-  if (score === 2) return "bg-amber-300"
-  if (score === 1) return "bg-rose-300"
-  return "bg-slate-100"
+  if (score === 3) return "bg-[#D97706] text-white"
+  if (score === 2) return "bg-[#FCE9DD] text-[#D97706]"
+  if (score === 1) return "bg-[#F5E5D6] text-[#C75D3C]"
+  return "bg-[#F0EAE0]"
 }
 
 export default function SkillMatrixPage() {
@@ -66,124 +66,130 @@ export default function SkillMatrixPage() {
 
   return (
     <AdminLayout>
-      <div className="max-w-[1700px] mx-auto space-y-4">
-        <div className="flex items-center gap-3">
-          <Link href="/komanda" className="p-2 hover:bg-slate-100 rounded-lg"><ArrowLeft className="w-5 h-5" /></Link>
-          <div className="flex-1">
-            <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
-              <GraduationCap className="w-7 h-7 text-blue-600" />
-              Ko'nikmalar matritsasi
-            </h1>
-            <p className="text-sm text-slate-500">{AGENTS.length} xodim × {SKILLS.length} ko'nikma · 1-5 baholash</p>
+      <div className="-mx-4 -my-4 px-4 py-6 min-h-full" style={{ background: "linear-gradient(180deg, #F5F1EB 0%, #FAF7F2 100%)" }}>
+        <div className="max-w-[1700px] mx-auto space-y-5">
+          <div className="flex items-end gap-3 border-b border-[#E8E0D3] pb-6">
+            <Link href="/komanda" className="p-2 hover:bg-[#F0EAE0] rounded-lg"><ArrowLeft className="w-5 h-5 text-[#6B5B4D]" /></Link>
+            <div className="flex-1">
+              <div className="text-xs uppercase tracking-[0.2em] text-[#9C8A6E] font-medium mb-2">SAVDOAI · KOMANDA</div>
+              <h1 className="text-4xl font-light tracking-tight text-[#1A1A1A]" style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>
+                Ko'nikmalar <span className="italic text-[#C75D3C]">matritsasi</span>
+              </h1>
+              <p className="text-sm text-[#6B5B4D] mt-2">{AGENTS.length} xodim × {SKILLS.length} ko'nikma · 1-5 baholash</p>
+            </div>
+            <Button variant="outline" className="gap-2 border-[#E8E0D3] text-[#6B5B4D]"><Download className="w-4 h-4" /> Excel</Button>
           </div>
-          <Button variant="outline" className="gap-2"><Download className="w-4 h-4" /> Excel</Button>
-        </div>
 
-        <Card className="p-5">
-          <h2 className="text-lg font-bold mb-4">Matritsa</h2>
-          <div className="overflow-x-auto">
-            <table className="w-full text-xs">
-              <thead>
-                <tr>
-                  <th className="text-left py-2 px-2 sticky left-0 bg-white z-10 min-w-[200px]">Xodim</th>
-                  {SKILLS.map((s, i) => (
-                    <th key={i} className="text-center py-2 px-1 font-semibold" style={{ writingMode: "vertical-rl", textOrientation: "mixed", height: "120px" }}>{s}</th>
-                  ))}
-                  <th className="text-center py-2 px-2">O'rta</th>
-                </tr>
-              </thead>
-              <tbody>
-                {enriched.map(a => (
-                  <tr key={a.id} className="hover:bg-slate-50">
-                    <td className="py-2 px-2 sticky left-0 bg-white z-10">
-                      <div className="font-bold text-sm">{a.name}</div>
-                      <div className="text-xs text-slate-500">{a.role} · {a.yearsExp}y · {a.certifications} sert</div>
-                    </td>
-                    {a.scores.map((score, i) => (
-                      <td key={i} className="text-center py-1 px-1">
-                        <div className={`w-8 h-8 mx-auto rounded flex items-center justify-center font-bold text-sm ${getColor(score)}`}>
-                          {score}
-                        </div>
-                      </td>
+          <Card className="bg-white border border-[#E8E0D3] shadow-sm rounded-2xl p-6">
+            <h2 className="text-lg font-medium mb-4 text-[#1A1A1A]" style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>Matritsa</h2>
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="bg-[#FAF7F2] border-b border-[#E8E0D3]">
+                    <th className="text-left py-3 px-2 sticky left-0 bg-[#FAF7F2] z-10 min-w-[200px] text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Xodim</th>
+                    {SKILLS.map((s, i) => (
+                      <th key={i} className="text-center py-3 px-1 text-xs uppercase tracking-wider font-medium text-[#9C8A6E]" style={{ writingMode: "vertical-rl", textOrientation: "mixed", height: "120px" }}>{s}</th>
                     ))}
-                    <td className="text-center py-2 px-2">
-                      <span className={`px-2 py-0.5 rounded font-mono font-bold text-sm ${a.avgScore >= 4 ? "bg-emerald-100 text-emerald-700" : a.avgScore >= 3 ? "bg-amber-100 text-amber-700" : "bg-rose-100 text-rose-700"}`}>
-                        {a.avgScore.toFixed(1)}
-                      </span>
-                    </td>
+                    <th className="text-center py-3 px-2 text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">O'rta</th>
                   </tr>
-                ))}
-                <tr className="bg-slate-100 font-bold">
-                  <td className="py-2 px-2 sticky left-0 bg-slate-100 z-10">Komanda o'rta</td>
-                  {SKILLS.map((s, i) => {
-                    const avg = AGENTS.reduce((sum, a) => sum + a.scores[i], 0) / AGENTS.length
-                    return (
-                      <td key={i} className="text-center py-1 px-1">
-                        <span className={`text-xs font-mono font-bold ${avg >= 3.5 ? "text-emerald-700" : avg >= 2.5 ? "text-amber-700" : "text-rose-700"}`}>
-                          {avg.toFixed(1)}
+                </thead>
+                <tbody>
+                  {enriched.map(a => (
+                    <tr key={a.id} className="border-b border-[#F0EAE0] hover:bg-[#FAF7F2]">
+                      <td className="py-2 px-2 sticky left-0 bg-white z-10">
+                        <div className="font-medium text-sm text-[#1A1A1A]">{a.name}</div>
+                        <div className="text-xs text-[#9C8A6E]">{a.role} · {a.yearsExp}y · {a.certifications} sert</div>
+                      </td>
+                      {a.scores.map((score, i) => (
+                        <td key={i} className="text-center py-1 px-1">
+                          <div className={`w-8 h-8 mx-auto rounded flex items-center justify-center font-medium text-sm ${getColor(score)}`}>
+                            {score}
+                          </div>
+                        </td>
+                      ))}
+                      <td className="text-center py-2 px-2">
+                        <span className={`px-2 py-0.5 rounded font-mono tabular-nums font-medium text-sm ${a.avgScore >= 4 ? "bg-emerald-50 text-emerald-700" : a.avgScore >= 3 ? "bg-[#FCE9DD] text-[#D97706]" : "bg-[#F5E5D6] text-[#C75D3C]"}`}>
+                          {a.avgScore.toFixed(1)}
                         </span>
                       </td>
-                    )
-                  })}
-                  <td className="text-center py-2 px-2 font-mono">
-                    {(AGENTS.reduce((s, a) => s + a.scores.reduce((s2, x) => s2 + x, 0) / a.scores.length, 0) / AGENTS.length).toFixed(1)}
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
+                    </tr>
+                  ))}
+                  <tr className="bg-[#FAF7F2] font-medium border-t border-[#E8E0D3]">
+                    <td className="py-3 px-2 sticky left-0 bg-[#FAF7F2] z-10 text-[#1A1A1A]">Komanda o'rta</td>
+                    {SKILLS.map((s, i) => {
+                      const avg = AGENTS.reduce((sum, a) => sum + a.scores[i], 0) / AGENTS.length
+                      return (
+                        <td key={i} className="text-center py-1 px-1">
+                          <span className={`text-xs font-mono tabular-nums font-medium ${avg >= 3.5 ? "text-emerald-700" : avg >= 2.5 ? "text-[#D97706]" : "text-[#C75D3C]"}`}>
+                            {avg.toFixed(1)}
+                          </span>
+                        </td>
+                      )
+                    })}
+                    <td className="text-center py-3 px-2 font-mono tabular-nums text-[#1A1A1A]">
+                      {(AGENTS.reduce((s, a) => s + a.scores.reduce((s2, x) => s2 + x, 0) / a.scores.length, 0) / AGENTS.length).toFixed(1)}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
 
-          <div className="mt-4 flex items-center gap-3 text-xs">
-            <span className="text-slate-500">Shkala:</span>
-            <div className="flex items-center gap-1"><span className="w-5 h-5 bg-rose-300 rounded inline-flex items-center justify-center font-bold">1</span> Yo'q</div>
-            <div className="flex items-center gap-1"><span className="w-5 h-5 bg-amber-300 rounded inline-flex items-center justify-center font-bold">2</span> Boshlang'ich</div>
-            <div className="flex items-center gap-1"><span className="w-5 h-5 bg-amber-400 text-white rounded inline-flex items-center justify-center font-bold">3</span> O'rta</div>
-            <div className="flex items-center gap-1"><span className="w-5 h-5 bg-emerald-400 text-white rounded inline-flex items-center justify-center font-bold">4</span> Yaxshi</div>
-            <div className="flex items-center gap-1"><span className="w-5 h-5 bg-emerald-600 text-white rounded inline-flex items-center justify-center font-bold">5</span> Mukammal</div>
-          </div>
-        </Card>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Card className="p-5">
-            <h2 className="text-lg font-bold mb-4 flex items-center gap-2"><TrendingUp className="w-5 h-5 text-emerald-600" /> Komandadagi ko'nikma gaplari</h2>
-            <div className="space-y-2">
-              {skillStats.slice(0, 5).map(s => (
-                <div key={s.skill} className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg">
-                  <div className="flex-1">
-                    <div className="font-semibold text-sm">{s.skill}</div>
-                    <div className="text-xs text-slate-500">Avg {s.avg} · Min {s.min} · Max {s.max}</div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-xs text-slate-500">Gap</div>
-                    <div className={`text-lg font-bold font-mono ${s.gap >= 3 ? "text-rose-700" : s.gap >= 2 ? "text-amber-700" : "text-emerald-700"}`}>{s.gap}</div>
-                  </div>
-                </div>
-              ))}
+            <div className="mt-4 flex items-center gap-3 text-xs text-[#6B5B4D] flex-wrap">
+              <span className="text-[#9C8A6E] uppercase tracking-wider">Shkala:</span>
+              <div className="flex items-center gap-1"><span className="w-5 h-5 bg-[#F5E5D6] text-[#C75D3C] rounded inline-flex items-center justify-center font-medium">1</span> Yo'q</div>
+              <div className="flex items-center gap-1"><span className="w-5 h-5 bg-[#FCE9DD] text-[#D97706] rounded inline-flex items-center justify-center font-medium">2</span> Boshlang'ich</div>
+              <div className="flex items-center gap-1"><span className="w-5 h-5 bg-[#D97706] text-white rounded inline-flex items-center justify-center font-medium">3</span> O'rta</div>
+              <div className="flex items-center gap-1"><span className="w-5 h-5 bg-emerald-400 text-white rounded inline-flex items-center justify-center font-medium">4</span> Yaxshi</div>
+              <div className="flex items-center gap-1"><span className="w-5 h-5 bg-emerald-600 text-white rounded inline-flex items-center justify-center font-medium">5</span> Mukammal</div>
             </div>
           </Card>
 
-          <Card className="p-5 bg-amber-50 border-amber-200">
-            <h2 className="text-lg font-bold mb-4 flex items-center gap-2"><Sparkles className="w-5 h-5 text-amber-600" /> AI tavsiyalar</h2>
-            <div className="space-y-3 text-sm">
-              {lowestSkills.length > 0 && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <Card className="bg-white border border-[#E8E0D3] shadow-sm rounded-2xl p-6">
+              <h2 className="text-lg font-medium mb-4 flex items-center gap-2 text-[#1A1A1A]" style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>
+                <TrendingUp className="w-5 h-5 text-emerald-700" /> Komandadagi ko'nikma gaplari
+              </h2>
+              <div className="space-y-2">
+                {skillStats.slice(0, 5).map(s => (
+                  <div key={s.skill} className="flex items-center gap-3 p-3 bg-[#FAF7F2] rounded-lg border border-[#F0EAE0]">
+                    <div className="flex-1">
+                      <div className="font-medium text-sm text-[#1A1A1A]">{s.skill}</div>
+                      <div className="text-xs text-[#9C8A6E]">Avg {s.avg} · Min {s.min} · Max {s.max}</div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-xs text-[#9C8A6E] uppercase tracking-wider">Gap</div>
+                      <div className={`text-lg font-medium font-mono tabular-nums ${s.gap >= 3 ? "text-[#C75D3C]" : s.gap >= 2 ? "text-[#D97706]" : "text-emerald-700"}`}>{s.gap}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </Card>
+
+            <Card className="bg-white border border-[#E8E0D3] shadow-sm rounded-2xl p-6">
+              <h2 className="text-lg font-medium mb-4 flex items-center gap-2 text-[#1A1A1A]" style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>
+                <Sparkles className="w-5 h-5 text-[#C75D3C]" /> AI tavsiyalar
+              </h2>
+              <div className="space-y-3 text-sm text-[#1A1A1A]">
+                {lowestSkills.length > 0 && (
+                  <div>
+                    <div className="font-medium text-[#C75D3C] mb-1">Eng past o'rta ko'nikmalar:</div>
+                    <ul className="space-y-1">
+                      {lowestSkills.map(s => (
+                        <li key={s.skill} className="text-[#6B5B4D]">• <span className="font-medium text-[#1A1A1A]">{s.skill}</span> ({s.avg}) — komanda treningi tavsiya etiladi</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
                 <div>
-                  <div className="font-bold text-amber-800 mb-1">📚 Eng past o'rta ko'nikmalar:</div>
-                  <ul className="space-y-1">
-                    {lowestSkills.map(s => (
-                      <li key={s.skill}>• <span className="font-bold">{s.skill}</span> ({s.avg}) — komanda treningi tavsiya etiladi</li>
-                    ))}
+                  <div className="font-medium text-[#C75D3C] mb-1">Mentorlik:</div>
+                  <ul className="space-y-1 text-[#6B5B4D]">
+                    <li>• <span className="font-medium text-[#1A1A1A]">BORIEV M.</span> → Турсунов Ж. (Sotuv + Vansel)</li>
+                    <li>• <span className="font-medium text-[#1A1A1A]">Babadjanova N.</span> → Karimov A. (Yangi onboarding)</li>
                   </ul>
                 </div>
-              )}
-              <div>
-                <div className="font-bold text-amber-800 mb-1">👥 Mentorlik:</div>
-                <ul className="space-y-1">
-                  <li>• <span className="font-bold">BORIEV M.</span> → Турсунов Ж. (Sotuv + Vansel)</li>
-                  <li>• <span className="font-bold">Babadjanova N.</span> → Karimov A. (Yangi onboarding)</li>
-                </ul>
               </div>
-            </div>
-          </Card>
+            </Card>
+          </div>
         </div>
       </div>
     </AdminLayout>

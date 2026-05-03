@@ -28,15 +28,20 @@ const COURSES: Course[] = [
 
 const TYPE_ICON: Record<string, any> = { video: Video, article: FileText, quiz: BookOpen, live: Users }
 const TYPE_COLOR: Record<string, string> = {
-  video: "bg-blue-100 text-blue-700",
-  article: "bg-emerald-100 text-emerald-700",
-  quiz: "bg-violet-100 text-violet-700",
-  live: "bg-amber-100 text-amber-700",
+  video: "bg-blue-50 text-blue-700",
+  article: "bg-emerald-50 text-emerald-700",
+  quiz: "bg-purple-50 text-purple-700",
+  live: "bg-[#FCE9DD] text-[#D97706]",
 }
 const DIFFICULTY_COLOR: Record<string, string> = {
-  beginner: "bg-emerald-100 text-emerald-700",
-  intermediate: "bg-amber-100 text-amber-700",
-  advanced: "bg-rose-100 text-rose-700",
+  beginner: "bg-emerald-50 text-emerald-700",
+  intermediate: "bg-[FCE9DD] text-[#D97706]",
+  advanced: "bg-[#F5E5D6] text-[#C75D3C]",
+}
+const DIFFICULTY_LABEL: Record<string, string> = {
+  beginner: "Boshlang'ich",
+  intermediate: "O'rta",
+  advanced: "Yuqori",
 }
 
 export default function TrainingPage() {
@@ -57,118 +62,124 @@ export default function TrainingPage() {
 
   return (
     <AdminLayout>
-      <div className="max-w-[1700px] mx-auto space-y-4">
-        <div className="flex items-center gap-3">
-          <Link href="/komanda" className="p-2 hover:bg-slate-100 rounded-lg"><ArrowLeft className="w-5 h-5" /></Link>
-          <div className="flex-1">
-            <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
-              <GraduationCap className="w-7 h-7 text-violet-600" />
-              Trening katalog (Akademiya)
-            </h1>
-            <p className="text-sm text-slate-500">{COURSES.length} ta kurs · {totalEnrolled} ro'yxat · {completionRate}% tugatish</p>
-          </div>
-          <Button className="gap-1"><Plus className="w-4 h-4" /> Yangi kurs</Button>
-        </div>
-
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <Card className="p-4 bg-emerald-50 border-emerald-200">
-            <BookOpen className="w-5 h-5 text-emerald-600 mb-2" />
-            <div className="text-xs font-bold text-emerald-700">Jami kurslar</div>
-            <div className="text-2xl font-bold mt-1">{COURSES.length}</div>
-          </Card>
-          <Card className="p-4 bg-blue-50 border-blue-200">
-            <Users className="w-5 h-5 text-blue-600 mb-2" />
-            <div className="text-xs font-bold text-blue-700">Ro'yxatdan o'tgan</div>
-            <div className="text-2xl font-bold mt-1">{totalEnrolled}</div>
-          </Card>
-          <Card className="p-4 bg-violet-50 border-violet-200">
-            <Star className="w-5 h-5 text-violet-600 mb-2" />
-            <div className="text-xs font-bold text-violet-700">Tugatish %</div>
-            <div className="text-2xl font-bold mt-1">{completionRate}%</div>
-          </Card>
-          <Card className="p-4 bg-amber-50 border-amber-200">
-            <Clock className="w-5 h-5 text-amber-600 mb-2" />
-            <div className="text-xs font-bold text-amber-700">Total minut</div>
-            <div className="text-2xl font-bold mt-1">{COURSES.reduce((s, c) => s + c.duration, 0)}</div>
-          </Card>
-        </div>
-
-        <Card className="p-4">
-          <div className="flex items-center gap-2 flex-wrap">
-            <select value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)} className="border border-slate-300 rounded-md px-3 py-2 text-sm">
-              <option value="all">Barcha kategoriya</option>
-              {categories.map(c => <option key={c}>{c}</option>)}
-            </select>
-            <select value={typeFilter} onChange={e => setTypeFilter(e.target.value)} className="border border-slate-300 rounded-md px-3 py-2 text-sm">
-              <option value="all">Barcha tur</option>
-              <option value="video">📹 Video</option>
-              <option value="article">📄 Maqola</option>
-              <option value="quiz">📝 Test</option>
-              <option value="live">👥 Jonli</option>
-            </select>
-            <div className="ml-auto relative">
-              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-              <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="Kurs nomi..." className="pl-9 w-64" />
+      <div className="-mx-4 -my-4 px-4 py-6 min-h-full" style={{ background: "linear-gradient(180deg, #F5F1EB 0%, #FAF7F2 100%)" }}>
+        <div className="max-w-[1700px] mx-auto space-y-5">
+          <div className="flex items-end gap-3 border-b border-[#E8E0D3] pb-6">
+            <Link href="/komanda" className="p-2 hover:bg-[#F0EAE0] rounded-lg"><ArrowLeft className="w-5 h-5 text-[#6B5B4D]" /></Link>
+            <div className="flex-1">
+              <div className="text-xs uppercase tracking-[0.2em] text-[#9C8A6E] font-medium mb-2">SAVDOAI · KOMANDA</div>
+              <h1 className="text-4xl font-light tracking-tight text-[#1A1A1A]" style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>
+                Trening <span className="italic text-[#C75D3C]">akademiya</span>
+              </h1>
+              <p className="text-sm text-[#6B5B4D] mt-2">{COURSES.length} ta kurs · {totalEnrolled} ro'yxat · {completionRate}% tugatish</p>
             </div>
+            <Button className="gap-1 text-white" style={{ background: "#C75D3C" }}><Plus className="w-4 h-4" /> Yangi kurs</Button>
           </div>
-        </Card>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-          {filtered.map(c => {
-            const Icon = TYPE_ICON[c.type]
-            const completionPct = Math.round((c.completed / c.enrolled) * 100)
-            return (
-              <Card key={c.id} className="p-5 hover:shadow-md transition-shadow">
-                <div className="flex items-start gap-3 mb-3">
-                  <div className={`w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0 ${TYPE_COLOR[c.type]}`}>
-                    <Icon className="w-6 h-6" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-bold text-base">{c.title}</h3>
-                    <div className="flex items-center gap-1 mt-1">
-                      {c.required && <span className="text-xs px-2 py-0.5 rounded bg-rose-100 text-rose-700">★ Majburiy</span>}
-                      <span className={`text-xs px-2 py-0.5 rounded ${DIFFICULTY_COLOR[c.difficulty]}`}>
-                        {c.difficulty === "beginner" ? "🟢 Boshlang'ich" : c.difficulty === "intermediate" ? "🟡 O'rta" : "🔴 Yuqori"}
-                      </span>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <Card className="bg-white border border-[#E8E0D3] shadow-sm rounded-2xl p-5 relative overflow-hidden">
+              <BookOpen className="w-5 h-5 text-emerald-700 mb-2" />
+              <div className="text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Jami kurslar</div>
+              <div className="text-3xl font-light mt-1 text-[#1A1A1A]" style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>{COURSES.length}</div>
+              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-emerald-600" />
+            </Card>
+            <Card className="bg-white border border-[#E8E0D3] shadow-sm rounded-2xl p-5 relative overflow-hidden">
+              <Users className="w-5 h-5 text-blue-700 mb-2" />
+              <div className="text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Ro'yxatdan o'tgan</div>
+              <div className="text-3xl font-light mt-1 text-[#1A1A1A]" style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>{totalEnrolled}</div>
+              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600" />
+            </Card>
+            <Card className="bg-white border border-[#E8E0D3] shadow-sm rounded-2xl p-5 relative overflow-hidden">
+              <Star className="w-5 h-5 text-purple-700 mb-2" />
+              <div className="text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Tugatish %</div>
+              <div className="text-3xl font-light mt-1 font-mono tabular-nums text-[#1A1A1A]" style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>{completionRate}%</div>
+              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-purple-600" />
+            </Card>
+            <Card className="bg-white border border-[#E8E0D3] shadow-sm rounded-2xl p-5 relative overflow-hidden">
+              <Clock className="w-5 h-5 text-[#D97706] mb-2" />
+              <div className="text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Total minut</div>
+              <div className="text-3xl font-light mt-1 font-mono tabular-nums text-[#1A1A1A]" style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>{COURSES.reduce((s, c) => s + c.duration, 0)}</div>
+              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#D97706]" />
+            </Card>
+          </div>
+
+          <Card className="bg-white border border-[#E8E0D3] shadow-sm rounded-2xl p-5">
+            <div className="flex items-center gap-2 flex-wrap">
+              <select value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)} className="border border-[#E8E0D3] rounded-md px-3 py-2 text-sm bg-white text-[#1A1A1A]">
+                <option value="all">Barcha kategoriya</option>
+                {categories.map(c => <option key={c}>{c}</option>)}
+              </select>
+              <select value={typeFilter} onChange={e => setTypeFilter(e.target.value)} className="border border-[#E8E0D3] rounded-md px-3 py-2 text-sm bg-white text-[#1A1A1A]">
+                <option value="all">Barcha tur</option>
+                <option value="video">Video</option>
+                <option value="article">Maqola</option>
+                <option value="quiz">Test</option>
+                <option value="live">Jonli</option>
+              </select>
+              <div className="ml-auto relative">
+                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#9C8A6E]" />
+                <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="Kurs nomi..." className="pl-9 w-64 border-[#E8E0D3]" />
+              </div>
+            </div>
+          </Card>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {filtered.map(c => {
+              const Icon = TYPE_ICON[c.type]
+              const completionPct = Math.round((c.completed / c.enrolled) * 100)
+              return (
+                <Card key={c.id} className="bg-white border border-[#E8E0D3] shadow-sm rounded-2xl p-5 hover:shadow-md transition-shadow">
+                  <div className="flex items-start gap-3 mb-3">
+                    <div className={`w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0 ${TYPE_COLOR[c.type]}`}>
+                      <Icon className="w-6 h-6" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-medium text-base text-[#1A1A1A]">{c.title}</h3>
+                      <div className="flex items-center gap-1 mt-1 flex-wrap">
+                        {c.required && <span className="text-xs px-2 py-0.5 rounded bg-[#F5E5D6] text-[#C75D3C]">Majburiy</span>}
+                        <span className={`text-xs px-2 py-0.5 rounded ${DIFFICULTY_COLOR[c.difficulty]}`}>
+                          {DIFFICULTY_LABEL[c.difficulty]}
+                        </span>
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                <div className="flex items-center gap-3 text-xs text-slate-500 mb-3">
-                  <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> {c.duration} min</span>
-                  <span className="flex items-center gap-1"><Users className="w-3 h-3" /> {c.enrolled}</span>
-                  <span className="flex items-center gap-1"><Star className="w-3 h-3 text-amber-500 fill-amber-500" /> {c.rating}</span>
-                  <span className="text-xs px-2 py-0.5 rounded bg-slate-100">{c.category}</span>
-                </div>
-
-                <div className="mb-3">
-                  <div className="flex items-center justify-between text-xs mb-1">
-                    <span className="text-slate-500">{c.completed} / {c.enrolled} tugatildi</span>
-                    <span className="font-bold">{completionPct}%</span>
+                  <div className="flex items-center gap-3 text-xs text-[#9C8A6E] mb-3 flex-wrap">
+                    <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> {c.duration} min</span>
+                    <span className="flex items-center gap-1"><Users className="w-3 h-3" /> {c.enrolled}</span>
+                    <span className="flex items-center gap-1 text-[#D97706]"><Star className="w-3 h-3 fill-[#D97706]" /> {c.rating}</span>
+                    <span className="text-xs px-2 py-0.5 rounded bg-[#F0EAE0] text-[#6B5B4D]">{c.category}</span>
                   </div>
-                  <div className="h-2 bg-slate-200 rounded-full overflow-hidden">
-                    <div className={`h-full ${completionPct >= 80 ? "bg-emerald-500" : completionPct >= 60 ? "bg-amber-500" : "bg-blue-500"}`} style={{ width: `${completionPct}%` }} />
+
+                  <div className="mb-3">
+                    <div className="flex items-center justify-between text-xs mb-1">
+                      <span className="text-[#9C8A6E]">{c.completed} / {c.enrolled} tugatildi</span>
+                      <span className="font-medium font-mono tabular-nums text-[#1A1A1A]">{completionPct}%</span>
+                    </div>
+                    <div className="h-2 bg-[#F0EAE0] rounded-full overflow-hidden">
+                      <div className={`h-full ${completionPct >= 80 ? "bg-emerald-600" : completionPct >= 60 ? "bg-[#D97706]" : "bg-blue-600"}`} style={{ width: `${completionPct}%` }} />
+                    </div>
                   </div>
-                </div>
 
-                <Button size="sm" className="w-full">Boshlash</Button>
-              </Card>
-            )
-          })}
-        </div>
-
-        <Card className="p-5 bg-violet-50 border-violet-200">
-          <div className="flex items-start gap-3">
-            <Sparkles className="w-6 h-6 text-violet-600 flex-shrink-0 mt-1" />
-            <div>
-              <h3 className="font-bold text-violet-800">AI Akademiya tavsiyasi</h3>
-              <p className="text-sm text-slate-700 mt-1">
-                AI Турсунов Ж. uchun "Sotuv asoslari" + "Klient muloqoti" treningini birlashtirilgan kurs sifatida tavsiya qiladi.
-                BORIEV M. uchun "Murakkab muzokara" advanced kursi tavsiya etilgan (2 ta sertifikat olishga yaqin).
-              </p>
-            </div>
+                  <Button size="sm" className="w-full text-white" style={{ background: "#C75D3C" }}>Boshlash</Button>
+                </Card>
+              )
+            })}
           </div>
-        </Card>
+
+          <Card className="bg-white border border-[#E8E0D3] shadow-sm rounded-2xl p-6">
+            <div className="flex items-start gap-3">
+              <Sparkles className="w-6 h-6 text-[#C75D3C] flex-shrink-0 mt-1" />
+              <div>
+                <h3 className="font-medium text-[#1A1A1A]" style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>AI Akademiya tavsiyasi</h3>
+                <p className="text-sm text-[#6B5B4D] mt-1">
+                  AI Турсунов Ж. uchun "Sotuv asoslari" + "Klient muloqoti" treningini birlashtirilgan kurs sifatida tavsiya qiladi.
+                  BORIEV M. uchun "Murakkab muzokara" advanced kursi tavsiya etilgan (2 ta sertifikat olishga yaqin).
+                </p>
+              </div>
+            </div>
+          </Card>
+        </div>
       </div>
     </AdminLayout>
   )
