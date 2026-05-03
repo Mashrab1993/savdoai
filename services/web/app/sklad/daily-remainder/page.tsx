@@ -1,85 +1,85 @@
 "use client"
-import { useState } from "react"
-import { PremiumPage, PremiumCard, PremiumSectionHeader } from "@/components/layout/premium-page"
-import { Calendar, Download } from "lucide-react"
+import { AdminLayout } from "@/components/layout/admin-layout"
+import { Card } from "@/components/ui/card"
+import { ArrowLeft } from "lucide-react"
+import Link from "next/link"
+import { useApi, useAuth } from "@/hooks/use-api"
+import { formatCurrency } from "@/lib/utils"
 
-const DATA = [
-  { product: "Choco-Boom 75g",          "01": 1480, "08": 1320, "15": 1120, "22": 1280, "29": 1240, today: 1240 },
-  { product: "Coca-Cola 1.5L",          "01": 1080, "08": 880,  "15": 720,  "22": 920,  "29": 888,  today: 888 },
-  { product: "Bonjur 50g",              "01": 480,  "08": 360,  "15": 300,  "22": 280,  "29": 240,  today: 240 },
-  { product: "Sok Apelsin 1L",          "01": 280,  "08": 220,  "15": 180,  "22": 200,  "29": 156,  today: 156 },
-  { product: "Pechenye Yubileynoye",    "01": 360,  "08": 320,  "15": 290,  "22": 270,  "29": 282,  today: 282 },
-  { product: "Voda Premium 1L",         "01": 220,  "08": 180,  "15": 140,  "22": 100,  "29": 84,   today: 84  },
-  { product: "Biskvit Triton 150g",     "01": 80,   "08": 60,   "15": 60,   "22": 40,   "29": 60,   today: 60  },
-  { product: "Chay Dilmah",             "01": 40,   "08": 36,   "15": 24,   "22": 16,   "29": 12,   today: 12  },
-]
-
-const DATES = ["01.05", "08.05", "15.05", "22.05", "29.05", "Bugun"]
-
-function fmt(n: number) { return n.toLocaleString("ru-RU") }
+type Tovar = { id: number; nomi: string; qoldiq: number; olish_narxi?: number; brend?: string }
+type TovarResp = { total: number; items: Tovar[] }
 
 export default function DailyRemainderPage() {
-  const [selectedDate] = useState("today")
+  const { isAuthenticated } = useAuth()
+  const { data, loading } = useApi<TovarResp>(isAuthenticated ? "/api/v1/tovarlar?limit=500" : null)
+  const items = data?.items ?? []
+  const sorted = items.slice().sort((a, b) => b.qoldiq - a.qoldiq)
+  const totalQty = items.reduce((s, t) => s + Math.max(0, t.qoldiq), 0)
+  const totalValue = items.reduce((s, t) => s + Math.max(0, t.qoldiq) * Number(t.olish_narxi || 0), 0)
 
   return (
-    <PremiumPage
-      backLink={{ href: "/sklad", label: "SKLAD" }}
-      title="Sana bo'yicha"
-      accent="qoldiq"
-      description={`${DATA.length} ta tovar · 30-kun davomida har hafta snapshot · time-travel rejimi`}
-      actions={
-        <>
-          <button className="px-3 py-2 rounded-md border border-[#E8E0D3] bg-white text-sm flex items-center gap-1.5">
-            <Calendar className="w-3.5 h-3.5" /> Sana tanlash
-          </button>
-          <button className="px-3 py-2 rounded-md border border-[#E8E0D3] bg-white text-sm flex items-center gap-1.5">
-            <Download className="w-3.5 h-3.5" /> Excel
-          </button>
-        </>
-      }
-    >
-      <PremiumCard className="p-6">
-        <PremiumSectionHeader eyebrow="HAR HAFTA SNAPSHOT" title="Qoldiq dinamikasi" />
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-[#E8E0D3] bg-[#FAF7F2]">
-                <th className="text-left py-3 px-2 text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Tovar</th>
-                {DATES.map(d => (
-                  <th key={d} className="text-right py-3 px-3 text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">{d}</th>
-                ))}
-                <th className="text-center py-3 px-2 text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Trend</th>
-              </tr>
-            </thead>
-            <tbody>
-              {DATA.map(row => {
-                const start = (row as any)["01"] as number
-                const end = row.today
-                const change = ((end - start) / start * 100)
-                return (
-                  <tr key={row.product} className="border-b border-[#F0EAE0] hover:bg-[#FAF7F2]">
-                    <td className="py-3 px-2 font-medium text-[#1A1A1A]">{row.product}</td>
-                    {DATES.map((d, i) => {
-                      const key = i === 5 ? "today" : ["01", "08", "15", "22", "29"][i]
-                      const val = (row as any)[key] as number
-                      return (
-                        <td key={d} className={`py-3 px-3 text-right font-mono ${i === 5 ? "font-medium text-[#C75D3C]" : "text-[#6B5B4D]"}`}>
-                          {fmt(val)}
-                        </td>
-                      )
-                    })}
-                    <td className="py-3 px-2 text-center">
-                      <span className={`text-xs font-medium px-2 py-0.5 rounded ${change >= 0 ? "bg-emerald-50 text-emerald-700" : "bg-[#F5E5D6] text-[#C75D3C]"}`}>
-                        {change >= 0 ? "+" : ""}{change.toFixed(1)}%
-                      </span>
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
+    <AdminLayout>
+      <div className="max-w-[1300px] mx-auto space-y-6">
+        <div className="flex items-center gap-3">
+          <Link href="/sklad" className="p-2 hover:bg-slate-100 rounded"><ArrowLeft className="w-5 h-5" /></Link>
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Kunlik qoldiq</h1>
+            <p className="text-base text-slate-500 mt-1">
+              Bugungi to'liq qoldiq snapshot
+              {!isAuthenticated && <span className="ml-2 text-amber-600 text-xs">⚠ Login kerak</span>}
+            </p>
+          </div>
         </div>
-      </PremiumCard>
-    </PremiumPage>
+
+        <div className="grid grid-cols-3 gap-4">
+          <Card className="p-4 border-blue-200 bg-blue-50/40">
+            <div className="text-xs uppercase font-semibold text-blue-700">Jami SKU</div>
+            <div className="text-3xl font-bold text-blue-800 tabular-nums">{items.length}</div>
+          </Card>
+          <Card className="p-4 border-emerald-200 bg-emerald-50/40">
+            <div className="text-xs uppercase font-semibold text-emerald-700">Jami qoldiq</div>
+            <div className="text-3xl font-bold text-emerald-800 tabular-nums">{totalQty.toLocaleString("ru-RU")}</div>
+          </Card>
+          <Card className="p-4 border-amber-200 bg-amber-50/40">
+            <div className="text-xs uppercase font-semibold text-amber-700">Ombor qiymati</div>
+            <div className="text-3xl font-bold text-amber-800 tabular-nums">{formatCurrency(totalValue)}</div>
+          </Card>
+        </div>
+
+        {loading && <div className="text-center py-12 text-slate-500">Yuklanmoqda...</div>}
+
+        {sorted.length > 0 && (
+          <Card>
+            <div className="px-5 py-3 border-b">
+              <h3 className="font-semibold">Tovarlar (qoldiq bo'yicha kamayuvchi)</h3>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-slate-50 border-b">
+                  <tr>
+                    <th className="px-4 py-3 text-left font-semibold w-12">#</th>
+                    <th className="px-4 py-3 text-left font-semibold">Tovar</th>
+                    <th className="px-4 py-3 text-left font-semibold">Brend</th>
+                    <th className="px-4 py-3 text-right font-semibold">Qoldiq</th>
+                    <th className="px-4 py-3 text-right font-semibold">Qiymati</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y">
+                  {sorted.slice(0, 100).map((t, i) => (
+                    <tr key={t.id} className="hover:bg-slate-50">
+                      <td className="px-4 py-2 text-slate-500">{i + 1}</td>
+                      <td className="px-4 py-2 font-medium">{t.nomi}</td>
+                      <td className="px-4 py-2 text-slate-600">{t.brend || "—"}</td>
+                      <td className="px-4 py-2 text-right tabular-nums font-bold">{t.qoldiq}</td>
+                      <td className="px-4 py-2 text-right tabular-nums text-emerald-700">{formatCurrency(t.qoldiq * Number(t.olish_narxi || 0))}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </Card>
+        )}
+      </div>
+    </AdminLayout>
   )
 }

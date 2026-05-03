@@ -1,120 +1,101 @@
 "use client"
-import { PremiumPage, PremiumCard, PremiumSectionHeader } from "@/components/layout/premium-page"
-import { TrendingUp, TrendingDown, Calendar, Download } from "lucide-react"
+import { AdminLayout } from "@/components/layout/admin-layout"
+import { Card } from "@/components/ui/card"
+import { ArrowLeft, DollarSign } from "lucide-react"
+import Link from "next/link"
+import { useApi, useAuth } from "@/hooks/use-api"
+import { formatCurrency } from "@/lib/utils"
 
-const ROWS = [
-  { product: "Choco-Boom 75g", category: "Shokolad", revenue: 28_400_000, cost: 18_240_000, profit: 10_160_000, margin: 35.8 },
-  { product: "Coca-Cola 1.5L", category: "Gazli ichimlik", revenue: 24_640_000, cost: 17_248_000, profit: 7_392_000, margin: 30.0 },
-  { product: "Bonjur Молочный 50g", category: "Shokolad", revenue: 18_200_000, cost: 11_830_000, profit: 6_370_000, margin: 35.0 },
-  { product: "Sok Apelsin 1L", category: "Sok", revenue: 12_400_000, cost: 8_680_000, profit: 3_720_000, margin: 30.0 },
-  { product: "Pechenye Yubileynoye", category: "Pechenye", revenue: 10_800_000, cost: 7_560_000, profit: 3_240_000, margin: 30.0 },
-  { product: "Voda Premium 1L", category: "Mineral suv", revenue: 8_640_000, cost: 5_184_000, profit: 3_456_000, margin: 40.0 },
-  { product: "Biskvit Triton 150g", category: "Pechenye", revenue: 6_820_000, cost: 4_774_000, profit: 2_046_000, margin: 30.0 },
-  { product: "Chay Dilmah", category: "Chay", revenue: 5_280_000, cost: 3_696_000, profit: 1_584_000, margin: 30.0 },
-]
-
-function fmt(n: number) { return n.toLocaleString("ru-RU") }
+type Tovar = { id: number; nomi: string; qoldiq: number; olish_narxi?: number; sotish_narxi: number; brend?: string; kategoriya?: string }
+type TovarResp = { total: number; items: Tovar[] }
 
 export default function FinancialReportPage() {
-  const totalRev = ROWS.reduce((s, r) => s + r.revenue, 0)
-  const totalCost = ROWS.reduce((s, r) => s + r.cost, 0)
-  const totalProfit = ROWS.reduce((s, r) => s + r.profit, 0)
-  const avgMargin = (totalProfit / totalRev) * 100
+  const { isAuthenticated } = useAuth()
+  const { data, loading } = useApi<TovarResp>(isAuthenticated ? "/api/v1/tovarlar?limit=500" : null)
+  const items = data?.items ?? []
+
+  // Calculate total stock value
+  const stockValueOlish = items.reduce((s, t) => s + Math.max(0, t.qoldiq) * Number(t.olish_narxi || 0), 0)
+  const stockValueSotish = items.reduce((s, t) => s + Math.max(0, t.qoldiq) * Number(t.sotish_narxi || 0), 0)
+  const potentialProfit = stockValueSotish - stockValueOlish
+
+  // By category
+  const byCat: Record<string, { qty: number; valOlish: number; valSotish: number }> = {}
+  items.forEach(t => {
+    const cat = t.kategoriya || "Boshqa"
+    if (!byCat[cat]) byCat[cat] = { qty: 0, valOlish: 0, valSotish: 0 }
+    byCat[cat].qty += Math.max(0, t.qoldiq)
+    byCat[cat].valOlish += Math.max(0, t.qoldiq) * Number(t.olish_narxi || 0)
+    byCat[cat].valSotish += Math.max(0, t.qoldiq) * Number(t.sotish_narxi || 0)
+  })
+  const catList = Object.entries(byCat).sort((a, b) => b[1].valOlish - a[1].valOlish)
 
   return (
-    <PremiumPage
-      backLink={{ href: "/sklad", label: "SKLAD" }}
-      title="Sklad fin."
-      accent="hisoboti"
-      description={`${ROWS.length} ta tovar · ${fmt(totalRev / 1_000_000)} M tushum · ${fmt(totalProfit / 1_000_000)} M sof foyda · ${avgMargin.toFixed(1)}% marja`}
-      actions={
-        <>
-          <button className="px-3 py-2 rounded-md border border-[#E8E0D3] bg-white text-sm flex items-center gap-1.5">
-            <Calendar className="w-3.5 h-3.5" /> Aprel 2026
-          </button>
-          <button className="px-3 py-2 rounded-md border border-[#E8E0D3] bg-white text-sm flex items-center gap-1.5">
-            <Download className="w-3.5 h-3.5" /> Excel
-          </button>
-        </>
-      }
-    >
-      {/* Top KPIs */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <PremiumCard className="p-5 relative overflow-hidden">
-          <div className="text-xs uppercase tracking-wider text-[#9C8A6E] font-medium mb-2">Tushum</div>
-          <div className="text-2xl font-medium tabular-nums text-[#1A1A1A]" style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>
-            {fmt(totalRev / 1_000_000)} M
+    <AdminLayout>
+      <div className="max-w-[1400px] mx-auto space-y-6">
+        <div className="flex items-center gap-3">
+          <Link href="/sklad" className="p-2 hover:bg-slate-100 rounded"><ArrowLeft className="w-5 h-5" /></Link>
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Sklad moliyaviy hisoboti</h1>
+            <p className="text-base text-slate-500 mt-1">
+              Ombor qiymati va potensial foyda
+              {!isAuthenticated && <span className="ml-2 text-amber-600 text-xs">⚠ Login kerak</span>}
+            </p>
           </div>
-          <div className="absolute bottom-0 left-0 right-0 h-1 bg-emerald-500" />
-        </PremiumCard>
-        <PremiumCard className="p-5 relative overflow-hidden">
-          <div className="text-xs uppercase tracking-wider text-[#9C8A6E] font-medium mb-2">Tannarx</div>
-          <div className="text-2xl font-medium tabular-nums text-[#1A1A1A]" style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>
-            {fmt(totalCost / 1_000_000)} M
-          </div>
-          <div className="absolute bottom-0 left-0 right-0 h-1 bg-[#9C8A6E]" />
-        </PremiumCard>
-        <PremiumCard className="p-5 relative overflow-hidden">
-          <div className="text-xs uppercase tracking-wider text-[#9C8A6E] font-medium mb-2">Sof foyda</div>
-          <div className="text-2xl font-medium tabular-nums text-[#C75D3C]" style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>
-            {fmt(totalProfit / 1_000_000)} M
-          </div>
-          <div className="absolute bottom-0 left-0 right-0 h-1 bg-[#C75D3C]" />
-        </PremiumCard>
-        <PremiumCard className="p-5 relative overflow-hidden">
-          <div className="text-xs uppercase tracking-wider text-[#9C8A6E] font-medium mb-2">O'rta marja</div>
-          <div className="text-2xl font-medium tabular-nums text-emerald-700" style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>
-            {avgMargin.toFixed(1)}%
-          </div>
-          <div className="absolute bottom-0 left-0 right-0 h-1 bg-emerald-700" />
-        </PremiumCard>
-      </div>
-
-      {/* Detailed table */}
-      <PremiumCard className="p-6">
-        <PremiumSectionHeader eyebrow="TOVAR BO'YICHA" title="Tafsilot" />
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-[#E8E0D3] bg-[#FAF7F2]">
-                <th className="text-left py-3 px-2 text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Tovar</th>
-                <th className="text-left py-3 px-2 text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Kategoriya</th>
-                <th className="text-right py-3 px-2 text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Tushum</th>
-                <th className="text-right py-3 px-2 text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Tannarx</th>
-                <th className="text-right py-3 px-2 text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Foyda</th>
-                <th className="text-right py-3 px-2 text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Marja</th>
-              </tr>
-            </thead>
-            <tbody>
-              {ROWS.sort((a, b) => b.profit - a.profit).map((r, i) => (
-                <tr key={r.product} className="border-b border-[#F0EAE0] hover:bg-[#FAF7F2]">
-                  <td className="py-3 px-2">
-                    <div className="font-medium text-[#1A1A1A]">{i + 1}. {r.product}</div>
-                  </td>
-                  <td className="py-3 px-2 text-[#6B5B4D]">{r.category}</td>
-                  <td className="py-3 px-2 text-right font-mono text-emerald-700">{fmt(r.revenue)}</td>
-                  <td className="py-3 px-2 text-right font-mono text-[#9C8A6E]">{fmt(r.cost)}</td>
-                  <td className="py-3 px-2 text-right font-mono font-medium text-[#C75D3C]">{fmt(r.profit)}</td>
-                  <td className="py-3 px-2 text-right">
-                    <span className={`px-2 py-0.5 rounded font-medium text-xs ${r.margin >= 35 ? "bg-emerald-50 text-emerald-700" : r.margin >= 30 ? "bg-blue-50 text-blue-700" : "bg-[#F5E5D6] text-[#C75D3C]"}`}>
-                      {r.margin.toFixed(1)}%
-                    </span>
-                  </td>
-                </tr>
-              ))}
-              <tr className="bg-[#FAF7F2] font-medium">
-                <td colSpan={2} className="py-3 px-2 text-xs uppercase tracking-wider text-[#9C8A6E]">Jami</td>
-                <td className="py-3 px-2 text-right font-mono text-[#1A1A1A]">{fmt(totalRev)}</td>
-                <td className="py-3 px-2 text-right font-mono text-[#1A1A1A]">{fmt(totalCost)}</td>
-                <td className="py-3 px-2 text-right font-mono text-[#C75D3C] text-base" style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>
-                  {fmt(totalProfit)}
-                </td>
-                <td className="py-3 px-2 text-right font-medium text-emerald-700">{avgMargin.toFixed(1)}%</td>
-              </tr>
-            </tbody>
-          </table>
         </div>
-      </PremiumCard>
-    </PremiumPage>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Card className="p-5 border-blue-200 bg-blue-50/40">
+            <div className="text-xs uppercase font-semibold text-blue-700">Olish narxi qiymati</div>
+            <div className="text-2xl font-bold text-blue-800 tabular-nums">{formatCurrency(stockValueOlish)}</div>
+            <div className="text-xs text-slate-500 mt-1">Tannarx asosida</div>
+          </Card>
+          <Card className="p-5 border-emerald-200 bg-emerald-50/40">
+            <div className="text-xs uppercase font-semibold text-emerald-700">Sotish narxi qiymati</div>
+            <div className="text-2xl font-bold text-emerald-800 tabular-nums">{formatCurrency(stockValueSotish)}</div>
+            <div className="text-xs text-slate-500 mt-1">To'liq sotsa</div>
+          </Card>
+          <Card className="p-5 border-amber-200 bg-amber-50/40">
+            <div className="text-xs uppercase font-semibold text-amber-700">Potensial foyda</div>
+            <div className="text-2xl font-bold text-amber-800 tabular-nums">{formatCurrency(potentialProfit)}</div>
+            <div className="text-xs text-slate-500 mt-1">Hammasini sotsa</div>
+          </Card>
+        </div>
+
+        {loading && <div className="text-center py-12 text-slate-500">Yuklanmoqda...</div>}
+
+        {catList.length > 0 && (
+          <Card>
+            <div className="px-5 py-3 border-b">
+              <h3 className="font-semibold">Kategoriya bo'yicha ({catList.length})</h3>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-slate-50 border-b">
+                  <tr>
+                    <th className="px-4 py-3 text-left font-semibold">Kategoriya</th>
+                    <th className="px-4 py-3 text-right font-semibold">Qoldiq</th>
+                    <th className="px-4 py-3 text-right font-semibold">Olish qiymati</th>
+                    <th className="px-4 py-3 text-right font-semibold">Sotish qiymati</th>
+                    <th className="px-4 py-3 text-right font-semibold">Foyda</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y">
+                  {catList.map(([cat, info]) => (
+                    <tr key={cat} className="hover:bg-slate-50">
+                      <td className="px-4 py-2 font-medium">{cat}</td>
+                      <td className="px-4 py-2 text-right tabular-nums">{info.qty}</td>
+                      <td className="px-4 py-2 text-right tabular-nums text-blue-700">{formatCurrency(info.valOlish)}</td>
+                      <td className="px-4 py-2 text-right tabular-nums text-emerald-700">{formatCurrency(info.valSotish)}</td>
+                      <td className="px-4 py-2 text-right tabular-nums font-bold text-amber-700">{formatCurrency(info.valSotish - info.valOlish)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </Card>
+        )}
+      </div>
+    </AdminLayout>
   )
 }
