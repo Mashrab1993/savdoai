@@ -2792,22 +2792,25 @@ async def nakladnoy_excel_batch(
 async def savdolar_excel(
     sana_dan: str | None = None,
     sana_gacha: str | None = None,
-    ids: str | None = None,  # Tanlangan ID'lar (vergul bilan): ?ids=1,2,3
+    ids: str | None = None,  # Tanlangan ID'lar
+    variant: int = 1,  # 1..4 — turli ko'rinish
     uid: int = Depends(get_uid),
 ):
-    """SalesDoc Реестр 3.0 formatida Excel.
+    """Реестр Excel — 4 xil ko'rinish.
 
-    Parametrlar:
-    - sana_dan, sana_gacha: davr filteri
-    - ids: tanlangan zakaz ID'lari (vergul bilan) — har bir userda /zakazlar
-           sahifasida tanlangan zakazlar uchun
+    variant:
+    - 1: STANDART (Реестр 3.0) — 9 ustun, klassik SalesDoc format
+    - 2: QISQA — 4 ustun (№, sana, klient, summa) — tez ko'rish uchun
+    - 3: KENGAYTIRILGAN — 11 ustun (+ to'langan, qarz, holat, izoh)
+    - 4: MOLIYAVIY — balans, qarz, to'langan, status (debit/kredit)
     """
-    import io
-    import base64
+    import io, base64
     from openpyxl import Workbook
     from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 
-    # Tanlangan ID'larni parse qilish
+    if variant not in (1, 2, 3, 4):
+        variant = 1
+
     selected_ids: list[int] = []
     if ids:
         for part in ids.split(","):
@@ -2834,6 +2837,7 @@ async def savdolar_excel(
 
         rows = await c.fetch(f"""
             SELECT ss.id, ss.klient_ismi, ss.jami, ss.tolangan, ss.qarz, ss.sana,
+                   ss.holat, ss.izoh,
                    COALESCE(k.telefon, '') AS telefon,
                    COALESCE(k.manzil, '')  AS manzil,
                    COALESCE(k.jami_sotib, 0) AS balans
@@ -2845,16 +2849,41 @@ async def savdolar_excel(
 
     wb = Workbook()
     ws = wb.active
-    ws.title = "Реестр 3.0"
-
-    headers = ["№", "Дата отгрузки", "Торгов. Точка", "Адрес", "Номер клиента",
-               "Торгов. Пред.", "Баланс клиента", "Сумма", "Отметка"]
-    widths  = [5, 13, 30, 35, 16, 14, 16, 16, 10]
 
     header_fill = PatternFill(start_color="0A819C", end_color="0A819C", fill_type="solid")
     header_font = Font(bold=True, color="FFFFFF", size=11)
     thin = Side(style="thin", color="888888")
     border = Border(left=thin, right=thin, top=thin, bottom=thin)
+    total_fill = PatternFill(start_color="E8F5E9", end_color="E8F5E9", fill_type="solid")
+
+    # Variant configuration
+    if variant == 1:  # STANDART
+        ws.title = "Реестр 3.0"
+        headers = ["№", "Дата отгрузки", "Торгов. Точка", "Адрес", "Номер клиента",
+                   "Торгов. Пред.", "Баланс клиента", "Сумма", "Отметка"]
+        widths = [5, 13, 30, 35, 16, 14, 16, 16, 10]
+        money_cols = [7, 8]
+        variant_name = "Standart"
+    elif variant == 2:  # QISQA
+        ws.title = "Реестр (qisqa)"
+        headers = ["№", "Sana", "Klient", "Summa"]
+        widths = [5, 13, 35, 16]
+        money_cols = [4]
+        variant_name = "Qisqa"
+    elif variant == 3:  # KENGAYTIRILGAN
+        ws.title = "Реестр (kengaytirilgan)"
+        headers = ["№", "ID", "Sana", "Klient", "Telefon", "Manzil",
+                   "Jami", "To'langan", "Qarz", "Holat", "Izoh"]
+        widths = [5, 8, 18, 30, 16, 30, 14, 14, 14, 12, 25]
+        money_cols = [7, 8, 9]
+        variant_name = "Kengaytirilgan"
+    else:  # variant == 4: MOLIYAVIY
+        ws.title = "Реестр (moliyaviy)"
+        headers = ["№", "Sana", "Klient", "Avval balans", "Sotuv", "To'lov",
+                   "Qarz", "Yangi balans", "Status"]
+        widths = [5, 13, 30, 16, 16, 16, 16, 16, 14]
+        money_cols = [4, 5, 6, 7, 8]
+        variant_name = "Moliyaviy"
 
     for i, (h, w) in enumerate(zip(headers, widths), 1):
         cell = ws.cell(row=1, column=i, value=h)
@@ -2866,43 +2895,84 @@ async def savdolar_excel(
     ws.row_dimensions[1].height = 28
 
     total_sum = 0.0
+    total_paid = 0.0
+    total_debt = 0.0
+
     for idx2, r in enumerate(rows, 2):
         d = dict(r)
         sana_str = d["sana"].strftime("%d.%m.%Y") if d.get("sana") else ""
-        vals = [
-            idx2 - 1, sana_str, d["klient_ismi"] or "Mijoz",
-            d["manzil"] or "", d["telefon"] or "", "SavdoAI Bot",
-            float(d["balans"]), float(d["jami"]), ""
-        ]
+        jami = float(d["jami"] or 0)
+        tolangan = float(d.get("tolangan") or 0)
+        qarz = float(d.get("qarz") or 0)
+        balans = float(d.get("balans") or 0)
+        klient = d.get("klient_ismi") or "Mijoz"
+
+        if variant == 1:
+            vals = [idx2-1, sana_str, klient, d.get("manzil") or "",
+                    d.get("telefon") or "", "SavdoAI Bot",
+                    balans, jami, ""]
+        elif variant == 2:
+            vals = [idx2-1, sana_str, klient, jami]
+        elif variant == 3:
+            vals = [idx2-1, d["id"], sana_str, klient,
+                    d.get("telefon") or "", d.get("manzil") or "",
+                    jami, tolangan, qarz, d.get("holat") or "yangi",
+                    d.get("izoh") or ""]
+        else:  # 4
+            balance_before = balans - jami
+            new_balance = balance_before + jami - tolangan
+            status = "Toza" if qarz <= 0 else "Qarzdor"
+            vals = [idx2-1, sana_str, klient,
+                    balance_before, jami, tolangan,
+                    qarz, new_balance, status]
+
         for col, v in enumerate(vals, 1):
             cell = ws.cell(row=idx2, column=col, value=v)
             cell.border = border
-            if col in (7, 8):
+            if col in money_cols:
                 cell.number_format = '#,##0'
                 cell.alignment = Alignment(horizontal="right")
-        total_sum += float(d["jami"])
+
+        total_sum += jami
+        total_paid += tolangan
+        total_debt += qarz
 
     total_row = len(rows) + 2
-    ws.cell(row=total_row, column=3, value="ИТОГО").font = Font(bold=True)
-    total_cell = ws.cell(row=total_row, column=8, value=total_sum)
-    total_cell.font = Font(bold=True, color="1B5E20")
-    total_cell.number_format = '#,##0'
-    for col in range(1, 10):
-        ws.cell(row=total_row, column=col).fill = PatternFill(
-            start_color="E8F5E9", end_color="E8F5E9", fill_type="solid"
-        )
+    if variant == 1:
+        ws.cell(row=total_row, column=3, value="ИТОГО").font = Font(bold=True)
+        c = ws.cell(row=total_row, column=8, value=total_sum)
+        c.font = Font(bold=True, color="1B5E20"); c.number_format = '#,##0'
+    elif variant == 2:
+        ws.cell(row=total_row, column=3, value="JAMI:").font = Font(bold=True)
+        c = ws.cell(row=total_row, column=4, value=total_sum)
+        c.font = Font(bold=True, color="1B5E20"); c.number_format = '#,##0'
+    elif variant == 3:
+        ws.cell(row=total_row, column=4, value="JAMI:").font = Font(bold=True)
+        for col, val in [(7, total_sum), (8, total_paid), (9, total_debt)]:
+            c = ws.cell(row=total_row, column=col, value=val)
+            c.font = Font(bold=True, color="1B5E20"); c.number_format = '#,##0'
+    else:  # 4
+        ws.cell(row=total_row, column=3, value="JAMI:").font = Font(bold=True)
+        for col, val in [(5, total_sum), (6, total_paid), (7, total_debt)]:
+            c = ws.cell(row=total_row, column=col, value=val)
+            c.font = Font(bold=True, color="1B5E20"); c.number_format = '#,##0'
+
+    for col in range(1, len(headers) + 1):
+        ws.cell(row=total_row, column=col).fill = total_fill
         ws.cell(row=total_row, column=col).border = border
 
     ws.freeze_panes = "A2"
-    ws.auto_filter.ref = f"A1:I{len(rows) + 1}"
+    ws.auto_filter.ref = f"A1:{chr(64 + len(headers))}{len(rows) + 1}"
 
     buf = io.BytesIO()
     wb.save(buf); buf.seek(0)
     return {
-        "filename": f"Реестр_3.0_{sana_dan or 'barcha'}.xlsx",
+        "filename": f"Реестр_{variant_name}_{sana_dan or 'barcha'}.xlsx",
         "content_base64": base64.b64encode(buf.getvalue()).decode(),
         "soni": len(rows),
         "jami_summa": total_sum,
+        "variant": variant,
+        "variant_name": variant_name,
     }
 
 
@@ -2911,17 +2981,27 @@ async def savdolar_nakladnoy_excel(
     sana_dan: str | None = None,
     sana_gacha: str | None = None,
     ids: str | None = None,  # Vergul bilan: ?ids=1,2,3
+    variant: int = 1,  # 1..7
     uid: int = Depends(get_uid),
 ):
-    """Накладной (invoice) Excel — har sotuv ichidagi tovarlar alohida qatorlar.
+    """Накладной (invoice) Excel — 7 xil ko'rinish.
 
-    Реестр endpoint'idan farqi: bu yerda har tovar alohida qator bo'ladi.
-    Har sotuv guruhi: shapka (klient + sana) + tovar qatorlar + JAMI.
+    variant:
+    - 1: STANDART — klassik (klient header + tovarlar + JAMI)
+    - 2: CHEK — POS receipt format (mini, 4 ustun)
+    - 3: OPTOM — wholesale (block + dona narx)
+    - 4: SOLIQ — IKPU + soliq formatida
+    - 5: KLIENT — klient nusxasi (logo + footer)
+    - 6: OMBOR — sklad uchun (faqat tovar + miqdor)
+    - 7: BATAFSIL — to'liq (klient, tovar, narx, izoh, holat)
     """
     import io
     import base64
     from openpyxl import Workbook
     from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+
+    if variant not in range(1, 8):
+        variant = 1
 
     # Tanlangan ID'lar
     selected_ids: list[int] = []
@@ -2970,13 +3050,23 @@ async def savdolar_nakladnoy_excel(
             for ch in chiq:
                 chiqimlar_by_sess.setdefault(ch["sessiya_id"], []).append(ch)
 
+    # Variant config — har bir uchun ustunlar va ish
+    variant_configs = {
+        1: {"name": "Standart", "headers": ["№", "Tovar nomi", "Miqdor", "Birlik", "Narx", "Summa"], "widths": [6, 35, 10, 10, 14, 14]},
+        2: {"name": "Chek", "headers": ["№", "Tovar", "Soni", "Summa"], "widths": [5, 30, 8, 14]},
+        3: {"name": "Optom", "headers": ["№", "Tovar nomi", "Miqdor", "Birlik", "Olish", "Sotish", "Summa"], "widths": [6, 35, 10, 10, 14, 14, 14]},
+        4: {"name": "Soliq", "headers": ["№", "Tovar nomi", "IKPU", "Miqdor", "Birlik", "Narx (NDS'siz)", "NDS 12%", "Jami"], "widths": [6, 30, 14, 10, 10, 16, 12, 14]},
+        5: {"name": "Klient", "headers": ["№", "Tovar nomi", "Miqdor", "Birlik", "Narx", "Summa"], "widths": [6, 35, 10, 10, 14, 14]},
+        6: {"name": "Ombor", "headers": ["№", "Tovar nomi", "Miqdor", "Birlik"], "widths": [6, 40, 12, 12]},
+        7: {"name": "Batafsil", "headers": ["№", "Tovar nomi", "Kategoriya", "Birlik", "Miqdor", "Narx", "Chegirma", "Summa", "Izoh"], "widths": [5, 30, 16, 10, 10, 14, 12, 14, 20]},
+    }
+    cfg = variant_configs[variant]
+    ncols = len(cfg["headers"])
+    variant_name = cfg["name"]
+
     wb = Workbook()
     ws = wb.active
-    ws.title = "Накладной"
-
-    # Headers
-    headers = ["№", "Tovar nomi", "Miqdor", "Birlik", "Narx", "Summa"]
-    widths = [6, 35, 10, 10, 14, 14]
+    ws.title = f"Накладной ({variant_name})"
 
     header_fill = PatternFill(start_color="0A819C", end_color="0A819C", fill_type="solid")
     header_font = Font(bold=True, color="FFFFFF", size=11)
@@ -2986,101 +3076,165 @@ async def savdolar_nakladnoy_excel(
     thin = Side(style="thin", color="888888")
     border = Border(left=thin, right=thin, top=thin, bottom=thin)
 
-    for i, w in enumerate(widths, 1):
+    for i, w in enumerate(cfg["widths"], 1):
         ws.column_dimensions[chr(64 + i)].width = w
 
+    # Variant 5 (KLIENT): logo/header
     row = 1
+    if variant == 5:
+        ws.cell(row=row, column=1, value="🏪 SAVDOAI — KLIENT NUSXASI")
+        ws.merge_cells(start_row=row, start_column=1, end_row=row, end_column=ncols)
+        ws.cell(row=row, column=1).font = Font(bold=True, size=14, color="C75D3C")
+        ws.cell(row=row, column=1).alignment = Alignment(horizontal="center")
+        row += 2
+
     grand_total = 0.0
     grand_count = 0
 
     for s in sotuvlar:
         sd = dict(s)
         sana_str = sd["sana"].strftime("%d.%m.%Y %H:%M") if sd.get("sana") else ""
-        # Section header — klient + sana
-        ws.cell(row=row, column=1, value=f"📋 SOTUV #{sd['id']} · {sana_str}")
-        ws.merge_cells(start_row=row, start_column=1, end_row=row, end_column=6)
-        for col in range(1, 7):
-            cell = ws.cell(row=row, column=col)
-            cell.fill = section_fill
-            cell.font = section_font
-            cell.border = border
-        row += 1
 
-        # Klient info
-        ws.cell(row=row, column=1, value="Klient:")
-        ws.cell(row=row, column=1).font = Font(bold=True, size=10)
-        ws.cell(row=row, column=2, value=sd["klient_ismi"] or "Mijoz")
-        ws.merge_cells(start_row=row, start_column=2, end_row=row, end_column=4)
-        ws.cell(row=row, column=5, value="Telefon:")
-        ws.cell(row=row, column=5).font = Font(bold=True, size=10)
-        ws.cell(row=row, column=6, value=sd["telefon"] or "—")
-        for col in range(1, 7):
-            ws.cell(row=row, column=col).border = border
-        row += 1
-
-        if sd["manzil"]:
-            ws.cell(row=row, column=1, value="Manzil:")
-            ws.cell(row=row, column=1).font = Font(bold=True, size=10)
-            ws.cell(row=row, column=2, value=sd["manzil"])
-            ws.merge_cells(start_row=row, start_column=2, end_row=row, end_column=6)
-            for col in range(1, 7):
+        # Variant 6 (OMBOR) — minimal header
+        if variant == 6:
+            ws.cell(row=row, column=1, value=f"📦 #{sd['id']} · {sana_str} · {sd.get('klient_ismi') or 'Mijoz'}")
+            ws.merge_cells(start_row=row, start_column=1, end_row=row, end_column=ncols)
+            for col in range(1, ncols + 1):
+                ws.cell(row=row, column=col).fill = section_fill
+                ws.cell(row=row, column=col).font = section_font
+                ws.cell(row=row, column=col).border = border
+            row += 1
+        else:
+            # Section header
+            ws.cell(row=row, column=1, value=f"📋 SOTUV #{sd['id']} · {sana_str}")
+            ws.merge_cells(start_row=row, start_column=1, end_row=row, end_column=ncols)
+            for col in range(1, ncols + 1):
+                ws.cell(row=row, column=col).fill = section_fill
+                ws.cell(row=row, column=col).font = section_font
                 ws.cell(row=row, column=col).border = border
             row += 1
 
-        # Column headers (per sotuv)
-        for i, h in enumerate(headers, 1):
+            # Klient info (1, 3, 4, 5, 7)
+            if variant in (1, 3, 4, 5, 7):
+                ws.cell(row=row, column=1, value="Klient:")
+                ws.cell(row=row, column=1).font = Font(bold=True, size=10)
+                ws.cell(row=row, column=2, value=sd["klient_ismi"] or "Mijoz")
+                merge_end = max(2, ncols // 2)
+                ws.merge_cells(start_row=row, start_column=2, end_row=row, end_column=merge_end)
+                tel_col = merge_end + 1
+                if tel_col <= ncols:
+                    ws.cell(row=row, column=tel_col, value="Telefon:")
+                    ws.cell(row=row, column=tel_col).font = Font(bold=True, size=10)
+                    if tel_col + 1 <= ncols:
+                        ws.cell(row=row, column=tel_col + 1, value=sd["telefon"] or "—")
+                        if tel_col + 2 <= ncols:
+                            ws.merge_cells(start_row=row, start_column=tel_col + 1, end_row=row, end_column=ncols)
+                for col in range(1, ncols + 1):
+                    ws.cell(row=row, column=col).border = border
+                row += 1
+
+                if sd["manzil"] and variant != 2:
+                    ws.cell(row=row, column=1, value="Manzil:")
+                    ws.cell(row=row, column=1).font = Font(bold=True, size=10)
+                    ws.cell(row=row, column=2, value=sd["manzil"])
+                    ws.merge_cells(start_row=row, start_column=2, end_row=row, end_column=ncols)
+                    for col in range(1, ncols + 1):
+                        ws.cell(row=row, column=col).border = border
+                    row += 1
+
+        # Column headers
+        for i, h in enumerate(cfg["headers"], 1):
             cell = ws.cell(row=row, column=i, value=h)
             cell.fill = header_fill
             cell.font = header_font
-            cell.alignment = Alignment(horizontal="center", vertical="center")
+            cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
             cell.border = border
         ws.row_dimensions[row].height = 22
         row += 1
 
-        # Items
+        # Items - variant-aware
         items = chiqimlar_by_sess.get(sd["id"], [])
         sotuv_total = 0.0
         for j, it in enumerate(items, 1):
             id_ = dict(it)
-            vals = [
-                j,
-                id_["tovar_nomi"] or "—",
-                float(id_["miqdor"]),
-                id_["birlik"] or "dona",
-                float(id_["sotish_narxi"]),
-                float(id_["jami"]),
-            ]
+            nomi = id_["tovar_nomi"] or "—"
+            miqdor = float(id_["miqdor"])
+            birlik = id_["birlik"] or "dona"
+            sotish = float(id_["sotish_narxi"])
+            jami_t = float(id_["jami"])
+
+            if variant == 1:  # Standart
+                vals = [j, nomi, miqdor, birlik, sotish, jami_t]
+                money_cols = [5, 6]
+                num_cols = [3, 5, 6]
+            elif variant == 2:  # Chek
+                vals = [j, nomi, miqdor, jami_t]
+                money_cols = [4]
+                num_cols = [3, 4]
+            elif variant == 3:  # Optom
+                olish = sotish * 0.85  # Estimate olish (85% of sotish)
+                vals = [j, nomi, miqdor, birlik, olish, sotish, jami_t]
+                money_cols = [5, 6, 7]
+                num_cols = [3, 5, 6, 7]
+            elif variant == 4:  # Soliq
+                nds = jami_t * 0.12 / 1.12  # NDS 12%
+                bez_nds = jami_t - nds
+                vals = [j, nomi, "11000000", miqdor, birlik, bez_nds, nds, jami_t]
+                money_cols = [6, 7, 8]
+                num_cols = [4, 6, 7, 8]
+            elif variant == 5:  # Klient
+                vals = [j, nomi, miqdor, birlik, sotish, jami_t]
+                money_cols = [5, 6]
+                num_cols = [3, 5, 6]
+            elif variant == 6:  # Ombor
+                vals = [j, nomi, miqdor, birlik]
+                money_cols = []
+                num_cols = [3]
+            else:  # 7 BATAFSIL
+                vals = [j, nomi, "Boshqa", birlik, miqdor, sotish, 0, jami_t, ""]
+                money_cols = [6, 7, 8]
+                num_cols = [5, 6, 7, 8]
+
             for col, v in enumerate(vals, 1):
                 cell = ws.cell(row=row, column=col, value=v)
                 cell.border = border
-                if col in (3, 5, 6):
+                if col in num_cols:
                     cell.alignment = Alignment(horizontal="right")
-                if col in (5, 6):
+                if col in money_cols:
                     cell.number_format = '#,##0'
-            sotuv_total += float(id_["jami"])
+            sotuv_total += jami_t
             row += 1
 
-        # Sotuv JAMI
-        ws.cell(row=row, column=1, value="JAMI:")
-        ws.merge_cells(start_row=row, start_column=1, end_row=row, end_column=5)
-        ws.cell(row=row, column=1).font = Font(bold=True, size=11)
-        ws.cell(row=row, column=1).alignment = Alignment(horizontal="right")
-        cell = ws.cell(row=row, column=6, value=sotuv_total)
-        cell.font = Font(bold=True, color="1B5E20", size=11)
-        cell.number_format = '#,##0'
-        cell.alignment = Alignment(horizontal="right")
-        for col in range(1, 7):
-            ws.cell(row=row, column=col).fill = total_fill
-            ws.cell(row=row, column=col).border = border
-        row += 1
-
-        # To'langan / qarz qisqartirilgan ko'rinish
-        if float(sd.get("tolangan") or 0) > 0 or float(sd.get("qarz") or 0) > 0:
-            ws.cell(row=row, column=1, value=f"To'langan: {float(sd.get('tolangan') or 0):,.0f}  ·  Qarz: {float(sd.get('qarz') or 0):,.0f}")
-            ws.merge_cells(start_row=row, start_column=1, end_row=row, end_column=6)
-            ws.cell(row=row, column=1).font = Font(italic=True, color="6B5B4D", size=9)
-            ws.cell(row=row, column=1).alignment = Alignment(horizontal="left")
+        # Sotuv JAMI (skip for OMBOR variant)
+        if variant != 6:
+            ws.cell(row=row, column=1, value="JAMI:")
+            ws.merge_cells(start_row=row, start_column=1, end_row=row, end_column=ncols - 1)
+            ws.cell(row=row, column=1).font = Font(bold=True, size=11)
+            ws.cell(row=row, column=1).alignment = Alignment(horizontal="right")
+            cell = ws.cell(row=row, column=ncols, value=sotuv_total)
+            cell.font = Font(bold=True, color="1B5E20", size=11)
+            cell.number_format = '#,##0'
+            cell.alignment = Alignment(horizontal="right")
+            for col in range(1, ncols + 1):
+                ws.cell(row=row, column=col).fill = total_fill
+                ws.cell(row=row, column=col).border = border
             row += 1
+
+            # To'langan/qarz (variants 1, 3, 5, 7)
+            if variant in (1, 3, 5, 7) and (float(sd.get("tolangan") or 0) > 0 or float(sd.get("qarz") or 0) > 0):
+                ws.cell(row=row, column=1, value=f"To'langan: {float(sd.get('tolangan') or 0):,.0f}  ·  Qarz: {float(sd.get('qarz') or 0):,.0f}")
+                ws.merge_cells(start_row=row, start_column=1, end_row=row, end_column=ncols)
+                ws.cell(row=row, column=1).font = Font(italic=True, color="6B5B4D", size=9)
+                ws.cell(row=row, column=1).alignment = Alignment(horizontal="left")
+                row += 1
+
+            # Variant 5 (KLIENT) — imzo joyi
+            if variant == 5:
+                row += 1
+                ws.cell(row=row, column=1, value="Sotuvchi imzosi: __________________")
+                ws.cell(row=row, column=ncols // 2 + 1 if ncols > 2 else 2, value="Klient imzosi: __________________")
+                ws.cell(row=row, column=1).font = Font(size=9, color="6B5B4D")
+                row += 1
 
         # Bo'sh qator
         row += 1
@@ -3090,24 +3244,26 @@ async def savdolar_nakladnoy_excel(
     # Grand total
     if grand_count > 1:
         ws.cell(row=row, column=1, value="GRAND TOTAL:")
-        ws.merge_cells(start_row=row, start_column=1, end_row=row, end_column=5)
+        ws.merge_cells(start_row=row, start_column=1, end_row=row, end_column=ncols - 1)
         ws.cell(row=row, column=1).font = Font(bold=True, size=14, color="C75D3C")
         ws.cell(row=row, column=1).alignment = Alignment(horizontal="right")
-        cell = ws.cell(row=row, column=6, value=grand_total)
+        cell = ws.cell(row=row, column=ncols, value=grand_total)
         cell.font = Font(bold=True, color="C75D3C", size=14)
         cell.number_format = '#,##0'
         cell.alignment = Alignment(horizontal="right")
-        for col in range(1, 7):
+        for col in range(1, ncols + 1):
             ws.cell(row=row, column=col).fill = PatternFill(start_color="FCE9DD", end_color="FCE9DD", fill_type="solid")
             ws.cell(row=row, column=col).border = border
 
     buf = io.BytesIO()
     wb.save(buf); buf.seek(0)
     return {
-        "filename": f"Накладной_{len(sotuvlar)}_zakaz.xlsx",
+        "filename": f"Накладной_{variant_name}_{len(sotuvlar)}_zakaz.xlsx",
         "content_base64": base64.b64encode(buf.getvalue()).decode(),
         "soni": len(sotuvlar),
         "jami_summa": grand_total,
+        "variant": variant,
+        "variant_name": variant_name,
     }
 
 

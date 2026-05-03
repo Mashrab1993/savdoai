@@ -67,15 +67,36 @@ export default function ZakazlarPage() {
   const totalSum = filtered.reduce((s, o) => s + Number(o.jami || 0), 0)
   const [exporting, setExporting] = useState(false)
 
+  const REGISTR_VARIANTS = [
+    { id: 1, name: "Standart", desc: "Реестр 3.0 — 9 ustun" },
+    { id: 2, name: "Qisqa", desc: "4 ustun (tez ko'rish)" },
+    { id: 3, name: "Kengaytirilgan", desc: "11 ustun (qarz, holat, izoh)" },
+    { id: 4, name: "Moliyaviy", desc: "Balans, debit/kredit" },
+  ]
+  const NAKLADNOY_VARIANTS = [
+    { id: 1, name: "Standart", desc: "Klassik invoice" },
+    { id: 2, name: "Chek", desc: "POS receipt (mini)" },
+    { id: 3, name: "Optom", desc: "Wholesale (olish + sotish narx)" },
+    { id: 4, name: "Soliq", desc: "IKPU + NDS 12%" },
+    { id: 5, name: "Klient", desc: "Klient nusxasi (logo + imzo)" },
+    { id: 6, name: "Ombor", desc: "Faqat tovar + miqdor" },
+    { id: 7, name: "Batafsil", desc: "Hammasi (kategoriya, izoh)" },
+  ]
+
   // Excel export — JSON+base64 javobini blob ga aylantirib yuklash
-  // format = "registr" (oddiy) yoki "nakladnoy" (har tovar alohida)
-  const downloadExcel = async (selectedOnly: boolean, format: "registr" | "nakladnoy" = "registr") => {
+  const downloadExcel = async (
+    selectedOnly: boolean,
+    format: "registr" | "nakladnoy" = "registr",
+    variant: number = 1,
+  ) => {
     setExporting(true)
     try {
-      const idsParam = selectedOnly && selected.size > 0 ? `?ids=${Array.from(selected).join(",")}` : ""
+      const params = new URLSearchParams()
+      if (selectedOnly && selected.size > 0) params.set("ids", Array.from(selected).join(","))
+      params.set("variant", String(variant))
       const path = format === "nakladnoy"
-        ? `/api/v1/savdolar/nakladnoy/excel${idsParam}`
-        : `/api/v1/savdolar/excel${idsParam}`
+        ? `/api/v1/savdolar/nakladnoy/excel?${params}`
+        : `/api/v1/savdolar/excel?${params}`
       const resp = await api.get<{ filename: string; content_base64: string }>(path)
       const bin = atob(resp.content_base64)
       const bytes = new Uint8Array(bin.length)
@@ -89,7 +110,8 @@ export default function ZakazlarPage() {
       URL.revokeObjectURL(url)
       const tanlangan = selectedOnly && selected.size > 0 ? selected.size : filtered.length
       const formatLabel = format === "nakladnoy" ? "Накладной" : "Реестр"
-      toast.success(`${tanlangan} ta zakaz ${formatLabel}'da yuklandi`)
+      const variantName = (format === "nakladnoy" ? NAKLADNOY_VARIANTS : REGISTR_VARIANTS).find(v => v.id === variant)?.name || ""
+      toast.success(`${tanlangan} ta zakaz ${formatLabel} (${variantName}) yuklandi`)
     } catch (e) {
       toast.error(e instanceof ApiError ? e.detail : (e as Error).message)
     } finally {
@@ -152,32 +174,40 @@ export default function ZakazlarPage() {
             <Button variant="outline">
               <Filter className="w-4 h-4" /> Qo'shimcha
             </Button>
-            <Button variant="outline" onClick={() => downloadExcel(false, "registr")} disabled={exporting}>
-              {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-              Реестр (barcha)
-            </Button>
-            <Button variant="outline" onClick={() => downloadExcel(false, "nakladnoy")} disabled={exporting}>
-              {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-              Накладной (barcha)
-            </Button>
+            <ExportDropdown
+              label="Реестр (barcha)"
+              variants={REGISTR_VARIANTS}
+              onPick={v => downloadExcel(false, "registr", v)}
+              disabled={exporting}
+            />
+            <ExportDropdown
+              label="Накладной (barcha)"
+              variants={NAKLADNOY_VARIANTS}
+              onPick={v => downloadExcel(false, "nakladnoy", v)}
+              disabled={exporting}
+            />
           </div>
         </Card>
 
         {selected.size > 0 && (
           <Card className="p-4 bg-emerald-50 border-emerald-200">
-            <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center justify-between gap-4 flex-wrap">
               <span className="text-sm font-semibold text-emerald-800">
                 {selected.size} ta zakaz tanlangan
               </span>
               <div className="flex gap-2 flex-wrap">
-                <Button variant="outline" onClick={() => downloadExcel(true, "registr")} disabled={exporting}>
-                  {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-                  Реестр ({selected.size})
-                </Button>
-                <Button variant="outline" onClick={() => downloadExcel(true, "nakladnoy")} disabled={exporting}>
-                  {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-                  Накладной ({selected.size})
-                </Button>
+                <ExportDropdown
+                  label={`Реестр (${selected.size})`}
+                  variants={REGISTR_VARIANTS}
+                  onPick={v => downloadExcel(true, "registr", v)}
+                  disabled={exporting}
+                />
+                <ExportDropdown
+                  label={`Накладной (${selected.size})`}
+                  variants={NAKLADNOY_VARIANTS}
+                  onPick={v => downloadExcel(true, "nakladnoy", v)}
+                  disabled={exporting}
+                />
                 <Button variant="outline" onClick={printSelected}>
                   <Printer className="w-4 h-4" /> Pechat
                 </Button>
@@ -299,5 +329,49 @@ function StatusTab({ active, onClick, children }: { active: boolean; onClick: ()
     >
       {children}
     </button>
+  )
+}
+
+type Variant = { id: number; name: string; desc: string }
+
+function ExportDropdown({
+  label, variants, onPick, disabled,
+}: {
+  label: string;
+  variants: Variant[];
+  onPick: (id: number) => void;
+  disabled?: boolean;
+}) {
+  const [open, setOpen] = useState(false)
+  return (
+    <div className="relative">
+      <Button
+        variant="outline"
+        onClick={() => setOpen(!open)}
+        disabled={disabled}
+        className="flex items-center gap-2"
+      >
+        {disabled ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+        {label}
+        <span className="text-xs opacity-50">▼</span>
+      </Button>
+      {open && (
+        <>
+          <div className="fixed inset-0 z-30" onClick={() => setOpen(false)} />
+          <div className="absolute right-0 top-full mt-1 z-40 w-72 bg-white border border-slate-200 rounded-lg shadow-xl overflow-hidden">
+            {variants.map(v => (
+              <button
+                key={v.id}
+                onClick={() => { setOpen(false); onPick(v.id) }}
+                className="w-full text-left px-4 py-3 hover:bg-emerald-50 border-b border-slate-100 last:border-0"
+              >
+                <div className="font-medium text-sm text-slate-900">{v.id}. {v.name}</div>
+                <div className="text-xs text-slate-500 mt-0.5">{v.desc}</div>
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
   )
 }
