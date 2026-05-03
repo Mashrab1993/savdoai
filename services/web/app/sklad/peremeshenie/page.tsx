@@ -1,72 +1,66 @@
 "use client"
 import { AdminLayout } from "@/components/layout/admin-layout"
 import { Card } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { ArrowLeft, Plus, ArrowRight } from "lucide-react"
+import { ArrowLeft, ArrowRightLeft } from "lucide-react"
 import Link from "next/link"
+import { useApi, useAuth } from "@/hooks/use-api"
 
-const MOCK = [
-  { id: "p_001", date: "2026-05-02 09:30", from: "Asosiy", to: "Химия sklad", items: 12, total: 480_000, status: "completed" },
-  { id: "p_002", date: "2026-05-01 16:00", from: "Asosiy", to: "VS sklad", items: 8, total: 320_000, status: "completed" },
-  { id: "p_003", date: "2026-05-01 14:00", from: "Возврат", to: "Asosiy", items: 3, total: 96_000, status: "in_transit" },
-]
+type Sklad = { id: number; nomi: string; turi?: string; latitude?: number; longitude?: number }
+type SkladResp = Sklad[] | { items?: Sklad[] }
 
-export default function PeremesheniePage() {
+export default function PeremeshenIePage() {
+  const { isAuthenticated } = useAuth()
+  const { data, loading } = useApi<SkladResp>(isAuthenticated ? "/api/v1/skladlar" : null)
+  const skladlar: Sklad[] = Array.isArray(data) ? data : (data?.items ?? [])
+
   return (
     <AdminLayout>
-      <div className="-mx-4 -my-4 px-4 py-6 min-h-full" style={{ background: "linear-gradient(180deg, #F5F1EB 0%, #FAF7F2 100%)" }}>
-        <div className="max-w-[1700px] mx-auto space-y-5">
-          <div className="flex items-end gap-3 border-b border-[#E8E0D3] pb-6">
-            <Link href="/sklad" className="p-2 hover:bg-[#F0EAE0] rounded-lg"><ArrowLeft className="w-5 h-5 text-[#6B5B4D]" /></Link>
-            <div className="flex-1">
-              <div className="text-xs uppercase tracking-[0.2em] text-[#9C8A6E] font-medium mb-2">SAVDOAI · SKLAD</div>
-              <h1 className="text-4xl font-light tracking-tight text-[#1A1A1A]" style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>
-                Peremesheniya <span className="italic text-[#C75D3C]">(transfers)</span>
-              </h1>
-              <p className="text-sm text-[#6B5B4D] mt-2">Sklad orasidagi tovar harakati</p>
-            </div>
-            <Button size="lg" style={{ background: "#C75D3C" }}>
-              <Plus className="w-5 h-5" /> Yangi peremeshanie
-            </Button>
+      <div className="max-w-[1200px] mx-auto space-y-6">
+        <div className="flex items-center gap-3">
+          <Link href="/sklad" className="p-2 hover:bg-slate-100 rounded"><ArrowLeft className="w-5 h-5" /></Link>
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Peremeshenie (Transfer)</h1>
+            <p className="text-base text-slate-500 mt-1">
+              Filial-filial orasida tovar o'tkazish
+              {!isAuthenticated && <span className="ml-2 text-amber-600 text-xs">⚠ Login kerak</span>}
+            </p>
           </div>
-
-          <Card className="bg-white border border-[#E8E0D3] shadow-sm rounded-2xl overflow-hidden">
-            <table className="w-full">
-              <thead className="border-b border-[#E8E0D3] bg-[#FAF7F2]">
-                <tr>
-                  <th className="text-left px-4 py-3 text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">ID</th>
-                  <th className="text-left px-4 py-3 text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Sana</th>
-                  <th className="text-left px-4 py-3 text-xs uppercase tracking-wider font-medium text-[#9C8A6E]" colSpan={3}>Yo'nalish</th>
-                  <th className="text-right px-4 py-3 text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Tovar</th>
-                  <th className="text-right px-4 py-3 text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Summa</th>
-                  <th className="text-left px-4 py-3 text-xs uppercase tracking-wider font-medium text-[#9C8A6E]">Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {MOCK.map(m => (
-                  <tr key={m.id} className="border-b border-[#F0EAE0] hover:bg-[#FAF7F2]">
-                    <td className="px-4 py-3 font-mono text-sm font-medium text-[#C75D3C]">{m.id}</td>
-                    <td className="px-4 py-3 text-sm text-[#1A1A1A]">{m.date}</td>
-                    <td className="px-4 py-3 text-sm font-medium text-[#1A1A1A]">{m.from}</td>
-                    <td className="px-2 py-3 text-center">
-                      <ArrowRight className="w-4 h-4 text-[#C75D3C] inline" />
-                    </td>
-                    <td className="px-4 py-3 text-sm font-medium text-[#1A1A1A]">{m.to}</td>
-                    <td className="px-4 py-3 text-right tabular-nums text-[#1A1A1A]">{m.items}</td>
-                    <td className="px-4 py-3 text-right tabular-nums font-medium text-[#1A1A1A]" style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>{m.total.toLocaleString()}</td>
-                    <td className="px-4 py-3">
-                      <span className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        m.status === "completed" ? "bg-emerald-50 text-emerald-700" : "bg-[#FCE9DD] text-[#D97706]"
-                      }`}>
-                        {m.status === "completed" ? "Bajarildi" : "Yo'lda"}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </Card>
         </div>
+
+        <Card className="p-5 bg-blue-50 border-blue-200">
+          <div className="flex items-start gap-3">
+            <ArrowRightLeft className="w-6 h-6 text-blue-600 flex-shrink-0" />
+            <div>
+              <h3 className="font-semibold text-blue-900">Transfer moduli</h3>
+              <p className="text-sm text-blue-800 mt-1">
+                Bir filialdan boshqa filialga tovarni ko'chirish uchun. Hozir {skladlar.length} ta filial mavjud.
+                Bot orqali yoki Mini App'da o'tkazish funksiyasi rivojlantirilmoqda.
+              </p>
+            </div>
+          </div>
+        </Card>
+
+        {loading && <div className="text-center py-12 text-slate-500">Yuklanmoqda...</div>}
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {skladlar.map(s => (
+            <Card key={s.id} className="p-5">
+              <div className="font-semibold text-lg">{s.nomi}</div>
+              <div className="text-sm text-slate-500 mt-1">{s.turi || "Sklad"}</div>
+              {s.latitude && s.longitude && (
+                <div className="text-xs text-slate-400 mt-2">
+                  📍 {s.latitude.toFixed(4)}, {s.longitude.toFixed(4)}
+                </div>
+              )}
+            </Card>
+          ))}
+        </div>
+
+        {!loading && skladlar.length === 0 && isAuthenticated && (
+          <Card className="p-8 text-center text-slate-500">
+            Filial yo'q. Sozlamalardan filial qo'shing.
+          </Card>
+        )}
       </div>
     </AdminLayout>
   )
