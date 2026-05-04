@@ -3803,21 +3803,25 @@ async def savdo_qaytarish_create(sessiya_id: int, data: dict, uid: int = Depends
 
             # Chiqimlarni yaratish (manfiy miqdor)
             for q in qaytarish_chiqimlari:
+                # chiqimlar table schema'sida izoh ustuni yo'q — sabab'ni
+                # qaytarish sessiyasi izohiga qo'shamiz, individual chiqim
+                # izohlarini ham bu darajada saqlamaymiz (kelajakda alohida
+                # qaytarish_sabablari jadvali kerak bo'lsa qo'shamiz).
                 await c.execute("""
                     INSERT INTO chiqimlar (
                         user_id, sessiya_id, klient_id, klient_ismi, tovar_id, tovar_nomi,
                         kategoriya, miqdor, qaytarilgan, birlik, olish_narxi, sotish_narxi,
-                        chegirma_foiz, jami, izoh, sana
+                        chegirma_foiz, jami, sana
                     ) VALUES (
                         $1, $2, $3, $4, $5, $6,
                         $7, $8, 0, $9, $10, $11,
-                        $12, $13, $14, NOW()
+                        $12, $13, NOW()
                     )
                 """,
                     uid, new_id, q["klient_id"], q["klient_ismi"],
                     q["tovar_id"], q["tovar_nomi"], q["kategoriya"],
                     q["miqdor"], q["birlik"], q["olish_narxi"], q["sotish_narxi"],
-                    q["chegirma_foiz"], q["jami"], q["sabab"],
+                    q["chegirma_foiz"], q["jami"],
                 )
 
                 # Original chiqimda qaytarilgan miqdorni yangilaymiz
