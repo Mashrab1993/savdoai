@@ -49,11 +49,7 @@ def _cleanup_expired():
 
 
 def _fmt(n: float) -> str:
-    """Format number as UZS."""
-    if n >= 1_000_000:
-        return f"{n / 1_000_000:.1f} mln so'm"
-    if n >= 1_000:
-        return f"{n / 1_000:.0f} ming so'm"
+    """Format number as UZS — to'liq aniq summa, ming/mln yumalashma yo'q."""
     return f"{n:,.0f} so'm"
 
 
