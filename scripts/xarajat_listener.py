@@ -40,15 +40,31 @@ EXPENSE_TEXT_PROMPT = """Bu xabar xarajat (rasxod) yozuvimi yoki savol/oddiy gap
 JSON qaytaring:
 {
   "type": "expense" | "question" | "other",
-  "amount": <son so'mda yoki null>,
+  "amount": <jami son so'mda yoki null. SANA raqami EMAS!>,
   "category": "benzin"|"gaz"|"oylik"|"abed"|"transport"|"tamir"|"aloqa"|"qarz"|"mahsulot"|"boshqa",
   "description": "<10-50 belgi qisqa tavsif>",
-  "person_mentioned": "<agar xabar boshqa shaxsga tegishli bo'lsa nomi yoki null>"
+  "person_mentioned": "<agar xabar boshqa shaxsga tegishli bo'lsa nomi yoki null>",
+  "items": [{"amount": <son>, "category": "<kategoriya>", "description": "<qisqa>"}]
 }
+
+⚠️ MUHIM QOIDA — SANA AJRATISH:
+- DD.MM.YYYY (01.05.2026, 02.05.2026, 30.04.2026) — bu SANA, summa EMAS!
+- 2026, 2025 yil raqamlari — summa EMAS!
+- "Urgut", "Bulungʻur", "Kattaqoʻrgʻon" — bu joy, kategoriya/summa EMAS
+
+⚠️ MUHIM QOIDA — KO'P XARAJAT:
+- Bir xabarda BIR NECHTA xarajat bo'lsa (har biri "summa kategoriya" tarzida):
+  • "amount" da JAMI summa qaytaring
+  • "items" massivida har birini alohida ko'rsating
+  • "category" — eng katta yoki birinchi xarajatning kategoriyasi
 
 Qoidalar:
 - "100k" → 100000, "1.5 mln" → 1500000, "20 ming" → 20000
-- "Akbar 80k benzin oldi" → expense, amount=80000, category=benzin
+- "100.000" yoki "100,000" → 100000 (nuqta/vergul - ming ajratuvchi)
+- "65.000 gaz" → amount=65000, category=gaz
+- "Akbar 80k benzin oldi" → amount=80000, category=benzin
+- "65.000gaz / 60.000 abet / Urgut 02.05.2026" → amount=125000, items=[{65000,gaz},{60000,abed}], sana=02.05.2026 (summa EMAS!)
+- "60.000 abet, 60.000 gaz, 5.000 Xudoyberdi oylik, 5.000 Kamol oylik, 01.05.2026" → amount=130000 (60000+60000+5000+5000), 4 items, sana 01.05.2026 EMAS amount
 - "salom", "rahmat" → other
 - "bu oy qancha xarajat?", "Akbar qancha?", "benzin necha?" → question
 
@@ -178,16 +194,33 @@ class XarajatListener:
                 result = self.call_gemini(EXPENSE_TEXT_PROMPT + transcript)
                 if result.get("type") == "expense" and result.get("amount"):
                     desc_short = result.get("description", "") or transcript[:200]
-                    await self._save_expense(
-                        sender_id=msg.sender_id,
-                        sender_name=sender_name,
-                        amount=result["amount"],
-                        category=result.get("category", "boshqa"),
-                        description=f"[OVOZ] {desc_short[:200]} | TR: {transcript[:200]}",
-                        sana=msg.date,
-                        ovoz_file_id=voice_path,
-                    )
-                    log.info(f"  Saved voice expense: {result['amount']:,.0f} so'm ({result.get('category')}) — {voice_path}")
+                    items = result.get("items") or []
+                    if isinstance(items, list) and len(items) > 1:
+                        for item in items:
+                            if not item.get("amount"):
+                                continue
+                            item_desc = item.get("description") or desc_short
+                            await self._save_expense(
+                                sender_id=msg.sender_id,
+                                sender_name=sender_name,
+                                amount=item["amount"],
+                                category=item.get("category", "boshqa"),
+                                description=f"[OVOZ] {item_desc[:150]} | TR: {transcript[:150]}",
+                                sana=msg.date,
+                                ovoz_file_id=voice_path,
+                            )
+                        log.info(f"  Saved {len(items)} voice expenses (jami: {result['amount']:,.0f} so'm) — {voice_path}")
+                    else:
+                        await self._save_expense(
+                            sender_id=msg.sender_id,
+                            sender_name=sender_name,
+                            amount=result["amount"],
+                            category=result.get("category", "boshqa"),
+                            description=f"[OVOZ] {desc_short[:200]} | TR: {transcript[:200]}",
+                            sana=msg.date,
+                            ovoz_file_id=voice_path,
+                        )
+                        log.info(f"  Saved voice expense: {result['amount']:,.0f} so'm ({result.get('category')}) — {voice_path}")
                 else:
                     # Xarajat emas (savol/oddiy gap) — ovoz faylini o'chirmaymiz, AI nostandart
                     # tushunmagan bo'lishi mumkin. /tmp emas, doimiy katalogda turadi.
@@ -237,15 +270,30 @@ class XarajatListener:
         try:
             result = self.call_gemini(EXPENSE_TEXT_PROMPT + msg.text)
             if result.get("type") == "expense" and result.get("amount"):
-                await self._save_expense(
-                    sender_id=msg.sender_id,
-                    sender_name=sender_name,
-                    amount=result["amount"],
-                    category=result.get("category", "boshqa"),
-                    description=result.get("description", msg.text[:100]),
-                    sana=msg.date,
-                )
-                log.info(f"  Saved text expense: {result['amount']:,.0f} so'm ({result.get('category')})")
+                items = result.get("items") or []
+                if isinstance(items, list) and len(items) > 1:
+                    for item in items:
+                        if not item.get("amount"):
+                            continue
+                        await self._save_expense(
+                            sender_id=msg.sender_id,
+                            sender_name=sender_name,
+                            amount=item["amount"],
+                            category=item.get("category", "boshqa"),
+                            description=item.get("description") or result.get("description", msg.text[:100]),
+                            sana=msg.date,
+                        )
+                    log.info(f"  Saved {len(items)} text expenses (jami: {result['amount']:,.0f} so'm)")
+                else:
+                    await self._save_expense(
+                        sender_id=msg.sender_id,
+                        sender_name=sender_name,
+                        amount=result["amount"],
+                        category=result.get("category", "boshqa"),
+                        description=result.get("description", msg.text[:100]),
+                        sana=msg.date,
+                    )
+                    log.info(f"  Saved text expense: {result['amount']:,.0f} so'm ({result.get('category')})")
             elif result.get("type") == "question":
                 answer = await self.answer_question(msg.text)
                 if answer:
