@@ -206,6 +206,9 @@ class TelegramAuthSo_rov(BaseModel):
     user_id:        int
     ism:            str | None = ""
     hash:           str
+    # auth_date: Unix timestamp — replay attack himoyasi (60s lifetime).
+    # Eski API mijozlar yo'qligi uchun majburiy qo'shildi.
+    auth_date:      int
 
 
 class PaginatsiyaResponse(BaseModel):
@@ -714,11 +717,23 @@ async def auth_telegram(data: TelegramAuthSo_rov):
     Telegram bot → API token olish.
     Bot har foydalanuvchi uchun bu endpoint orqali JWT oladi.
     """
-    uid      = data.user_id
-    bot_hash = data.hash
-    expected = hmac.new(
-        JWT_SECRET.encode(), str(uid).encode(), "sha256"
-    ).hexdigest()[:32]
+    uid       = data.user_id
+    bot_hash  = data.hash
+    auth_date = data.auth_date
+    now       = int(time.time())
+
+    # Replay attack himoyasi: auth_date 60 sekund ichida bo'lishi kerak
+    # Bu eski hash'larni qayta ishlatishni oldini oladi.
+    AUTH_WINDOW = 60  # seconds
+    if auth_date > now + 10:  # kelajak (10s clock skew)
+        raise HTTPException(403, "auth_date kelajakda (clock skew?)")
+    if now - auth_date > AUTH_WINDOW:
+        raise HTTPException(403, f"auth_date eski (max {AUTH_WINDOW}s)")
+
+    # Hash endi user_id + auth_date dan hisoblanadi (timestamp imzolanadi).
+    # Shu sababli har yangi hash 60s'dan keyin ishlamaydi.
+    msg = f"{uid}:{auth_date}".encode()
+    expected = hmac.new(JWT_SECRET.encode(), msg, "sha256").hexdigest()[:32]
 
     if not hmac.compare_digest(bot_hash, expected):
         raise HTTPException(403, "Noto'g'ri hash")
