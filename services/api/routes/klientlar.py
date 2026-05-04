@@ -88,7 +88,7 @@ async def klientlar(
                k.jami_xaridlar, k.xarid_soni,
                COALESCE(SUM(q.qolgan) FILTER(WHERE q.yopildi=FALSE),0) AS aktiv_qarz
         FROM klientlar k
-        LEFT JOIN qarzlar q ON q.klient_id = k.id
+        LEFT JOIN qarzlar q ON q.klient_id = k.id AND q.user_id = k.user_id
         WHERE {where_sql}
         GROUP BY k.id
         {having}
@@ -102,7 +102,7 @@ async def klientlar(
                 SELECT COUNT(*) FROM (
                     SELECT k.id
                     FROM klientlar k
-                    LEFT JOIN qarzlar q ON q.klient_id = k.id
+                    LEFT JOIN qarzlar q ON q.klient_id = k.id AND q.user_id = k.user_id
                     WHERE {where_sql}
                     GROUP BY k.id
                     {having}
@@ -170,8 +170,8 @@ async def klient_360(klient_id: int, uid: int = Depends(get_uid)):
                 COALESCE(SUM(qolgan) FILTER (WHERE NOT yopildi), 0) AS aktiv_qarz,
                 COUNT(*) FILTER (WHERE NOT yopildi)            AS aktiv_soni,
                 COUNT(*) FILTER (WHERE yopildi)                AS yopilgan_soni
-            FROM qarzlar WHERE klient_id = $1
-        """, klient_id)
+            FROM qarzlar WHERE klient_id = $1 AND user_id = $2
+        """, klient_id, uid)
 
         sotuv_stats = await c.fetchrow("""
             SELECT
