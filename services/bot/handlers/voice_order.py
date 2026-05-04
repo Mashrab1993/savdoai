@@ -212,9 +212,10 @@ async def handle_voice_order(update: Update, context: ContextTypes.DEFAULT_TYPE)
             context.user_data["_voice_order_handled"] = True
             return
 
-        # Build confirmation message
+        # Build confirmation message — plain text (tovar nomlarida _ va * bo'lishi mumkin,
+        # Markdown ulangan parsing xato beradi)
         lines = [
-            f"🏪 **{klient['ism']}**",
+            f"🏪 {klient['ism']}",
             f"📦 {len(matched)} ta tovar, {_fmt(float(jami))}",
             "",
         ]
@@ -222,7 +223,7 @@ async def handle_voice_order(update: Update, context: ContextTypes.DEFAULT_TYPE)
             stock_warn = " ⚠️" if m["qoldiq"] < m["miqdor"] else ""
             lines.append(
                 f"{i}. {m['nomi']}\n"
-                f"   {m['miqdor']} {m['birlik']} × {float(m['narx']):,.0f} = **{float(m['jami']):,.0f}**{stock_warn}"
+                f"   {m['miqdor']} {m['birlik']} × {float(m['narx']):,.0f} = {float(m['jami']):,.0f}{stock_warn}"
             )
 
         if not_found:
@@ -232,7 +233,7 @@ async def handle_voice_order(update: Update, context: ContextTypes.DEFAULT_TYPE)
                 lines.append(f"  • {n}")
 
         lines.append("")
-        lines.append(f"💰 **JAMI: {_fmt(float(jami))}**")
+        lines.append(f"💰 JAMI: {_fmt(float(jami))}")
 
         # Store pending order with unique token (prevents race condition
         # when same user sends two voice orders quickly)
@@ -264,7 +265,6 @@ async def handle_voice_order(update: Update, context: ContextTypes.DEFAULT_TYPE)
 
         await msg.reply_text(
             "\n".join(lines),
-            parse_mode="Markdown",
             reply_markup=keyboard,
         )
 
