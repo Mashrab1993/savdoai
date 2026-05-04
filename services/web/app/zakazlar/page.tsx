@@ -1,16 +1,24 @@
 "use client"
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import { AdminLayout } from "@/components/layout/admin-layout"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { Search, Plus, Download, Filter, Truck, CheckCircle, Clock, X, MoreVertical, Loader2, Printer } from "lucide-react"
+import { Search, Plus, Download, Filter, Truck, CheckCircle, Clock, X, MoreVertical, Loader2, Printer, Copy, Calendar, Trash2 } from "lucide-react"
 import Link from "next/link"
 import { useApi, useAuth } from "@/hooks/use-api"
 import { LoadingSkeleton, EmptyState, ErrorState } from "@/components/shared/states"
 import { formatCurrency } from "@/lib/utils"
 import { api, ApiError } from "@/lib/api"
 import { toast } from "sonner"
+
+const PERIOD_LABELS: Record<string, string> = {
+  all: "Barchasi",
+  today: "Bugun",
+  yesterday: "Kecha",
+  week: "Hafta",
+  month: "Oy",
+}
 
 type SavdoRow = {
   id: number
@@ -42,10 +50,20 @@ export default function ZakazlarPage() {
   const [search, setSearch] = useState("")
   const [statusFilter, setStatusFilter] = useState<StatusKey | "all">("all")
   const [selected, setSelected] = useState<Set<number>>(new Set())
+  // Yangi P1 filterlar
+  const [period, setPeriod] = useState<string>("all")  // today | yesterday | week | month | all
+  const [docFilter, setDocFilter] = useState("")
+  const [bulking, setBulking] = useState(false)
 
-  const { data, loading, error } = useApi<SavdoResp>(
-    isAuthenticated ? "/api/v1/savdolar?limit=200" : null
-  )
+  const apiUrl = useMemo(() => {
+    if (!isAuthenticated) return null
+    const params = new URLSearchParams({ limit: "200" })
+    if (period !== "all") params.set("period", period)
+    if (docFilter.trim()) params.set("document_number", docFilter.trim())
+    return `/api/v1/savdolar?${params.toString()}`
+  }, [isAuthenticated, period, docFilter])
+
+  const { data, loading, error, refetch } = useApi<SavdoResp>(apiUrl)
 
   const allOrders: SavdoRow[] = data?.items ?? []
   const filtered = allOrders.filter(o => {
@@ -121,9 +139,58 @@ export default function ZakazlarPage() {
 
   const printSelected = () => {
     if (selected.size === 0) return
-    // Print-friendly view — yangi tab'da
     const ids = Array.from(selected).join(",")
     window.open(`/zakazlar/print?ids=${ids}`, "_blank")
+  }
+
+  // Duplicate zayavka — bitta sotuv
+  const duplicateOrder = async (id: number) => {
+    try {
+      const res = await api.post<{ id: number; document_number: string }>(`/api/v1/savdo/${id}/duplicate`)
+      toast.success(`Nusxa yaratildi: #${res.id}${res.document_number ? ` (${res.document_number})` : ""}`)
+      refetch()
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.detail : (e as Error).message)
+    }
+  }
+
+  // Bulk status change
+  const bulkChangeStatus = async (newStatus: string) => {
+    if (selected.size === 0) return
+    setBulking(true)
+    try {
+      const res = await api.post<{ yangilandi: number }>("/api/v1/savdo/bulk/status", {
+        ids: Array.from(selected),
+        holat: newStatus,
+      })
+      toast.success(`${res.yangilandi} ta zakaz holati o'zgartirildi: ${newStatus}`)
+      setSelected(new Set())
+      refetch()
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.detail : (e as Error).message)
+    } finally {
+      setBulking(false)
+    }
+  }
+
+  // Bulk soft delete
+  const bulkDelete = async () => {
+    if (selected.size === 0) return
+    if (!confirm(`${selected.size} ta zakazni bekor qilmoqchimisiz? (status bekor bo'ladi, hard delete EMAS)`)) return
+    setBulking(true)
+    try {
+      const res = await api.post<{ bekor: number }>("/api/v1/savdo/bulk/delete", {
+        ids: Array.from(selected),
+        sabab: "Frontend bulk delete",
+      })
+      toast.success(`${res.bekor} ta zakaz bekor qilindi`)
+      setSelected(new Set())
+      refetch()
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.detail : (e as Error).message)
+    } finally {
+      setBulking(false)
+    }
   }
 
   return (
@@ -160,6 +227,23 @@ export default function ZakazlarPage() {
           })}
         </Card>
 
+        {/* Period preset buttons (P1 SalesDoc parity) */}
+        <Card className="p-3 flex flex-wrap gap-2 items-center">
+          <Calendar className="w-4 h-4 text-slate-500" />
+          <span className="text-sm text-slate-600 mr-2">Davr:</span>
+          {(["all", "today", "yesterday", "week", "month"] as const).map((p) => (
+            <button
+              key={p}
+              onClick={() => setPeriod(p)}
+              className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                period === p ? "bg-emerald-600 text-white" : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+              }`}
+            >
+              {PERIOD_LABELS[p]}
+            </button>
+          ))}
+        </Card>
+
         <Card className="p-4">
           <div className="flex flex-wrap gap-3">
             <div className="flex-1 min-w-[280px] relative">
@@ -169,6 +253,13 @@ export default function ZakazlarPage() {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="pl-11"
+              />
+            </div>
+            <div className="min-w-[200px] relative">
+              <Input
+                placeholder="Hujjat raqami (MUK000...)"
+                value={docFilter}
+                onChange={(e) => setDocFilter(e.target.value)}
               />
             </div>
             <Button variant="outline">
@@ -196,6 +287,19 @@ export default function ZakazlarPage() {
                 {selected.size} ta zakaz tanlangan
               </span>
               <div className="flex gap-2 flex-wrap">
+                <BulkStatusDropdown
+                  onPick={(s) => bulkChangeStatus(s)}
+                  disabled={bulking}
+                />
+                <Button
+                  variant="outline"
+                  onClick={bulkDelete}
+                  disabled={bulking}
+                  className="text-rose-700 border-rose-200 hover:bg-rose-50"
+                >
+                  {bulking ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                  Bekor qilish
+                </Button>
                 <ExportDropdown
                   label={`Реестр (${selected.size})`}
                   variants={REGISTR_VARIANTS}
@@ -294,7 +398,14 @@ export default function ZakazlarPage() {
                             {status.label}
                           </span>
                         </td>
-                        <td className="px-4 py-3">
+                        <td className="px-4 py-3 text-right">
+                          <button
+                            onClick={() => duplicateOrder(o.id)}
+                            className="p-1.5 hover:bg-emerald-50 rounded text-slate-500 hover:text-emerald-600 mr-1"
+                            title="Nusxalash (Дублировать)"
+                          >
+                            <Copy className="w-4 h-4" />
+                          </button>
                           <button className="p-1 hover:bg-slate-200 rounded">
                             <MoreVertical className="w-4 h-4 text-slate-400" />
                           </button>
@@ -333,6 +444,42 @@ function StatusTab({ active, onClick, children }: { active: boolean; onClick: ()
 }
 
 type Variant = { id: number; name: string; desc: string }
+
+function BulkStatusDropdown({ onPick, disabled }: { onPick: (status: string) => void; disabled?: boolean }) {
+  const [open, setOpen] = useState(false)
+  const STATUSES_BULK = [
+    { key: "tasdiqlangan", label: "Tasdiqlash" },
+    { key: "yigilmoqda", label: "Yig'ish boshlandi" },
+    { key: "otgruzka", label: "Otgruzka" },
+    { key: "yetkazildi", label: "Yetkazildi" },
+    { key: "yopiq", label: "Yopiq" },
+  ]
+  return (
+    <div className="relative">
+      <Button variant="outline" onClick={() => setOpen(!open)} disabled={disabled}>
+        {disabled ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
+        Holat o'zgartirish
+        <span className="text-xs opacity-50">▼</span>
+      </Button>
+      {open && (
+        <>
+          <div className="fixed inset-0 z-30" onClick={() => setOpen(false)} />
+          <div className="absolute right-0 top-full mt-1 z-40 w-56 bg-white border border-slate-200 rounded-lg shadow-xl overflow-hidden">
+            {STATUSES_BULK.map(s => (
+              <button
+                key={s.key}
+                onClick={() => { setOpen(false); onPick(s.key) }}
+                className="w-full text-left px-4 py-2.5 hover:bg-emerald-50 border-b border-slate-100 last:border-0 text-sm font-medium text-slate-900"
+              >
+                → {s.label}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  )
+}
 
 function ExportDropdown({
   label, variants, onPick, disabled,
