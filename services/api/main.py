@@ -2408,6 +2408,13 @@ async def savdolar_royxati(
     min_summa: float | None = None,
     holat: str | None = None,  # yangi/tasdiqlangan/otgruzka/yetkazildi/bekor
     sort: str = "sana",
+    # SalesDoc parity P1 — agent/sklad/period/document_number/tip_zayavki
+    shogird_id: int | None = None,
+    sklad_id: int | None = None,
+    ekspeditor_id: int | None = None,
+    period: str | None = None,  # today | yesterday | week | month | all
+    document_number: str | None = None,
+    tip_zayavki: str | None = None,  # sotish | qaytarish | obmen
     uid: int = Depends(get_uid),
 ):
     """
@@ -2428,6 +2435,18 @@ async def savdolar_royxati(
             params.append(f"%{like_escape(klient)}%")
             idx += 1
 
+        # Period preset — Tashkent timezone
+        if period and period != "all":
+            tz = "AT TIME ZONE 'Asia/Tashkent'"
+            if period == "today":
+                where_parts.append(f"(ss.sana {tz})::date = (NOW() {tz})::date")
+            elif period == "yesterday":
+                where_parts.append(f"(ss.sana {tz})::date = (NOW() {tz})::date - interval '1 day'")
+            elif period == "week":
+                where_parts.append(f"ss.sana >= NOW() - interval '7 days'")
+            elif period == "month":
+                where_parts.append(f"ss.sana >= NOW() - interval '30 days'")
+
         if sana_dan:
             where_parts.append(f"ss.sana >= ${idx}::timestamptz")
             params.append(sana_dan)
@@ -2447,8 +2466,41 @@ async def savdolar_royxati(
             idx += 1
 
         if holat:
-            where_parts.append(f"ss.holat = ${idx}")
-            params.append(holat)
+            # Vergul bilan ajratilgan ko'p holat ham qabul qilamiz
+            if "," in holat:
+                holats = [h.strip() for h in holat.split(",") if h.strip()]
+                placeholders = ",".join(f"${idx + i}" for i in range(len(holats)))
+                where_parts.append(f"ss.holat IN ({placeholders})")
+                params.extend(holats)
+                idx += len(holats)
+            else:
+                where_parts.append(f"ss.holat = ${idx}")
+                params.append(holat)
+                idx += 1
+
+        if shogird_id is not None:
+            where_parts.append(f"ss.shogird_id = ${idx}")
+            params.append(shogird_id)
+            idx += 1
+
+        if sklad_id is not None:
+            where_parts.append(f"ss.sklad_id = ${idx}")
+            params.append(sklad_id)
+            idx += 1
+
+        if ekspeditor_id is not None:
+            where_parts.append(f"ss.ekspeditor_id = ${idx}")
+            params.append(ekspeditor_id)
+            idx += 1
+
+        if document_number:
+            where_parts.append(f"lower(ss.document_number) LIKE lower(${idx})")
+            params.append(f"%{like_escape(document_number)}%")
+            idx += 1
+
+        if tip_zayavki:
+            where_parts.append(f"ss.tip_zayavki = ${idx}")
+            params.append(tip_zayavki)
             idx += 1
 
         where_sql = (" AND " + " AND ".join(where_parts)) if where_parts else ""
@@ -3462,6 +3514,129 @@ class TovarImportSorov(BaseModel):
 # ════════════════════════════════════════════════════════════════
 #  FOYDA TAHLILI — maxsus endpoint
 # ════════════════════════════════════════════════════════════════
+# ════════════════════════════════════════════════════════════════
+#  SALESDOC PARITY — DUPLICATE / BULK / GROUP OPLATA
+# ════════════════════════════════════════════════════════════════
+
+
+@app.post("/api/v1/savdo/{sessiya_id}/duplicate", tags=["Sotuv"])
+async def savdo_duplicate(sessiya_id: int, uid: int = Depends(get_uid)):
+    """
+    Mavjud zayavkani nusxalash (clone). SalesDoc 'Дублировать' ekvivalenti.
+    Yangi document_number generatsiya qiladi, holat='yangi' qiladi, chiqimlarni
+    tranzaksiyada ko'chiradi. Original zayavka tegilmaydi.
+    """
+    async with get_pool().acquire() as c:
+        async with c.transaction():
+            # Original sessiyani olish (RLS check)
+            orig = await c.fetchrow(
+                "SELECT * FROM sotuv_sessiyalar WHERE id=$1 AND user_id=$2",
+                sessiya_id, uid
+            )
+            if not orig:
+                raise HTTPException(404, "Sotuv topilmadi")
+
+            # Yangi document_number — agar avval bor bo'lsa, prefix bilan
+            new_doc = None
+            if orig["document_number"]:
+                # MUK000144 → MUK000145 (sodda increment)
+                import re as _re
+                m = _re.match(r"^([A-Za-z]+)(\d+)$", orig["document_number"])
+                if m:
+                    prefix = m.group(1)
+                    next_num = await c.fetchval(
+                        "SELECT COALESCE(MAX(CAST(SUBSTRING(document_number FROM '[0-9]+$') AS INTEGER)), 0) + 1 "
+                        "FROM sotuv_sessiyalar WHERE document_number LIKE $1 AND user_id=$2",
+                        f"{prefix}%", uid
+                    )
+                    new_doc = f"{prefix}{next_num:06d}"
+
+            # Yangi sessiya yaratish
+            new_id = await c.fetchval("""
+                INSERT INTO sotuv_sessiyalar (
+                    user_id, klient_id, klient_ismi, jami, tolangan, qarz,
+                    izoh, sana, holat, shogird_id, ekspeditor_id, sklad_id,
+                    tip_zayavki, document_number
+                ) VALUES (
+                    $1, $2, $3, $4, 0, $4,
+                    $5, NOW(), 'yangi', $6, $7, $8,
+                    $9, $10
+                )
+                RETURNING id
+            """,
+                uid, orig["klient_id"], orig["klient_ismi"], orig["jami"],
+                f"[Duplikat #{orig['id']}] {orig['izoh'] or ''}",
+                orig["shogird_id"], orig["ekspeditor_id"], orig["sklad_id"],
+                orig["tip_zayavki"], new_doc
+            )
+
+            # Chiqimlarni nusxalash
+            await c.execute("""
+                INSERT INTO chiqimlar (sessiya_id, tovar_id, miqdor, narx, summa, izoh, vaqt, user_id)
+                SELECT $1, tovar_id, miqdor, narx, summa, izoh, NOW(), user_id
+                FROM chiqimlar
+                WHERE sessiya_id = $2 AND user_id = $3
+            """, new_id, sessiya_id, uid)
+
+            log.info("📋 Sotuv #%d duplicate → #%d (uid=%d)", sessiya_id, new_id, uid)
+            return {"id": new_id, "document_number": new_doc, "original_id": sessiya_id}
+
+
+@app.post("/api/v1/savdo/bulk/status", tags=["Sotuv"])
+async def savdo_bulk_status(data: dict, uid: int = Depends(get_uid)):
+    """
+    Ko'p zayavka holatini birdaniga o'zgartirish.
+    Body: {"ids": [1, 2, 3], "holat": "tasdiqlangan"}
+    """
+    ids = data.get("ids") or []
+    holat = (data.get("holat") or "").strip()
+    if not ids or not isinstance(ids, list):
+        raise HTTPException(400, "ids ro'yxati kerak")
+    if holat not in ("yangi", "tasdiqlangan", "otgruzka", "yetkazildi", "bekor"):
+        raise HTTPException(400, "Yaroqsiz holat")
+
+    # Faqat int ID'larni olamiz
+    ids_int = [int(i) for i in ids if isinstance(i, (int, str)) and str(i).isdigit()]
+    if not ids_int:
+        raise HTTPException(400, "Yaroqli id yo'q")
+
+    async with get_pool().acquire() as c:
+        # RLS — faqat user'ning o'zinikini yangilaydi
+        result = await c.execute("""
+            UPDATE sotuv_sessiyalar
+            SET holat = $1, holat_yangilangan = NOW()
+            WHERE id = ANY($2::bigint[]) AND user_id = $3
+        """, holat, ids_int, uid)
+        # asyncpg result format: "UPDATE N"
+        n = int(result.split()[-1]) if result else 0
+        log.info("🔄 Bulk status: %d zayavka → %s (uid=%d)", n, holat, uid)
+        return {"yangilandi": n, "holat": holat}
+
+
+@app.post("/api/v1/savdo/bulk/delete", tags=["Sotuv"])
+async def savdo_bulk_delete(data: dict, uid: int = Depends(get_uid)):
+    """
+    Ko'p zayavkani bekor qilish (soft delete via holat='bekor').
+    Body: {"ids": [...], "sabab": "..."}
+    Hard delete o'rniga holat o'zgartiramiz — restore qilish mumkin.
+    """
+    ids = data.get("ids") or []
+    sabab = (data.get("sabab") or "Bulk bekor").strip()[:200]
+    ids_int = [int(i) for i in ids if isinstance(i, (int, str)) and str(i).isdigit()]
+    if not ids_int:
+        raise HTTPException(400, "Yaroqli id yo'q")
+
+    async with get_pool().acquire() as c:
+        result = await c.execute("""
+            UPDATE sotuv_sessiyalar
+            SET holat='bekor', bekor_vaqti=NOW(), bekor_sabab=$1
+            WHERE id=ANY($2::bigint[]) AND user_id=$3 AND holat<>'bekor'
+        """, sabab, ids_int, uid)
+        n = int(result.split()[-1]) if result else 0
+        log.info("🗑️ Bulk bekor: %d zayavka (uid=%d, sabab=%s)", n, uid, sabab[:40])
+        return {"bekor": n, "sabab": sabab}
+
+
 # ════════════════════════════════════════════════════════════════
 #  QR-KOD — chek uchun QR kod generatsiya
 # ════════════════════════════════════════════════════════════════
