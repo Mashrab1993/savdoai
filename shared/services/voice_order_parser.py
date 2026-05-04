@@ -588,8 +588,8 @@ async def create_order_from_voice(
                     INSERT INTO chiqimlar
                         (user_id, sessiya_id, klient_id, klient_ismi,
                          tovar_id, tovar_nomi, kategoriya, miqdor, birlik,
-                         olish_narxi, sotish_narxi, narx, jami, sana)
-                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $11, $12, NOW())
+                         olish_narxi, sotish_narxi, jami, sana)
+                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW())
                 """,
                     uid, sessiya_id, klient_id, klient["ism"],
                     m["tovar_id"], m["nomi"], m["kategoriya"],

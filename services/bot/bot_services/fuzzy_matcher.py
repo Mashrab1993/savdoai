@@ -218,9 +218,12 @@ class FuzzyMatcher:
         )
         if result_partial and result_partial[1] >= 90:
             # Partial yaxshi — lekin ratio ham tekshir (tasodifiy qisqa match oldini olish)
+            # Threshold oshirildi 55→80 — "shokolad" → "GRASHOK SHOKOLAD" kabi xato
+            # almashtirishlardan saqlanish uchun. Gemini AI parser bu fazada
+            # to'liq matn'ni o'zi tushuntiradi.
             idx_p = product_lowers.index(result_partial[0])
             ratio_check = fuzz.ratio(raw_lower, result_partial[0])
-            if ratio_check >= 55:
+            if ratio_check >= 80:
                 matched = products[idx_p]
                 if operational_token_blocks_product_fuzzy(raw_name, result_partial[1]):
                     return None
