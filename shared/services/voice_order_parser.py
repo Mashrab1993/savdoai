@@ -375,7 +375,14 @@ def fuzzy_match_tovar(nomi: str, db_tovarlar: list[dict]) -> dict | None:
                 continue
             common = words_input & words_db
             if common:
-                score = len(common) / max(len(words_input), len(words_db))
+                # Use len(words_db) as denominator: "did input cover enough of
+                # the db product name?" — ALL db words present = 1.0 (full match)
+                # This handles short db names: "PREZIDENT 3 kg" (1 word ≥3 = "prezident")
+                # → input "Prezident shokolad 3 kg" has "prezident" → 1/1 = 1.0
+                coverage = len(common) / len(words_db)
+                # Also factor in input precision (how much input is matched)
+                precision = len(common) / len(words_input)
+                score = (coverage * 0.7 + precision * 0.3)
                 if len(common) >= 2:
                     score += 0.1
             else:
