@@ -622,16 +622,21 @@ from services.api.deps import get_uid
 
 
 def jwt_yarat(user_id: int, ttl: int = 86400) -> str:
-    """JWT token yaratish"""
-    h64 = base64.urlsafe_b64encode(
-        b'{"alg":"HS256","typ":"JWT"}'
-    ).rstrip(b"=").decode()
-    payload = json.dumps({"sub": str(user_id), "exp": int(time.time()) + ttl})
-    p64 = base64.urlsafe_b64encode(payload.encode()).rstrip(b"=").decode()
-    sig = base64.urlsafe_b64encode(
-        hmac.new(JWT_SECRET.encode(), f"{h64}.{p64}".encode(), "sha256").digest()
-    ).rstrip(b"=").decode()
-    return f"{h64}.{p64}.{sig}"
+    """PyJWT bilan standart JWT token yaratish.
+
+    Old custom format → PyJWT migration:
+    - Algorithm: HS256 (whitelist'da bizga ruxsat)
+    - Claims: sub, iat, exp (standart)
+    - PyJWT'da xatosiz tekshirish mumkin (algorithm confusion yo'q)
+    """
+    import jwt as _pyjwt
+    now = int(time.time())
+    payload = {
+        "sub": str(user_id),
+        "iat": now,
+        "exp": now + ttl,
+    }
+    return _pyjwt.encode(payload, JWT_SECRET, algorithm="HS256")
 
 
 # ════════════════════════════════════════════════════════════

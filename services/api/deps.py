@@ -33,40 +33,54 @@ def _get_jwt_secret() -> str:
 
 
 def jwt_tekshir(token: str) -> int | None:
-    """JWT tokenni tekshirib user_id qaytarish.
+    """JWT tokenni PyJWT bilan tekshirib user_id qaytarish.
 
-    Xato sabablari log'ga yozildi — brute-force yoki malformed token
-    hujumlari monitoring'da ko'rinadi. Secret o'zi hech qachon log'ga
-    chiqmaydi.
+    PyJWT bilan to'g'ri tekshirish (algorithm whitelist, exp tekshirish):
+    - HS256 algorithm whitelist (algorithm confusion himoya)
+    - exp tekshiriladi (token muddati)
+    - iat tekshiriladi (kelajak vaqt aldash himoya)
+    - 10s leeway clock skew uchun
+    - Eski custom-format tokenlar ham qabul qilinadi (PyJWT decode qiladi)
     """
     try:
+        import jwt as _pyjwt
+        from jwt import InvalidTokenError, ExpiredSignatureError, DecodeError
+
         secret = _get_jwt_secret()
-        parts = token.split(".")
-        if len(parts) != 3:
-            log.info("JWT reject: invalid_format parts=%d", len(parts))
+        try:
+            payload = _pyjwt.decode(
+                token,
+                secret,
+                algorithms=["HS256"],  # algorithm whitelist (security)
+                options={
+                    "require": ["sub", "exp"],
+                    "verify_signature": True,
+                    "verify_exp": True,
+                    "verify_iat": False,  # eski tokenlarda iat yo'q
+                    "verify_nbf": True,
+                },
+                leeway=10,  # 10 sekund clock skew tolerance
+            )
+        except ExpiredSignatureError:
+            log.info("JWT reject: expired")
             return None
-        h64, p64, s64 = parts
-        msg = f"{h64}.{p64}".encode()
-        kutilgan = base64.urlsafe_b64encode(
-            hmac.new(secret.encode(), msg, "sha256").digest()
-        ).rstrip(b"=").decode()
-        if not hmac.compare_digest(s64, kutilgan):
-            log.warning("JWT reject: signature_mismatch (brute-force xavfi?)")
+        except DecodeError as e:
+            log.warning("JWT reject: decode_error %s", e)
             return None
-        pad = p64 + "=" * (-len(p64) % 4)
-        payload = json.loads(base64.urlsafe_b64decode(pad))
-        if payload.get("exp", 0) < time.time():
-            log.info("JWT reject: expired sub=%s exp=%s", payload.get("sub"), payload.get("exp"))
+        except InvalidTokenError as e:
+            log.warning("JWT reject: invalid_token %s: %s", type(e).__name__, e)
             return None
-        return int(payload.get("sub", 0)) or None
-    except json.JSONDecodeError as e:
-        log.warning("JWT reject: payload_not_json %s", e)
-        return None
-    except (ValueError, TypeError) as e:
-        log.warning("JWT reject: decode_error %s", e)
-        return None
+
+        sub = payload.get("sub", 0)
+        try:
+            uid = int(sub)
+        except (ValueError, TypeError):
+            log.warning("JWT reject: sub_not_int %r", sub)
+            return None
+        return uid if uid > 0 else None
+
     except RuntimeError as e:
-        # JWT_SECRET yo'q bo'lsa — bu deployment muammosi, sirni yashirmaslik
+        # JWT_SECRET yo'q bo'lsa — deployment muammosi
         log.error("JWT reject: config_error %s", e)
         return None
     except Exception as e:
