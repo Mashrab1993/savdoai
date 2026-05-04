@@ -285,6 +285,10 @@ export default function YangiSotuvPage() {
                   <div className="font-medium text-[#1A1A1A]">{client.ism}</div>
                   <div className="text-xs text-[#9C8A6E]">{client.telefon || "—"}</div>
                 </div>
+
+                {/* P2: Klient balans vidjeti */}
+                <KlientBalansVidjet klientId={client.id} />
+
                 {cartItems.length === 0 ? (
                   <p className="text-center text-[#9C8A6E] py-8 text-sm">Hozircha bo'sh</p>
                 ) : (
@@ -417,5 +421,69 @@ export default function YangiSotuvPage() {
         </div>
       </div>
     </AdminLayout>
+  )
+}
+
+// P2: Klient balans vidjeti (sotuv yaratish ekraniga)
+type KlientBalans = {
+  jami_qarz: number
+  muddati_otgan_qarzlar: number
+  kredit_limit: number | null
+  kredit_qoldiq: number | null
+  kredit_oshib_ketdi: boolean
+  oxirgi_sotuv_sana: string | null
+  oy: { soni: number; jami: number }
+}
+
+function KlientBalansVidjet({ klientId }: { klientId: number }) {
+  const { data, loading } = useApi<KlientBalans>(`/api/v1/klient/${klientId}/balans`)
+  if (loading) return null
+  if (!data) return null
+
+  const { jami_qarz, muddati_otgan_qarzlar, kredit_limit, kredit_qoldiq, kredit_oshib_ketdi, oxirgi_sotuv_sana, oy } = data
+  const lastSale = oxirgi_sotuv_sana ? new Date(oxirgi_sotuv_sana).toLocaleDateString("uz-UZ") : "—"
+
+  return (
+    <div className={`mb-4 p-3 rounded-lg text-xs space-y-1 ${
+      kredit_oshib_ketdi ? "bg-rose-50 border border-rose-200" :
+      muddati_otgan_qarzlar > 0 ? "bg-amber-50 border border-amber-200" :
+      "bg-emerald-50 border border-emerald-200"
+    }`}>
+      <div className="font-semibold uppercase text-slate-700 mb-1.5">Mijoz balansi</div>
+      <div className="grid grid-cols-2 gap-1.5">
+        <div className="text-slate-600">Jami qarz:</div>
+        <div className={`text-right font-medium tabular-nums ${jami_qarz > 0 ? "text-rose-700" : "text-slate-700"}`}>
+          {fmt(Math.round(jami_qarz))} so'm
+        </div>
+        {kredit_limit !== null && (
+          <>
+            <div className="text-slate-600">Kredit limit:</div>
+            <div className="text-right font-medium tabular-nums text-slate-700">
+              {fmt(Math.round(kredit_limit))} so'm
+            </div>
+            <div className="text-slate-600">Qoldiq:</div>
+            <div className={`text-right font-medium tabular-nums ${kredit_oshib_ketdi ? "text-rose-700" : "text-emerald-700"}`}>
+              {kredit_qoldiq !== null ? fmt(Math.round(kredit_qoldiq)) + " so'm" : "—"}
+            </div>
+          </>
+        )}
+        <div className="text-slate-600">Oy bo'yicha:</div>
+        <div className="text-right font-medium tabular-nums text-slate-700">
+          {oy.soni} ta · {fmt(Math.round(oy.jami))}
+        </div>
+        <div className="text-slate-600">Oxirgi sotuv:</div>
+        <div className="text-right font-medium text-slate-600">{lastSale}</div>
+      </div>
+      {kredit_oshib_ketdi && (
+        <div className="mt-2 px-2 py-1 bg-rose-100 text-rose-800 rounded text-[11px] font-semibold">
+          ⚠ KREDIT LIMIT OSHGAN!
+        </div>
+      )}
+      {muddati_otgan_qarzlar > 0 && !kredit_oshib_ketdi && (
+        <div className="mt-2 px-2 py-1 bg-amber-100 text-amber-800 rounded text-[11px] font-semibold">
+          ⚠ {muddati_otgan_qarzlar} ta muddati o'tgan qarz
+        </div>
+      )}
+    </div>
   )
 }
