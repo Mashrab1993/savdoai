@@ -52,9 +52,13 @@ async def _cleanup_expired():
             _pending_orders.pop(k, None)
 
 
-def _fmt(n: float) -> str:
-    """Format number as UZS — to'liq aniq summa, ming/mln yumalashma yo'q."""
-    return f"{n:,.0f} so'm"
+def _fmt(n) -> str:
+    """Format number as UZS — to'liq aniq summa, ming/mln yumalashma yo'q.
+    Accepts Decimal or float; preserves precision when n is Decimal."""
+    if isinstance(n, Decimal):
+        # Quantize to integer som; format with thousand separators
+        return f"{n.quantize(Decimal('1')):,} so'm"
+    return f"{int(n):,} so'm"
 
 
 async def handle_voice_order(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -216,14 +220,14 @@ async def handle_voice_order(update: Update, context: ContextTypes.DEFAULT_TYPE)
         # Markdown ulangan parsing xato beradi)
         lines = [
             f"🏪 {klient['ism']}",
-            f"📦 {len(matched)} ta tovar, {_fmt(float(jami))}",
+            f"📦 {len(matched)} ta tovar, {_fmt(jami)}",
             "",
         ]
         for i, m in enumerate(matched, 1):
             stock_warn = " ⚠️" if m["qoldiq"] < m["miqdor"] else ""
             lines.append(
                 f"{i}. {m['nomi']}\n"
-                f"   {m['miqdor']} {m['birlik']} × {float(m['narx']):,.0f} = {float(m['jami']):,.0f}{stock_warn}"
+                f"   {m['miqdor']} {m['birlik']} × {_fmt(m['narx'])} = {_fmt(m['jami'])}{stock_warn}"
             )
 
         if not_found:
@@ -233,7 +237,7 @@ async def handle_voice_order(update: Update, context: ContextTypes.DEFAULT_TYPE)
                 lines.append(f"  • {n}")
 
         lines.append("")
-        lines.append(f"💰 JAMI: {_fmt(float(jami))}")
+        lines.append(f"💰 JAMI: {_fmt(jami)}")
 
         # Store pending order with unique token (lock-protected to prevent
         # race conditions when same user sends two voice orders quickly)
@@ -342,7 +346,7 @@ async def handle_voice_order_callback(update: Update, context: ContextTypes.DEFA
                     f"✅ Zakaz yaratildi!\n\n"
                     f"🏪 {result['klient']}\n"
                     f"📦 {result['tovarlar_soni']} ta tovar\n"
-                    f"💰 {_fmt(float(result['jami_summa']))}\n"
+                    f"💰 {_fmt(result['jami_summa'])}\n"
                     f"📋 Sessiya #{result['sessiya_id']}\n\n"
                     f"📄 Nakladnoy: /nakladnoy_{result['sessiya_id']}",
                 )
