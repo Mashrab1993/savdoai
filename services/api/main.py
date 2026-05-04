@@ -4176,7 +4176,76 @@ async def savdo_holat_change(sessiya_id: int, data: dict, uid: int = Depends(get
                 )
 
             log.info("🔄 Sotuv #%d holat: %s → %s (uid=%d)", sessiya_id, current, new_holat, uid)
-            return {"id": sessiya_id, "eski_holat": current, "yangi_holat": new_holat}
+
+        # Telegram bildirishnoma — transaction'dan tashqari (xato user javobini buzmasligi uchun)
+        try:
+            sess_full = await c.fetchrow(
+                "SELECT klient_ismi, jami, document_number FROM sotuv_sessiyalar WHERE id=$1",
+                sessiya_id,
+            )
+            await _notify_telegram_holat(uid, sessiya_id, current, new_holat, sess_full, izoh)
+        except Exception as e:
+            log.warning("Telegram notify (holat) failed: %s", e)
+
+        return {"id": sessiya_id, "eski_holat": current, "yangi_holat": new_holat}
+
+
+async def _notify_telegram_holat(
+    uid: int,
+    sessiya_id: int,
+    eski: str,
+    yangi: str,
+    sess_full,
+    izoh: str = "",
+) -> None:
+    """User Telegram'ga holat o'zgarishini xabar qilish (BOT_TOKEN orqali).
+
+    Faqat foydalanuvchining Telegram chat_id'siga yuboriladi (uid = chat_id).
+    BOT_TOKEN o'rnatilmagan bo'lsa silently skip qiladi.
+    """
+    bot_token = os.getenv("BOT_TOKEN", "").strip()
+    if not bot_token:
+        return
+
+    LABELS = {
+        "yangi": "Yangi (qoralama)",
+        "tasdiqlangan": "Tasdiqlangan",
+        "yigilmoqda": "Yig'ilmoqda",
+        "otgruzka": "Otgruzka qilindi",
+        "yetkazildi": "Yetkazildi",
+        "yopiq": "Yopiq",
+        "bekor": "Bekor qilindi",
+    }
+    EMOJI = {
+        "yangi": "🆕", "tasdiqlangan": "✅", "yigilmoqda": "📦",
+        "otgruzka": "🚚", "yetkazildi": "🎯", "yopiq": "🔒", "bekor": "❌",
+    }
+
+    klient = (sess_full and sess_full["klient_ismi"]) or "—"
+    jami = float(sess_full["jami"]) if sess_full and sess_full["jami"] else 0
+    doc = (sess_full and sess_full["document_number"]) or f"#{sessiya_id}"
+
+    msg = (
+        f"{EMOJI.get(yangi, '🔄')} *Sotuv holati o'zgardi*\n"
+        f"\n"
+        f"📄 Hujjat: `{doc}`\n"
+        f"👤 Klient: {klient}\n"
+        f"💰 Summa: {jami:,.0f} so'm\n"
+        f"\n"
+        f"📊 {LABELS.get(eski, eski)} → *{LABELS.get(yangi, yangi)}*"
+    )
+    if izoh:
+        msg += f"\n\n💬 _{izoh}_"
+
+    import httpx
+    async with httpx.AsyncClient(timeout=10.0) as http:
+        try:
+            await http.post(
+                f"https://api.telegram.org/bot{bot_token}/sendMessage",
+                json={"chat_id": uid, "text": msg, "parse_mode": "Markdown"},
+            )
+        except Exception as e:
+            log.warning("Telegram sendMessage failed: %s", e)
 
 
 @app.get("/api/v1/savdo-holat-workflow", tags=["Sotuv"])
