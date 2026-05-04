@@ -327,6 +327,7 @@ def _extract_size(text: str) -> str | None:
 def fuzzy_match_tovar(nomi: str, db_tovarlar: list[dict]) -> dict | None:
     """
     Agent aytgan tovar nomini DB'dagi eng mos tovar bilan moslashtirish.
+    [v2.1 Cyrillic+Latin+Size+Price priority]
 
     Cyrillic ↔ Latin transliteration ham qo'llab-quvvatlanadi:
         Agent: "Yubileyniy 4 kg"
@@ -335,6 +336,7 @@ def fuzzy_match_tovar(nomi: str, db_tovarlar: list[dict]) -> dict | None:
         Agent: "Rosabella qizil"
         DB:    "ROSABELLA KIZIL 2 kg"  ← MATCH (substring)
     """
+    log.debug("[v2.1] fuzzy_match_tovar input: %r", nomi)
     nomi_lower = nomi.lower().strip()
     if not nomi_lower:
         return None
@@ -417,8 +419,11 @@ def fuzzy_match_tovar(nomi: str, db_tovarlar: list[dict]) -> dict | None:
 
     # Minimum threshold
     if best_score < 0.4:
+        log.debug("[v2.1] fuzzy_match_tovar no match (best %.3f) for %r", best_score, nomi)
         return None
 
+    log.info("[v2.1] fuzzy_match: %r → id=%s '%s' (score=%.3f)",
+             nomi, best.get("id"), best.get("nomi", "")[:40], best_score)
     return best
 
 
