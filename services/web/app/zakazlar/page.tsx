@@ -4,7 +4,7 @@ import { AdminLayout } from "@/components/layout/admin-layout"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { Search, Plus, Download, Filter, Truck, CheckCircle, Clock, X, MoreVertical, Loader2, Printer, Copy, Calendar, Trash2 } from "lucide-react"
+import { Search, Plus, Download, Truck, CheckCircle, Clock, X, MoreVertical, Loader2, Printer, Copy, Calendar, Trash2 } from "lucide-react"
 import Link from "next/link"
 import { useApi, useAuth } from "@/hooks/use-api"
 import { LoadingSkeleton, EmptyState, ErrorState } from "@/components/shared/states"
@@ -45,23 +45,40 @@ const STATUSES = {
 
 type StatusKey = keyof typeof STATUSES
 
+type RefItem = { id: number; ism?: string; nomi?: string }
+
 export default function ZakazlarPage() {
   const { isAuthenticated } = useAuth()
   const [search, setSearch] = useState("")
   const [statusFilter, setStatusFilter] = useState<StatusKey | "all">("all")
   const [selected, setSelected] = useState<Set<number>>(new Set())
   // Yangi P1 filterlar
-  const [period, setPeriod] = useState<string>("all")  // today | yesterday | week | month | all
+  const [period, setPeriod] = useState<string>("all")
   const [docFilter, setDocFilter] = useState("")
   const [bulking, setBulking] = useState(false)
+  // P3: agent/sklad/hudud filterlar
+  const [shogirdId, setShogirdId] = useState<string>("")
+  const [skladId, setSkladId] = useState<string>("")
+  const [hududId, setHududId] = useState<string>("")
+
+  // Reference data
+  const { data: shogirdlar } = useApi<RefItem[]>(isAuthenticated ? "/api/v1/shogirdlar" : null)
+  const { data: skladlar } = useApi<{ items: RefItem[] } | RefItem[]>(isAuthenticated ? "/api/v1/skladlar" : null)
+  const { data: hududlar } = useApi<{ items: RefItem[] } | RefItem[]>(isAuthenticated ? "/api/v1/hududlar" : null)
+  const skladItems = Array.isArray(skladlar) ? skladlar : (skladlar?.items ?? [])
+  const hududItems = Array.isArray(hududlar) ? hududlar : (hududlar?.items ?? [])
+  const shogirdItems: RefItem[] = Array.isArray(shogirdlar) ? shogirdlar : []
 
   const apiUrl = useMemo(() => {
     if (!isAuthenticated) return null
     const params = new URLSearchParams({ limit: "200" })
     if (period !== "all") params.set("period", period)
     if (docFilter.trim()) params.set("document_number", docFilter.trim())
+    if (shogirdId) params.set("shogird_id", shogirdId)
+    if (skladId) params.set("sklad_id", skladId)
+    if (hududId) params.set("hudud_id", hududId)
     return `/api/v1/savdolar?${params.toString()}`
-  }, [isAuthenticated, period, docFilter])
+  }, [isAuthenticated, period, docFilter, shogirdId, skladId, hududId])
 
   const { data, loading, error, refetch } = useApi<SavdoResp>(apiUrl)
 
@@ -255,16 +272,54 @@ export default function ZakazlarPage() {
                 className="pl-11"
               />
             </div>
-            <div className="min-w-[200px] relative">
+            <div className="min-w-[180px] relative">
               <Input
                 placeholder="Hujjat raqami (MUK000...)"
                 value={docFilter}
                 onChange={(e) => setDocFilter(e.target.value)}
               />
             </div>
-            <Button variant="outline">
-              <Filter className="w-4 h-4" /> Qo'shimcha
-            </Button>
+            <select
+              value={shogirdId}
+              onChange={e => setShogirdId(e.target.value)}
+              className="px-3 py-2 border border-slate-200 rounded-md bg-white text-sm focus:outline-none focus:border-emerald-500 min-w-[160px]"
+            >
+              <option value="">Agent (barcha)</option>
+              {shogirdItems.map(s => (
+                <option key={s.id} value={s.id}>{s.ism || `#${s.id}`}</option>
+              ))}
+            </select>
+            <select
+              value={skladId}
+              onChange={e => setSkladId(e.target.value)}
+              className="px-3 py-2 border border-slate-200 rounded-md bg-white text-sm focus:outline-none focus:border-emerald-500 min-w-[140px]"
+            >
+              <option value="">Sklad (barcha)</option>
+              {skladItems.map(s => (
+                <option key={s.id} value={s.id}>{s.nomi || `#${s.id}`}</option>
+              ))}
+            </select>
+            {hududItems.length > 0 && (
+              <select
+                value={hududId}
+                onChange={e => setHududId(e.target.value)}
+                className="px-3 py-2 border border-slate-200 rounded-md bg-white text-sm focus:outline-none focus:border-emerald-500 min-w-[140px]"
+              >
+                <option value="">Hudud (barcha)</option>
+                {hududItems.map(h => (
+                  <option key={h.id} value={h.id}>{h.nomi || `#${h.id}`}</option>
+                ))}
+              </select>
+            )}
+            {(shogirdId || skladId || hududId || docFilter) && (
+              <button
+                onClick={() => { setShogirdId(""); setSkladId(""); setHududId(""); setDocFilter("") }}
+                className="px-3 py-2 text-sm text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded"
+                title="Filterlarni tozalash"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
             <ExportDropdown
               label="Реестр (barcha)"
               variants={REGISTR_VARIANTS}
