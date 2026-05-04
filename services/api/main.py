@@ -4261,7 +4261,7 @@ async def _notify_telegram_holat(
             log.warning("Telegram sendMessage failed: %s", e)
 
 
-@app.get("/api/v1/sozlamalar/hujjat-prefix", tags=["Sozlamalar"])
+@app.get("/api/v1/hujjat-prefix", tags=["Sozlamalar"])
 async def hujjat_prefix_get(uid: int = Depends(get_uid)):
     """Hujjat raqamlash prefiksi (default: MUK)."""
     async with get_pool().acquire() as c:
@@ -4272,7 +4272,7 @@ async def hujjat_prefix_get(uid: int = Depends(get_uid)):
     return {"prefix": prefix or "MUK"}
 
 
-@app.post("/api/v1/sozlamalar/hujjat-prefix", tags=["Sozlamalar"])
+@app.post("/api/v1/hujjat-prefix", tags=["Sozlamalar"])
 async def hujjat_prefix_set(data: dict, uid: int = Depends(get_uid)):
     """Hujjat prefiksi (3-6 ta lotin harfi tavsiya, masalan: TST, OPT, ROZ)."""
     import re as _re

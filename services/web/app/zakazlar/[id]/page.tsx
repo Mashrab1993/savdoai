@@ -32,6 +32,14 @@ type WorkflowResp = {
   labels: Record<string, string>
 }
 
+type HolatTarixItem = {
+  id: number
+  eski_holat: string | null
+  yangi_holat: string
+  izoh: string | null
+  vaqt: string
+}
+
 const STATUS_ICONS: Record<string, typeof Clock> = {
   yangi: Clock,
   tasdiqlangan: CheckCircle,
@@ -53,6 +61,9 @@ export default function ZakazDetailPage({ params }: { params: Promise<{ id: stri
   )
   const { data: workflow } = useApi<WorkflowResp>(
     isAuthenticated ? "/api/v1/savdo-holat-workflow" : null
+  )
+  const { data: tarix } = useApi<{ items: HolatTarixItem[] }>(
+    isAuthenticated && sotuvId ? `/api/v1/savdo/${sotuvId}/holat-tarix` : null
   )
 
   const [changing, setChanging] = useState(false)
@@ -250,6 +261,52 @@ export default function ZakazDetailPage({ params }: { params: Promise<{ id: stri
               <Card className="p-4 bg-amber-50 border-amber-200">
                 <div className="text-xs uppercase font-semibold text-amber-700">Izoh</div>
                 <div className="text-sm">{s.izoh}</div>
+              </Card>
+            )}
+
+            {/* Status history timeline (audit trail) */}
+            {tarix?.items && tarix.items.length > 0 && (
+              <Card>
+                <div className="px-5 py-3 border-b">
+                  <h3 className="font-semibold flex items-center gap-2">
+                    <Clock className="w-4 h-4 text-slate-500" />
+                    Holat tarixi ({tarix.items.length})
+                  </h3>
+                </div>
+                <div className="p-5">
+                  <ol className="space-y-3 relative">
+                    <div className="absolute left-3 top-0 bottom-0 w-0.5 bg-slate-200" />
+                    {tarix.items.map((entry) => {
+                      const Icon = STATUS_ICONS[entry.yangi_holat] || ChevronRight
+                      const isBekor = entry.yangi_holat === "bekor"
+                      return (
+                        <li key={entry.id} className="flex items-start gap-3 relative">
+                          <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 z-10 ${
+                            isBekor ? "bg-rose-100 text-rose-600 border-2 border-rose-200" :
+                            "bg-emerald-100 text-emerald-700 border-2 border-emerald-200"
+                          }`}>
+                            <Icon className="w-3 h-3" />
+                          </div>
+                          <div className="flex-1 pt-0.5">
+                            <div className="text-sm">
+                              <span className="text-slate-500">{workflow?.labels[entry.eski_holat || ""] || entry.eski_holat || "—"}</span>
+                              <span className="mx-1.5 text-slate-400">→</span>
+                              <span className={isBekor ? "font-semibold text-rose-700" : "font-semibold text-emerald-700"}>
+                                {workflow?.labels[entry.yangi_holat] || entry.yangi_holat}
+                              </span>
+                            </div>
+                            {entry.izoh && (
+                              <div className="text-xs text-slate-600 mt-0.5 italic">{entry.izoh}</div>
+                            )}
+                            <div className="text-xs text-slate-400 mt-0.5">
+                              {new Date(entry.vaqt).toLocaleString("uz-UZ", { dateStyle: "short", timeStyle: "short" })}
+                            </div>
+                          </div>
+                        </li>
+                      )
+                    })}
+                  </ol>
+                </div>
               </Card>
             )}
           </>
