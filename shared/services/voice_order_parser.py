@@ -402,6 +402,15 @@ def fuzzy_match_tovar(nomi: str, db_tovarlar: list[dict]) -> dict | None:
             else:
                 score -= 0.5  # strong penalty for size mismatch
 
+        # PRICE BONUS: prefer products with prices (active products)
+        # over zero-priced ones (incomplete data)
+        try:
+            sotish = float(tv.get("sotish_narxi") or 0)
+            if sotish > 0:
+                score += 0.05  # small bonus
+        except (TypeError, ValueError):
+            pass
+
         if score > best_score:
             best_score = score
             best = tv
