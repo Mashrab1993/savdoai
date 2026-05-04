@@ -327,13 +327,12 @@ async def handle_voice_order_callback(update: Update, context: ContextTypes.DEFA
 
             if result["success"]:
                 await query.edit_message_text(
-                    f"✅ **Zakaz yaratildi!**\n\n"
+                    f"✅ Zakaz yaratildi!\n\n"
                     f"🏪 {result['klient']}\n"
                     f"📦 {result['tovarlar_soni']} ta tovar\n"
                     f"💰 {_fmt(float(result['jami_summa']))}\n"
                     f"📋 Sessiya #{result['sessiya_id']}\n\n"
                     f"📄 Nakladnoy: /nakladnoy_{result['sessiya_id']}",
-                    parse_mode="Markdown",
                 )
             else:
                 errors = "\n".join(f"• {e}" for e in result["xatolar"])
