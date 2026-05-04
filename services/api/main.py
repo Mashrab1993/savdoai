@@ -4002,7 +4002,7 @@ async def savdo_holat_change(sessiya_id: int, data: dict, uid: int = Depends(get
             return {"id": sessiya_id, "eski_holat": current, "yangi_holat": new_holat}
 
 
-@app.get("/api/v1/savdo/holat-workflow", tags=["Sotuv"])
+@app.get("/api/v1/savdo-holat-workflow", tags=["Sotuv"])
 async def savdo_holat_workflow(uid: int = Depends(get_uid)):
     """Frontend uchun: state machine xaritasi (qaysi holatdan qaysiga o'tish mumkin)"""
     return {
