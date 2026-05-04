@@ -2418,6 +2418,7 @@ async def savdolar_royxati(
     tip_zayavki: str | None = None,  # sotish | qaytarish | obmen
     tolov_usuli: str | None = None,  # naqd | kassa | plastik | otkazma
     klient_kategoriya: str | None = None,  # klientlar.kategoriya text
+    hudud_id: int | None = None,  # P3 — territoriya filter
     uid: int = Depends(get_uid),
 ):
     """
@@ -2518,6 +2519,11 @@ async def savdolar_royxati(
         if klient_kategoriya:
             where_parts.append(f"lower(COALESCE(k.kategoriya,'')) = lower(${idx}::text)")
             params.append(klient_kategoriya)
+            idx += 1
+
+        if hudud_id is not None:
+            where_parts.append(f"k.hudud_id = ${idx}")
+            params.append(hudud_id)
             idx += 1
 
         where_sql = (" AND " + " AND ".join(where_parts)) if where_parts else ""
@@ -4177,6 +4183,13 @@ async def savdo_holat_change(sessiya_id: int, data: dict, uid: int = Depends(get
 
             log.info("🔄 Sotuv #%d holat: %s → %s (uid=%d)", sessiya_id, current, new_holat, uid)
 
+            # Status tarixiga yozish (P3 audit trail)
+            await c.execute(
+                "INSERT INTO sotuv_holat_tarix (sessiya_id, user_id, eski_holat, yangi_holat, izoh) "
+                "VALUES ($1, $2, $3, $4, $5)",
+                sessiya_id, uid, current, new_holat, izoh or None,
+            )
+
         # Telegram bildirishnoma — transaction'dan tashqari (xato user javobini buzmasligi uchun)
         try:
             sess_full = await c.fetchrow(
@@ -4246,6 +4259,55 @@ async def _notify_telegram_holat(
             )
         except Exception as e:
             log.warning("Telegram sendMessage failed: %s", e)
+
+
+@app.get("/api/v1/sozlamalar/hujjat-prefix", tags=["Sozlamalar"])
+async def hujjat_prefix_get(uid: int = Depends(get_uid)):
+    """Hujjat raqamlash prefiksi (default: MUK)."""
+    async with get_pool().acquire() as c:
+        prefix = await c.fetchval(
+            "SELECT qiymat FROM server_config WHERE user_id=$1 AND modul='hujjat' AND kalit='prefix'",
+            uid,
+        )
+    return {"prefix": prefix or "MUK"}
+
+
+@app.post("/api/v1/sozlamalar/hujjat-prefix", tags=["Sozlamalar"])
+async def hujjat_prefix_set(data: dict, uid: int = Depends(get_uid)):
+    """Hujjat prefiksi (3-6 ta lotin harfi tavsiya, masalan: TST, OPT, ROZ)."""
+    import re as _re
+    prefix = (data.get("prefix") or "").strip().upper()
+    if not _re.match(r"^[A-Z]{2,8}$", prefix):
+        raise HTTPException(400, "Prefiks 2-8 ta lotin harfi (A-Z)")
+    async with get_pool().acquire() as c:
+        await c.execute("""
+            INSERT INTO server_config (user_id, modul, kalit, qiymat, yangilangan)
+            VALUES ($1, 'hujjat', 'prefix', $2, NOW())
+            ON CONFLICT (user_id, modul, kalit)
+            DO UPDATE SET qiymat=$2, yangilangan=NOW()
+        """, uid, prefix)
+    return {"prefix": prefix}
+
+
+@app.get("/api/v1/savdo/{sessiya_id}/holat-tarix", tags=["Sotuv"])
+async def savdo_holat_tarix(sessiya_id: int, uid: int = Depends(get_uid)):
+    """Sotuv holatining barcha o'zgarishlari tarixi (audit trail)."""
+    async with get_pool().acquire() as c:
+        # RLS check
+        sess = await c.fetchrow(
+            "SELECT id FROM sotuv_sessiyalar WHERE id=$1 AND user_id=$2",
+            sessiya_id, uid,
+        )
+        if not sess:
+            raise HTTPException(404, "Sotuv topilmadi")
+
+        rows = await c.fetch("""
+            SELECT id, eski_holat, yangi_holat, izoh, vaqt
+            FROM sotuv_holat_tarix
+            WHERE sessiya_id=$1
+            ORDER BY vaqt ASC
+        """, sessiya_id)
+    return {"items": [dict(r) for r in rows]}
 
 
 @app.get("/api/v1/savdo-holat-workflow", tags=["Sotuv"])
