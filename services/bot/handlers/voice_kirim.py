@@ -15,6 +15,7 @@
 ╚══════════════════════════════════════════════════════════════╝
 """
 from __future__ import annotations
+import asyncio
 import logging
 import time
 import uuid
@@ -34,16 +35,19 @@ from shared.services.voice_order_parser import (
 log = logging.getLogger(__name__)
 
 # Pending kirim orders keyed by unique token
+# IMPORTANT: All access protected by _pending_lock to prevent race conditions
 _pending_kirims: dict[str, dict] = {}
+_pending_lock = asyncio.Lock()
 _PENDING_TTL = 600  # 10 minutes
 
 
-def _cleanup_expired_kirims():
-    """Remove pending kirims older than 10 minutes."""
-    now = time.time()
-    expired = [k for k, v in _pending_kirims.items() if now - v.get("ts", 0) > _PENDING_TTL]
-    for k in expired:
-        _pending_kirims.pop(k, None)
+async def _cleanup_expired_kirims():
+    """Remove pending kirims older than 10 minutes (lock-protected)."""
+    async with _pending_lock:
+        now = time.time()
+        expired = [k for k, v in _pending_kirims.items() if now - v.get("ts", 0) > _PENDING_TTL]
+        for k in expired:
+            _pending_kirims.pop(k, None)
 
 
 def _fmt(n: float) -> str:
@@ -197,23 +201,26 @@ async def handle_voice_kirim(update: Update, context: ContextTypes.DEFAULT_TYPE)
 
         lines.append(f"💰 **JAMI KIRIM: {_fmt(float(jami_kirim))}**")
 
-        # Store pending kirim with unique token
+        # Store pending kirim — lock-protected (race condition fix)
         token = uuid.uuid4().hex[:12]
-        _pending_kirims[token] = {
-            "user_id": user_id,
-            "parsed": parsed,
-            "matched": matched,
-            "jami": jami_kirim,
-            "text": text,
-            "ts": time.time(),
-        }
-
-        # Clean up expired + overflow
-        _cleanup_expired_kirims()
-        if len(_pending_kirims) > 50:
-            oldest_keys = list(_pending_kirims.keys())[:len(_pending_kirims) - 50]
-            for k in oldest_keys:
+        async with _pending_lock:
+            _pending_kirims[token] = {
+                "user_id": user_id,
+                "parsed": parsed,
+                "matched": matched,
+                "jami": jami_kirim,
+                "text": text,
+                "ts": time.time(),
+            }
+            # Clean up expired + overflow inside same lock (atomic)
+            now = time.time()
+            expired = [k for k, v in _pending_kirims.items() if now - v.get("ts", 0) > _PENDING_TTL]
+            for k in expired:
                 _pending_kirims.pop(k, None)
+            if len(_pending_kirims) > 50:
+                oldest_keys = list(_pending_kirims.keys())[:len(_pending_kirims) - 50]
+                for k in oldest_keys:
+                    _pending_kirims.pop(k, None)
 
         # Inline keyboard
         keyboard = InlineKeyboardMarkup([
@@ -256,15 +263,21 @@ async def handle_voice_kirim_callback(update: Update, context: ContextTypes.DEFA
         await query.edit_message_text("⚠️ Noto'g'ri callback.")
         return
 
-    pending = _pending_kirims.pop(token, None)
-    if not pending:
-        await query.edit_message_text("⚠️ Bu kirim eskirgan. Qaytadan yuborin.")
-        return
+    # Lock-protected: atomic pop + ownership check
+    async with _pending_lock:
+        pending = _pending_kirims.pop(token, None)
+        if pending and pending.get("user_id") != user_id:
+            _pending_kirims[token] = pending  # Put back if wrong user
+            pending = None
+            wrong_user = True
+        else:
+            wrong_user = False
 
-    # Verify user
-    if pending["user_id"] != user_id:
-        _pending_kirims[token] = pending
-        await query.edit_message_text("⚠️ Bu kirim boshqa foydalanuvchiga tegishli.")
+    if not pending:
+        if wrong_user:
+            await query.edit_message_text("⚠️ Bu kirim boshqa foydalanuvchiga tegishli.")
+        else:
+            await query.edit_message_text("⚠️ Bu kirim eskirgan. Qaytadan yuborin.")
         return
 
     if action == "cancel":
