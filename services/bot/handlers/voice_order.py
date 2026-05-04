@@ -115,25 +115,26 @@ async def handle_voice_order(update: Update, context: ContextTypes.DEFAULT_TYPE)
             tovarlar_list = [dict(r) for r in tovarlar]
             klientlar_list = [dict(r) for r in klientlar]
 
-        # Parse the text — try regex first, then Gemini AI
+        # Parse the text — Gemini AI FIRST (handles narx vs qty, multi-item,
+        # Cyrillic↔Latin), regex is fallback.
         tovar_nomlari = [t.get("nomi", "") for t in tovarlar_list]
         [k.get("ism", "") for k in klientlar_list]
 
-        parsed = parse_order_text(text)
-
-        # If regex failed OR do'kon not found — try Gemini smart parser
+        parsed = None
         klient = None
-        if not parsed.get("xato") and parsed.get("do'kon"):
-            klient = fuzzy_match_klient(parsed["do'kon"], klientlar_list)
+        try:
+            parsed = await smart_parse_with_gemini(text, tovar_nomlari)
+            if parsed and not parsed.get("xato") and parsed.get("do'kon"):
+                klient = fuzzy_match_klient(parsed["do'kon"], klientlar_list)
+        except Exception as _sp:
+            log.debug("Gemini parse failed: %s", _sp)
+            parsed = None
 
-        if parsed.get("xato") or not parsed.get("tovarlar") or not klient:
-            # Regex failed or klient not matched — try Gemini AI with FULL context
-            try:
-                parsed = await smart_parse_with_gemini(text, tovar_nomlari)
-                if not parsed.get("xato") and parsed.get("do'kon"):
-                    klient = fuzzy_match_klient(parsed["do'kon"], klientlar_list)
-            except Exception as _sp:
-                log.debug("smart parse fallback: %s", _sp)
+        # Fallback to regex parser if Gemini didn't return usable result
+        if not parsed or parsed.get("xato") or not parsed.get("tovarlar"):
+            parsed = parse_order_text(text)
+            if not parsed.get("xato") and parsed.get("do'kon"):
+                klient = fuzzy_match_klient(parsed["do'kon"], klientlar_list)
 
         if parsed.get("xato") or not parsed.get("tovarlar"):
             # Aniqroq xato — user nima yetishmayotganini biladi
