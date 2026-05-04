@@ -16,6 +16,7 @@
 ╚══════════════════════════════════════════════════════════════╝
 """
 from __future__ import annotations
+import asyncio
 import logging
 import time
 import uuid
@@ -36,16 +37,19 @@ from shared.services.voice_order_parser import (
 log = logging.getLogger(__name__)
 
 # Pending orders keyed by unique token (NOT user_id — prevents race condition)
+# IMPORTANT: All access protected by _pending_lock to prevent race conditions
 _pending_orders: dict[str, dict] = {}
+_pending_lock = asyncio.Lock()
 _PENDING_TTL = 600  # 10 minutes
 
 
-def _cleanup_expired():
-    """Remove pending orders older than 10 minutes."""
-    now = time.time()
-    expired = [k for k, v in _pending_orders.items() if now - v.get("ts", 0) > _PENDING_TTL]
-    for k in expired:
-        _pending_orders.pop(k, None)
+async def _cleanup_expired():
+    """Remove pending orders older than 10 minutes (lock-protected)."""
+    async with _pending_lock:
+        now = time.time()
+        expired = [k for k, v in _pending_orders.items() if now - v.get("ts", 0) > _PENDING_TTL]
+        for k in expired:
+            _pending_orders.pop(k, None)
 
 
 def _fmt(n: float) -> str:
@@ -231,25 +235,28 @@ async def handle_voice_order(update: Update, context: ContextTypes.DEFAULT_TYPE)
         lines.append("")
         lines.append(f"💰 JAMI: {_fmt(float(jami))}")
 
-        # Store pending order with unique token (prevents race condition
-        # when same user sends two voice orders quickly)
+        # Store pending order with unique token (lock-protected to prevent
+        # race conditions when same user sends two voice orders quickly)
         token = uuid.uuid4().hex[:12]
-        _pending_orders[token] = {
-            "user_id": user_id,
-            "parsed": parsed,
-            "klient": klient,
-            "matched": matched,
-            "jami": jami,
-            "text": text,
-            "ts": time.time(),
-        }
-
-        # Clean up expired + overflow
-        _cleanup_expired()
-        if len(_pending_orders) > 50:
-            oldest_keys = list(_pending_orders.keys())[:len(_pending_orders) - 50]
-            for k in oldest_keys:
+        async with _pending_lock:
+            _pending_orders[token] = {
+                "user_id": user_id,
+                "parsed": parsed,
+                "klient": klient,
+                "matched": matched,
+                "jami": jami,
+                "text": text,
+                "ts": time.time(),
+            }
+            # Clean up expired + overflow inside same lock
+            now = time.time()
+            expired = [k for k, v in _pending_orders.items() if now - v.get("ts", 0) > _PENDING_TTL]
+            for k in expired:
                 _pending_orders.pop(k, None)
+            if len(_pending_orders) > 50:
+                oldest_keys = list(_pending_orders.keys())[:len(_pending_orders) - 50]
+                for k in oldest_keys:
+                    _pending_orders.pop(k, None)
 
         # Inline keyboard — token in callback_data (unique per order)
         keyboard = InlineKeyboardMarkup([
@@ -291,15 +298,21 @@ async def handle_voice_order_callback(update: Update, context: ContextTypes.DEFA
         await query.edit_message_text("⚠️ Noto'g'ri callback.")
         return
 
-    pending = _pending_orders.pop(token, None)
-    if not pending:
-        await query.edit_message_text("⚠️ Bu zakaz eskirgan. Qaytadan yuborin.")
-        return
+    # Lock-protected: atomic pop + ownership check
+    async with _pending_lock:
+        pending = _pending_orders.pop(token, None)
+        if pending and pending.get("user_id") != user_id:
+            _pending_orders[token] = pending  # Put back if wrong user
+            pending = None
+            wrong_user = True
+        else:
+            wrong_user = False
 
-    # Verify the callback is from the same user who created the order
-    if pending["user_id"] != user_id:
-        _pending_orders[token] = pending  # Put it back
-        await query.edit_message_text("⚠️ Bu zakaz boshqa foydalanuvchiga tegishli.")
+    if not pending:
+        if wrong_user:
+            await query.edit_message_text("⚠️ Bu zakaz boshqa foydalanuvchiga tegishli.")
+        else:
+            await query.edit_message_text("⚠️ Bu zakaz eskirgan. Qaytadan yuborin.")
         return
 
     if action == "cancel":
