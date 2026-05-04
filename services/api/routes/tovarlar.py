@@ -208,7 +208,7 @@ async def tovarlar_facets(uid: int = Depends(get_uid)):
 
 @router.get("/tovar/{tovar_id}")
 async def tovar_bir(tovar_id: int, uid: int = Depends(get_uid)):
-    """Bitta tovar to'liq ma'lumoti"""
+    """Bitta tovar to'liq ma'lumoti — defense-in-depth user_id filter (IDOR fix)"""
     async with rls_conn(uid) as c:
         t = await c.fetchrow("""
             SELECT id, user_id, nomi, kategoriya, birlik, olish_narxi, sotish_narxi,
@@ -218,8 +218,8 @@ async def tovar_bir(tovar_id: int, uid: int = Depends(get_uid)):
                    ikpu_birlik_kod, gtin, hajm, ogirlik, blokda_soni, korobkada_soni,
                    saralash, yaroqlilik_muddati, tavsif, rasm_url, faol,
                    savdo_yonalishi, yangilangan
-            FROM tovarlar WHERE id=$1
-        """, tovar_id)
+            FROM tovarlar WHERE id=$1 AND user_id=$2
+        """, tovar_id, uid)
         if not t:
             raise HTTPException(404, "Tovar topilmadi")
         return dict(t)
@@ -352,22 +352,35 @@ async def tovar_yangilash(tovar_id: int, data: TovarYangilaSorov,
 
 @router.delete("/tovar/{tovar_id}")
 async def tovar_ochirish(tovar_id: int, uid: int = Depends(get_uid)):
-    """Tovarni o'chirish (agar sotuvda ishlatilmagan bo'lsa)"""
+    """Tovarni o'chirish — atomic check-and-delete (TOCTOU race fix)"""
     from shared.cache.redis_cache import user_cache_tozala
     async with rls_conn(uid) as c:
-        sotuv_bor = await c.fetchval(
-            "SELECT EXISTS(SELECT 1 FROM chiqimlar WHERE tovar_id=$1)", tovar_id
-        )
-        if sotuv_bor:
+        # Atomic: DELETE only if no chiqimlar exist for this tovar+user
+        # Eliminates check-then-delete TOCTOU race
+        async with c.transaction():
+            deleted = await c.fetchrow("""
+                DELETE FROM tovarlar t
+                WHERE t.id = $1
+                  AND t.user_id = $2
+                  AND NOT EXISTS (
+                    SELECT 1 FROM chiqimlar ch
+                    WHERE ch.tovar_id = t.id AND ch.user_id = $2
+                  )
+                RETURNING t.id
+            """, tovar_id, uid)
+
+        if deleted is None:
+            # Either tovar doesn't exist or has chiqimlar — disambiguate
+            exists = await c.fetchval(
+                "SELECT EXISTS(SELECT 1 FROM tovarlar WHERE id=$1 AND user_id=$2)",
+                tovar_id, uid,
+            )
+            if not exists:
+                raise HTTPException(404, "Tovar topilmadi")
             raise HTTPException(
                 409, "Bu tovar sotuvlarda ishlatilgan — o'chirib bo'lmaydi. "
                      "Qoldiqni 0 ga o'zgartiring."
             )
-        result = await c.execute(
-            "DELETE FROM tovarlar WHERE id=$1 AND user_id=$2", tovar_id, uid
-        )
-    if "DELETE 0" in result:
-        raise HTTPException(404, "Tovar topilmadi")
     await user_cache_tozala(uid)
     return {"id": tovar_id, "status": "ochirildi"}
 
