@@ -276,7 +276,10 @@ async def handle_voice_order(update: Update, context: ContextTypes.DEFAULT_TYPE)
 
     except Exception as e:
         log.error("voice_order: %s", e, exc_info=True)
-        await msg.reply_text(f"⚠️ Xatolik: {str(e)[:200]}")
+        # Don't expose internal error to user (DB internals, stack traces)
+        await msg.reply_text(
+            "⚠️ Xatolik yuz berdi. Iltimos qaytadan urining yoki adminga murojaat qiling."
+        )
 
 
 async def handle_voice_order_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -351,4 +354,7 @@ async def handle_voice_order_callback(update: Update, context: ContextTypes.DEFA
 
         except Exception as e:
             log.error("voice_order confirm: %s", e, exc_info=True)
-            await query.edit_message_text(f"⚠️ Xatolik: {str(e)[:200]}")
+            # Don't expose internals — generic message
+            await query.edit_message_text(
+                "⚠️ Tasdiqlashda xatolik. Iltimos qaytadan urining yoki adminga murojaat qiling."
+            )
