@@ -2469,12 +2469,11 @@ async def savdolar_royxati(
             # Vergul bilan ajratilgan ko'p holat ham qabul qilamiz
             if "," in holat:
                 holats = [h.strip() for h in holat.split(",") if h.strip()]
-                placeholders = ",".join(f"${idx + i}" for i in range(len(holats)))
-                where_parts.append(f"ss.holat IN ({placeholders})")
-                params.extend(holats)
-                idx += len(holats)
+                where_parts.append(f"ss.holat = ANY(${idx}::text[])")
+                params.append(holats)
+                idx += 1
             else:
-                where_parts.append(f"ss.holat = ${idx}")
+                where_parts.append(f"ss.holat = ${idx}::text")
                 params.append(holat)
                 idx += 1
 
@@ -2494,12 +2493,12 @@ async def savdolar_royxati(
             idx += 1
 
         if document_number:
-            where_parts.append(f"lower(ss.document_number) LIKE lower(${idx})")
+            where_parts.append(f"lower(ss.document_number) LIKE lower(${idx}::text)")
             params.append(f"%{like_escape(document_number)}%")
             idx += 1
 
         if tip_zayavki:
-            where_parts.append(f"ss.tip_zayavki = ${idx}")
+            where_parts.append(f"ss.tip_zayavki = ${idx}::text")
             params.append(tip_zayavki)
             idx += 1
 
@@ -3570,10 +3569,16 @@ async def savdo_duplicate(sessiya_id: int, uid: int = Depends(get_uid)):
                 orig["tip_zayavki"], new_doc
             )
 
-            # Chiqimlarni nusxalash
+            # Chiqimlarni nusxalash (real schema'ga moslab)
             await c.execute("""
-                INSERT INTO chiqimlar (sessiya_id, tovar_id, miqdor, narx, summa, izoh, vaqt, user_id)
-                SELECT $1, tovar_id, miqdor, narx, summa, izoh, NOW(), user_id
+                INSERT INTO chiqimlar (
+                    user_id, sessiya_id, klient_id, klient_ismi, tovar_id, tovar_nomi,
+                    kategoriya, miqdor, qaytarilgan, birlik, olish_narxi, sotish_narxi,
+                    chegirma_foiz, jami, sana
+                )
+                SELECT user_id, $1, klient_id, klient_ismi, tovar_id, tovar_nomi,
+                       kategoriya, miqdor, 0, birlik, olish_narxi, sotish_narxi,
+                       chegirma_foiz, jami, NOW()
                 FROM chiqimlar
                 WHERE sessiya_id = $2 AND user_id = $3
             """, new_id, sessiya_id, uid)
