@@ -2536,10 +2536,18 @@ async def savdolar_royxati(
             LIMIT $1 OFFSET $2
         """, *params)
 
+        # COUNT query — where_sql $3+ placeholderlardan boshlanadi.
+        # Param indekslarini qayta nomlaymiz: $3→$1, $4→$2, ...
+        import re as _re_count
+        count_where = _re_count.sub(
+            r"\$(\d+)",
+            lambda m: f"${int(m.group(1)) - 2}",
+            where_sql,
+        )
         total = await c.fetchval(f"""
             SELECT COUNT(*) FROM sotuv_sessiyalar ss
             LEFT JOIN klientlar k ON k.id = ss.klient_id
-            WHERE 1=1 {where_sql}
+            WHERE 1=1 {count_where}
         """, *params[2:])
 
         # Umumiy statistika (bugungi) + holat bo'yicha ajratish
