@@ -3881,6 +3881,145 @@ async def izoh_shablon_delete(shablon_id: int, uid: int = Depends(get_uid)):
 
 
 # ════════════════════════════════════════════════════════════════
+#  BEKOR SABABLARI SPRAVOCHNIK — qaytarish/bekor uchun sabab tanlash
+# ════════════════════════════════════════════════════════════════
+
+
+@app.get("/api/v1/bekor-sabablari", tags=["Sotuv"])
+async def bekor_sabablari_list(tur: str | None = None, uid: int = Depends(get_uid)):
+    """tur: sotuv | qaytarish — agar None bo'lsa hammasi"""
+    async with get_pool().acquire() as c:
+        if tur:
+            rows = await c.fetch(
+                "SELECT id, nomi, tur, faol FROM bekor_sabablari WHERE user_id=$1 AND tur=$2 AND faol=TRUE ORDER BY nomi",
+                uid, tur,
+            )
+        else:
+            rows = await c.fetch(
+                "SELECT id, nomi, tur, faol FROM bekor_sabablari WHERE user_id=$1 AND faol=TRUE ORDER BY tur, nomi",
+                uid,
+            )
+    return {"items": [dict(r) for r in rows]}
+
+
+@app.post("/api/v1/bekor-sabablari", tags=["Sotuv"])
+async def bekor_sabab_create(data: dict, uid: int = Depends(get_uid)):
+    nomi = (data.get("nomi") or "").strip()[:100]
+    tur = (data.get("tur") or "sotuv").strip()
+    if not nomi:
+        raise HTTPException(400, "nomi kerak")
+    if tur not in ("sotuv", "qaytarish"):
+        raise HTTPException(400, "tur: sotuv yoki qaytarish")
+    async with get_pool().acquire() as c:
+        new_id = await c.fetchval(
+            "INSERT INTO bekor_sabablari (user_id, nomi, tur) VALUES ($1, $2, $3) RETURNING id",
+            uid, nomi, tur,
+        )
+    return {"id": new_id, "nomi": nomi, "tur": tur}
+
+
+@app.delete("/api/v1/bekor-sabablari/{sabab_id}", tags=["Sotuv"])
+async def bekor_sabab_delete(sabab_id: int, uid: int = Depends(get_uid)):
+    """Soft delete — faol=FALSE qilish (audit uchun saqlash)"""
+    async with get_pool().acquire() as c:
+        result = await c.execute(
+            "UPDATE bekor_sabablari SET faol=FALSE WHERE id=$1 AND user_id=$2",
+            sabab_id, uid,
+        )
+    return {"deleted": int(result.split()[-1]) if result else 0}
+
+
+# ════════════════════════════════════════════════════════════════
+#  STATUS WORKFLOW — buyurtma jarayoni (qoralama→...→yopiq)
+# ════════════════════════════════════════════════════════════════
+
+
+# Holat o'zgarishi qoidalari (state machine)
+HOLAT_TRANSITIONS = {
+    "yangi": ["tasdiqlangan", "bekor"],
+    "tasdiqlangan": ["yigilmoqda", "bekor"],
+    "yigilmoqda": ["otgruzka", "bekor"],
+    "otgruzka": ["yetkazildi", "bekor"],
+    "yetkazildi": ["yopiq", "bekor"],
+    "bekor": ["yangi"],  # qayta tiklash
+    "yopiq": [],  # final state
+}
+
+
+@app.post("/api/v1/savdo/{sessiya_id}/holat", tags=["Sotuv"])
+async def savdo_holat_change(sessiya_id: int, data: dict, uid: int = Depends(get_uid)):
+    """
+    Sotuv holatini state machine bo'yicha o'zgartirish.
+    Body: {"holat": "tasdiqlangan", "izoh": "..."} (izoh ixtiyoriy)
+    Validates allowed transitions.
+    """
+    new_holat = (data.get("holat") or "").strip()
+    izoh = (data.get("izoh") or "").strip()[:300]
+
+    if new_holat not in HOLAT_TRANSITIONS:
+        raise HTTPException(400, f"Yaroqsiz holat: {new_holat}")
+
+    async with get_pool().acquire() as c:
+        async with c.transaction():
+            sess = await c.fetchrow(
+                "SELECT id, holat FROM sotuv_sessiyalar WHERE id=$1 AND user_id=$2 FOR UPDATE",
+                sessiya_id, uid,
+            )
+            if not sess:
+                raise HTTPException(404, "Sotuv topilmadi")
+
+            current = sess["holat"] or "yangi"
+            allowed = HOLAT_TRANSITIONS.get(current, [])
+            if new_holat not in allowed and new_holat != current:
+                raise HTTPException(
+                    400,
+                    f"'{current}' dan '{new_holat}' ga o'tib bo'lmaydi. Mumkin: {allowed}",
+                )
+
+            # otgruzka holatiga o'tsa otgruzka_vaqti'ni yozish
+            if new_holat == "otgruzka":
+                await c.execute(
+                    "UPDATE sotuv_sessiyalar SET holat=$1, holat_yangilangan=NOW(), otgruzka_vaqti=NOW() WHERE id=$2",
+                    new_holat, sessiya_id,
+                )
+            elif new_holat == "yetkazildi":
+                await c.execute(
+                    "UPDATE sotuv_sessiyalar SET holat=$1, holat_yangilangan=NOW(), yetkazildi_vaqti=NOW() WHERE id=$2",
+                    new_holat, sessiya_id,
+                )
+            elif new_holat == "bekor":
+                await c.execute(
+                    "UPDATE sotuv_sessiyalar SET holat=$1, holat_yangilangan=NOW(), bekor_vaqti=NOW(), bekor_sabab=$2 WHERE id=$3",
+                    new_holat, izoh or "Bekor qilindi", sessiya_id,
+                )
+            else:
+                await c.execute(
+                    "UPDATE sotuv_sessiyalar SET holat=$1, holat_yangilangan=NOW() WHERE id=$2",
+                    new_holat, sessiya_id,
+                )
+
+            log.info("🔄 Sotuv #%d holat: %s → %s (uid=%d)", sessiya_id, current, new_holat, uid)
+            return {"id": sessiya_id, "eski_holat": current, "yangi_holat": new_holat}
+
+
+@app.get("/api/v1/savdo/holat-workflow", tags=["Sotuv"])
+async def savdo_holat_workflow(uid: int = Depends(get_uid)):
+    """Frontend uchun: state machine xaritasi (qaysi holatdan qaysiga o'tish mumkin)"""
+    return {
+        "transitions": HOLAT_TRANSITIONS,
+        "labels": {
+            "yangi": "Yangi (qoralama)",
+            "tasdiqlangan": "Tasdiqlangan",
+            "yigilmoqda": "Yig'ilmoqda",
+            "otgruzka": "Otgruzka qilindi",
+            "yetkazildi": "Yetkazildi",
+            "yopiq": "Yopiq",
+            "bekor": "Bekor qilindi",
+        },
+    }
+
+
+# ════════════════════════════════════════════════════════════════
 #  QR-KOD — chek uchun QR kod generatsiya
 # ════════════════════════════════════════════════════════════════
 
