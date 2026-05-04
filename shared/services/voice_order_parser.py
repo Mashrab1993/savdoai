@@ -1080,7 +1080,10 @@ Tovar nomlarida lotincha ↔ kirill harflarga e'tibor ber:
 Matn (faqat JSON qaytar):
 {text}"""
 
-        resp = client.models.generate_content(
+        # Wrap blocking Gemini call in asyncio.to_thread to not block event loop
+        import asyncio as _asyncio
+        resp = await _asyncio.to_thread(
+            client.models.generate_content,
             model=_model,
             contents=prompt,
             config={"response_mime_type": "application/json"},
@@ -1147,7 +1150,8 @@ async def smart_parse_kirim_with_gemini(text: str, tovarlar_nomlari: list[str]) 
             return parse_kirim_text(text)  # fallback to regex
 
         client = _genai.Client(api_key=key)
-        _model = "gemini-3.1-pro-preview"
+        # Use stable model — gemini-3.1-pro-preview was invalid (does not exist)
+        _model = os.getenv("GEMINI_KIRIM_MODEL", "gemini-2.5-pro")
 
         prompt = f"""Sen distributor uchun ovozli KIRIM (tovar tushumi) ma'lumotlarini parse qiluvchi AI'san.
 
@@ -1167,7 +1171,13 @@ Mavjud tovarlar ro'yxati (fuzzy match qil):
 
 Matn: "{text}"
 """
-        resp = client.models.generate_content(model=_model, contents=prompt)
+        # Wrap blocking call in asyncio.to_thread
+        import asyncio as _asyncio
+        resp = await _asyncio.to_thread(
+            client.models.generate_content,
+            model=_model,
+            contents=prompt,
+        )
         raw = resp.text.strip()
 
         # Extract JSON from response
