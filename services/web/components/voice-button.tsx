@@ -18,10 +18,29 @@ export function VoiceButton() {
   const [history, setHistory] = useState<VoiceCommand[]>([])
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const chunksRef = useRef<Blob[]>([])
+  const streamRef = useRef<MediaStream | null>(null)
+  const cancelledRef = useRef(false)
+
+  // Component unmount paytida MediaRecorder + stream tozalash
+  // Aks holda mikrofon ko'k indikator yonib qoladi va RAM leak bo'ladi.
+  useEffect(() => {
+    return () => {
+      cancelledRef.current = true
+      try {
+        if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+          mediaRecorderRef.current.stop()
+        }
+      } catch {}
+      try {
+        streamRef.current?.getTracks().forEach(t => t.stop())
+      } catch {}
+    }
+  }, [])
 
   async function startRecording() {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      streamRef.current = stream
       const recorder = new MediaRecorder(stream)
       mediaRecorderRef.current = recorder
       chunksRef.current = []
@@ -29,6 +48,8 @@ export function VoiceButton() {
       recorder.ondataavailable = (e) => chunksRef.current.push(e.data)
       recorder.onstop = async () => {
         stream.getTracks().forEach(t => t.stop())
+        streamRef.current = null
+        if (cancelledRef.current) return  // unmount bo'lgan bo'lsa state set qilmaslik
         const blob = new Blob(chunksRef.current, { type: 'audio/webm' })
         await processAudio(blob)
       }
@@ -53,23 +74,21 @@ export function VoiceButton() {
     try {
       const formData = new FormData()
       formData.append('audio', blob, 'voice.webm')
-      const res = await fetch((process.env.NEXT_PUBLIC_API_URL || '') + '/api/v1/voice/process', {
-        method: 'POST',
-        body: formData,
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('auth_token') || ''}` }
-      })
-      if (res.ok) {
-        const data = await res.json()
-        setTranscript(data.text || '')
-        setHistory(prev => [{ text: data.text, intent: data.intent, result: data.result }, ...prev])
-        toast.success("Tushundim: " + (data.intent || data.text))
-      } else {
-        toast.error("Voice processing xato")
-      }
+      // Markaziy api.post endi FormData'ni to'g'ri qo'llaydi (Content-Type
+      // qo'ymaslik kerak — browser o'zi multipart boundary qo'yadi)
+      const data = await api.post<{ text?: string; intent?: string; result?: string }>(
+        '/api/v1/voice/process',
+        formData
+      )
+      if (cancelledRef.current) return  // unmount bo'lgan bo'lsa state set qilmaslik
+      setTranscript(data?.text || '')
+      setHistory(prev => [{ text: data?.text || '', intent: data?.intent, result: data?.result }, ...prev])
+      toast.success("Tushundim: " + (data?.intent || data?.text || ''))
     } catch (e: any) {
-      toast.error(e?.message || "Voice xato")
+      if (cancelledRef.current) return
+      toast.error(e?.detail || e?.message || "Voice xato")
     } finally {
-      setProcessing(false)
+      if (!cancelledRef.current) setProcessing(false)
     }
   }
 
