@@ -3651,6 +3651,232 @@ async def savdo_bulk_delete(data: dict, uid: int = Depends(get_uid)):
 
 
 # ════════════════════════════════════════════════════════════════
+#  KLIENT BALANS / KREDIT LIMIT VIDJETI
+# ════════════════════════════════════════════════════════════════
+
+
+@app.get("/api/v1/klient/{klient_id}/balans", tags=["Klient"])
+async def klient_balans(klient_id: int, uid: int = Depends(get_uid)):
+    """
+    Klient balans vidjeti (sotuv yaratish ekraniga). Qaytaradi:
+    - jami_qarz: ochiq qarzlar yig'indisi
+    - oxirgi_sotuv_sana: oxirgi tranzaksiya sanasi
+    - oy_jami: 30 kun ichida sotuvlar miqdori
+    - kredit_limit: agar belgilangan bo'lsa
+    - kredit_qoldiq: limit - jami_qarz
+    """
+    async with get_pool().acquire() as c:
+        klient = await c.fetchrow(
+            "SELECT id, ism, telefon, manzil, kredit_limit FROM klientlar WHERE id=$1 AND user_id=$2",
+            klient_id, uid,
+        )
+        if not klient:
+            raise HTTPException(404, "Klient topilmadi")
+
+        jami_qarz = await c.fetchval(
+            "SELECT COALESCE(SUM(qolgan), 0) FROM qarzlar WHERE klient_id=$1 AND user_id=$2 AND yopildi=FALSE",
+            klient_id, uid,
+        ) or 0
+
+        oy_stats = await c.fetchrow("""
+            SELECT COUNT(*) AS soni, COALESCE(SUM(jami), 0) AS jami
+            FROM sotuv_sessiyalar
+            WHERE klient_id=$1 AND user_id=$2 AND sana >= NOW() - interval '30 days'
+        """, klient_id, uid)
+
+        oxirgi = await c.fetchval(
+            "SELECT MAX(sana) FROM sotuv_sessiyalar WHERE klient_id=$1 AND user_id=$2",
+            klient_id, uid,
+        )
+
+        muddati_otgan = await c.fetchval("""
+            SELECT COUNT(*) FROM qarzlar
+            WHERE klient_id=$1 AND user_id=$2 AND yopildi=FALSE AND muddat IS NOT NULL AND muddat < CURRENT_DATE
+        """, klient_id, uid) or 0
+
+        kredit_limit = float(klient.get("kredit_limit") or 0)
+        kredit_qoldiq = max(0, kredit_limit - float(jami_qarz)) if kredit_limit else None
+
+        return {
+            "klient": {"id": klient["id"], "ism": klient["ism"], "telefon": klient["telefon"], "manzil": klient["manzil"]},
+            "jami_qarz": float(jami_qarz),
+            "muddati_otgan_qarzlar": int(muddati_otgan),
+            "kredit_limit": kredit_limit if kredit_limit else None,
+            "kredit_qoldiq": kredit_qoldiq,
+            "kredit_oshib_ketdi": (kredit_limit > 0 and float(jami_qarz) > kredit_limit) if kredit_limit else False,
+            "oxirgi_sotuv_sana": oxirgi.isoformat() if oxirgi else None,
+            "oy": {"soni": int(oy_stats["soni"]), "jami": float(oy_stats["jami"])},
+        }
+
+
+# ════════════════════════════════════════════════════════════════
+#  QAYTARISH (RMA) — SalesDoc /orders/recoveryOrder/create
+# ════════════════════════════════════════════════════════════════
+
+
+@app.post("/api/v1/savdo/{sessiya_id}/qaytarish", tags=["Sotuv"])
+async def savdo_qaytarish_create(sessiya_id: int, data: dict, uid: int = Depends(get_uid)):
+    """
+    Sotuv asosida qaytarish (RMA) yaratish.
+    SalesDoc 'Создать возврат с полки' ekvivalenti.
+    Body: {"items": [{"chiqim_id": 1, "miqdor": 2.0, "sabab": "..."}, ...], "izoh": "..."}
+    """
+    items = data.get("items") or []
+    izoh = (data.get("izoh") or "").strip()
+    if not items:
+        raise HTTPException(400, "Qaytariladigan tovarlar yo'q")
+
+    async with get_pool().acquire() as c:
+        async with c.transaction():
+            orig = await c.fetchrow(
+                "SELECT * FROM sotuv_sessiyalar WHERE id=$1 AND user_id=$2",
+                sessiya_id, uid,
+            )
+            if not orig:
+                raise HTTPException(404, "Original sotuv topilmadi")
+
+            # Qaytarish summasi va chiqimlarini hisoblaymiz
+            jami_qaytarish = 0.0
+            qaytarish_chiqimlari = []
+            for it in items:
+                ch_id = int(it.get("chiqim_id", 0))
+                miqdor = float(it.get("miqdor", 0))
+                if ch_id <= 0 or miqdor <= 0:
+                    continue
+                orig_chiqim = await c.fetchrow(
+                    "SELECT * FROM chiqimlar WHERE id=$1 AND sessiya_id=$2 AND user_id=$3",
+                    ch_id, sessiya_id, uid,
+                )
+                if not orig_chiqim:
+                    continue
+                # Tekshirish: qaytarish miqdori sotilgandan oshmasin
+                already = float(orig_chiqim["qaytarilgan"] or 0)
+                ostiqcha = float(orig_chiqim["miqdor"]) - already
+                if miqdor > ostiqcha:
+                    raise HTTPException(400, f"Tovar #{orig_chiqim['tovar_nomi']}: max {ostiqcha} qaytarish mumkin")
+                summa = float(orig_chiqim["sotish_narxi"]) * miqdor
+                jami_qaytarish += summa
+                qaytarish_chiqimlari.append({
+                    "tovar_id": orig_chiqim["tovar_id"],
+                    "tovar_nomi": orig_chiqim["tovar_nomi"],
+                    "kategoriya": orig_chiqim["kategoriya"],
+                    "miqdor": -miqdor,  # manfiy = qaytarish
+                    "birlik": orig_chiqim["birlik"],
+                    "olish_narxi": orig_chiqim["olish_narxi"],
+                    "sotish_narxi": orig_chiqim["sotish_narxi"],
+                    "chegirma_foiz": orig_chiqim["chegirma_foiz"],
+                    "jami": -summa,
+                    "klient_id": orig_chiqim["klient_id"],
+                    "klient_ismi": orig_chiqim["klient_ismi"],
+                    "sabab": (it.get("sabab") or "").strip()[:200],
+                    "orig_chiqim_id": ch_id,
+                })
+
+            if not qaytarish_chiqimlari:
+                raise HTTPException(400, "Yaroqli qaytarish tovari yo'q")
+
+            # Qaytarish sessiyasi yaratish
+            new_doc = None
+            if orig["document_number"]:
+                # Original MUK000144 → QAYT000144 prefix
+                import re as _re
+                m = _re.match(r"^([A-Za-z]+)(\d+)$", orig["document_number"])
+                if m:
+                    new_doc = f"QAYT{m.group(2)}"
+
+            new_id = await c.fetchval("""
+                INSERT INTO sotuv_sessiyalar (
+                    user_id, klient_id, klient_ismi, jami, tolangan, qarz,
+                    izoh, sana, holat, shogird_id, sklad_id,
+                    tip_zayavki, document_number
+                ) VALUES (
+                    $1, $2, $3, $4, 0, $4,
+                    $5, NOW(), 'yangi', $6, $7,
+                    'qaytarish', $8
+                )
+                RETURNING id
+            """,
+                uid, orig["klient_id"], orig["klient_ismi"], -jami_qaytarish,
+                f"[Qaytarish #{sessiya_id}] {izoh}",
+                orig["shogird_id"], orig["sklad_id"], new_doc,
+            )
+
+            # Chiqimlarni yaratish (manfiy miqdor)
+            for q in qaytarish_chiqimlari:
+                await c.execute("""
+                    INSERT INTO chiqimlar (
+                        user_id, sessiya_id, klient_id, klient_ismi, tovar_id, tovar_nomi,
+                        kategoriya, miqdor, qaytarilgan, birlik, olish_narxi, sotish_narxi,
+                        chegirma_foiz, jami, izoh, sana
+                    ) VALUES (
+                        $1, $2, $3, $4, $5, $6,
+                        $7, $8, 0, $9, $10, $11,
+                        $12, $13, $14, NOW()
+                    )
+                """,
+                    uid, new_id, q["klient_id"], q["klient_ismi"],
+                    q["tovar_id"], q["tovar_nomi"], q["kategoriya"],
+                    q["miqdor"], q["birlik"], q["olish_narxi"], q["sotish_narxi"],
+                    q["chegirma_foiz"], q["jami"], q["sabab"],
+                )
+
+                # Original chiqimda qaytarilgan miqdorni yangilaymiz
+                await c.execute(
+                    "UPDATE chiqimlar SET qaytarilgan = qaytarilgan + $1 WHERE id=$2",
+                    abs(q["miqdor"]), q["orig_chiqim_id"],
+                )
+
+            log.info("↩️ Qaytarish: sotuv #%d → qaytarish #%d, summa=%.2f (uid=%d)",
+                     sessiya_id, new_id, jami_qaytarish, uid)
+            return {
+                "id": new_id,
+                "document_number": new_doc,
+                "original_id": sessiya_id,
+                "jami": -jami_qaytarish,
+                "tovar_soni": len(qaytarish_chiqimlari),
+            }
+
+
+# ════════════════════════════════════════════════════════════════
+#  IZOH SHABLONLARI — qayta-qayta yoziladigan eslatmalar
+# ════════════════════════════════════════════════════════════════
+
+
+@app.get("/api/v1/izoh-shablonlar", tags=["Sotuv"])
+async def izoh_shablon_list(uid: int = Depends(get_uid)):
+    async with get_pool().acquire() as c:
+        rows = await c.fetch(
+            "SELECT id, nomi, matn, yaratilgan FROM izoh_shablonlar WHERE user_id=$1 ORDER BY yaratilgan DESC",
+            uid,
+        )
+    return {"items": [dict(r) for r in rows]}
+
+
+@app.post("/api/v1/izoh-shablonlar", tags=["Sotuv"])
+async def izoh_shablon_create(data: dict, uid: int = Depends(get_uid)):
+    nomi = (data.get("nomi") or "").strip()[:100]
+    matn = (data.get("matn") or "").strip()[:1000]
+    if not nomi or not matn:
+        raise HTTPException(400, "nomi va matn kerak")
+    async with get_pool().acquire() as c:
+        new_id = await c.fetchval(
+            "INSERT INTO izoh_shablonlar (user_id, nomi, matn) VALUES ($1, $2, $3) RETURNING id",
+            uid, nomi, matn,
+        )
+    return {"id": new_id, "nomi": nomi, "matn": matn}
+
+
+@app.delete("/api/v1/izoh-shablonlar/{shablon_id}", tags=["Sotuv"])
+async def izoh_shablon_delete(shablon_id: int, uid: int = Depends(get_uid)):
+    async with get_pool().acquire() as c:
+        result = await c.execute(
+            "DELETE FROM izoh_shablonlar WHERE id=$1 AND user_id=$2",
+            shablon_id, uid,
+        )
+    return {"deleted": int(result.split()[-1]) if result else 0}
+
+
+# ════════════════════════════════════════════════════════════════
 #  QR-KOD — chek uchun QR kod generatsiya
 # ════════════════════════════════════════════════════════════════
 
