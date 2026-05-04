@@ -22,7 +22,7 @@ import base64
 import json
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, HTTPException, Depends, Request
+from fastapi import FastAPI, HTTPException, Depends, Request, UploadFile, File
 from pydantic import BaseModel, Field
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -2412,9 +2412,12 @@ async def savdolar_royxati(
     shogird_id: int | None = None,
     sklad_id: int | None = None,
     ekspeditor_id: int | None = None,
+    sborshchik_id: int | None = None,
     period: str | None = None,  # today | yesterday | week | month | all
     document_number: str | None = None,
     tip_zayavki: str | None = None,  # sotish | qaytarish | obmen
+    tolov_usuli: str | None = None,  # naqd | kassa | plastik | otkazma
+    klient_kategoriya: str | None = None,  # klientlar.kategoriya text
     uid: int = Depends(get_uid),
 ):
     """
@@ -2500,6 +2503,21 @@ async def savdolar_royxati(
         if tip_zayavki:
             where_parts.append(f"ss.tip_zayavki = ${idx}::text")
             params.append(tip_zayavki)
+            idx += 1
+
+        if sborshchik_id is not None:
+            where_parts.append(f"ss.sborshchik_id = ${idx}")
+            params.append(sborshchik_id)
+            idx += 1
+
+        if tolov_usuli:
+            where_parts.append(f"ss.tolov_usuli = ${idx}::text")
+            params.append(tolov_usuli)
+            idx += 1
+
+        if klient_kategoriya:
+            where_parts.append(f"lower(COALESCE(k.kategoriya,'')) = lower(${idx}::text)")
+            params.append(klient_kategoriya)
             idx += 1
 
         where_sql = (" AND " + " AND ".join(where_parts)) if where_parts else ""
@@ -3927,6 +3945,165 @@ async def bekor_sabab_delete(sabab_id: int, uid: int = Depends(get_uid)):
             sabab_id, uid,
         )
     return {"deleted": int(result.split()[-1]) if result else 0}
+
+
+# ════════════════════════════════════════════════════════════════
+#  EXCEL/CSV IMPORT — sotuvlarni ommaviy yuklash
+# ════════════════════════════════════════════════════════════════
+
+
+@app.post("/api/v1/sotuv/import", tags=["Sotuv"])
+async def sotuv_import_excel(file: UploadFile = File(...), uid: int = Depends(get_uid)):
+    """
+    Excel/CSV fayldan sotuvlarni ommaviy yuklash. SalesDoc /orders/importOrder ekvivalenti.
+
+    Excel formati (har qator = 1 ta sotuv):
+    - klient_ismi (yoki telefon)
+    - tovar_nomi
+    - miqdor
+    - narx
+    - sana (ixtiyoriy)
+    - izoh (ixtiyoriy)
+
+    Bir xil klient+sana qatorlar bitta sessiyaga birlashtiriladi.
+    Topilmagan klient/tovar — yangi yaratiladi.
+    """
+    if not file.filename:
+        raise HTTPException(400, "Fayl yuborilmagan")
+
+    ext = file.filename.lower().rsplit(".", 1)[-1] if "." in file.filename else ""
+    if ext not in ("xlsx", "xls", "csv"):
+        raise HTTPException(400, "Faqat .xlsx, .xls, .csv formatlari qabul qilinadi")
+
+    content = await file.read()
+    if len(content) > 10 * 1024 * 1024:  # 10 MB
+        raise HTTPException(400, "Fayl 10 MB dan katta bo'lmasin")
+
+    # Parse rows
+    rows = []
+    try:
+        if ext == "csv":
+            import csv as _csv, io as _io
+            reader = _csv.DictReader(_io.StringIO(content.decode("utf-8-sig")))
+            rows = list(reader)
+        else:
+            from openpyxl import load_workbook
+            import io as _io
+            wb = load_workbook(_io.BytesIO(content), data_only=True)
+            ws = wb.active
+            headers = [str(c.value or "").strip().lower() for c in next(ws.iter_rows(max_row=1))]
+            for row in ws.iter_rows(min_row=2, values_only=True):
+                if not any(c is not None for c in row):
+                    continue
+                d = {headers[i]: (str(v) if v is not None else "") for i, v in enumerate(row) if i < len(headers)}
+                rows.append(d)
+    except Exception as e:
+        raise HTTPException(400, f"Fayl o'qishda xato: {e}")
+
+    if not rows:
+        raise HTTPException(400, "Faylda ma'lumot yo'q")
+
+    # Group by klient+sana → har biri alohida sessiya
+    from collections import defaultdict
+    grouped = defaultdict(list)
+    for r in rows:
+        klient = (r.get("klient_ismi") or r.get("klient") or r.get("client") or r.get("mijoz") or "").strip()
+        if not klient:
+            continue
+        sana = (r.get("sana") or r.get("date") or "").strip()
+        key = (klient, sana)
+        grouped[key].append(r)
+
+    if not grouped:
+        raise HTTPException(400, "Hech bir klient nomi topilmadi (column: klient_ismi)")
+
+    yaratilgan_sessiyalar = []
+    xatolar = []
+
+    async with get_pool().acquire() as c:
+        async with c.transaction():
+            for (klient_ismi, sana_str), items in grouped.items():
+                # Klient topish/yaratish
+                klient = await c.fetchrow(
+                    "SELECT id, ism FROM klientlar WHERE user_id=$1 AND lower(ism)=lower($2)",
+                    uid, klient_ismi,
+                )
+                if not klient:
+                    klient_id = await c.fetchval(
+                        "INSERT INTO klientlar (user_id, ism) VALUES ($1, $2) RETURNING id",
+                        uid, klient_ismi,
+                    )
+                else:
+                    klient_id = klient["id"]
+
+                # Sessiya summasini hisoblash
+                jami = 0.0
+                chiqimlar_data = []
+                for it in items:
+                    tovar_nomi = (it.get("tovar_nomi") or it.get("tovar") or it.get("product") or "").strip()
+                    if not tovar_nomi:
+                        continue
+                    try:
+                        miqdor = float(str(it.get("miqdor") or it.get("qty") or 0).replace(",", "."))
+                        narx = float(str(it.get("narx") or it.get("price") or 0).replace(",", "."))
+                    except (ValueError, TypeError):
+                        xatolar.append(f"{klient_ismi}/{tovar_nomi}: miqdor/narx noto'g'ri")
+                        continue
+                    if miqdor <= 0 or narx <= 0:
+                        continue
+                    summa = miqdor * narx
+                    jami += summa
+                    chiqimlar_data.append({
+                        "tovar_nomi": tovar_nomi,
+                        "miqdor": miqdor,
+                        "narx": narx,
+                        "summa": summa,
+                    })
+
+                if not chiqimlar_data:
+                    continue
+
+                # Sessiya yaratish
+                sessiya_id = await c.fetchval("""
+                    INSERT INTO sotuv_sessiyalar (
+                        user_id, klient_id, klient_ismi, jami, tolangan, qarz,
+                        izoh, sana, holat, tip_zayavki
+                    ) VALUES (
+                        $1, $2, $3, $4, 0, $4,
+                        '[Excel import]', NOW(), 'yangi', 'sotish'
+                    )
+                    RETURNING id
+                """, uid, klient_id, klient_ismi, jami)
+
+                # Chiqimlarni yaratish
+                for ch in chiqimlar_data:
+                    # Tovar topish
+                    tovar = await c.fetchrow(
+                        "SELECT id FROM tovarlar WHERE user_id=$1 AND lower(nomi)=lower($2)",
+                        uid, ch["tovar_nomi"],
+                    )
+                    tovar_id = tovar["id"] if tovar else None
+
+                    await c.execute("""
+                        INSERT INTO chiqimlar (
+                            user_id, sessiya_id, klient_id, klient_ismi, tovar_id, tovar_nomi,
+                            miqdor, qaytarilgan, sotish_narxi, jami, sana
+                        ) VALUES (
+                            $1, $2, $3, $4, $5, $6,
+                            $7, 0, $8, $9, NOW()
+                        )
+                    """, uid, sessiya_id, klient_id, klient_ismi, tovar_id, ch["tovar_nomi"],
+                         ch["miqdor"], ch["narx"], ch["summa"])
+
+                yaratilgan_sessiyalar.append({"id": sessiya_id, "klient_ismi": klient_ismi, "jami": jami, "tovar_soni": len(chiqimlar_data)})
+
+    log.info("📥 Sotuv import: %d sessiya, %d xato (uid=%d)", len(yaratilgan_sessiyalar), len(xatolar), uid)
+    return {
+        "yaratildi": len(yaratilgan_sessiyalar),
+        "xatolar_soni": len(xatolar),
+        "sessiyalar": yaratilgan_sessiyalar[:50],
+        "xatolar": xatolar[:50],
+    }
 
 
 # ════════════════════════════════════════════════════════════════
