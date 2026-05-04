@@ -276,48 +276,137 @@ def parse_order_text(text: str) -> dict:
 #  FUZZY MATCHING — DB'dagi tovarlar bilan moslashtirish
 # ════════════════════════════════════════════════════════════
 
+_CYRILLIC_TO_LATIN = {
+    "а": "a", "б": "b", "в": "v", "г": "g", "д": "d", "е": "e", "ё": "yo",
+    "ж": "j", "з": "z", "и": "i", "й": "y", "к": "k", "л": "l", "м": "m",
+    "н": "n", "о": "o", "п": "p", "р": "r", "с": "s", "т": "t", "у": "u",
+    "ф": "f", "х": "x", "ц": "ts", "ч": "ch", "ш": "sh", "щ": "sh",
+    "ъ": "", "ы": "i", "ь": "", "э": "e", "ю": "yu", "я": "ya",
+    "қ": "q", "ғ": "g", "ҳ": "h", "ў": "o",
+}
+
+
+def _to_latin(s: str) -> str:
+    """Convert Cyrillic to Latin transliteration (lowercase)."""
+    out = []
+    for ch in s.lower():
+        out.append(_CYRILLIC_TO_LATIN.get(ch, ch))
+    return "".join(out)
+
+
+def _normalize_for_match(s: str) -> str:
+    """Normalize text for fuzzy matching: lowercase + Latin + whitespace."""
+    s = _to_latin(s).lower()
+    # Replace common alternates
+    s = s.replace("yu", "ju").replace("yo", "jo")  # Yubileyniy/Юбилейный
+    # Strip non-letter/number
+    import re as _re
+    s = _re.sub(r"[^\w\s]", " ", s, flags=_re.UNICODE)
+    s = _re.sub(r"\s+", " ", s).strip()
+    return s
+
+
+def _extract_size(text: str) -> str | None:
+    """Extract size/weight token like '4 kg', '1.5 kg', '300 ml', '2 кг'.
+    Returns canonical form (e.g. '4kg', '1.5kg') or None.
+    """
+    import re as _re
+    text = text.lower()
+    # Patterns: "4 kg", "1.5 kg", "1,5kg", "300 ml", "2 кг"
+    m = _re.search(r"(\d+(?:[.,]\d+)?)\s*(kg|кг|gr|гр|г|ml|мл|l|л)\b", text)
+    if m:
+        num = m.group(1).replace(",", ".")
+        unit = m.group(2)
+        # Canonical units
+        unit_map = {"кг": "kg", "гр": "g", "г": "g", "gr": "g", "мл": "ml", "л": "l"}
+        unit_canonical = unit_map.get(unit, unit)
+        return f"{num}{unit_canonical}"
+    return None
+
+
 def fuzzy_match_tovar(nomi: str, db_tovarlar: list[dict]) -> dict | None:
     """
     Agent aytgan tovar nomini DB'dagi eng mos tovar bilan moslashtirish.
 
-    Agent: "Rosabella qizil"
-    DB:    "ROSABELLA KIZIL 2 kg"  ← MATCH
+    Cyrillic ↔ Latin transliteration ham qo'llab-quvvatlanadi:
+        Agent: "Yubileyniy 4 kg"
+        DB:    "ЮБИЛЕЙНОЕ печенье в коробке 4 кг."  ← MATCH (transliterated + size)
 
-    Oddiy substring + lowercase matching. Keyinroq ML bilan
-    yaxshilash mumkin.
+        Agent: "Rosabella qizil"
+        DB:    "ROSABELLA KIZIL 2 kg"  ← MATCH (substring)
     """
     nomi_lower = nomi.lower().strip()
     if not nomi_lower:
         return None
 
+    nomi_norm = _normalize_for_match(nomi_lower)
+    input_size = _extract_size(nomi_lower)
+
     best = None
-    best_score = 0
+    best_score = 0.0
 
     for tv in db_tovarlar:
         db_nomi = (tv.get("nomi") or "").lower()
         if not db_nomi:
             continue
 
-        # Exact substring match
+        db_norm = _normalize_for_match(db_nomi)
+        db_size = _extract_size(db_nomi)
+
+        score = 0.0
+
+        # 1. Exact substring (highest priority)
         if nomi_lower in db_nomi or db_nomi in nomi_lower:
-            score = len(nomi_lower) / max(len(db_nomi), 1)
-            if score > best_score:
-                best_score = score
-                best = tv
-            continue
+            score = min(len(nomi_lower), len(db_nomi)) / max(len(db_nomi), 1) + 0.5
 
-        # Word overlap
-        words_input = set(nomi_lower.split())
-        words_db = set(db_nomi.split())
-        common = words_input & words_db
-        if common:
-            score = len(common) / max(len(words_input), len(words_db))
-            if score > best_score:
-                best_score = score
-                best = tv
+        # 2. Normalized (transliterated) substring
+        elif nomi_norm in db_norm or db_norm in nomi_norm:
+            score = min(len(nomi_norm), len(db_norm)) / max(len(db_norm), 1) + 0.3
 
-    # Minimum threshold — 0.4 prevents false positives
-    # (e.g. "Park" matching "Parking karta 500mb")
+        else:
+            # 3. Word overlap (normalized)
+            words_input = set(nomi_norm.split())
+            words_db = set(db_norm.split())
+            words_input = {w for w in words_input if len(w) >= 3}
+            words_db = {w for w in words_db if len(w) >= 3}
+            if not words_input or not words_db:
+                continue
+            common = words_input & words_db
+            if common:
+                score = len(common) / max(len(words_input), len(words_db))
+                if len(common) >= 2:
+                    score += 0.1
+            else:
+                # 4. Prefix overlap — for inflected forms (Yubileyniy ↔ Yubileynoye)
+                # Find any input word with >=5 char prefix match to any db word
+                from difflib import SequenceMatcher as _SM
+                best_word_score = 0.0
+                for w_in in words_input:
+                    if len(w_in) < 5:
+                        continue
+                    for w_db in words_db:
+                        if len(w_db) < 5:
+                            continue
+                        # Check if first 5 chars match
+                        if w_in[:5] == w_db[:5]:
+                            ratio = _SM(None, w_in, w_db).ratio()
+                            if ratio > best_word_score:
+                                best_word_score = ratio
+                if best_word_score >= 0.5:
+                    score = best_word_score * 0.7  # weighted (less than substring)
+
+        # SIZE PENALTY/BONUS: if both have explicit size, must match
+        if input_size and db_size:
+            if input_size == db_size:
+                score += 0.5  # strong bonus for size match
+            else:
+                score -= 0.5  # strong penalty for size mismatch
+
+        if score > best_score:
+            best_score = score
+            best = tv
+
+    # Minimum threshold
     if best_score < 0.4:
         return None
 
@@ -889,12 +978,12 @@ async def create_kirim_from_voice(
 
 async def smart_parse_with_gemini(text: str, tovarlar_nomlari: list[str]) -> dict:
     """
-    Agar oddiy regex parser ishlamasa — Gemini'dan yordam so'rash.
+    Gemini AI bilan ovozli buyurtmalarni structured ma'lumotga aylantirish.
 
-    Gemini'ga tovarlar ro'yxatini berish va matnni structured
-    JSON ga parse qilishni so'rash. Bu murakkab gaplar uchun:
-    "Xurshid akaga ikki dona Rosabella qizil bilan to'rtta Dollux
-    keyin yana bitta Park ham qo'shib yuboring"
+    Asosiy vazifalar:
+    - Klient nomini ajratish (Cyrillic + Latin)
+    - Tovarlarni ajratish (faqat NOM va MIQDOR — narx DB'dan)
+    - Sana (DD.MM.YYYY) raqamlarini summa/miqdor bilan ARALASHTIRMASLIK
 
     Returns same shape as parse_order_text().
     """
@@ -903,45 +992,87 @@ async def smart_parse_with_gemini(text: str, tovarlar_nomlari: list[str]) -> dic
         from google import genai as _genai
         key = os.getenv("GEMINI_API_KEY", "")
         if not key:
-            return parse_order_text(text)  # fallback to regex
-
-        client = _genai.Client(api_key=key)
-        _model = "gemini-3.1-pro-preview"
-
-        prompt = f"""Sen savdo agenti uchun ovozli buyurtmalarni parse qiluvchi AI'san.
-
-Quyidagi matnni tahlil qil va JSON formatda javob ber:
-- "dokon": do'kon yoki klient nomi (BIRINCHI aytilgan ism — ajratuvchi belgi bo'lmasligi mumkin)
-- "tovarlar": [{{"nomi": "tovar nomi", "miqdor": son}}]
-
-MUHIM QOIDALAR:
-1. Faqat JSON qaytar, boshqa matn qo'shma
-2. Matn boshidagi ism — bu DO'KON nomi (klient ismi)
-3. Agar ajratuvchi belgi (—, -, .) yo'q bo'lsa ham, birinchi ismni do'kon deb ol
-4. "aka", "opa", "uka" + shahar nomi = do'kon nomi
-5. Masalan: "Jasur aka Kattaqo'rg'on benim katta 11 karobka" → dokon = "Jasur aka Kattaqo'rg'on"
-
-Mavjud tovarlar ro'yxati:
-{chr(10).join(f'- {n}' for n in tovarlar_nomlari[:50])}
-
-Matn: "{text}"
-"""
-        resp = client.models.generate_content(model=_model, contents=prompt)
-        raw = resp.text.strip()
-
-        # Extract JSON from response
-        import json
-        # Try to find JSON in response
-        if raw.startswith("{"):
-            data = json.loads(raw)
-        elif "{" in raw:
-            start = raw.index("{")
-            end = raw.rindex("}") + 1
-            data = json.loads(raw[start:end])
-        else:
             return parse_order_text(text)
 
-        # Validate and sanitize Gemini output
+        client = _genai.Client(api_key=key)
+        # gemini-2.5-pro stable, multilingual (Uzbek/Russian/English)
+        _model = os.getenv("GEMINI_VOICE_ORDER_MODEL", "gemini-2.5-pro")
+
+        # Show first 80 tovarlar to give Gemini context for matching
+        tovarlar_sample = "\n".join(f"- {n}" for n in tovarlar_nomlari[:80])
+
+        prompt = f"""Sen savdo agentining ovozli buyurtmasini structured JSON ga aylantiruvchi AI'san.
+
+⚠️ JUDA MUHIM QOIDALAR:
+1. NARX yo'q! Faqat tovar nomi va MIQDORni qaytar. Narx DB'dan olinadi.
+   Misol: "147,700 dan", "66,000 so'mdan" — bu NARX, MIQDOR EMAS! e'tiborga olma.
+2. Sana raqamlari (DD.MM.YYYY masalan 04.05.2026) — miqdor EMAS!
+3. "karobka", "dona", "shtuk", "kg" — bu BIRLIK
+4. Miqdor — birlikdan oldingi son ("3 karobka", "2 dona", "5 shtuk")
+
+JSON FORMAT:
+{{
+  "dokon": "klient/do'kon nomi",
+  "tovarlar": [
+    {{"nomi": "tovar nomi", "miqdor": 2, "birlik": "karobka"}},
+    {{"nomi": "boshqa tovar", "miqdor": 1, "birlik": "dona"}}
+  ]
+}}
+
+KLIENT NOMI:
+- "Sirojiddin aka Bulungur" → dokon = "Sirojiddin aka Bulungur"
+- "aka", "opa", "uka", "haji", "domla" + shahar = klient nomi
+- Ajratuvchi (—, -, "ga zakaz") gacha bo'lgan ismdir
+
+TOVAR NOMI:
+- "Yubileyniy 4 kilogramlik" → "Yubileyniy 4 kg"
+- "Prezident 3 kilogramlik shokolad" → "Prezident 3 kg shokolad"
+- "City keks yashil 1.5 kg" → "City keks yashil 1.5 kg"
+
+MIQDOR:
+- "ikki karobka" / "2 karobka" → miqdor=2, birlik="karobka"
+- "bir dona" / "1 dona" → miqdor=1, birlik="dona"
+- Agar narx ko'rinsa ("66000 dan", "147,700 so'm") — IGNORE narx, faqat miqdor
+
+MISOL:
+Voice: "Sirojiddin aka Bulungur Naprotiv Mikrokreditbankka zakaz. Yubileyniy pecheniy karobka 4 kilogramlik. Ikki karobka 66 000 so'm. Prezident 3 kilogramlik shokolad. Bir karobka 147 700 dan. City keks yashil, 1,5 kilolik. Ikki dona 41 000 dan."
+
+Output:
+{{
+  "dokon": "Sirojiddin aka Bulungur Naprotiv Mikrokreditbank",
+  "tovarlar": [
+    {{"nomi": "Yubileyniy 4 kg", "miqdor": 2, "birlik": "karobka"}},
+    {{"nomi": "Prezident 3 kg shokolad", "miqdor": 1, "birlik": "karobka"}},
+    {{"nomi": "City keks yashil 1.5 kg", "miqdor": 2, "birlik": "dona"}}
+  ]
+}}
+
+Mavjud tovarlar bazasidan namuna ({len(tovarlar_nomlari)} ta):
+{tovarlar_sample}
+
+Tovar nomlarida lotincha ↔ kirill harflarga e'tibor ber:
+- "Yubileyniy" = "ЮБИЛЕЙНОЕ"
+- "City keks" = "CITY KEKS"
+- "Prezident" = "ПРЕЗИДЕНТ" yoki "PREZIDENT"
+- Foydalanuvchi tasavvur qilgan nom — bazadagi Cyrillic nomga moslab top.
+
+Matn (faqat JSON qaytar):
+{text}"""
+
+        resp = client.models.generate_content(
+            model=_model,
+            contents=prompt,
+            config={"response_mime_type": "application/json"},
+        )
+        raw = (resp.text or "").strip()
+
+        import json
+        try:
+            data = json.loads(raw)
+        except json.JSONDecodeError:
+            log.warning("smart_parse_with_gemini: invalid JSON: %r", raw[:200])
+            return parse_order_text(text)
+
         tovarlar_parsed = []
         for t in data.get("tovarlar", []):
             nomi = (t.get("nomi") or "").strip()
@@ -951,21 +1082,15 @@ Matn: "{text}"
                 miqdor = int(t.get("miqdor", 1))
             except (ValueError, TypeError):
                 miqdor = 1
-            # Bound quantity to sane range (1-9999)
+            # Sane bounds — protect from price-as-qty bugs
             miqdor = max(1, min(miqdor, 9999))
-            # Check nomi is plausible (exists in tovarlar list, fuzzy)
-            nomi_lower = nomi.lower()
-            has_match = any(
-                nomi_lower in tn.lower() or tn.lower() in nomi_lower
-                for tn in tovarlar_nomlari
-            )
-            if not has_match:
-                # Still include but log — fuzzy_match_tovar will handle
-                log.debug("gemini returned unknown tovar: %s", nomi)
-            tovarlar_parsed.append({"nomi": nomi, "miqdor": miqdor})
+            tovarlar_parsed.append({
+                "nomi": nomi,
+                "miqdor": miqdor,
+                "birlik": (t.get("birlik") or "dona").strip(),
+            })
 
         dokon = (data.get("dokon") or data.get("do'kon") or "").strip()
-
         return {
             "do'kon": dokon,
             "tovarlar": tovarlar_parsed,
@@ -973,8 +1098,8 @@ Matn: "{text}"
         }
 
     except Exception as e:
-        log.warning("smart_parse_with_gemini: %s", e)
-        return parse_order_text(text)  # fallback to regex
+        log.warning("smart_parse_with_gemini xato: %s", e)
+        return parse_order_text(text)
 
 
 # ════════════════════════════════════════════════════════════
