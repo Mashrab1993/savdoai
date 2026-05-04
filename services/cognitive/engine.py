@@ -554,7 +554,16 @@ class CognitiveDvigatel:
                         model=self._model,
                         max_tokens=2048,
                         temperature=0.0,   # DSc matematika: gallyusinatsiya=0
-                        system=COGNITIVE_SYSTEM_PROMPT,
+                        # Prompt caching — system prompt katta (dialekt lug'at,
+                        # tools instructions). cache_control bilan keyingi
+                        # request'larda 90% tejamkorlik (Anthropic 2024+).
+                        system=[
+                            {
+                                "type": "text",
+                                "text": COGNITIVE_SYSTEM_PROMPT,
+                                "cache_control": {"type": "ephemeral"},
+                            }
+                        ],
                         tools=tools_list,
                         messages=[{"role": "user", "content": boyitilgan}],
                     )
