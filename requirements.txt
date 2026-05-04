@@ -27,3 +27,4 @@ qrcode[pil]>=7.4
 sentry-sdk
 thefuzz[speedup]>=0.20.0
 python-multipart>=0.0.9
+PyJWT>=2.8.0
