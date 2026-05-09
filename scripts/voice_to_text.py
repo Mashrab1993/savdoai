@@ -27,7 +27,7 @@ def main():
     from google.genai import types
 
     client = genai.Client(api_key=api_key)
-    model = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash")
+    model = os.environ.get("GEMINI_MODEL", "gemini-2.5-pro")
 
     audio_bytes = open(file_path, "rb").read()
 

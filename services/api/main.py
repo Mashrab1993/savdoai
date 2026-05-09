@@ -492,6 +492,13 @@ except Exception as e:
     log.warning("⚠️ Tashrif moduli yuklanmadi: %s", e)
 
 try:
+    from services.api.routes.mobile_p3 import router as mobile_p3_router
+    app.include_router(mobile_p3_router, tags=["Mobile P3"])
+    log.info("✅ Mobile P3 (visits + equipment) moduli ulandi")
+except Exception as e:
+    log.warning("⚠️ Mobile P3 moduli yuklanmadi: %s", e)
+
+try:
     from services.api.routes.tovarlar_v2 import router as tovarlar_v2_router
     app.include_router(tovarlar_v2_router, tags=["Tovarlar V2"])
     log.info("✅ Tovarlar V2 (kengaytirilgan) moduli ulandi")
