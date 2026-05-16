@@ -10,7 +10,7 @@ from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))))
-from services.api.deps import get_uid
+from services.api.deps import get_uid, require_plan
 from shared.database.pool import get_conn
 from shared.services.sd_agent_gaps import (
     dona_blok_hisoblash, tara_harakat, klient_tara_qoldiq,
@@ -27,7 +27,7 @@ router = APIRouter(tags=["sd-agent-features"])
 
 # ═══ Dona + Blok ═══
 @router.post("/dona-blok")
-async def dona_blok(tovar_id: int, dona: float = 0, blok: float = 0, uid: int = Depends(get_uid)):
+async def dona_blok(tovar_id: int, dona: float = 0, blok: float = 0, uid: int = Depends(require_plan("pro"))):
     async with get_conn(uid) as conn:
         return await dona_blok_hisoblash(conn, tovar_id, dona, blok)
 
@@ -36,7 +36,7 @@ class TaraReq(BaseModel):
     klient_id: int; tara_turi_id: int; turi: str; miqdor: int; izoh: str = ""
 
 @router.post("/tara")
-async def tara_post(body: TaraReq, uid: int = Depends(get_uid)):
+async def tara_post(body: TaraReq, uid: int = Depends(require_plan("pro"))):
     async with get_conn(uid) as conn:
         tid = await tara_harakat(conn, uid, body.klient_id, body.tara_turi_id, body.turi, body.miqdor, body.izoh)
         return {"id": tid}
@@ -51,7 +51,7 @@ class OddmentReq(BaseModel):
     klient_id: int; tovarlar: list[dict]
 
 @router.post("/oddment")
-async def oddment_post(body: OddmentReq, uid: int = Depends(get_uid)):
+async def oddment_post(body: OddmentReq, uid: int = Depends(require_plan("pro"))):
     async with get_conn(uid) as conn:
         return await oddment_yaratish(conn, uid, body.klient_id, body.tovarlar)
 
@@ -62,7 +62,7 @@ class ReplacementReq(BaseModel):
     yangi_miqdor: float = 0; foto_url: str = ""
 
 @router.post("/almashtirish")
-async def almashtirish(body: ReplacementReq, uid: int = Depends(get_uid)):
+async def almashtirish(body: ReplacementReq, uid: int = Depends(require_plan("pro"))):
     async with get_conn(uid) as conn:
         aid = await almashtirish_yaratish(conn, uid, body.dict())
         return {"id": aid}
@@ -81,7 +81,7 @@ async def bugungi(uid: int = Depends(get_uid)):
 
 # ═══ QR Kod ═══
 @router.post("/klient/{klient_id}/qr")
-async def qr_yarat(klient_id: int, uid: int = Depends(get_uid)):
+async def qr_yarat(klient_id: int, uid: int = Depends(require_plan("pro"))):
     async with get_conn(uid) as conn:
         qr = await klient_qr_yaratish(conn, uid, klient_id)
         return {"qr_kod": qr}
@@ -104,7 +104,7 @@ async def bilimlar_list(kategoriya: str | None = None, uid: int = Depends(get_ui
         return await bilimlar_royxati(conn, uid, kategoriya)
 
 @router.post("/bilimlar")
-async def bilim_add(body: BilimReq, uid: int = Depends(get_uid)):
+async def bilim_add(body: BilimReq, uid: int = Depends(require_plan("pro"))):
     async with get_conn(uid) as conn:
         bid = await bilim_yaratish(conn, uid, body.dict())
         return {"id": bid}

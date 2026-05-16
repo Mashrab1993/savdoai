@@ -8,6 +8,7 @@ from __future__ import annotations
 import io
 import base64
 import logging
+from decimal import Decimal
 
 from fastapi import APIRouter, HTTPException, Depends, Request
 from pydantic import BaseModel, Field
@@ -16,6 +17,12 @@ from shared.database.pool import rls_conn
 from shared.utils import like_escape
 from services.api.deps import get_uid, endpoint_rate_check
 
+# 2026-05-16 audit: pul maydonlari Decimal — IEEE 754 drift'dan himoya.
+# Float 0.1 + 0.2 = 0.30000000000000004 → buxgalter zarari. Decimal
+# 18-raqamli aniqlikda, DB DECIMAL(18,2) bilan moslikda.
+# JSON output uchun `float(v.quantize('0.01'))` 2 raqamga round qiladi.
+_MONEY_ENCODER = {Decimal: lambda v: float(v.quantize(Decimal("0.01")))}
+
 log = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/v1", tags=["Tovarlar"])
 
@@ -23,14 +30,16 @@ router = APIRouter(prefix="/api/v1", tags=["Tovarlar"])
 # ═══ PYDANTIC MODELS ═══
 
 class TovarYaratSorov(BaseModel):
-    nomi:             str   = Field(..., min_length=1, max_length=200)
-    kategoriya:       str   = Field("Boshqa")
-    birlik:           str   = Field("dona")
-    olish_narxi:      float = Field(0, ge=0)
-    sotish_narxi:     float = Field(0, ge=0)
-    min_sotish_narxi: float = Field(0, ge=0)
-    qoldiq:           float = Field(0, ge=0)
-    min_qoldiq:       float = Field(0, ge=0)
+    nomi:             str     = Field(..., min_length=1, max_length=200)
+    kategoriya:       str     = Field("Boshqa")
+    birlik:           str     = Field("dona")
+    # Money fields → Decimal (IEEE 754 drift fix, 2026-05-16 audit)
+    olish_narxi:      Decimal = Field(Decimal("0"), ge=0, max_digits=18, decimal_places=2)
+    sotish_narxi:     Decimal = Field(Decimal("0"), ge=0, max_digits=18, decimal_places=2)
+    min_sotish_narxi: Decimal = Field(Decimal("0"), ge=0, max_digits=18, decimal_places=2)
+    # qoldiq/min_qoldiq quantity, lekin DB DECIMAL(18,2) — Decimal qoldiramiz
+    qoldiq:           Decimal = Field(Decimal("0"), ge=0, max_digits=18, decimal_places=2)
+    min_qoldiq:       Decimal = Field(Decimal("0"), ge=0, max_digits=18, decimal_places=2)
     # SalesDoc-compatible maydonlar
     brend:            str | None   = None
     podkategoriya:    str | None   = None
@@ -51,17 +60,21 @@ class TovarYaratSorov(BaseModel):
     yaroqlilik_muddati: int | None = None
     tavsif:           str | None   = None
     savdo_yonalishi:  str | None   = None
+
+    class Config:
+        json_encoders = _MONEY_ENCODER
 
 
 class TovarYangilaSorov(BaseModel):
-    nomi:             str | None   = None
-    kategoriya:       str | None   = None
-    birlik:           str | None   = None
-    olish_narxi:      float | None = None
-    sotish_narxi:     float | None = None
-    min_sotish_narxi: float | None = None
-    qoldiq:           float | None = None
-    min_qoldiq:       float | None = None
+    nomi:             str | None     = None
+    kategoriya:       str | None     = None
+    birlik:           str | None     = None
+    # Money → Decimal
+    olish_narxi:      Decimal | None = Field(None, ge=0, max_digits=18, decimal_places=2)
+    sotish_narxi:     Decimal | None = Field(None, ge=0, max_digits=18, decimal_places=2)
+    min_sotish_narxi: Decimal | None = Field(None, ge=0, max_digits=18, decimal_places=2)
+    qoldiq:           Decimal | None = Field(None, ge=0, max_digits=18, decimal_places=2)
+    min_qoldiq:       Decimal | None = Field(None, ge=0, max_digits=18, decimal_places=2)
     # SalesDoc-compatible maydonlar
     brend:            str | None   = None
     podkategoriya:    str | None   = None
@@ -83,18 +96,27 @@ class TovarYangilaSorov(BaseModel):
     tavsif:           str | None   = None
     savdo_yonalishi:  str | None   = None
 
+    class Config:
+        json_encoders = _MONEY_ENCODER
+
 
 class QoldiqYangilaSorov(BaseModel):
-    qoldiq: float = Field(..., ge=0)
+    qoldiq: Decimal = Field(..., ge=0, max_digits=18, decimal_places=2)
+
+    class Config:
+        json_encoders = _MONEY_ENCODER
 
 
 class TovarImportItem(BaseModel):
     nomi:         str
-    kategoriya:   str   = "Boshqa"
-    birlik:       str   = "dona"
-    olish_narxi:  float = 0
-    sotish_narxi: float = 0
-    qoldiq:       float = 0
+    kategoriya:   str     = "Boshqa"
+    birlik:       str     = "dona"
+    olish_narxi:  Decimal = Field(Decimal("0"), ge=0, max_digits=18, decimal_places=2)
+    sotish_narxi: Decimal = Field(Decimal("0"), ge=0, max_digits=18, decimal_places=2)
+    qoldiq:       Decimal = Field(Decimal("0"), ge=0, max_digits=18, decimal_places=2)
+
+    class Config:
+        json_encoders = _MONEY_ENCODER
 
 
 class TovarImportSorov(BaseModel):
@@ -405,7 +427,7 @@ async def tovar_qoldiq_yangilash(tovar_id: int, data: QoldiqYangilaSorov,
     return {
         "id": tovar_id, "nomi": old["nomi"],
         "eski_qoldiq": float(old["qoldiq"]),
-        "yangi_qoldiq": data.qoldiq, "status": "yangilandi",
+        "yangi_qoldiq": float(data.qoldiq), "status": "yangilandi",
     }
 
 

@@ -102,12 +102,12 @@ async def get_uid(
     if not await rate_limit_tekshir(f"ip:{ip}", max_req=100, window_s=60):
         raise HTTPException(429, "Juda ko'p so'rov. 1 daqiqa kuting.")
 
-    # 1. Bearer header (asosiy)
+    # 1. Bearer header — the ONLY accepted source. We previously allowed a
+    # `?token=...` query param for browser download UX, but that put tokens
+    # in proxy/CDN logs and in browser history → CSRF/exfil risk. Removed
+    # in 2026-05-16 audit. Downloads must now use POST with Authorization
+    # header (or a short-lived signed download URL — separate flow).
     token_str = creds.credentials if creds and creds.credentials else None
-
-    # 2. Query param fallback (browser download uchun)
-    if not token_str:
-        token_str = request.query_params.get("token", "").strip() or None
 
     if not token_str:
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Token kerak")
@@ -129,6 +129,73 @@ async def get_uid(
         await cache_yoz(k_user(uid), dict(u), TTL_USER)
 
     return uid
+
+
+# ════════════════════════════════════════════════════════════
+#  PLAN GATING — pro/enterprise feature himoyasi
+# ════════════════════════════════════════════════════════════
+#
+# 2026-05-16 audit: Copilot, Anomaliya, AI Extras, SD Agent Gaps endi
+# obuna talab qiladi. Free user'lar 402 (Payment Required) oladi.
+# Sotuvga tayyor: pro $X/oy, enterprise $XX/oy — kuchaytirilgan modul.
+
+_PLAN_RANK = {"free": 0, "pro": 1, "enterprise": 2}
+
+
+async def _user_plan(uid: int) -> str:
+    """User'ning joriy tarifini olish (cache → DB fallback)."""
+    user = await cache_ol(k_user(uid))
+    if user and "plan" in user:
+        return str(user.get("plan") or "free").lower()
+    # Cache miss — DB
+    from shared.database.pool import get_pool
+    async with get_pool().acquire() as c:
+        plan = await c.fetchval("SELECT plan FROM users WHERE id=$1", uid)
+    plan = (plan or "free").lower()
+    # Cache yangilash (best-effort)
+    try:
+        u = user or {}
+        u["plan"] = plan
+        await cache_yoz(k_user(uid), u, TTL_USER)
+    except Exception:
+        pass
+    return plan
+
+
+def require_plan(min_plan: str = "pro"):
+    """FastAPI Dependency factory — endpoint min plan talab qiladi.
+
+    Foydalanish:
+        @router.post("/ask", dependencies=[Depends(require_plan("pro"))])
+        async def copilot_ask(...):
+            ...
+
+    Yoki to'g'ridan-to'g'ri:
+        async def endpoint(uid: int = Depends(require_plan("pro"))):
+            ...
+            # uid hali ham mavjud
+    """
+    min_rank = _PLAN_RANK.get(min_plan.lower(), 1)
+
+    async def _dep(uid: int = Depends(get_uid)) -> int:
+        plan = await _user_plan(uid)
+        user_rank = _PLAN_RANK.get(plan, 0)
+        if user_rank < min_rank:
+            log.info(
+                "PLAN GATE: uid=%d plan=%s required=%s — 402",
+                uid, plan, min_plan,
+            )
+            raise HTTPException(
+                status_code=402,
+                detail=(
+                    f"Bu funksiya {min_plan.capitalize()} tarif talab qiladi. "
+                    f"Joriy tarif: {plan.capitalize()}. "
+                    "Tarif yangilash uchun admin bilan bog'laning."
+                ),
+            )
+        return uid
+
+    return _dep
 
 
 # ════════════════════════════════════════════════════════════

@@ -14,6 +14,7 @@ from __future__ import annotations
 import io
 import logging
 from datetime import datetime
+from decimal import Decimal
 
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
 from fastapi.responses import StreamingResponse
@@ -26,6 +27,10 @@ router = APIRouter(prefix="/api/v1/narx", tags=["Narx v2"])
 
 ALLOWED_TURI = {"prodaja", "zakup", "prayslist"}
 
+# 2026-05-16 audit: pulga ta'sir qiluvchi foizlar ham Decimal — markup
+# hisobida (narx * (1 + foiz/100)) drift bo'lmasligi uchun.
+_MONEY_ENCODER = {Decimal: lambda v: float(v.quantize(Decimal("0.01")))}
+
 
 class NarxTuriIn(BaseModel):
     nomi: str = Field(..., min_length=1, max_length=100)
@@ -33,10 +38,13 @@ class NarxTuriIn(BaseModel):
     turi: str = Field("prodaja")
     tavsif: str | None = None
     tolov_usuli: str | None = Field(None, max_length=50)
-    foiz_chegirma: float = 0
+    foiz_chegirma: Decimal = Field(Decimal("0"), max_digits=6, decimal_places=2)
     klient_turi_id: int | None = None
     tartib: int = 0
     faol: bool = True
+
+    class Config:
+        json_encoders = _MONEY_ENCODER
 
 
 @router.get("/turlari")
@@ -163,8 +171,11 @@ async def delete_narx_turi(nt_id: int, uid: int = Depends(get_uid)):
 
 class MarkupIn(BaseModel):
     narx_turi_id: int
-    foiz: float = Field(..., description="Markup % (masalan 20 = +20%)")
+    foiz: Decimal = Field(..., description="Markup % (masalan 20 = +20%)", max_digits=6, decimal_places=2)
     faqat_boshsiz: bool = Field(True, description="Faqat narxi yo'q tovarlarga qo'llash")
+
+    class Config:
+        json_encoders = _MONEY_ENCODER
 
 
 @router.post("/markup")
@@ -201,12 +212,16 @@ async def apply_markup(body: MarkupIn, uid: int = Depends(get_uid)):
             """, uid)
 
         qoshildi = 0
+        # Decimal arithmetic — money aniqligi (2026-05-16 audit)
+        foiz_d = Decimal(body.foiz)
+        koef = Decimal("1") + foiz_d / Decimal("100")
+        Q = Decimal("0.01")
         async with c.transaction():
             for r in rows:
-                bazaviy = float(r["bazaviy"] or 0)
+                bazaviy = Decimal(r["bazaviy"] or 0)
                 if bazaviy <= 0:
                     continue
-                yangi_narx = round(bazaviy * (1 + body.foiz / 100), 2)
+                yangi_narx = (bazaviy * koef).quantize(Q)
                 await c.execute("""
                     INSERT INTO tovar_narxlari (user_id, tovar_id, narx_turi_id, narx)
                     VALUES ($1, $2, $3, $4)
@@ -224,7 +239,7 @@ async def apply_markup(body: MarkupIn, uid: int = Depends(get_uid)):
         "ok": True,
         "narx_turi_id": body.narx_turi_id,
         "tovarlar_soni": qoshildi,
-        "foiz": body.foiz,
+        "foiz": float(body.foiz),
     }
 
 
@@ -315,11 +330,12 @@ async def bulk_set_prices(body: BulkNarxIn, uid: int = Depends(get_uid)):
                         o_chirildi += 1
                     continue
 
+                # 2026-05-16 audit: Decimal — IEEE 754 drift fix
                 try:
-                    narx = float(narx_val)
+                    narx = Decimal(str(narx_val)).quantize(Decimal("0.01"))
                     if narx < 0:
                         continue
-                except (TypeError, ValueError):
+                except (TypeError, ValueError, ArithmeticError):
                     continue
 
                 await c.execute("""

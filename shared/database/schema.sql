@@ -7,9 +7,23 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
 -- RLS kontekst funksiyasi
+-- 2026-05-16 audit: avval NULL qaytarardi (fail-open) — agar set_config
+-- chaqirilmagan bo'lsa, `user_id = NULL` → barcha qatorlar ko'rinmaydi
+-- (PostgreSQL NULL = NULL false bo'lgani uchun) — BIROQ developer xato
+-- qilib `current_uid()` ni boshqa joyda ishlatsa va NULL bo'lsa, sirli
+-- query natijasi xato bo'lardi. Endi NULL'da EXCEPTION raise qiladi.
 CREATE OR REPLACE FUNCTION current_uid() RETURNS BIGINT AS $$
-    SELECT NULLIF(current_setting('app.uid', true), '')::BIGINT;
-$$ LANGUAGE SQL STABLE;
+DECLARE
+    v_uid BIGINT;
+BEGIN
+    v_uid := NULLIF(current_setting('app.uid', true), '')::BIGINT;
+    IF v_uid IS NULL OR v_uid <= 0 THEN
+        RAISE EXCEPTION 'RLS kontekst o''rnatilmagan (app.uid). rls_conn() ishlatish kerak.'
+            USING ERRCODE = 'insufficient_privilege';
+    END IF;
+    RETURN v_uid;
+END;
+$$ LANGUAGE plpgsql STABLE;
 
 -- Makro: RLS policy yaratish
 CREATE OR REPLACE FUNCTION enable_rls(tbl TEXT) RETURNS void AS $$

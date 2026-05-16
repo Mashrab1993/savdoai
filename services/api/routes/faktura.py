@@ -7,6 +7,7 @@
 from __future__ import annotations
 import json
 import logging
+from decimal import Decimal
 
 from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel, Field
@@ -18,12 +19,16 @@ log = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/v1", tags=["Faktura"])
 
 
+# 2026-05-16 audit: jami_summa float → Decimal (IEEE 754 drift fix)
 class FakturaYaratSorov(BaseModel):
-    klient_ismi: str = Field(..., min_length=1, max_length=200)
-    tovarlar: list = Field(default_factory=list)
-    jami_summa: float = Field(0, ge=0)
+    klient_ismi: str   = Field(..., min_length=1, max_length=200)
+    tovarlar: list     = Field(default_factory=list)
+    jami_summa: Decimal = Field(Decimal("0"), ge=0, max_digits=18, decimal_places=2)
     bank_rekvizit: dict | None = None
     izoh: str | None = None
+
+    class Config:
+        json_encoders = {Decimal: lambda v: float(v.quantize(Decimal("0.01")))}
 
 
 @router.get("/fakturalar")

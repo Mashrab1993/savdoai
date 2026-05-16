@@ -19,7 +19,7 @@ from datetime import date, timedelta
 
 from fastapi import APIRouter, Depends, Query
 from shared.database.pool import rls_conn
-from services.api.deps import get_uid
+from services.api.deps import get_uid, require_plan
 from services.cognitive.ai_extras import claude_opus
 
 log = logging.getLogger(__name__)
@@ -29,7 +29,7 @@ router = APIRouter(prefix="/api/v1/anomaliya", tags=["AI Anomaliya"])
 @router.get("")
 async def anomaliya_scan(
     kunlar: int = Query(7, description="Oxirgi N kun skanerlash"),
-    uid: int = Depends(get_uid),
+    uid: int = Depends(require_plan("pro")),
 ):
     """Oxirgi N kun ichida g'ayrioddiy zayavkalarni topadi va AI tahlil qiladi."""
     sana_dan = date.today() - timedelta(days=kunlar)

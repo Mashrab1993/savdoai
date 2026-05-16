@@ -19,7 +19,7 @@ from services.cognitive.ai_extras import (
     second_opinion,
     v0,
 )
-from services.api.deps import get_uid
+from services.api.deps import get_uid, require_plan
 
 router = APIRouter(prefix="/api/v1/ai", tags=["AI"])
 
@@ -125,7 +125,7 @@ def _check_rate(endpoint: str, uid: int) -> None:
 
 @router.post("/second-opinion")
 async def api_second_opinion(inp: SecondOpinionIn,
-                              uid: int = Depends(get_uid)):
+                              uid: int = Depends(require_plan("pro"))):
     """Claude Opus 4.7 dan birlamchi javobni mustaqil tekshirish (audit).
 
     Narx: $5/M input, $25/M output. Soatiga 20 so'rov cheklangan (per user).
@@ -144,7 +144,7 @@ async def api_second_opinion(inp: SecondOpinionIn,
 
 
 @router.post("/batch")
-async def api_batch(inp: BatchIn, uid: int = Depends(get_uid)):
+async def api_batch(inp: BatchIn, uid: int = Depends(require_plan("pro"))):
     """DeepSeek V3 — arzon va tez batch chaqiruv. Soatiga 200 so'rov."""
     if not deepseek.ready:
         raise HTTPException(503, "DeepSeek kaliti sozlanmagan")
@@ -158,7 +158,7 @@ async def api_batch(inp: BatchIn, uid: int = Depends(get_uid)):
 
 
 @router.post("/market-intel")
-async def api_market_intel(inp: MarketIn, uid: int = Depends(get_uid)):
+async def api_market_intel(inp: MarketIn, uid: int = Depends(require_plan("pro"))):
     """Grok 4 — real-time bozor tahlil. Soatiga 40 so'rov."""
     if not grok.ready:
         raise HTTPException(503, "Grok kaliti sozlanmagan")
@@ -172,7 +172,7 @@ async def api_market_intel(inp: MarketIn, uid: int = Depends(get_uid)):
 
 
 @router.post("/generate-ui")
-async def api_generate_ui(inp: UIGenIn, uid: int = Depends(get_uid)):
+async def api_generate_ui(inp: UIGenIn, uid: int = Depends(require_plan("pro"))):
     """v0.dev — matn → shadcn/ui + Tailwind React komponent. Soatiga 10 so'rov."""
     if not v0.ready:
         raise HTTPException(503, "v0.dev kaliti sozlanmagan")

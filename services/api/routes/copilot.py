@@ -13,7 +13,7 @@ import logging
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 from shared.database.pool import rls_conn
-from services.api.deps import get_uid
+from services.api.deps import get_uid, require_plan
 from services.cognitive.ai_extras import claude_opus
 
 log = logging.getLogger(__name__)
@@ -26,7 +26,7 @@ class CopilotIn(BaseModel):
 
 
 @router.post("/ask")
-async def copilot_ask(body: CopilotIn, uid: int = Depends(get_uid)):
+async def copilot_ask(body: CopilotIn, uid: int = Depends(require_plan("pro"))):
     """AI Copilot — biznes savolga Opus 4.7 javob beradi.
 
     Joriy biznes holat avtomatik kontekstga qo'shiladi:

@@ -239,10 +239,18 @@ async def lifespan(app: FastAPI):
     # shuning uchun bootda aniqlaymiz, runtime'da emas)
     config_errors = []
     jwt_secret = os.getenv("JWT_SECRET", "")
-    if len(jwt_secret) < 16:
+    # Production'da (Railway) 32+ belgi MAJBURIY — HMAC-SHA256 uchun to'liq
+    # entropiya (256-bit). 2026-05-16 audit: <32 endi xato (warn emas).
+    # Local dev'da (RAILWAY_* env'lari yo'q) hali ham 16 minimum (eski test
+    # secret'lar buzilmasligi uchun).
+    _is_prod = bool(os.getenv("RAILWAY_ENVIRONMENT") or os.getenv("RAILWAY_SERVICE_ID"))
+    _min_jwt = 32 if _is_prod else 16
+    if len(jwt_secret) < _min_jwt:
         config_errors.append(
-            f"JWT_SECRET juda qisqa ({len(jwt_secret)} belgi). Minimum 16 "
-            "belgi kerak (HMAC xavfsizligi uchun). 32+ tavsiya."
+            f"JWT_SECRET juda qisqa ({len(jwt_secret)} belgi). "
+            f"{'Production' if _is_prod else 'Dev'}'da minimum {_min_jwt} "
+            "belgi kerak (HMAC-SHA256 uchun to'liq entropiya). "
+            "Generatsiya: python -c \"import secrets; print(secrets.token_urlsafe(32))\""
         )
     if not (dsn.startswith("postgres://") or dsn.startswith("postgresql://")):
         config_errors.append(
@@ -811,10 +819,14 @@ async def auth_webapp(data: dict):
     if not hmac.compare_digest(computed_hash, received_hash):
         raise HTTPException(403, "initData tekshiruvi muvaffaqiyatsiz")
 
-    # 5. auth_date tekshirish (24 soatdan eski bo'lmasligi kerak)
+    # 5. auth_date tekshirish — was 86400s (24h) which let an intercepted
+    # initData replay for a full day. Tightened to 300s (5 min) per
+    # 2026-05-16 backend audit — Telegram regenerates initData on every
+    # WebApp launch, so 5 min is enough for legitimate UX with no real
+    # downside.
     auth_date = int(parsed.get("auth_date", ["0"])[0])
-    if time.time() - auth_date > 86400:
-        raise HTTPException(403, "initData muddati o'tgan")
+    if time.time() - auth_date > 300:
+        raise HTTPException(403, "initData muddati o'tgan — qaytadan oching")
 
     # 6. User ma'lumotlarini olish
     user_json = parsed.get("user", ["{}"])[0]
@@ -904,10 +916,22 @@ async def auth_login(data: LoginSorov, request: Request):
                 login,
             )
         else:
-            tel = _telefon_tozala(telefon)
+            # 2026-05-16 audit: avval ILIKE '%LAST9%' edi — bu account
+            # takeover risk'ini berardi (ikki user oxirgi 9 raqamni baham
+            # ko'rsa). Endi normallashtirilgan telefon bo'yicha EXACT match.
+            # Bir nechta variantni tekshiramiz (998..., 0..., +998..., bo'sh
+            # joylar va tirelar bilan), lekin har biri EXACT.
+            tel_norm = _telefon_tozala(telefon)
+            # Variantlar: 998901234567, +998901234567, 901234567
+            variants = {tel_norm, "+" + tel_norm}
+            if tel_norm.startswith("998") and len(tel_norm) == 12:
+                variants.add(tel_norm[3:])  # 901234567
             user = await c.fetchrow(
-                "SELECT id, ism, to_liq_ism, username, telefon, dokon_nomi, segment, faol, login, parol_hash FROM users WHERE replace(replace(telefon,' ',''),'-','') LIKE '%' || $1 || '%' AND faol=TRUE LIMIT 1",
-                tel[-9:],
+                "SELECT id, ism, to_liq_ism, username, telefon, dokon_nomi, "
+                "segment, faol, login, parol_hash FROM users "
+                "WHERE regexp_replace(COALESCE(telefon,''), '[^0-9+]', '', 'g') = ANY($1::text[]) "
+                "AND faol=TRUE LIMIT 1",
+                list(variants),
             )
 
     if not user:
@@ -1957,10 +1981,20 @@ async def export_file_yuklab(task_id: str, uid: int = Depends(get_uid)):
         if not content_b64:
             raise HTTPException(404, "Fayl mazmuni topilmadi (muddati o'tgan bo'lishi mumkin)")
 
-        # Security: task result user_id tekshirish — boshqa user faylini yuklab olishni oldini olish
+        # Security: task result user_id tekshirish — boshqa user faylini yuklab olishni oldini olish.
+        # 2026-05-16 audit: FAIL-CLOSED. Avval None bo'lsa o'tib ketardi (eski
+        # task'lar yoki worker user_id qo'ymaganda) — bu maxfiy export'ni
+        # exfil qilish risk'i. Endi None ham 403 chiqaradi.
         task_uid = res.get("user_id")
-        if task_uid is not None and int(task_uid) != uid:
-            log.warning("EXPORT SECURITY: uid=%d tried to download task for uid=%s", uid, task_uid)
+        try:
+            task_uid_int = int(task_uid) if task_uid is not None else None
+        except (ValueError, TypeError):
+            task_uid_int = None
+        if task_uid_int is None or task_uid_int != uid:
+            log.warning(
+                "EXPORT SECURITY: uid=%d tried to download task for uid=%r (raw=%r)",
+                uid, task_uid_int, task_uid,
+            )
             raise HTTPException(403, "Bu fayl sizga tegishli emas")
 
         format_ = res.get("format", "excel")
@@ -2047,9 +2081,24 @@ async def rate_limit_middleware(request: Request, call_next):
             del _rate_buckets[k]
         _rate_last_gc = now
 
-    # Max IP cap — DDoS himoya
-    if len(_rate_buckets) > _RATE_MAX_IPS and ip not in _rate_buckets:
-        return await call_next(request)  # yangi IP qo'shmaymiz
+    # Max IP cap — DDoS himoya. 2026-05-16 audit: avval "skip-when-full"
+    # ishlatardi — bu attacker'ga rate limit'ni chetlab o'tish imkonini
+    # berardi (10001+ IP ochsa yangilar limitsiz). Endi LRU eviction:
+    # bucket to'lsa, eng eski IPni o'chirib yangisiga joy ochamiz.
+    if len(_rate_buckets) >= _RATE_MAX_IPS and ip not in _rate_buckets:
+        # Eng eski IPlarni o'chir (oxirgi so'rov vaqti bo'yicha)
+        # 10% evict — burst tomonidan to'lib qolishini oldini oladi
+        evict_count = max(1, _RATE_MAX_IPS // 10)
+        oldest = sorted(
+            _rate_buckets.items(),
+            key=lambda kv: max(kv[1]) if kv[1] else 0,
+        )[:evict_count]
+        for k, _v in oldest:
+            _rate_buckets.pop(k, None)
+        log.warning(
+            "RATE LIMIT DICT FULL: evicted %d oldest IPs (cap=%d)",
+            evict_count, _RATE_MAX_IPS,
+        )
 
     # Clean old entries
     if ip in _rate_buckets:

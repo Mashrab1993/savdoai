@@ -1049,20 +1049,27 @@ async def qaytarishlar_list(
     }
 
 
+# 2026-05-16 audit: miqdor/narx float → Decimal (IEEE 754 drift fix)
+from decimal import Decimal as _Decimal
+
 class QaytarishYarat(__import__("pydantic").BaseModel):
     chiqim_id: int | None = None
     klient_ismi: str | None = ""
     tovar_nomi: str
-    miqdor: float
+    miqdor: _Decimal = __import__("pydantic").Field(..., gt=0, max_digits=18, decimal_places=2)
     birlik: str | None = "dona"
-    narx: float
+    narx: _Decimal = __import__("pydantic").Field(..., ge=0, max_digits=18, decimal_places=2)
     sabab: str | None = ""
+
+    class Config:
+        json_encoders = {_Decimal: lambda v: float(v.quantize(_Decimal("0.01")))}
 
 
 @router.post("/qaytarish")
 async def qaytarish_yarat(data: QaytarishYarat, uid: int = Depends(get_uid)):
     """Yangi qaytarish (vozvrat) yaratish."""
-    jami = data.miqdor * data.narx
+    # Decimal arithmetic — money aniqligi
+    jami = (data.miqdor * data.narx).quantize(_Decimal("0.01"))
     async with rls_conn(uid) as c:
         row = await c.fetchrow("""
             INSERT INTO qaytarishlar
