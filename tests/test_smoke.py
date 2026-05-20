@@ -636,9 +636,13 @@ class TestV21_3MergedModules:
         assert 'async def websocket_endpoint' in src
 
     def test_websocket_jwt_auth(self):
-        """WebSocket requires JWT authentication"""
+        """WebSocket requires JWT authentication (PyJWT via deps.jwt_tekshir).
+
+        2026-05-20: hand-rolled `_jwt_tekshir` PyJWT-based `jwt_tekshir` bilan
+        almashtirildi (services.api.deps).
+        """
         src = open(os.path.join(os.path.dirname(__file__), '..', 'services', 'api', 'routes', 'websocket.py')).read()
-        assert '_jwt_tekshir' in src
+        assert 'jwt_tekshir' in src
         assert 'JWT_SECRET' in src or 'jwt' in src.lower()
 
     def test_websocket_rejects_no_secret(self):

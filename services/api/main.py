@@ -216,6 +216,24 @@ class PaginatsiyaResponse(BaseModel):
     page:           int
     limit:          int
     total_pages:    int
+
+
+# Mini-do'kon ommaviy buyurtma — Pydantic validatsiya
+class BuyurtmaTovarItem(BaseModel):
+    id:     int
+    miqdor: float = Field(..., gt=0, le=100000)
+
+
+class BuyurtmaSorov(BaseModel):
+    klient_ismi: str = Field(..., min_length=2, max_length=100)
+    telefon:     str = Field(..., min_length=9, max_length=20)
+    izoh:        str = Field("", max_length=1000)
+    tovarlar:    list[BuyurtmaTovarItem] = Field(..., min_length=1)
+
+
+# /tahlil proksi — Cognitive Engine sorov
+class TahlilSorov(BaseModel):
+    matn: str = Field(..., min_length=1, max_length=4000)
     has_next:       bool
     has_prev:       bool
     items:          list
@@ -636,7 +654,7 @@ except Exception as e:
 #  JWT + AUTH — deps.py dan import (shared bilan kassa/ws)
 # ════════════════════════════════════════════════════════════
 
-from services.api.deps import get_uid
+from services.api.deps import get_uid, require_plan
 
 
 def jwt_yarat(user_id: int, ttl: int = 86400) -> str:
@@ -1233,13 +1251,14 @@ async def hisobot_kunlik(uid: int = Depends(get_uid)):
 # ════════════════════════════════════════════════════════════
 
 @app.post("/api/v1/tahlil", tags=["Sotuv"])
-async def tahlil(data: dict, uid: int = Depends(get_uid)):
+async def tahlil(data: TahlilSorov, uid: int = Depends(require_plan("pro"))):
     """
     AI tahlil — Cognitive Engine ga proksi.
     RAG + Tool Calling + temperature=0.0
+    Pro tarif talab qiladi (Copilot/Anomaliya bilan bir xil siyosat).
     """
     import httpx
-    matn = data.get("matn", "").strip()
+    matn = data.matn.strip()
     if not matn:
         raise HTTPException(400, "Matn bo'sh")
 
@@ -4571,35 +4590,40 @@ async def dokon_tovarlar(dokon_id: int, q: str = "", request: Request = None):
 
 
 @app.post("/api/v1/dokon/{dokon_id}/buyurtma", tags=["Mini-Do'kon"])
-async def dokon_buyurtma(dokon_id: int, data: dict, request: Request = None):
-    """Klient buyurtma yaratish — auth kerak emas. Rate limit: 5 req/min."""
-    # Rate limit — spam himoyasi
+async def dokon_buyurtma(dokon_id: int, data: BuyurtmaSorov, request: Request = None):
+    """Klient buyurtma yaratish — auth kerak emas. Rate limit: 5 req/min/dokon."""
+    # Rate limit — spam himoyasi (dokon_id kalitiga kiritilgan: bir do'kon spamlasa
+    # boshqa do'konlar zarar ko'rmasin).
     if request:
         ip = request.client.host if request.client else "unknown"
         from shared.cache.redis_cache import rate_limit_tekshir
-        if not await rate_limit_tekshir(f"buyurtma:{ip}", max_req=5, window_s=60):
+        if not await rate_limit_tekshir(f"buyurtma:{ip}:{dokon_id}", max_req=5, window_s=60):
             raise HTTPException(429, "Juda ko'p so'rov. 1 daqiqa kuting.")
-    tovarlar = data.get("tovarlar", [])
-    if not tovarlar:
-        raise HTTPException(400, "Tovarlar ro'yxati bo'sh")
 
     async with get_pool().acquire() as c:
+        # Do'kon mavjud va faol ekanligini tasdiqlash (dokon_tovarlar bilan bir xil pattern)
+        dokon = await c.fetchval(
+            "SELECT id FROM users WHERE id=$1 AND faol=TRUE", dokon_id
+        )
+        if not dokon:
+            raise HTTPException(404, "Do'kon topilmadi")
+
         async with c.transaction():
             row = await c.fetchrow(
                 "INSERT INTO buyurtmalar (user_id, klient_ismi, telefon, izoh) "
                 "VALUES ($1, $2, $3, $4) RETURNING id",
                 dokon_id,
-                data.get("klient_ismi", ""),
-                data.get("telefon", ""),
-                data.get("izoh", ""),
+                data.klient_ismi,
+                data.telefon,
+                data.izoh,
             )
             buyurtma_id = row["id"]
 
-            for t in tovarlar:
+            for t in data.tovarlar:
                 tovar = await c.fetchrow(
                     "SELECT id, nomi, sotish_narxi FROM tovarlar "
                     "WHERE id=$1 AND user_id=$2",
-                    t.get("id"), dokon_id,
+                    t.id, dokon_id,
                 )
                 if tovar:
                     await c.execute(
@@ -4609,7 +4633,7 @@ async def dokon_buyurtma(dokon_id: int, data: dict, request: Request = None):
                         buyurtma_id,
                         tovar["id"],
                         tovar["nomi"],
-                        t.get("miqdor", 1),
+                        t.miqdor,
                         tovar["sotish_narxi"],
                     )
 
@@ -4620,10 +4644,10 @@ async def dokon_buyurtma(dokon_id: int, data: dict, request: Request = None):
         if bot_token:
             matn = (
                 f"🛒 *Yangi buyurtma!*\n\n"
-                f"👤 {data.get('klient_ismi', 'Noma')}\n"
-                f"📞 {data.get('telefon', '-')}\n"
-                f"📦 {len(tovarlar)} ta tovar\n"
-                f"📝 {data.get('izoh', '-')}"
+                f"👤 {data.klient_ismi}\n"
+                f"📞 {data.telefon}\n"
+                f"📦 {len(data.tovarlar)} ta tovar\n"
+                f"📝 {data.izoh or '-'}"
             )
             async with httpx.AsyncClient() as client:
                 await client.post(

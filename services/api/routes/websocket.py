@@ -14,6 +14,8 @@ import time
 
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
+from services.api.deps import jwt_tekshir
+
 log = logging.getLogger(__name__)
 router = APIRouter()
 
@@ -78,49 +80,67 @@ def get_manager() -> ConnectionManager:
     return _manager
 
 
-def _jwt_tekshir(token: str, secret: str) -> int | None:
-    """JWT dan user_id ajratish"""
-    import base64
-    import hmac
-    try:
-        parts = token.split(".")
-        if len(parts) != 3: return None
-        h64, p64, s64 = parts
-        msg = f"{h64}.{p64}".encode()
-        kutilgan = base64.urlsafe_b64encode(
-            hmac.new(secret.encode(), msg, "sha256").digest()
-        ).rstrip(b"=").decode()
-        if not hmac.compare_digest(s64, kutilgan): return None
-        pad = p64 + "=" * (-len(p64) % 4)
-        payload = json.loads(base64.urlsafe_b64decode(pad))
-        if payload.get("exp", 0) < time.time(): return None
-        return int(payload.get("sub", 0)) or None
-    except Exception:
-        return None
-
-
 @router.websocket("/ws")
 async def websocket_endpoint(ws: WebSocket):
     """
-    WebSocket endpoint.
-    Ulanish: ws://host/ws?token=JWT_TOKEN
-    Xabarlar: {"type": "ping"} → {"type": "pong"}
-              {"type": "sync", "data": {...}} → broadcast to user devices
+    WebSocket endpoint — PyJWT autentifikatsiya.
+
+    2026-05-20 audit: hand-rolled JWT verifier (HMAC-SHA256) services.api.deps
+    ichidagi PyJWT (algorithm whitelist, iat/exp/nbf tekshirish, leeway) bilan
+    almashtirildi. Token endi query string'da emas, balki accept() dan keyingi
+    BIRINCHI xabarda yuboriladi → token proxy/CDN/server access loglarida
+    qolmaydi.
+
+    Mijoz protokoli:
+        ws.connect("/ws")           # accept()
+        ws.send({"token": "JWT"})   # birinchi xabar
+        # endi normal {type: ping/sync/status} xabarlari ishlaydi
+
+    BREAKING-CHANGE: eski mijozlar `?token=JWT` query bilan ulansa endi
+    rad etiladi. Frontend/Flutter kodi shu protokolga yangilanishi kerak.
     """
     import os
-    token = ws.query_params.get("token", "")
     secret = os.getenv("JWT_SECRET", "")
-
     if not secret:
         await ws.close(code=4001, reason="JWT_SECRET o'rnatilmagan")
         return
 
-    user_id = _jwt_tekshir(token, secret)
-    if not user_id:
-        await ws.close(code=4003, reason="Token yaroqsiz")
+    await ws.accept()
+    # Birinchi xabar — auth handshake. 5s timeout xavfsizlik uchun
+    # (idle ulanish JWT'siz socketni egallab turmaslik uchun).
+    import asyncio
+    try:
+        first = await asyncio.wait_for(ws.receive_json(), timeout=5.0)
+    except (asyncio.TimeoutError, json.JSONDecodeError, Exception) as e:
+        log.info("WS auth timeout/decode: %s", e)
+        try:
+            await ws.close(code=1008, reason="Auth timeout")
+        except Exception:
+            pass
         return
 
-    await _manager.connect(ws, user_id)
+    token = (first or {}).get("token", "") if isinstance(first, dict) else ""
+    user_id = jwt_tekshir(token) if token else None
+    if not user_id:
+        try:
+            await ws.close(code=1008, reason="Token yaroqsiz")
+        except Exception:
+            pass
+        return
+
+    # Mijozga auth muvaffaqiyat haqida xabar
+    try:
+        await ws.send_json({"type": "auth_ok", "uid": user_id, "ts": time.time()})
+    except Exception:
+        return
+
+    # ConnectionManager.connect() ws.accept() ni ham chaqiradi — bizda allaqachon
+    # accept() bo'lgan. Manager ro'yxatiga qo'shamiz ikkinchi accept'siz.
+    if user_id not in _manager._active:
+        _manager._active[user_id] = []
+    _manager._active[user_id].append(ws)
+    log.info("WS connect (PyJWT): uid=%d (jami=%d)",
+             user_id, sum(len(v) for v in _manager._active.values()))
     try:
         while True:
             raw = await ws.receive_text()
