@@ -162,13 +162,28 @@ def _faktura_pdf(data: dict) -> bytes:
     from reportlab.lib import colors
     from reportlab.lib.units import cm
     from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
-    from reportlab.lib.styles import getSampleStyleSheet
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from shared.services._pdf_fonts import register_cyrillic_font
+
+    # Register DejaVu Sans for Cyrillic + Uzbek apostrophe; falls back to
+    # Helvetica with a warning if no .ttf is available.
+    font_reg, font_bold = register_cyrillic_font()
 
     buf = io.BytesIO()
     doc = SimpleDocTemplate(buf, pagesize=A4,
                              topMargin=2*cm, bottomMargin=2*cm,
                              leftMargin=2*cm, rightMargin=2*cm)
-    s = getSampleStyleSheet()
+    base = getSampleStyleSheet()
+    # Re-derive Title/Normal with the Cyrillic-capable font so headings and
+    # body text render '№', "so'm", Russian/Cyrillic correctly.
+    s = {
+        "Title": ParagraphStyle(
+            "Title", parent=base["Title"], fontName=font_bold,
+        ),
+        "Normal": ParagraphStyle(
+            "Normal", parent=base["Normal"], fontName=font_reg,
+        ),
+    }
     els = []
 
     raqam = data.get("raqam") or faktura_raqami()
@@ -201,8 +216,9 @@ def _faktura_pdf(data: dict) -> bytes:
     tbl.setStyle(TableStyle([
         ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#1a56db")),
         ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
-        ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
-        ("FONTNAME", (0, -1), (-1, -1), "Helvetica-Bold"),
+        ("FONTNAME", (0, 0), (-1, 0), font_bold),
+        ("FONTNAME", (0, -1), (-1, -1), font_bold),
+        ("FONTNAME", (0, 1), (-1, -2), font_reg),
         ("GRID", (0, 0), (-1, -1), 0.4, colors.grey),
         ("ROWBACKGROUNDS", (0, 1), (-1, -2), [colors.white, colors.HexColor("#f7f9fc")]),
     ]))

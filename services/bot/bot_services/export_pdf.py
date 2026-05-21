@@ -14,6 +14,14 @@ from reportlab.platypus import (
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.enums import TA_CENTER
 
+from shared.services._pdf_fonts import register_cyrillic_font
+
+# Cyrillic-capable font registration. Returns ("DV", "DV-Bold") when DejaVu
+# is available on the system, otherwise ("Helvetica", "Helvetica-Bold") with
+# a logged warning. Without this, Cyrillic letters and the Uzbek apostrophe
+# (ʻ / ʼ) render as blank boxes.
+FONT_REG, FONT_BOLD = register_cyrillic_font()
+
 TZ = pytz.timezone("Asia/Tashkent")
 KOK    = colors.HexColor("#1a56db")
 YASHIL = colors.HexColor("#059669")
@@ -37,9 +45,12 @@ def _pul(v: Any) -> str:
 
 def _uslublar():
     s = getSampleStyleSheet()
+    # Promote built-in styles to use Cyrillic-capable font.
+    s["Title"].fontName = FONT_BOLD
+    s["Normal"].fontName = FONT_REG
     s.add(ParagraphStyle("Sarlavha2",   parent=s["Title"],   fontSize=13, spaceAfter=5))
     s.add(ParagraphStyle("Oddiy",       parent=s["Normal"],  fontSize=10, spaceAfter=4))
-    s.add(ParagraphStyle("Qalin",       parent=s["Normal"],  fontSize=10, fontName="Helvetica-Bold"))
+    s.add(ParagraphStyle("Qalin",       parent=s["Normal"],  fontSize=10, fontName=FONT_BOLD))
     s.add(ParagraphStyle("Markaz",      parent=s["Normal"],  fontSize=9,  alignment=TA_CENTER))
     s.add(ParagraphStyle("Ostki",       parent=s["Normal"],  fontSize=8,  textColor=colors.black))
     return s
@@ -49,9 +60,9 @@ def _jadval_uslubi(sarlavha_rang=KOK) -> TableStyle:
     return TableStyle([
         ("BACKGROUND",    (0, 0), (-1,  0), sarlavha_rang),
         ("TEXTCOLOR",     (0, 0), (-1,  0), colors.white),
-        ("FONTNAME",      (0, 0), (-1,  0), "Helvetica-Bold"),
+        ("FONTNAME",      (0, 0), (-1,  0), FONT_BOLD),
         ("FONTSIZE",      (0, 0), (-1,  0), 9),
-        ("FONTNAME",      (0, 1), (-1, -1), "Helvetica"),
+        ("FONTNAME",      (0, 1), (-1, -1), FONT_REG),
         ("FONTSIZE",      (0, 1), (-1, -1), 9),
         ("TEXTCOLOR",     (0, 1), (-1, -1), colors.black),
         ("ROWBACKGROUNDS",(0, 1), (-1, -1), [colors.white]),
@@ -197,16 +208,16 @@ def chek_pdf(data: dict, dokon_nomi: str, width_mm: int = 80) -> bytes:
     c.setFillColor(BLACK)
     c.rect(0, y - 4, pw, 20, fill=1, stroke=0)
     c.setFillColor(colors.white)
-    c.setFont("Helvetica-Bold", 12 if len(dokon_nomi or "") <= 22 else 10)
+    c.setFont(FONT_BOLD, 12 if len(dokon_nomi or "") <= 22 else 10)
     c.drawCentredString(cx, y, (dokon_nomi or "SAVDOAI").upper())
     c.setFillColor(BLACK)
     y -= 22
 
-    c.setFont("Helvetica-Bold", 9)
+    c.setFont(FONT_BOLD, 9)
     c.drawCentredString(cx, y, "MASHRAB MOLIYA")
     y -= 12
 
-    c.setFont("Helvetica-Bold", 8)
+    c.setFont(FONT_BOLD, 8)
     c.drawString(mg, y, f"Chek № {nak}")
     c.drawRightString(rx, y, sana)
     y -= 10
@@ -214,7 +225,7 @@ def chek_pdf(data: dict, dokon_nomi: str, width_mm: int = 80) -> bytes:
     amal_map = {"kirim": "KIRIM", "chiqim": "SOTUV", "qaytarish": "QAYTARISH",
                 "qarz_tolash": "QARZ TOLASH", "nakladnoy": "NAKLADNOY"}
     amal_nom = amal_map.get(amal, "SOTUV")
-    c.setFont("Helvetica-Bold", 9)
+    c.setFont(FONT_BOLD, 9)
     c.drawCentredString(cx, y, amal_nom)
     y -= 11
 
@@ -224,7 +235,7 @@ def chek_pdf(data: dict, dokon_nomi: str, width_mm: int = 80) -> bytes:
     y -= 8
 
     if klient:
-        c.setFont("Helvetica-Bold", 11)
+        c.setFont(FONT_BOLD, 11)
         c.drawString(mg, y, str(klient)[:30])
         y -= 14
 
@@ -233,7 +244,7 @@ def chek_pdf(data: dict, dokon_nomi: str, width_mm: int = 80) -> bytes:
     c.line(mg, y, rx, y)
     y -= 6
 
-    c.setFont("Helvetica-Bold", 10)
+    c.setFont(FONT_BOLD, 10)
     c.drawString(mg + 1, y, "TOVAR NOMI")
     c.drawRightString(rx - 1, y, "JAMI")
     y -= 13
@@ -252,17 +263,17 @@ def chek_pdf(data: dict, dokon_nomi: str, width_mm: int = 80) -> bytes:
             disp = disp[: mx - 2] + ".."
 
         s_str = f"{jami:,.0f}"
-        c.setFont("Helvetica-Bold", 11)
-        sw = c.stringWidth(s_str, "Helvetica-Bold", 11)
+        c.setFont(FONT_BOLD, 11)
+        sw = c.stringWidth(s_str, FONT_BOLD, 11)
         max_name_w = iw - sw - 4
-        c.setFont("Helvetica-Bold", 10)
-        nw = c.stringWidth(disp, "Helvetica-Bold", 10)
+        c.setFont(FONT_BOLD, 10)
+        nw = c.stringWidth(disp, FONT_BOLD, 10)
         if nw > max_name_w:
-            c.setFont("Helvetica-Bold", 9)
+            c.setFont(FONT_BOLD, 9)
         c.setFillColor(BLACK)
         c.drawString(mg, y, disp)
 
-        c.setFont("Helvetica-Bold", 11)
+        c.setFont(FONT_BOLD, 11)
         c.drawRightString(rx, y, s_str)
         y -= 13
 
@@ -270,7 +281,7 @@ def chek_pdf(data: dict, dokon_nomi: str, width_mm: int = 80) -> bytes:
             det = f"    {miq_s} g x {narx:,.0f}/kg"
         else:
             det = f"    {miq_s} {birlik} x {narx:,.0f}"
-        c.setFont("Helvetica-Bold", 9)
+        c.setFont(FONT_BOLD, 9)
         c.setFillColor(BLACK)
         c.drawString(mg, y, det)
         y -= 12
@@ -291,24 +302,24 @@ def chek_pdf(data: dict, dokon_nomi: str, width_mm: int = 80) -> bytes:
     c.setFillColor(BLACK)
     c.roundRect(mg, y - 5, iw, bh, 3, fill=1, stroke=0)
     c.setFillColor(colors.white)
-    c.setFont("Helvetica-Bold", 13)
+    c.setFont(FONT_BOLD, 13)
     c.drawString(mg + 4, y, "JAMI")
-    c.setFont("Helvetica-Bold", 16)
+    c.setFont(FONT_BOLD, 16)
     c.drawRightString(rx - 4, y, f"{jami_s:,.0f}")
-    c.setFont("Helvetica-Bold", 9)
+    c.setFont(FONT_BOLD, 9)
     c.drawRightString(rx - 4, y - 13, "so'm")
     c.setFillColor(BLACK)
     y -= bh + 8
 
-    c.setFont("Helvetica-Bold", 9)
+    c.setFont(FONT_BOLD, 9)
     c.setFillColor(BLACK)
     c.drawCentredString(cx, y, f"{len(tovarlar)} ta pozitsiya")
     y -= 11
 
     if qarz > 0:
-        c.setFont("Helvetica-Bold", 10)
+        c.setFont(FONT_BOLD, 10)
         c.drawString(mg, y, "To'langan:")
-        c.setFont("Helvetica-Bold", 11)
+        c.setFont(FONT_BOLD, 11)
         c.drawRightString(rx, y, f"{tol:,.0f}")
         y -= 14
 
@@ -316,11 +327,11 @@ def chek_pdf(data: dict, dokon_nomi: str, width_mm: int = 80) -> bytes:
         c.setFillColor(RED)
         c.roundRect(mg, y - 4, iw, bq, 3, fill=1, stroke=0)
         c.setFillColor(colors.white)
-        c.setFont("Helvetica-Bold", 12)
+        c.setFont(FONT_BOLD, 12)
         c.drawString(mg + 4, y, "QARZ")
-        c.setFont("Helvetica-Bold", 14)
+        c.setFont(FONT_BOLD, 14)
         c.drawRightString(rx - 4, y, f"{qarz:,.0f}")
-        c.setFont("Helvetica-Bold", 9)
+        c.setFont(FONT_BOLD, 9)
         c.drawRightString(rx - 4, y - 12, "so'm")
         c.setFillColor(BLACK)
         y -= bq + 8
@@ -331,11 +342,11 @@ def chek_pdf(data: dict, dokon_nomi: str, width_mm: int = 80) -> bytes:
     c.line(mg, y, rx, y)
     y -= 10
 
-    c.setFont("Helvetica-Bold", 9)
+    c.setFont(FONT_BOLD, 9)
     c.setFillColor(BLACK)
     c.drawCentredString(cx, y, "Xaridingiz uchun rahmat!")
     y -= 11
-    c.setFont("Helvetica-Bold", 8)
+    c.setFont(FONT_BOLD, 8)
     c.drawCentredString(cx, y, "@savdoai_mashrab_bot")
 
     c.save()
@@ -366,7 +377,7 @@ def klient_hisobi_pdf(data: dict, dokon_nomi: str) -> bytes:
     ]
     stat_tbl = Table(stat_qatorlar, colWidths=[6*cm, 5*cm])
     stat_tbl.setStyle(TableStyle([
-        ("FONTNAME",    (0, 0), (0, -1), "Helvetica-Bold"),
+        ("FONTNAME",    (0, 0), (0, -1), FONT_BOLD),
         ("FONTSIZE",    (0, 0), (-1,-1), 10),
         ("TOPPADDING",  (0, 0), (-1,-1), 4),
         ("BOTTOMPADDING",(0,0), (-1,-1), 4),
@@ -466,10 +477,10 @@ def kunlik_pdf(d: dict, dokon_nomi: str) -> bytes:
     tbl.setStyle(TableStyle([
         ("BACKGROUND",    (0, 0), (-1,  0), KOK),
         ("TEXTCOLOR",     (0, 0), (-1,  0), colors.white),
-        ("FONTNAME",      (0, 0), (-1,  0), "Helvetica-Bold"),
-        ("FONTNAME",      (0,-2), (-1, -2), "Helvetica-Bold"),
+        ("FONTNAME",      (0, 0), (-1,  0), FONT_BOLD),
+        ("FONTNAME",      (0,-2), (-1, -2), FONT_BOLD),
         ("BACKGROUND",    (0,-2), (-1, -2), colors.HexColor("#d1fae5")),
-        ("FONTNAME",      (0, 1), (-1, -1), "Helvetica"),
+        ("FONTNAME",      (0, 1), (-1, -1), FONT_REG),
         ("FONTSIZE",      (0, 0), (-1, -1), 10),
         ("ROWBACKGROUNDS",(0, 1), (-1, -2), [colors.white, OCHKUK]),
         ("GRID",          (0, 0), (-1, -1), 0.4, colors.HexColor("#d1d5db")),

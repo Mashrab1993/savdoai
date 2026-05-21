@@ -650,6 +650,13 @@ try:
 except Exception as e:
     log.warning("⚠️ Biznes salomatligi yuklanmadi: %s", e)
 
+try:
+    from services.api.routes.password_reset import router as pwd_reset_router
+    app.include_router(pwd_reset_router)
+    log.info("✅ Parol tiklash moduli ulandi (audit P1 fix)")
+except Exception as e:
+    log.warning("⚠️ Parol tiklash yuklanmadi: %s", e)
+
 # ════════════════════════════════════════════════════════════
 #  JWT + AUTH — deps.py dan import (shared bilan kassa/ws)
 # ════════════════════════════════════════════════════════════
