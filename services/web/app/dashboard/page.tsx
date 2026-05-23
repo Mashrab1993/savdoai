@@ -4,6 +4,8 @@ import { Card } from "@/components/ui/card"
 import { Users, Package, AlertTriangle, ShoppingBag, AlertCircle, Sparkles, ArrowUpRight } from "lucide-react"
 import { formatCurrency } from "@/lib/utils"
 import { useApi, useAuth } from "@/hooks/use-api"
+import { WelcomeBanner } from "@/components/shared/welcome-banner"
+import { Suspense } from "react"
 
 type Me = { id: number; ism?: string; to_liq_ism?: string; dokon_nomi?: string; username?: string }
 
@@ -43,6 +45,10 @@ export default function DashboardPage() {
     <AdminLayout>
       <div className="-mx-4 -my-4 px-4 py-6 min-h-full" style={{ background: "linear-gradient(180deg, #F5F1EB 0%, #FAF7F2 100%)" }}>
         <div className="max-w-[1500px] mx-auto space-y-8">
+
+          <Suspense fallback={null}>
+            <WelcomeBanner />
+          </Suspense>
 
           <div className="flex items-end justify-between border-b border-[#E8E0D3] pb-6">
             <div>

@@ -80,6 +80,11 @@ app.conf.update(
             "task":     "tasks.ledger_reconciliation",
             "schedule": crontab(hour=6, minute=0),
         },
+        # Sinov (trial) eslatmasi — har kuni 09:30 (13/7/3/1 kun qolganlar)
+        "sinov-eslatma": {
+            "task":     "tasks.sinov_eslatma_barcha",
+            "schedule": crontab(hour=9, minute=30),
+        },
     },
 )
 
@@ -886,3 +891,318 @@ async def _all_faol_users():
     from shared.database.pool import get_pool
     async with get_pool().acquire() as c:
         return await c.fetch("SELECT id FROM users WHERE faol=TRUE")
+
+
+# ════════════════════════════════════════════════════════════
+#  SINOV (TRIAL) ESLATMA — 13/7/3 kun qolgan paytda
+#  2026-05-23 — Self-serve signup'dan keyin
+# ════════════════════════════════════════════════════════════
+
+@app.task(bind=True, name="tasks.sinov_eslatma_barcha",
+          max_retries=2, default_retry_delay=120)
+def sinov_eslatma_barcha(self):
+    """Sinov (14 kun trial) tugayotgan user'larga eslatma."""
+    import asyncio
+    try:
+        asyncio.run(_sinov_eslatma_async())
+    except Exception as exc:
+        log.error("Sinov eslatma task xato: %s", exc)
+        countdown = min(60 * (2 ** self.request.retries), 600)
+        raise self.retry(exc=exc, countdown=countdown)
+
+
+async def _sinov_eslatma_async():
+    """Sinov 13/7/3/0 kun qolganlarga turli matnlar."""
+    from shared.database.pool import pool_init, get_pool
+    dsn = os.environ["DATABASE_URL"]
+    bot_token = os.environ.get("BOT_TOKEN", "")
+    await pool_init(dsn, min_size=1, max_size=2)
+
+    # Har 3 darajada turli ogohlantirish
+    targets = [
+        (13, "🌱", "Sinov 13 kun qoldi", "Tizimni ishlatishni davom ettiring. Ma'lumotlaringiz xavfsiz."),
+        (7,  "⏰", "Sinov 7 kun qoldi",  "Bir hafta — to'lov qilishni o'ylab ko'ring. 99k/oydan boshlanadi."),
+        (3,  "⚠️", "Sinov 3 kun qoldi",  "3 kun keyin tarif tanlash kerak. Aks holda yangi sotuv qabul qilolmaysiz."),
+        (1,  "🔴", "ERTAGA SINOV TUGAYDI", "Ertaga 23:59 da sinov tugaydi. savdoai.uz/narx → tarif tanlang."),
+    ]
+
+    async with get_pool().acquire() as c:
+        for kun_qoldi, emoji, sarlavha, matn in targets:
+            users = await c.fetch("""
+                SELECT id, ism, dokon_nomi, company_kod, sinov_tugash
+                FROM users
+                WHERE faol=TRUE
+                  AND tarif='sinov'
+                  AND parent_id IS NULL
+                  AND sinov_tugash IS NOT NULL
+                  AND sinov_tugash = CURRENT_DATE + $1
+            """, kun_qoldi)
+
+            if not users:
+                continue
+
+            log.info(f"Sinov eslatma {kun_qoldi}-kun: {len(users)} user")
+
+            if not bot_token:
+                log.warning("BOT_TOKEN yo'q — sinov eslatma yuborilmadi")
+                continue
+
+            import httpx
+            async with httpx.AsyncClient(timeout=10) as http:
+                for u in users:
+                    try:
+                        kod = u.get("company_kod") or "do'koningiz"
+                        link = f"https://{kod}.savdoai.uz/narx" if kod else "https://savdoai.uz/narx"
+                        xabar = (
+                            f"{emoji} *{sarlavha}*\n\n"
+                            f"Hurmatli {u['ism'] or 'do'kon egasi'},\n"
+                            f"{matn}\n\n"
+                            f"📅 Sinov tugashi: *{u['sinov_tugash']}*\n"
+                            f"💎 Tarifni tanlash: {link}\n\n"
+                            f"Savol: @savdoai_support"
+                        )
+                        await http.post(
+                            f"https://api.telegram.org/bot{bot_token}/sendMessage",
+                            json={
+                                "chat_id": u["id"],
+                                "text": xabar,
+                                "parse_mode": "Markdown",
+                                "disable_web_page_preview": True,
+                            },
+                        )
+                        log.info("Sinov eslatma yuborildi uid=%d kun=%d", u["id"], kun_qoldi)
+                    except Exception as e:
+                        log.warning("Sinov eslatma uid=%d xato: %s", u["id"], e)
+
+
+# ════════════════════════════════════════════════════════════
+#  WELCOME XABAR — Yangi signup keyin
+#  2026-05-23
+# ════════════════════════════════════════════════════════════
+
+@app.task(name="tasks.welcome_yuborish")
+def welcome_yuborish(user_id: int, dokon_nomi: str, ism: str, company_kod: str) -> dict:
+    """Yangi signup'dan keyin Telegram'da welcome xabar (signup endpoint chaqiradi)."""
+    import asyncio
+    try:
+        return asyncio.run(_welcome_async(user_id, dokon_nomi, ism, company_kod))
+    except Exception as exc:
+        log.error("Welcome xabar xato uid=%d: %s", user_id, exc)
+        return {"ok": False, "xato": str(exc)}
+
+
+async def _welcome_async(user_id: int, dokon_nomi: str, ism: str, company_kod: str) -> dict:
+    bot_token = os.environ.get("BOT_TOKEN", "")
+    if not bot_token:
+        return {"ok": False, "xato": "BOT_TOKEN yo'q"}
+
+    import httpx
+
+    xabar = (
+        f"🎉 *Xush kelibsiz, {ism}!*\n\n"
+        f"*{dokon_nomi}* — SavdoAI tizimiga muvaffaqiyatli ulandi.\n\n"
+        f"🏢 *Sizning kompaniya kodingiz:*\n"
+        f"`{company_kod}`\n\n"
+        f"🌐 *Sizning URL:*\n"
+        f"https://{company_kod}.savdoai.uz\n\n"
+        f"📅 *14 kun bepul sinov boshlandi.*\n"
+        f"Karta talab qilinmaydi.\n\n"
+        f"━━━━━━━━━━━━━━━━━━━\n"
+        f"📋 *KEYINGI QADAMLAR:*\n\n"
+        f"1️⃣ Tovarlaringizni kiriting (Excel yoki ovoz orqali)\n"
+        f"2️⃣ Sotuvchilaringizni qo'shing (/sozlamalar/users)\n"
+        f"3️⃣ Birinchi sotuv qiling (ovoz bilan ham mumkin)\n\n"
+        f"━━━━━━━━━━━━━━━━━━━\n"
+        f"💬 *Yordam kerakmi?*\n"
+        f"@savdoai\\_support — Telegram support guruh\n"
+        f"📞 +998 90 123 45 67 — Mashrab Aka\n\n"
+        f"🎓 *Qisqa video qo'llanmalar:*\n"
+        f"https://savdoai.uz/help\n\n"
+        f"Muvaffaqiyat, {ism}! 🚀"
+    )
+
+    keyboard = {
+        "inline_keyboard": [
+            [
+                {"text": "📦 Tovar kiritish", "url": f"https://{company_kod}.savdoai.uz/sklad"},
+                {"text": "👥 Sotuvchi qo'shish", "url": f"https://{company_kod}.savdoai.uz/sozlamalar/users"},
+            ],
+            [
+                {"text": "📊 Dashboard ochish", "url": f"https://{company_kod}.savdoai.uz/dashboard"},
+            ],
+            [
+                {"text": "💎 Tariflarni ko'rish", "url": "https://savdoai.uz/narx"},
+                {"text": "💬 Support", "url": "https://t.me/savdoai_support"},
+            ],
+        ]
+    }
+
+    async with httpx.AsyncClient(timeout=10) as http:
+        r = await http.post(
+            f"https://api.telegram.org/bot{bot_token}/sendMessage",
+            json={
+                "chat_id": user_id,
+                "text": xabar,
+                "parse_mode": "Markdown",
+                "reply_markup": keyboard,
+                "disable_web_page_preview": True,
+            },
+        )
+        if r.status_code != 200:
+            log.warning("Welcome xabar HTTP %d: %s", r.status_code, r.text[:200])
+            return {"ok": False, "status": r.status_code}
+
+    log.info("✅ Welcome xabar yuborildi: uid=%d kod=%s", user_id, company_kod)
+    return {"ok": True}
+
+
+# ════════════════════════════════════════════════════════════
+#  DEMO DATA SEED — Yangi signup keyin demo tovar/mijoz
+#  2026-05-23
+#
+#  Yangi user signup qilgach, 50 ta demo tovar, 10 ta mijoz,
+#  5 ta demo sotuv kiritiladi. Bu user darrov tizimning
+#  funksionalligini ko'radi, hayratlanadi.
+# ════════════════════════════════════════════════════════════
+
+@app.task(name="tasks.demo_data_seed")
+def demo_data_seed(user_id: int) -> dict:
+    """Yangi user uchun demo ma'lumotlar kiritish."""
+    import asyncio
+    try:
+        return asyncio.run(_demo_data_seed_async(user_id))
+    except Exception as exc:
+        log.error("Demo data seed xato uid=%d: %s", user_id, exc)
+        return {"ok": False, "xato": str(exc)}
+
+
+DEMO_TOVARLAR = [
+    # (nomi, kategoriya, birlik, olish_narxi, sotish_narxi, qoldiq)
+    ("Coca-Cola 0.5L",        "Ichimliklar",      "dona",   6_000,  9_000,  120),
+    ("Coca-Cola 1L",          "Ichimliklar",      "dona",  10_000, 14_000,   80),
+    ("Coca-Cola 1.5L",        "Ichimliklar",      "dona",  12_000, 17_000,   60),
+    ("Pepsi 1L",              "Ichimliklar",      "dona",   9_500, 13_500,   90),
+    ("Fanta 1L",              "Ichimliklar",      "dona",   9_500, 13_500,   75),
+    ("Sprite 1L",             "Ichimliklar",      "dona",   9_500, 13_500,   85),
+    ("Suv 0.5L (Hayat)",      "Ichimliklar",      "dona",   2_000,  3_500,  200),
+    ("Suv 1.5L (Hayat)",      "Ichimliklar",      "dona",   4_500,  6_500,  150),
+    ("Suv 5L (Aktash)",       "Ichimliklar",      "dona",   8_000, 11_000,   45),
+    ("Choy Lipton 100g",      "Ichimliklar",      "dona",  18_000, 25_000,   50),
+
+    ("Non (oddiy)",           "Oziq-ovqat",       "dona",   3_000,  4_500,   80),
+    ("Non (sariq)",           "Oziq-ovqat",       "dona",   4_000,  6_000,   50),
+    ("Sut 1L (Imkon)",        "Oziq-ovqat",       "dona",   8_500, 12_000,   60),
+    ("Sut 1L (Akfa)",         "Oziq-ovqat",       "dona",  10_000, 14_000,   40),
+    ("Yog' 1L (Oltin)",       "Oziq-ovqat",       "dona",  18_000, 25_000,   30),
+    ("Sariyog' 200g",         "Oziq-ovqat",       "dona",  12_000, 17_000,   45),
+    ("Tvorog 200g",           "Oziq-ovqat",       "dona",   7_000, 10_000,   55),
+    ("Smetana 200g",          "Oziq-ovqat",       "dona",   6_500,  9_500,   50),
+    ("Pishloq Russkiy 200g",  "Oziq-ovqat",       "dona",  22_000, 30_000,   25),
+    ("Tuxum 10ta",            "Oziq-ovqat",       "dona",  18_000, 24_000,   60),
+
+    ("Choy paketda 100p",     "Quruq tovar",      "dona",  12_000, 18_000,   70),
+    ("Qahva Nescafe 100g",    "Quruq tovar",      "dona",  35_000, 50_000,   30),
+    ("Shakar 1kg",            "Quruq tovar",      "kg",     8_500, 11_000,   80),
+    ("Tuz 1kg",               "Quruq tovar",      "kg",     2_500,  3_500,  100),
+    ("Un 1kg (Premium)",      "Quruq tovar",      "kg",     6_000,  9_000,   65),
+    ("Guruch 1kg (Alanga)",   "Quruq tovar",      "kg",    12_000, 16_000,   55),
+    ("Makaron 500g",          "Quruq tovar",      "dona",   5_500,  8_000,   90),
+    ("Vermichel 400g",        "Quruq tovar",      "dona",   4_500,  6_500,  100),
+
+    ("Halva 200g",            "Shirinliklar",     "dona",   8_000, 12_000,   40),
+    ("Konfet Korovka 100g",   "Shirinliklar",     "dona",   6_000,  9_000,   60),
+    ("Pechene Yubileynoye",   "Shirinliklar",     "dona",   3_500,  5_500,   80),
+    ("Vafli 100g",            "Shirinliklar",     "dona",   4_000,  6_000,   75),
+    ("Snickers",              "Shirinliklar",     "dona",   5_500,  8_000,  100),
+    ("Twix",                  "Shirinliklar",     "dona",   5_500,  8_000,   90),
+
+    ("Sigaret Marlboro",      "Tamaki",           "dona",  18_000, 25_000,   50),
+    ("Sigaret Kent",          "Tamaki",           "dona",  16_000, 22_000,   60),
+    ("Sigaret Parlament",     "Tamaki",           "dona",  20_000, 28_000,   40),
+
+    ("Sovun Safeguard",       "Maishiy ehtiyoj",  "dona",   5_000,  7_500,   50),
+    ("Shampun Head&Shoulders","Maishiy ehtiyoj",  "dona",  35_000, 50_000,   25),
+    ("Pasta Colgate",         "Maishiy ehtiyoj",  "dona",  12_000, 17_000,   40),
+    ("Tish cho'tka Oral-B",   "Maishiy ehtiyoj",  "dona",   8_000, 12_000,   45),
+    ("Tualet qog'oz 4-li",    "Maishiy ehtiyoj",  "dona",  12_000, 17_000,   60),
+    ("Salfetka 100p",         "Maishiy ehtiyoj",  "dona",   6_000,  9_000,   80),
+
+    ("Yoğurt 200g (Imkon)",   "Oziq-ovqat",       "dona",   6_500,  9_500,   55),
+    ("Maslo 1L (Korral)",     "Oziq-ovqat",       "dona",  16_000, 22_000,   35),
+    ("Konserva Tushonka",     "Quruq tovar",      "dona",  18_000, 26_000,   30),
+    ("Mayonez 200g",          "Quruq tovar",      "dona",   7_500, 11_000,   60),
+    ("Ketchup Heinz 300g",    "Quruq tovar",      "dona",  12_000, 17_000,   45),
+    ("Pivo Sarbast 0.5L",     "Ichimliklar",      "dona",   8_500, 12_000,   80),
+    ("Energetik Hell 0.5L",   "Ichimliklar",      "dona",  10_000, 14_500,   50),
+    ("Kokos suvi 0.5L",       "Ichimliklar",      "dona",   8_000, 12_000,   25),
+]
+
+
+DEMO_KLIENTLAR = [
+    ("Aziz Aka (Yunusobod)",       "+998901111111",  "Yunusobod, A.Temur k. 12"),
+    ("Karim Bekzodov (Sergeli)",   "+998902222222",  "Sergeli, Mustaqillik 45"),
+    ("Bekzod Aka (Chilonzor)",     "+998903333333",  "Chilonzor 7-kv, dom 12"),
+    ("Sardor Karimov (Yashnobod)", "+998904444444",  "Yashnobod 5-kv, 23"),
+    ("Otabek Aka (Olmazor)",       "+998905555555",  "Olmazor, Bog'i Eram 8"),
+    ("Dilshod (Mirobod)",          "+998906666666",  "Mirobod, Shahriston 14"),
+    ("Mavluda opa (Yakkasaroy)",   "+998907777777",  "Yakkasaroy, Buyuk Turon 5"),
+    ("Sanjar (Uchtepa)",           "+998908888888",  "Uchtepa, Yangi Hayot 9"),
+    ("Akmal Aka (Mirzo Ulug'bek)", "+998909999999",  "Mirzo Ulug'bek, Lutfiy 22"),
+    ("Diyora opa (Shayxontohur)",  "+998900000000",  "Shayxontohur, Bobur 15"),
+]
+
+
+async def _demo_data_seed_async(user_id: int) -> dict:
+    """50 tovar, 10 mijoz, 5 demo sotuv."""
+    from shared.database.pool import pool_init, get_pool
+    dsn = os.environ["DATABASE_URL"]
+    await pool_init(dsn, min_size=1, max_size=2)
+
+    natija = {"tovar": 0, "klient": 0, "sotuv": 0, "ok": True}
+
+    async with get_pool().acquire() as c:
+        # User mavjudligi va segment'i tekshirilsin
+        u = await c.fetchrow(
+            "SELECT id, dokon_nomi, segment FROM users WHERE id = $1 AND faol = TRUE",
+            user_id,
+        )
+        if not u:
+            return {"ok": False, "xato": "User topilmadi"}
+
+        # Tovarlar
+        for nomi, kategoriya, birlik, olish, sotish, qoldiq in DEMO_TOVARLAR:
+            try:
+                await c.execute(
+                    """
+                    INSERT INTO tovarlar
+                    (user_id, nomi, kategoriya, birlik,
+                     olish_narxi, sotish_narxi, min_sotish_narxi, qoldiq)
+                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+                    ON CONFLICT (user_id, lower(nomi)) DO NOTHING
+                    """,
+                    user_id, nomi, kategoriya, birlik,
+                    olish, sotish, sotish * 0.95, qoldiq,
+                )
+                natija["tovar"] += 1
+            except Exception as e:
+                log.warning("Demo tovar xato (%s): %s", nomi, e)
+
+        # Klientlar
+        for ism, telefon, manzil in DEMO_KLIENTLAR:
+            try:
+                await c.execute(
+                    """
+                    INSERT INTO klientlar (user_id, ism, telefon, manzil)
+                    VALUES ($1, $2, $3, $4)
+                    """,
+                    user_id, ism, telefon, manzil,
+                )
+                natija["klient"] += 1
+            except Exception as e:
+                log.warning("Demo klient xato (%s): %s", ism, e)
+
+    log.info(
+        "✅ Demo data seeded uid=%d: %d tovar, %d klient",
+        user_id, natija["tovar"], natija["klient"],
+    )
+    return natija

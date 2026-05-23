@@ -481,6 +481,35 @@ try:
 except Exception as e:
     log.warning("⚠️ Multi-filial yuklanmadi: %s", e)
 
+# ═══ 2026-05-23: Multi-tenant signup + agent multi-company + photo guard ═══
+try:
+    from services.api.routes.signup import signup_router
+    app.include_router(signup_router, tags=["Auth", "Team"])
+    log.info("✅ Self-serve signup + team API ulandi")
+except Exception as e:
+    log.warning("⚠️ Signup moduli yuklanmadi: %s", e)
+
+try:
+    from services.api.routes.agent_companies import agent_router
+    app.include_router(agent_router, tags=["Agent", "Team"])
+    log.info("✅ Agent multi-company API ulandi")
+except Exception as e:
+    log.warning("⚠️ Agent multi-company yuklanmadi: %s", e)
+
+try:
+    from services.api.routes.photo_guard import photo_router
+    app.include_router(photo_router, tags=["Foto"])
+    log.info("✅ Photo guard moduli ulandi")
+except Exception as e:
+    log.warning("⚠️ Photo guard yuklanmadi: %s", e)
+
+try:
+    from services.api.middleware.subdomain import SubdomainTenantMiddleware
+    app.add_middleware(SubdomainTenantMiddleware)
+    log.info("✅ Subdomain tenant middleware ulandi")
+except Exception as e:
+    log.warning("⚠️ Subdomain middleware yuklanmadi: %s", e)
+
 # ═══ YANGI MODULLAR (SalesDoc funksiyalari) ═══
 try:
     from services.api.routes.aksiya import router as aksiya_router

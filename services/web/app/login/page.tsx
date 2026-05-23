@@ -5,25 +5,42 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { api } from "@/lib/api"
 import { toast } from "sonner"
-import { Building2, Lock, User, Loader2, Phone, Key } from "lucide-react"
+import { Building2, Lock, User, Loader2, Phone, Key, Users, Tag } from "lucide-react"
+import Link from "next/link"
 
-type Method = "login" | "phone" | "token"
+type Method = "team" | "phone" | "login" | "token"
 
 export default function LoginPage() {
   const router = useRouter()
-  const [method, setMethod] = useState<Method>("login")
+  const [method, setMethod] = useState<Method>("team")
+  const [companyKod, setCompanyKod] = useState("")
   const [login, setLogin] = useState("")
   const [phone, setPhone] = useState("")
   const [token, setTokenInput] = useState("")
   const [password, setPassword] = useState("")
   const [loading, setLoading] = useState(false)
+  const [kodCompany, setKodCompany] = useState<string | null>(null)
+
+  // Kod kiritilganda kompaniya nomi ko'rsatish
+  async function lookupKod(kod: string) {
+    if (kod.length < 2) {
+      setKodCompany(null)
+      return
+    }
+    try {
+      const r = await fetch(`/auth/lookup_kod?kod=${encodeURIComponent(kod)}`)
+      const data = await r.json()
+      setKodCompany(data.mavjud ? data.dokon_nomi : null)
+    } catch {
+      setKodCompany(null)
+    }
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setLoading(true)
     try {
       if (method === "token") {
-        // Token validatsiya — saqlash oldidan /me chaqirib tekshiramiz
         localStorage.setItem("auth_token", token)
         try {
           const me = await api.get<{ id: number }>("/api/v1/me")
@@ -34,6 +51,24 @@ export default function LoginPage() {
           localStorage.removeItem("auth_token")
           toast.error("Token noto'g'ri yoki muddati o'tgan")
         }
+        return
+      }
+      if (method === "team") {
+        const res = await api.post<{
+          token: string
+          user_id: number
+          company_kod: string
+          role: string
+        }>("/auth/login_team", {
+          company_kod: companyKod.trim().toLowerCase(),
+          login: login.trim().toLowerCase(),
+          parol: password,
+        })
+        localStorage.setItem("auth_token", res.token)
+        localStorage.setItem("auth_user_id", String(res.user_id))
+        localStorage.setItem("company_kod", res.company_kod || "")
+        toast.success(`Tizimga kirdingiz (${res.role})`)
+        router.push("/dashboard")
         return
       }
       const body: { login?: string; telefon?: string; parol: string } = { parol: password }
@@ -117,12 +152,15 @@ export default function LoginPage() {
           </div>
 
           {/* Method tabs */}
-          <div className="grid grid-cols-3 gap-1 p-1 bg-slate-100 rounded-lg">
-            <MethodTab active={method === "login"} onClick={() => setMethod("login")}>
-              <User className="w-4 h-4" /> Login
+          <div className="grid grid-cols-4 gap-1 p-1 bg-slate-100 rounded-lg">
+            <MethodTab active={method === "team"} onClick={() => setMethod("team")}>
+              <Users className="w-4 h-4" /> Jamoa
             </MethodTab>
             <MethodTab active={method === "phone"} onClick={() => setMethod("phone")}>
               <Phone className="w-4 h-4" /> Telefon
+            </MethodTab>
+            <MethodTab active={method === "login"} onClick={() => setMethod("login")}>
+              <User className="w-4 h-4" /> Login
             </MethodTab>
             <MethodTab active={method === "token"} onClick={() => setMethod("token")}>
               <Key className="w-4 h-4" /> Token
@@ -130,6 +168,46 @@ export default function LoginPage() {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-5">
+            {method === "team" && (
+              <>
+                <Field label="Kompaniya kodi" icon={Tag}>
+                  <Input
+                    type="text"
+                    placeholder="masalan: salom-market"
+                    value={companyKod}
+                    onChange={(e) => {
+                      const v = e.target.value.toLowerCase()
+                      setCompanyKod(v)
+                      lookupKod(v)
+                    }}
+                    autoFocus
+                    required
+                    className="lowercase"
+                  />
+                  {kodCompany && (
+                    <p className="text-xs text-emerald-600 mt-1">✓ {kodCompany}</p>
+                  )}
+                </Field>
+                <Field label="Login" icon={User}>
+                  <Input
+                    type="text"
+                    placeholder="ismingiz yoki telefon"
+                    value={login}
+                    onChange={(e) => setLogin(e.target.value)}
+                    required
+                  />
+                </Field>
+                <Field label="Parol" icon={Lock}>
+                  <Input
+                    type="password"
+                    placeholder="Parolingiz"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                  />
+                </Field>
+              </>
+            )}
             {method === "login" && (
               <>
                 <Field label="Login" icon={User}>
@@ -201,8 +279,16 @@ export default function LoginPage() {
             </Button>
           </form>
 
-          <div className="text-center text-sm text-slate-500">
-            Yordam kerakmi? <span className="text-emerald-600 font-medium">+998 71 207-59-95</span>
+          <div className="text-center text-sm text-slate-500 space-y-2">
+            <div>
+              Yangi do'konchimisiz?{" "}
+              <Link href="/signup" className="text-emerald-600 font-medium hover:underline">
+                14 kun bepul sinash
+              </Link>
+            </div>
+            <div>
+              Yordam kerakmi? <span className="text-emerald-600 font-medium">@savdoai_support</span>
+            </div>
           </div>
         </div>
       </div>
