@@ -6,7 +6,8 @@ import { AdminLayout } from "@/components/layout/admin-layout"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { useApi, useAuth, api } from "@/hooks/use-api"
+import { useApi, useAuth } from "@/hooks/use-api"
+import { api } from "@/lib/api"
 import { toast } from "sonner"
 import {
   ArrowLeft, Plus, Users, Shield, ShoppingBag, Truck, ClipboardCheck,
@@ -59,7 +60,7 @@ const PERMISSION_LABELS: Record<string, string> = {
 export default function TeamPage() {
   const { isAuthenticated } = useAuth()
   const { data: me } = useApi<Me>(isAuthenticated ? "/api/v1/me_v2" : null)
-  const { data: agents, mutate } = useApi<Agent[]>(
+  const { data: agents, refetch } = useApi<Agent[]>(
     isAuthenticated ? "/api/v1/team/agents" : null
   )
   const [showAdd, setShowAdd] = useState(false)
@@ -83,7 +84,7 @@ export default function TeamPage() {
         data: { agent_id: agent.agent_id },
       })
       toast.success(`${agent.ism} o'chirildi`)
-      mutate?.()
+      refetch?.()
     } catch (err) {
       toast.error((err as { detail?: string })?.detail || "Xato")
     }
@@ -144,7 +145,7 @@ export default function TeamPage() {
             onClose={() => setShowAdd(false)}
             onSuccess={() => {
               setShowAdd(false)
-              mutate?.()
+              refetch?.()
             }}
             company_kod={me?.company_kod || ""}
           />
@@ -156,7 +157,7 @@ export default function TeamPage() {
             onClose={() => setShowPermissions(null)}
             onSuccess={() => {
               setShowPermissions(null)
-              mutate?.()
+              refetch?.()
             }}
           />
         )}

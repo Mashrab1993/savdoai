@@ -66,5 +66,12 @@ export const api = {
     }
     return apiRequest<T>(path, { method: 'PUT', body: body ? JSON.stringify(body) : undefined })
   },
-  delete: <T>(path: string) => apiRequest<T>(path, { method: 'DELETE' }),
+  patch: <T>(path: string, body?: unknown) => {
+    if (body instanceof FormData) {
+      return apiRequest<T>(path, { method: 'PATCH', body })
+    }
+    return apiRequest<T>(path, { method: 'PATCH', body: body ? JSON.stringify(body) : undefined })
+  },
+  delete: <T>(path: string, body?: unknown) =>
+    apiRequest<T>(path, { method: 'DELETE', body: body ? JSON.stringify(body) : undefined }),
 }
