@@ -145,9 +145,32 @@ async def webhook_yuborish(conn, uid: int, event: str, data: dict) -> int:
     return yuborildi
 
 
+def _webhook_url_safe(url: str) -> bool:
+    """SSRF himoyasi: faqat public http(s); xususiy/loopback/link-local/metadata IP bloklanadi."""
+    import ipaddress, socket
+    from urllib.parse import urlparse
+    try:
+        p = urlparse(url)
+        if p.scheme not in ("http", "https") or not p.hostname:
+            return False
+        port = p.port or (443 if p.scheme == "https" else 80)
+        for info in socket.getaddrinfo(p.hostname, port):
+            ip = ipaddress.ip_address(info[4][0])
+            if (ip.is_private or ip.is_loopback or ip.is_link_local
+                    or ip.is_reserved or ip.is_multicast or ip.is_unspecified):
+                return False
+        return True
+    except Exception:
+        return False
+
+
 async def _yuborish_retry(conn, webhook: dict, event: str, payload: str):
     """Webhook yuborish — exponential backoff retry bilan."""
     import aiohttp
+
+    if not _webhook_url_safe(webhook.get("url", "")):
+        log.warning("\U0001F6AB Webhook URL bloklandi (ichki/xususiy IP): %s", webhook.get("url"))
+        return
 
     headers = {
         "Content-Type": "application/json; charset=utf-8",

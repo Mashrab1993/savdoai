@@ -139,7 +139,8 @@ class ClickProvider(PaymentProvider):
             f"{data.get('sign_time', '')}"
         )
         expected = hashlib.md5(sign_string.encode()).hexdigest()
-        return data.get("sign_string", "") == expected
+        import hmac as _hmac
+        return _hmac.compare_digest(str(data.get("sign_string", "")), expected)
 
     def webhook_parse(self, data: dict) -> TolovNatija:
         """Click webhook datani parse qilish."""
@@ -206,7 +207,8 @@ class PaymeProvider(PaymentProvider):
         try:
             decoded = base64.b64decode(auth[6:]).decode()
             login, password = decoded.split(":", 1)
-            return login == "Paycom" and password == self.secret_key
+            import hmac as _hmac
+            return login == "Paycom" and _hmac.compare_digest(password, str(self.secret_key))
         except Exception:
             return False
 
